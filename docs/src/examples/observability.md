@@ -1,5 +1,5 @@
 # [Observability Analysis](@id ObservabilityAnalysisExamples)
-In this example, we analyze a 6-bus power system, shown in Figure 1, monitored by four power meters. The objective is to perform an observability analysis to identify observable islands and restore observability.
+In this example, we analyze a 6-bus power system, shown in Figure 1, monitored by four power meters. The initial objective is to conduct an observability analysis to identify observable islands and restore observability. Later, we examine optimal PMU placement to ensure system observability using only phasor measurements.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/obs6bus.svg" width="400"/>
@@ -11,9 +11,9 @@ In this example, we analyze a 6-bus power system, shown in Figure 1, monitored b
 !!! note "Info"
     Users can download a Julia script containing the scenarios from this section using the following [link](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/analyses/observability.jl).
 
-First, we define the power system model by specifying buses and branches:
+We begin by defining the power system, specifying buses and branches, and setting the generator at the slack bus:
 ```@example 6bus
-using JuliaGrid # hide
+using JuliaGrid, HiGHS # hide
 @default(template) # hide
 @default(unit) # hide
 
@@ -33,6 +33,8 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 4")
 addBranch!(system; label = "Branch 4", from = "Bus 3", to = "Bus 5")
 addBranch!(system; label = "Branch 5", from = "Bus 3", to = "Bus 4")
 addBranch!(system; label = "Branch 6", from = "Bus 4", to = "Bus 6")
+
+addGenerator!(system; label = "Generator 1", bus = "Bus 1")
 
 nothing # hide
 ```
@@ -163,3 +165,62 @@ Figure 4 illustrates the measurement configuration that makes our 6-bus power sy
 </div>
 ```
 
+---
+
+## Optimal PMU Placement
+The goal of the PMU placement algorithm is to determine the minimal number of PMUs required to make the system observable. In this case, we analyze a 6-bus power system without power meters and identify the smallest set of PMUs needed for full observability, ensuring a unique state estimator:
+```julia 6bus
+placement = pmuPlacement(system, HiGHS.Optimizer)
+```
+```@setup 6bus
+placement = pmuPlacement(system, HiGHS.Optimizer; silent = true)
+nothing # hide
+```
+
+The optimal PMU locations can be retrieved with:
+```@repl 6bus
+placement.bus
+nothing # hide
+```
+
+Figure 5 illustrates the PMU configuration that ensures observability and guarantees a unique state estimator. Each installed PMU measures the bus voltage phasor and the current phasors of all connected branches.
+```@raw html
+<div style="text-align: center;">
+    <img src="../../assets/obs6bus_pmu.svg" width="430"/>
+    <p>Figure 5: PMU configuration that makes the 6-bus power system observable.</p>
+</div>
+&nbsp;
+```
+
+Thus, PMUs are placed at `Bus 2`, `Bus 3`, and `Bus 4`, measuring the corresponding voltage phasors. Next, the following variables provide information on the branches where these PMUs measure current phasors:
+```@repl 6bus
+placement.from
+placement.to
+nothing # hide
+```
+
+These variables provide users with a convenient way to define phasor measurement values, whether based on AC power flow or AC optimal power flow analyses, which have been thoroughly explored in state estimation examples. Additionally, users have the option to manually specify measurement values, an example of this approach is presented below:
+```@example 6bus
+pmu = measurement()
+
+addPmu!(system, pmu; label = "PMU 1-1", bus = "Bus 2", magnitude = 1.1, angle = -0.2)
+addPmu!(system, pmu; label = "PMU 1-2", to = "Branch 1", magnitude = 1.2, angle = -2.7)
+addPmu!(system, pmu; label = "PMU 1-3", from = "Branch 2", magnitude = 0.6, angle = 0.3)
+addPmu!(system, pmu; label = "PMU 1-4", from = "Branch 3", magnitude = 0.6, angle = 0.7)
+
+addPmu!(system, pmu; label = "PMU 2-1", bus = "Bus 3", magnitude = 1.2, angle = -0.3)
+addPmu!(system, pmu; label = "PMU 2-2", to = "Branch 2", magnitude = 0.6, angle = -2.8)
+addPmu!(system, pmu; label = "PMU 2-3", from = "Branch 4", magnitude = 0.3, angle = -2.8)
+
+addPmu!(system, pmu; label = "PMU 3-1", bus = "Bus 4", magnitude = 1.2, angle = -0.3)
+addPmu!(system, pmu; label = "PMU 3-2", to = "Branch 3", magnitude = 0.6, angle = -2.3)
+addPmu!(system, pmu; label = "PMU 3-3", to = "Branch 4", magnitude = 0.3, angle = 0.3)
+addPmu!(system, pmu; label = "PMU 3-4", from = "Branch 6", magnitude = 0.2, angle = 1.9)
+
+nothing # hide
+```
+
+This set of phasor measurements ensures system observability and guarantees a unique state estimator. The defined phasor measurements can be displayed using:
+```@example 6bus
+printPmuData(system, pmu)
+```

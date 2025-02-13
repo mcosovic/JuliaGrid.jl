@@ -452,7 +452,7 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LAV})
 end
 
 """
-    pmuPlacement(system::PowerSystem, optimizer; bridge)
+    pmuPlacement(system::PowerSystem, optimizer; bridge, name, silent)
 
 The function determines the optimal placement of PMUs through integer linear programming.
 Specifically, it identifies the minimum set of PMU locations required for effective power
@@ -468,8 +468,10 @@ more detailed information, please refer to the
 [JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
 
 # Keyword
-The `bridge` keyword enables users to manage the bridging mechanism within the JuMP
-package.
+The function accepts the following keywords:
+* `bridge`: controls the bridging mechanism (default: `false`),
+* `name`: handles the creation of string names (default: `false`),
+* `silent`: determines whether the solver produces output (default: `false`).
 
 # Returns
 The function returns an instance of the `PlacementPMU` type, containing variables such as:
@@ -516,7 +518,8 @@ function pmuPlacement(
     system::PowerSystem,
     (@nospecialize optimizerFactory);
     bridge::Bool = false,
-    name::Bool = false
+    name::Bool = false,
+    silent::Bool = false,
 )
     bus = system.bus
     branch = system.branch
@@ -532,6 +535,11 @@ function pmuPlacement(
     dropZeros!(ac)
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
+
+    if silent
+        JuMP.set_silent(jump)
+    end
+
     set_string_names_on_creation(jump, name)
 
     placement = @variable(jump, 0 <= placement[i = 1:bus.number] <= 1, Int)
