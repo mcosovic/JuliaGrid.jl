@@ -44,16 +44,16 @@ Notably, observability analysis and optimal PMU placement are independent of bra
 ---
 
 ## Identification of Observable Islands
-Next, we define the measurement model. JuliaGrid employs standard observability analysis based on the linear decoupled measurement model. Active power measurements from wattmeters are used to estimate bus voltage angles, while reactive power measurements from varmeters estimate bus voltage magnitudes. Thus, each of the four meters in Figure 2 represents both a wattmeter and a varmeter.
+Next, we define the measurement model. JuliaGrid employs standard observability analysis based on the linear decoupled measurement model. Active power measurements from wattmeters are used to estimate bus voltage angles, while reactive power measurements from varmeters estimate bus voltage magnitudes. In this example, the 6-bus power system is monitored by four meters, as shown in Figure 2.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/obs6bus_meter.svg" width="400"/>
+    <img src="../../assets/obs6bus_meter.svg" width="430"/>
     <p>Figure 2: The 6-bus power system monitoring with four power meters.</p>
 </div>
 &nbsp;
 ```
 
-Notably, the island detection step relies only on wattmeters, meaning that if the goal is simply to identify observable islands, defining wattmeters alone is sufficient. However, for observability restoration followed by state estimation, varmeters are also needed. Therefore, in this example, we define both wattmeters and varmeters in pairs:
+Notably, the island detection step relies only on wattmeters, meaning that if the goal is simply to identify observable islands, defining wattmeters alone is sufficient. However, for observability restoration followed by state estimation, varmeters are also needed. Therefore, the four meters represent both wattmeters and varmeters:
 ```@example 6bus
 device = measurement()
 
@@ -86,11 +86,11 @@ islands.island
 nothing # hide
 ```
 
-This is illustrated in Figure 2.
+This is illustrated in Figure 3.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/obs6bus_flow.svg" width="430"/>
-    <p>Figure 2: Flow observable islands in the 6-bus power system.</p>
+    <p>Figure 3: Flow observable islands in the 6-bus power system.</p>
 </div>
 &nbsp;
 ```
@@ -107,11 +107,11 @@ islands.island
 nothing # hide
 ```
 
-As observed, the devices `Meter 2` and `Meter 3` together merge the first, second, and third flow observable islands into one, as shown in Figure 3.
+As observed, the devices `Meter 2` and `Meter 3` together merge the first, second, and third flow observable islands into one, as shown in Figure 4.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/obs6bus_maximal.svg" width="430"/>
-    <p>Figure 3: Maximal observable islands in the 6-bus power system.</p>
+    <p>Figure 4: Maximal observable islands in the 6-bus power system.</p>
 </div>
 &nbsp;
 ```
@@ -166,11 +166,11 @@ addVoltmeter!(system, device; label = "Pseudo 3", bus = "Bus 1", magnitude = 1.0
 nothing # hide
 ```
 
-Figure 4 illustrates the measurement configuration that makes our 6-bus power system observable and ensures a unique state estimator.
+Figure 5 illustrates the measurement configuration that makes our 6-bus power system observable and ensures a unique state estimator.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/obs6bus_psudo.svg" width="430"/>
-    <p>Figure 4: Measurement configuration that makes the 6-bus power system observable.</p>
+    <img src="../../assets/obs6bus_psudo.svg" width="400"/>
+    <p>Figure 5: Measurement configuration that makes the 6-bus power system observable.</p>
 </div>
 ```
 
@@ -192,11 +192,11 @@ placement.bus
 nothing # hide
 ```
 
-Figure 5 illustrates the PMU configuration that ensures observability and guarantees a unique state estimator. Each installed PMU measures the bus voltage phasor and the current phasors of all connected branches.
+Figure 6 illustrates the PMU configuration that ensures observability and guarantees a unique state estimator. Each installed PMU measures the bus voltage phasor and the current phasors of all connected branches.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/obs6bus_pmu.svg" width="430"/>
-    <p>Figure 5: PMU configuration that makes the 6-bus power system observable.</p>
+    <p>Figure 6: PMU configuration that makes the 6-bus power system observable.</p>
 </div>
 &nbsp;
 ```
