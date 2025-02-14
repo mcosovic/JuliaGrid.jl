@@ -1,9 +1,9 @@
 # [Observability Analysis](@id ObservabilityAnalysisExamples)
-In this example, we analyze a 6-bus power system, shown in Figure 1, monitored by four power meters. The initial objective is to conduct an observability analysis to identify observable islands and restore observability. Later, we examine optimal PMU placement to ensure system observability using only phasor measurements.
+In this example, we analyze a 6-bus power system, shown in Figure 1. The initial objective is to conduct an observability analysis to identify observable islands and restore observability. Later, we examine optimal PMU placement to ensure system observability using only phasor measurements.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/obs6bus.svg" width="400"/>
-    <p>Figure 1: The 6-bus power system monitoring with four power meters.</p>
+    <p>Figure 1: The 6-bus power system.</p>
 </div>
 &nbsp;
 ```
@@ -11,7 +11,7 @@ In this example, we analyze a 6-bus power system, shown in Figure 1, monitored b
 !!! note "Info"
     Users can download a Julia script containing the scenarios from this section using the following [link](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/analyses/observability.jl).
 
-We begin by defining the power system, specifying buses and branches, and setting the generator at the slack bus:
+We define the power system, specify buses and branches, and assign the generator to the slack bus:
 ```@example 6bus
 using JuliaGrid, HiGHS # hide
 @default(template) # hide
@@ -39,7 +39,21 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1")
 nothing # hide
 ```
 
-Next, we define the measurement model. JuliaGrid employs standard observability analysis based on the linear decoupled measurement model. Active power measurements from wattmeters are used to estimate bus voltage angles, while reactive power measurements from varmeters estimate bus voltage magnitudes. Thus, each of the four meters in Figure 1 represents both a wattmeter and a varmeter. Notably, the island detection step relies only on wattmeters, meaning that if the goal is simply to identify observable islands, defining wattmeters alone is sufficient. However, for observability restoration followed by state estimation, varmeters are also needed. Therefore, in this example, we define both wattmeters and varmeters in pairs:
+Notably, observability analysis and optimal PMU placement are independent of branch parameters, as well as measurement values and variances.
+
+---
+
+## Identification of Observable Islands
+Next, we define the measurement model. JuliaGrid employs standard observability analysis based on the linear decoupled measurement model. Active power measurements from wattmeters are used to estimate bus voltage angles, while reactive power measurements from varmeters estimate bus voltage magnitudes. Thus, each of the four meters in Figure 2 represents both a wattmeter and a varmeter.
+```@raw html
+<div style="text-align: center;">
+    <img src="../../assets/obs6bus_meter.svg" width="400"/>
+    <p>Figure 2: The 6-bus power system monitoring with four power meters.</p>
+</div>
+&nbsp;
+```
+
+Notably, the island detection step relies only on wattmeters, meaning that if the goal is simply to identify observable islands, defining wattmeters alone is sufficient. However, for observability restoration followed by state estimation, varmeters are also needed. Therefore, in this example, we define both wattmeters and varmeters in pairs:
 ```@example 6bus
 device = measurement()
 
@@ -60,12 +74,7 @@ nothing # hide
 
 Attempting to solve nonlinear state estimation with these measurements would not be possible, as the gain matrix would be singular. The same issue arises with DC state estimation. To prevent this, users can perform observability analysis, which adds non-redundant measurements to ensure a nonsingular gain matrix and a unique state estimator.
 
-Notably, observability analysis is independent of branch parameters, measurement values, and variances.
-
----
-
-## Identification of Observable Islands
-With JuliaGrid, we have the ability to identify both flow observable and maximal observable islands, each of which can be used as the foundation for the restoration step. To provide a comprehensive analysis, we will explore both types of islands. In the first step, we focus on determining the flow observable islands:
+Observability analysis begins with identifying observable islands. We have the ability to identify both flow observable and maximal observable islands, each of which can be used as the foundation for the restoration step. To provide a comprehensive analysis, we will explore both types of islands. In the first step, we focus on determining the flow observable islands:
 ```@example 6bus
 islands = islandTopologicalFlow(system, device)
 nothing # hide
@@ -173,7 +182,7 @@ The goal of the PMU placement algorithm is to determine the minimal number of PM
 placement = pmuPlacement(system, HiGHS.Optimizer)
 ```
 ```@setup 6bus
-placement = pmuPlacement(system, HiGHS.Optimizer; silent = true)
+placement = pmuPlacement(system, HiGHS.Optimizer; print = false)
 nothing # hide
 ```
 

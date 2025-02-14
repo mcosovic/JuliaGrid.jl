@@ -15,7 +15,7 @@ system30 = powerSystem(path * "case30test.m")
         end
         compstruct(analysisSE.voltage, analysis.voltage; atol = 1e-10)
 
-        analysisLAV = acLavStateEstimation(system, device, Ipopt.Optimizer; silent = true)
+        analysisLAV = acLavStateEstimation(system, device, Ipopt.Optimizer; print = false)
         solve!(system, analysisLAV)
         compstruct(analysisLAV.voltage, analysis.voltage; atol = 1e-8)
 
@@ -696,7 +696,7 @@ system30 = powerSystem(path * "case30test.m")
         solve!(system, analysisSE)
         compstruct(analysisSE.voltage, analysis.voltage; atol = 1e-8)
 
-        analysisLAV = pmuLavStateEstimation(system, device, Ipopt.Optimizer; silent = true)
+        analysisLAV = pmuLavStateEstimation(system, device, Ipopt.Optimizer; print = false)
         solve!(system, analysisLAV)
         compstruct(analysisLAV.voltage, analysis.voltage; atol = 1e-6)
     end
@@ -862,7 +862,7 @@ system30 = powerSystem(path * "case30test.m")
         solve!(system, analysisSE)
         @test analysisSE.voltage.angle ≈ analysis.voltage.angle
 
-        analysisLAV = dcLavStateEstimation(system, device, Ipopt.Optimizer; silent = true)
+        analysisLAV = dcLavStateEstimation(system, device, Ipopt.Optimizer; print = false)
         solve!(system, analysisLAV)
         @test analysisLAV.voltage.angle ≈ analysis.voltage.angle
 

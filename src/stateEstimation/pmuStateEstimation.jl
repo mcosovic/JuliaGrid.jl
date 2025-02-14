@@ -204,7 +204,7 @@ end
 
 """
     pmuLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
-        bridge, name, silent)
+        bridge, name, print)
 
 The function establishes the LAV model for state estimation with PMUs only. In this
 model, the vector of state variables contains bus voltages, given in rectangular
@@ -220,7 +220,7 @@ outliers.
 The function accepts the following keywords:
 * `bridge`: controls the bridging mechanism (default: `false`),
 * `name`: handles the creation of string names (default: `false`),
-* `silent`: controls solver output display (default: `false`).
+* `print`: controls solver output display (default: `true`).
 
 Users can employ the LAV method to find an estimator by choosing one of the available
 [optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
@@ -253,7 +253,7 @@ function pmuLavStateEstimation(
     @nospecialize optimizerFactory;
     bridge::Bool = false,
     name::Bool = false,
-    silent::Bool = false,
+    print::Bool = true,
 )
     bus = system.bus
     branch = system.branch
@@ -267,7 +267,7 @@ function pmuLavStateEstimation(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
-    if silent
+    if !print
         JuMP.set_silent(jump)
     end
 
@@ -463,7 +463,7 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LAV})
 end
 
 """
-    pmuPlacement(system::PowerSystem, optimizer; bridge, name, silent)
+    pmuPlacement(system::PowerSystem, optimizer; bridge, name, print)
 
 The function determines the optimal placement of PMUs through integer linear programming.
 Specifically, it identifies the minimum set of PMU locations required for effective power
@@ -482,7 +482,7 @@ more detailed information, please refer to the
 The function accepts the following keywords:
 * `bridge`: controls the bridging mechanism (default: `false`),
 * `name`: handles the creation of string names (default: `false`),
-* `silent`: controls solver output display (default: `false`).
+* `print`: controls solver output display (default: `true`).
 
 # Returns
 The function returns an instance of the `PlacementPMU` type, containing variables such as:
@@ -530,7 +530,7 @@ function pmuPlacement(
     (@nospecialize optimizerFactory);
     bridge::Bool = false,
     name::Bool = false,
-    silent::Bool = false,
+    print::Bool = true,
 )
     bus = system.bus
     branch = system.branch
@@ -547,7 +547,7 @@ function pmuPlacement(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
 
-    if silent
+    if !print
         JuMP.set_silent(jump)
     end
 
