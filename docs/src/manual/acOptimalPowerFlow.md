@@ -421,7 +421,7 @@ nothing # hide
 ---
 
 ## [Optimal Power Flow Solution](@id ACOptimalPowerFlowSolutionManual)
-To establish the AC optimal power flow problem, we can utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, we can use the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles. Also, to turn off the solver output within the REPL, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function before calling [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function. Here is an example:
+To establish the AC optimal power flow problem, we utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, we can use the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles:
 ```julia ACOptimalPowerFlow
 JuMP.set_silent(analysis.method.jump)
 solve!(system, analysis)
@@ -431,6 +431,7 @@ JuMP.set_silent(analysis.method.jump)
 solve!(system, analysis)
 nothing # hide
 ```
+To suppress the solver display output, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function. Alternatively, output can be disabled by setting the `print = false` keyword within the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function.
 
 By executing this function, we will obtain the solution with the optimal values for the active and reactive power outputs of the generators, as well as the bus voltage magnitudes and angles.
 ```@repl ACOptimalPowerFlow

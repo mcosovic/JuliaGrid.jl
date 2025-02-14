@@ -80,13 +80,13 @@ islands = islandTopologicalFlow(system, device)
 nothing # hide
 ```
 
-As a result, four flow observable islands are identified: `Bus 1` and `Bus 2` form the first island, `Bus 3` forms the second island, `Bus 4` and `Bus 6` constitute the third island, while `Bus 5` forms the fourth island:
+As the result, four flow observable islands are identified:
 ```@repl 6bus
 islands.island
 nothing # hide
 ```
 
-This is illustrated in Figure 3.
+The first observable island consists of `Bus 1` and `Bus 2`, the second island is formed by `Bus 3`, the third island includes `Bus 4` and `Bus 6`, while `Bus 5` constitutes the fourth island, as shown in Figure 3.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/obs6bus_flow.svg" width="430"/>
