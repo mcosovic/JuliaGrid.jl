@@ -758,11 +758,11 @@ The function accepts five keywords:
   * `reactive = 2`: adding or updating cost, and polynomial is being used.
 * `piecewise`: Cost model defined by input-output points given as `Matrix{Float64}`:
   * first column (pu, W or VAr): active or reactive power output of the generator,
-  * second column (\$/hr): cost for the specified active or reactive power output.
+  * second column (\\$/hr): cost for the specified active or reactive power output.
 * `polynomial`: The n-th degree polynomial coefficients given as `Vector{Float64}`:
-  * first element (\$/puⁿ-hr, \$/Wⁿhr or \$/VArⁿ-hr): coefficient of the n-th degree term, ....,
-  * penultimate element (\$/pu-hr, \$/W-hr or \$/VAr-hr): coefficient of the first degree term,
-  * last element (\$/hr): constant coefficient.
+  * first element (\\$/puⁿ-hr, \\$/Wⁿhr or \\$/VArⁿ-hr): coefficient of the n-th degree term, ....,
+  * penultimate element (\\$/pu-hr, \\$/W-hr or \\$/VAr-hr): coefficient of the first degree term,
+  * last element (\\$/hr): constant coefficient.
 
 # Updates
 The function updates the `generator.cost` field within the `PowerSystem` composite type.
