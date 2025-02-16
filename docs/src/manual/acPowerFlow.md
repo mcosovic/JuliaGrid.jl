@@ -277,7 +277,7 @@ Next, we can initialize the Newton-Raphson method with the voltages obtained fro
 ```@example ACPowerFlowSolution
 analysis = newtonRaphson(system)
 
-setInitialPoint!(analysis, gs)
+setInitialPoint!(gs, analysis)
 for iteration = 1:100
     stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
@@ -295,7 +295,7 @@ end
 ##### Print Results in the REPL
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example ACPowerFlowSolution
-@voltage(pu, deg, V)
+@voltage(pu, deg)
 printBusData(system, analysis)
 nothing # hide
 ```
@@ -437,7 +437,6 @@ for iteration = 1:100
 end
 nothing # hide
 ```
-Throughout this process, JuliaGrid will factorize the constant Jacobian matrices that govern the fast Newton-Raphson method.
 
 Now, let us make changes to the power system and proceed directly to the iteration step:
 ```@example ACPowerFlowSolution
@@ -554,15 +553,15 @@ print(system.branch.label, analysis.current.to.angle)
 ```
 
 !!! note "Info"
-    To better understand the powers and currents associated with buses, branches, and generators that are obtained by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, we suggest referring to the tutorials on [AC Power Flow Analysis](@ref ACPowerFlowTutorials).
+    For a better understanding of the powers and currents from buses, branches, and generators obtained by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, refer to the [AC Power Flow Analysis](@ref ACPowerFlowTutorials).
 
 ---
 
 ##### Print Results in the REPL
 Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, to create a bus summary with the desired units, users can use the following function:
 ```@example ComputationPowersCurrentsLosses
-@voltage(pu, deg, V)
-@power(MW, MVAr, pu)
+@voltage(pu, deg)
+@power(MW, MVAr)
 printBusSummary(system, analysis)
 @default(unit) # hide
 nothing # hide

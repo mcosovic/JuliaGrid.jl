@@ -55,8 +55,8 @@ per-unit. The rest of the keywords are initialized with a value of zero. However
 can modify these default settings by utilizing the [`@generator`](@ref @generator) macro.
 
 # Units
-By default, the input units are associated with per-units (pu) as shown. However, users
-have the option to use other units instead of per-units using the [`@power`](@ref @power)
+By default, the input units are associated with per-units as shown. However, users have
+the option to use other units instead of per-units using the [`@power`](@ref @power)
 and [`@voltage`](@ref @voltage) macros.
 
 # Examples
@@ -71,7 +71,7 @@ addGenerator!(system; bus = "Bus 1", active = 0.5, magnitude = 1.1)
 
 Adding a generator using a custom unit system:
 ```jldoctest
-@power(MW, MVAr, MVA)
+@power(MW, MVAr)
 @voltage(kV, deg, kV)
 system = powerSystem()
 
@@ -658,7 +658,7 @@ with the keywords specified within the [`addGenerator!`](@ref addGenerator!) fun
 with their corresponding values.
 
 # Units
-By default, the input units are associated with per-units (pu) as shown. However, users have
+By default, the input units are associated with per-units as shown. However, users have
 the option to use other units instead of per-units using the [`@power`](@ref @power) and
 [`@voltage`](@ref @voltage) macros.
 
@@ -675,7 +675,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.5, reacti
 
 Adding a generator using a custom unit system:
 ```jldoctest
-@power(MW, MVAr, MVA)
+@power(MW, MVAr)
 @voltage(kV, deg, kV)
 system = powerSystem()
 
@@ -758,11 +758,11 @@ The function accepts five keywords:
   * `reactive = 2`: adding or updating cost, and polynomial is being used.
 * `piecewise`: Cost model defined by input-output points given as `Matrix{Float64}`:
   * first column (pu, W or VAr): active or reactive power output of the generator,
-  * second column (€/hr): cost for the specified active or reactive power output.
+  * second column (\$/hr): cost for the specified active or reactive power output.
 * `polynomial`: The n-th degree polynomial coefficients given as `Vector{Float64}`:
-  * first element (€/puⁿ-hr, €/Wⁿhr or €/VArⁿ-hr): coefficient of the n-th degree term, ....,
-  * penultimate element (€/pu-hr, €/W-hr or €/VAr-hr): coefficient of the first degree term,
-  * last element (€/hr): constant coefficient.
+  * first element (\$/puⁿ-hr, \$/Wⁿhr or \$/VArⁿ-hr): coefficient of the n-th degree term, ....,
+  * penultimate element (\$/pu-hr, \$/W-hr or \$/VAr-hr): coefficient of the first degree term,
+  * last element (\$/hr): constant coefficient.
 
 # Updates
 The function updates the `generator.cost` field within the `PowerSystem` composite type.
@@ -770,7 +770,7 @@ Furthermore, it guarantees that any modifications to the parameters are transmit
 to the `Analysis` type.
 
 # Units
-By default, the input units related with active powers are per-units (pu), but they can be
+By default, the input units related with active powers are per-units, but they can be
 modified using the macro [`@power`](@ref @power).
 
 # Examples
@@ -786,7 +786,7 @@ cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.0; 500.0
 
 Adding a cost using a custom unit system:
 ```jldoctest
-@power(MW, MVAr, MVA)
+@power(MW, MVAr)
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", active = 25, reactive = -4, base = 132e3)

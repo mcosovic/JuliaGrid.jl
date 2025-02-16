@@ -37,8 +37,8 @@ are initialized with a value of zero. However, the user can modify these default
 by utilizing the [`@bus`](@ref @bus) macro.
 
 # Units
-By default, the keyword parameters use per-units (pu) and radians (rad) as units, with the
-exception of the `base` keyword argument, which is in volts (V). However, users have the
+By default, the keyword parameters use per-units and radians as units, with the
+exception of the `base` keyword argument, which is in volts. However, users have the
 option to use other units instead of per-units and radians, or to specify prefixes for base
 voltage by using the [`@power`](@ref @power) and [`@voltage`](@ref @voltage) macros.
 
@@ -52,7 +52,7 @@ addBus!(system; label = "Bus 1", active = 0.25, angle = 0.175, base = 132e3)
 
 Adding a bus using a custom unit system:
 ```jldoctest
-@power(MW, MVAr, MVA)
+@power(MW, MVAr)
 @voltage(pu, deg, kV)
 system = powerSystem()
 
@@ -423,10 +423,10 @@ the keywords specified within the [`addBus!`](@ref addBus!) function, along with
 corresponding values.
 
 # Units
-By default, the keyword parameters use per-units (pu) and radians (rad) as units, with the
-exception of the `base` keyword argument, which is in volts (V). However, users have the
-option to use other units instead of per-units and radians, or to specify prefixes for base
-voltage by using the [`@power`](@ref @power) and [`@voltage`](@ref @voltage) macros.
+By default, the keyword parameters use per-units and radians as units, with the exception
+of the `base` keyword argument, which is in volts. However, users have the option to use
+other units instead of per-units and radians, or to specify prefixes for base voltage by
+using the [`@power`](@ref @power) and [`@voltage`](@ref @voltage) macros.
 
 # Examples
 Adding a bus template using the default unit system:
@@ -439,7 +439,7 @@ addBus!(system; label = "Bus 1", reactive = -0.04, base = 132e3)
 
 Adding a bus template using a custom unit system:
 ```jldoctest
-@power(MW, MVAr, MVA)
+@power(MW, MVAr)
 @voltage(pu, deg, kV)
 system = powerSystem()
 

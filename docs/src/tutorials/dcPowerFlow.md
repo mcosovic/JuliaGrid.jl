@@ -5,9 +5,8 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 @labels(Integer)
-
-@power(MW, MVAr, MVA)
-@voltage(pu, deg, V)
+@power(MW, MVAr)
+@voltage(pu, deg)
 
 system = powerSystem()
 
@@ -25,7 +24,7 @@ addGenerator!(system; bus = 3, active = 5.0)
 nothing #hide
 ```
 
-To review, we can conceptualize the bus/branch model as the graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where we have the set of buses ``\mathcal{N} = \{1, \dots, n\}``, and the set of branches ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` within the power system:
+To review, we can conceptualize the bus/branch model as the graph denoted by ``\mathcal G = (\mathcal N, \mathcal E)``, where we have the set of buses ``\mathcal N = \{1, \dots, n\}``, and the set of branches ``\mathcal E \subseteq \mathcal N \times \mathcal N`` within the power system:
 ```@repl PowerFlowSolutionDC
 𝒩 = collect(keys(system.bus.label))
 ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]
@@ -34,14 +33,14 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 ---
 
 !!! ukw "Notation"
-    In this section, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal{N}``, and ``a_{ij}`` represents the element associated with branch ``(i,j) \in \mathcal{E}``.
+    In this section, when referring to a vector ``\mathbf a``, we use the notation ``\mathbf a = [a_{i}]`` or ``\mathbf a = [a_{ij}]``, where ``a_i`` represents the element associated with bus ``i \in \mathcal N``, and ``a_{ij}`` represents the element associated with branch ``(i,j) \in \mathcal E``.
 
 ---
 
 ## [Power Flow Solution](@id DCPowerFlowSolutionTutorials)
 As discussed in section [DC Model](@ref DCModelTutorials), the DC power flow problem can be represented by a set of linear equations:
 ```math
-  \mathbf {P} = \mathbf{B} \bm {\Theta} + \mathbf{P_\text{tr}} + \mathbf{P}_\text{sh}.
+  \mathbf P = \mathbf B \bm \Theta + \mathbf{P}_\mathrm{tr} + \mathbf{P}_\mathrm{sh}.
 ```
 
 ---
@@ -55,7 +54,7 @@ nothing # hide
 
 The DC power flow solution is obtained through a non-iterative approach by solving the system of linear equations:
 ```math
-    \bm {\Theta} = \mathbf{B}^{-1}(\mathbf {P} - \mathbf{P_\text{tr}} - \mathbf{P}_\text{sh}).
+    \bm \Theta = \mathbf{B}^{-1}(\mathbf P - \mathbf{P}_\mathrm{tr} - \mathbf{P}_\mathrm{sh}).
 ```
 
 JuliaGrid begins the process by establishing the DC power flow framework:
@@ -64,7 +63,7 @@ analysis = dcPowerFlow(system)
 nothing # hide
 ```
 
-The subsequent step involves performing the LU factorization of the nodal matrix ``\mathbf{B} = \mathbf{L}\mathbf{U}`` and computing the bus voltage angles using:
+The subsequent step involves performing the LU factorization of the nodal matrix ``\mathbf B = \mathbf L \mathbf U`` and computing the bus voltage angles using:
 ```@example PowerFlowSolutionDC
 solve!(system, analysis)
 nothing # hide
@@ -79,7 +78,7 @@ The factorization of the nodal matrix can be accessed using:
 𝐔 = analysis.method.factorization.U
 ```
 
-It is important to note that the slack bus voltage angle is excluded from the vector ``\bm{\Theta}`` only during the computation step. Consequently, the corresponding elements in the vectors ``\mathbf {P}``, ``\mathbf{P_\text{tr}}``, ``\mathbf{P}_\text{sh}``, and the corresponding row and column of the matrix ``\mathbf{B}`` are removed. It is worth mentioning that this process is handled internally, and the stored elements remain unchanged.
+It is important to note that the slack bus voltage angle is excluded from the vector ``\bm \Theta`` only during the computation step. Consequently, the corresponding elements in the vectors ``\mathbf P``, ``\mathbf{P}_\mathrm{tr}``, ``\mathbf{P}_\mathrm{sh}``, and the corresponding row and column of the matrix ``\mathbf B`` are removed. It is worth mentioning that this process is handled internally, and the stored elements remain unchanged.
 
 Finally, the resulting bus voltage angles are saved in the vector as follows:
 ```@repl PowerFlowSolutionDC
@@ -101,7 +100,7 @@ nothing # hide
 ---
 
 ##### Power Injections
-[Active power injections](@ref DCBusInjectionTutorials) are stored as the vector ``\mathbf{P} = [P_i]``, and can be retrieved using the following commands:
+[Active power injections](@ref DCBusInjectionTutorials) are stored as the vector ``\mathbf P = [P_i]``, and can be retrieved using the following commands:
 ```@repl PowerFlowSolutionDC
 𝐏 = analysis.power.injection.active
 ```
@@ -111,9 +110,9 @@ nothing # hide
 ##### Generator Power Injections
 The active power supplied by generators to the buses can be calculated by summing the given generator active powers in the input data, except for the slack bus, which can be determined as:
 ```math
-    P_{\text{p}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}},
+    P_{\mathrm{p}i} = P_i + P_{\mathrm{d}i},\;\;\; i \in \mathcal{N}_\mathrm{sb},
 ```
-where ``P_{\text{d}i}`` represents the active power demanded by consumers at the slack bus. The vector of active powers injected by generators into the buses, denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, can be obtained using the following command:
+where ``P_{\mathrm{d}i}`` represents the active power demanded by consumers at the slack bus. The vector of active powers injected by generators into the buses, denoted by ``\mathbf{P}_\mathrm{p} = [P_{\mathrm{p}i}]``, can be obtained using the following command:
 ```@repl PowerFlowSolutionDC
 𝐏ₚ = analysis.power.supply.active
 ```
@@ -121,12 +120,12 @@ where ``P_{\text{d}i}`` represents the active power demanded by consumers at the
 ---
 
 ##### Power Flows
-The resulting [from-bus active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using:
+The resulting [from-bus active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_\mathrm{i} = [P_{ij}]``, which can be retrieved using:
 ```@repl PowerFlowSolutionDC
 𝐏ᵢ = analysis.power.from.active
 ```
 
-Similarly, the resulting [to-bus active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using:
+Similarly, the resulting [to-bus active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_\mathrm{j} = [P_{ji}]``, which can be retrieved using:
 ```@repl PowerFlowSolutionDC
 𝐏ⱼ = analysis.power.to.active
 ```
@@ -134,13 +133,13 @@ Similarly, the resulting [to-bus active power flows](@ref DCBranchNetworkEquatio
 ---
 
 ##### Generators Power Outputs
-The output active power of each generator located at bus ``i \in \mathcal{N}_{\text{pv}} \cup \mathcal{N}_{\text{pq}}`` is equal to the active power specified in the input data. If there are multiple generators, their output active powers are also equal to the active powers specified in the input data. However, the output active power of a generator located at the slack bus will be:
+The output active power of each generator located at bus ``i \in \mathcal{N}_\mathrm{pv} \cup \mathcal{N}_\mathrm{pq}`` is equal to the active power specified in the input data. If there are multiple generators, their output active powers are also equal to the active powers specified in the input data. However, the output active power of a generator located at the slack bus will be:
 ```math
-    P_{\text{g}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}_{\text{sb}}.
+    P_{\mathrm{g}i} = P_i + P_{\mathrm{d}i}, \;\;\; i \in \mathcal{N}_\mathrm{sb}.
 ```
-In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\text{g}i}``. Then, this amount of power is reduced by the output active power of the other generators.
+In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\mathrm{g}i}``. Then, this amount of power is reduced by the output active power of the other generators.
 
-To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_{\text{g}} = [P_{\text{g}i}]``, ``i \in \mathcal{S}``, where the set ``\mathcal{S}`` represents the set of generators, users can utilize the following command:
+To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_\mathrm{g} = [P_{\mathrm{g}i}]``, ``i \in \mathcal S``, where the set ``\mathcal S`` represents the set of generators, users can utilize the following command:
 ```@repl PowerFlowSolutionDC
 𝐏ₒ = analysis.power.generator.active
 ```

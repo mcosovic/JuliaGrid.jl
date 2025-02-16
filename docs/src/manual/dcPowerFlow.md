@@ -118,7 +118,7 @@ nothing # hide
 ##### Print Results in the REPL
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example DCPowerFlowSolution
-@voltage(pu, deg, V)
+@voltage(pu, deg)
 printBusData(system, analysis)
 nothing # hide
 ```
@@ -324,7 +324,7 @@ print(system.branch.label, system.base.power.value * analysis.power.from.active)
 ##### Print Results in the REPL
 Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, users have the option to print the results in the REPL using any units that have been configured:
 ```@example ComputationPowersCurrentsLosses
-@power(MW, pu, pu)
+@power(MW, pu)
 printBranchData(system, analysis)
 @default(unit) # hide
 nothing # hide

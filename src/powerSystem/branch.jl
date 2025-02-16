@@ -55,9 +55,9 @@ initialized with a value of zero. However, the user can modify these default set
 utilizing the [`@branch`](@ref @branch) macro.
 
 # Units
-The default units for the keyword parameters are per-units (pu) and radians (rad). However,
-the user can choose to use other units besides per-units and radians by utilizing macros such
-as [`@power`](@ref @power), [`@voltage`](@ref @voltage), [`@current`](@ref @current), and
+The default units for the keyword parameters are per-units and radians. However, the user
+can choose to use other units besides per-units and radians by utilizing macros such as
+[`@power`](@ref @power), [`@voltage`](@ref @voltage), [`@current`](@ref @current), and
 [`@parameter`](@ref @parameter).
 
 # Examples
@@ -73,7 +73,7 @@ addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.12, shiftAngle = 
 
 Adding a branch using a custom unit system:
 ```jldoctest
-@voltage(pu, deg, kV)
+@voltage(pu, deg)
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.25, reactive = -0.04)
@@ -538,7 +538,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2")
 
 Adding a branch template using a custom unit system:
 ```jldoctest
-@voltage(pu, deg, kV)
+@voltage(pu, deg)
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.25, reactive = -0.04)
