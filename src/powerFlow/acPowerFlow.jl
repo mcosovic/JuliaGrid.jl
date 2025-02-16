@@ -1017,95 +1017,28 @@ function adjustAngle!(system::PowerSystem, analysis::ACPowerFlow; slack::IntStrM
 end
 
 """
-    startingVoltage!(system::PowerSystem, analysis::ACPowerFlow)
+    setInitialPoint!(source::Union{PowerSystem, Analysis}, target::ACPowerFlow)
 
-The function extracts bus voltage magnitudes and angles from the `PowerSystem` composite
-type and assigns them to the `ACPowerFlow` type, enabling users to initialize voltage
-values as required.
+The function assigns the bus voltage magnitudes and angles in the `target` argument using
+data from the `source` argument. It is useful for initializing AC power flow with results
+from AC or DC analyses or for setting an initial point defined within the `PowerSystem` type.
 
-# Updates
-This function only updates the `voltage` field of the `ACPowerFlow` type.
-
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
-
-analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-
-updateBus!(system, analysis; label = 14, reactive = 0.13, magnitude = 1.2, angle = -0.17)
-
-startingVoltage!(system, analysis)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-```
-"""
-function startingVoltage!(
-    system::PowerSystem,
-    analysis::ACPowerFlow{T}
-) where T <: Union{NewtonRaphson, FastNewtonRaphson}
-
-    bus = system.bus
-    volt = analysis.voltage
-
-    @inbounds for i = 1:bus.number
-        if haskey(bus.supply.generator, i) && bus.layout.type[i] != 1
-            volt.magnitude[i] = system.generator.voltage.magnitude[bus.supply.generator[i][1]]
-        else
-            volt.magnitude[i] = bus.voltage.magnitude[i]
-        end
-        volt.angle[i] = bus.voltage.angle[i]
-    end
-end
-
-function startingVoltage!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel})
-    bus = system.bus
-    volt = analysis.voltage
-
-    @inbounds for i = 1:bus.number
-        if haskey(bus.supply.generator, i) && bus.layout.type[i] != 1
-            volt.magnitude[i] = system.generator.voltage.magnitude[bus.supply.generator[i][1]]
-        else
-            volt.magnitude[i] = bus.voltage.magnitude[i]
-        end
-        volt.angle[i] = bus.voltage.angle[i]
-        analysis.method.voltage[i] = volt.magnitude[i] * cis(volt.angle[i])
-    end
-end
-
-"""
-    transferVoltage!(analysis1::ACPowerFlow, analysis2::ACPowerFlow)
-
-The function transfers the bus voltage magnitude and angle values from `analysis1` to
-`analysis2`. It is useful for initializing methods with results obtained from other methods.
-
-# Updates
-The function only updates the `voltage` field in the `analysis2` variable.
+Note that when using DC analyses, only voltage angles are used to initialize AC power flow,
+while the magnitudes remain unchanged as provided in the `target` argument.
 
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
-analysis1 = gaussSeidel(system)
+gs = gaussSeidel(system)
 for i = 1:10
     solve!(system, analysis1)
 end
 
-analysis2 = newtonRaphson(system)
-transferVoltage!(analysis1, analysis2)
+nr = newtonRaphson(system)
+
+setInitialPoint!(gs, nr)
 for i = 1:10
     stopping = mismatch!(system, analysis2)
     if all(stopping .< 1e-8)
@@ -1115,41 +1048,53 @@ for i = 1:10
 end
 ```
 """
-function transferVoltage!(
-    analysis1::ACPowerFlow,
-    analysis2::ACPowerFlow{T}
-) where T <: Union{NewtonRaphson, FastNewtonRaphson}
-
+function setInitialPoint!(system::PowerSystem, analysis::ACPowerFlow)
     bus = system.bus
-    from = analysis1.voltage
-    to = analysis2.voltage
+    volt = analysis.voltage
 
-    if lastindex(to.magnitude) == lastindex(from.magnitude) && lastindex(to.angle) == lastindex(from.angle)
-        @inbounds for i = 1:bus.number
-            to.magnitude[i] = from.magnitude[i]
-            to.angle[i] = from.angle[i]
+    errorTransfer(bus.voltage.angle, volt.angle)
+    errorTransfer(bus.voltage.magnitude, volt.magnitude)
+
+    @inbounds for i = 1:bus.number
+        if haskey(bus.supply.generator, i) && bus.layout.type[i] != 1
+            volt.magnitude[i] = system.generator.voltage.magnitude[bus.supply.generator[i][1]]
+        else
+            volt.magnitude[i] = bus.voltage.magnitude[i]
         end
-    else
-        errorTransfer()
+
+        volt.angle[i] = bus.voltage.angle[i]
+
+        if isdefined(analysis.method, :voltage)
+            analysis.method.voltage[i] = volt.magnitude[i] * cis(volt.angle[i])
+        end
     end
 end
 
-function transferVoltage!(analysis1::ACPowerFlow, analysis2::ACPowerFlow{GaussSeidel})
-    bus = system.bus
-    from = analysis1.voltage
-    to = analysis2.voltage
+function setInitialPoint!(source::AC, target::ACPowerFlow)
+    errorTransfer(source.voltage.magnitude, target.voltage.magnitude)
+    errorTransfer(source.voltage.angle, target.voltage.angle)
 
-    if lastindex(to.magnitude) == lastindex(from.magnitude) && lastindex(to.angle) == lastindex(from.angle)
-        @inbounds for i = 1:bus.number
-            to.magnitude[i] = from.magnitude[i]
-            to.angle[i] = from.angle[i]
-            analysis2.method.voltage[i] = to.magnitude[i] * cis(to.angle[i])
+    @inbounds for i = 1:system.bus.number
+        target.voltage.magnitude[i] = source.voltage.magnitude[i]
+        target.voltage.angle[i] = source.voltage.angle[i]
+
+        if isdefined(target.method, :voltage)
+            target.method.voltage[i] = target.voltage.magnitude[i] * cis(target.voltage.angle[i])
         end
-    else
-        errorTransfer()
     end
 end
 
+function setInitialPoint!(source::DC, target::ACPowerFlow)
+    errorTransfer(source.voltage.angle, target.voltage.angle)
+
+    @inbounds for i = 1:system.bus.number
+        target.voltage.angle[i] = source.voltage.angle[i]
+
+        if isdefined(target.method, :voltage)
+            target.method.voltage[i] = target.voltage.magnitude[i] * cis(target.voltage.angle[i])
+        end
+    end
+end
 
 ##### Initialize Voltages for AC Power Flow #####
 function initializeACPowerFlow(system::PowerSystem)

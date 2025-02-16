@@ -258,7 +258,7 @@
     end
 
     @testset "IEEE 30: Starting Voltages" begin
-        startingVoltage!(system30, analysis)
+        setInitialPoint!(system30, analysis)
         @test analysis.voltage.magnitude == startMagnitude
         @test analysis.voltage.angle == startAngle
 
@@ -344,7 +344,7 @@ end
         dropZeros!(system30.model.ac)
         updateBranch!(system30, analysis; label = 5, status = 1)
 
-        startingVoltage!(system30, analysis)
+        setInitialPoint!(system30, analysis)
         iteration = 0
         for i = 1:1000
             stopping = mismatch!(system30, analysis)

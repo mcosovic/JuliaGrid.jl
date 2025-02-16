@@ -15,8 +15,7 @@ using JuliaGrid
 * [`gaussSeidel`](@ref gaussSeidel)
 * [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson}))
 * [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson}))
-* [`startingVoltage!`](@ref startingVoltage!)
-* [`transferVoltage!`](@ref transferVoltage!)
+* [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::ACPowerFlow))
 * [`reactiveLimit!`](@ref reactiveLimit!)
 * [`adjustAngle!`](@ref adjustAngle!)
 
@@ -34,8 +33,7 @@ fastNewtonRaphsonXB
 gaussSeidel
 mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})
 solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})
-startingVoltage!
-transferVoltage!
+setInitialPoint!(::PowerSystem, ::ACPowerFlow)
 reactiveLimit!
 adjustAngle!
 ```

@@ -138,8 +138,8 @@ system.bus.voltage.angle
 
 ---
 
-##### Customizing Input Units for Keywords
-Typically, all keywords associated with electrical quantities are expected to be provided in per-units (pu) and radians (rad) by default, with the exception of base voltages, which should be specified in volts (V). However, users can choose to use different units than the default per-units and radians or modify the prefix of the base voltage unit by using macros such as the following:
+##### Customizing Input Units
+Typically, all keywords associated with electrical quantities are expected to be provided in per-units and radians by default, with the exception of base voltages, which should be specified in volts. However, users can choose to use different units than the default per-units and radians or modify the prefix of the base voltage unit by using macros such as the following:
 ```@example addBusUnit
 using JuliaGrid # hide
 
@@ -160,7 +160,8 @@ addBus!(system; label = "Bus 2", type = 1, angle = -2.0, base = 345.0)
 
 As can be observed, electrical quantities will continue to be stored in per-units and radians format:
 ```@repl addBusUnit
-[system.bus.demand.active system.bus.voltage.angle]
+system.bus.demand.active
+system.bus.voltage.angle
 ```
 
 The base voltage values will still be stored in volts (V) since we only changed the input unit prefix, and did not modify the internal unit prefix, as shown below:
@@ -205,8 +206,8 @@ system.branch.parameter.reactance
 
 ---
 
-##### Customizing Input Units for Keywords
-To use units other than per-units (pu) and radians (rad), macros can be employed to change the input units. For example, if there is a need to use ohms (Ω), the macros below can be employed:
+##### Customizing Input Units
+To use units other than per-units and radians, macros can be employed to change the input units. For example, if there is a need to use ohms (Ω), the macros below can be employed:
 ```@example addBranchUnit
 using JuliaGrid # hide
 @parameter(Ω, pu)
@@ -245,7 +246,8 @@ nothing # hide
 
 In the above code, we add the generator to the `Bus 2`, with active and reactive power outputs set to:
 ```@repl addGenerator
-system.generator.output.active, system.generator.output.reactive
+system.generator.output.active
+system.generator.output.reactive
 ```
 
 Similar to buses and branches, the input units can be changed to units other than per-units using different macros.
@@ -256,7 +258,7 @@ Similar to buses and branches, the input units can be changed to units other tha
 ---
 
 ## [Add Templates](@id AddTemplatesManual)
-The functions [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`addGenerator!`](@ref addGenerator!) are used to add bus, branch, and generator to the power system, respectively. If certain keywords are not specified, default values are assigned to some parameters.
+The functions [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`addGenerator!`](@ref addGenerator!) are used to add bus, branch, and generator to the power system, respectively. If certain keywords are not specified, default values are assigned to parameters.
 
 ---
 
@@ -307,29 +309,24 @@ system.generator.voltage.magnitude
 
 ---
 
-##### Customizing Input Units for Keywords
+##### Customizing Input Units
 Templates can also be defined using a custom unit system, for example:
 ```@example CreateBusTemplateUnits
 using JuliaGrid # hide
 
 system = powerSystem()
 
-@power(MW, MVAr, MVA)
+@power(MW, MVAr)
 @bus(active = 100, reactive = 200)
 addBus!(system; label = "Bus 1")
-
-@power(pu, pu, pu)
-addBus!(system; label = "Bus 2", active = 0.5)
 nothing # hide
 ```
 
-In this example, we create the bus template and one bus using SI power units, and then we switch to per-units and add the second bus. It is important to note that once the template is defined in any unit system, it remains valid regardless of subsequent unit system changes. The resulting power values are:
+In this example, we create the bus template and one bus using SI power units. The resulting power values are:
 ```@repl CreateBusTemplateUnits
 system.bus.demand.active
 system.bus.demand.reactive
 ```
-
-Thus, JuliaGrid automatically tracks the unit system used to create templates and provides the appropriate conversion to per-units and radians. Even if the user switches to a different unit system later on, the previously defined template will still be valid.
 
 ---
 
@@ -439,7 +436,7 @@ In this example, two buses are generated and labeled as `Bus 1 HV` and `Bus 2 HV
 ---
 
 ##### Retrieving Labels
-Finally, we will outline how users can retrieve stored labels. Let us consider the following power system creation:
+Finally, we will outline how users can retrieve stored labels. Let us consider the following power system:
 ```@example RetrieveLabels
 using JuliaGrid # hide
 
@@ -708,7 +705,7 @@ cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.0; 500.0
 ```
 In essence, what we have accomplished is the establishment of a cost function depicted as ``f(P_{\text{g}1}) = 1100 P_{\text{g}1}^2 + 500 P_{\text{g}1} + 150`` through the code provided. In general, when constructing a polynomial cost function, the coefficients must be ordered from the highest degree to the lowest.
 
-The default input units are in per-units (pu), with coefficients of the cost function having units of currency/pu²-hr for 1100, currency/pu-hr for 500, and currency/hr for 150. Therefore, the coefficients are stored exactly as entered:
+The default input units are in per-units, with coefficients of the cost function having units of currency/pu²-hr for 1100, currency/pu-hr for 500, and currency/hr for 150. Therefore, the coefficients are stored exactly as entered:
 ```@repl addActiveCost
 system.generator.cost.active.polynomial[1]
 ```
@@ -731,10 +728,10 @@ system.generator.cost.reactive.piecewise[1]
 
 ---
 
-##### Customizing Input Units for Keywords
-Changing input units from per-units (pu) can be particularly useful since cost functions are usually related to SI units. Let us set active powers in megawatts (MW) and reactive powers in megavolt-amperes reactive (MVAr):
+##### Customizing Input Units
+Changing input units from per-units can be particularly useful since cost functions are usually related to SI units. Let us set active powers in megawatts (MW) and reactive powers in megavolt-amperes reactive (MVAr):
 ```@example addActiveCost
-@power(MW, MVAr, pu)
+@power(MW, MVAr)
 nothing # hide
 ```
 

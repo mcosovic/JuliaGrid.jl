@@ -52,7 +52,7 @@ include("powerFlow/acPowerFlow.jl")
 include("powerFlow/dcPowerFlow.jl")
 export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel
 export mismatch!, solve!
-export reactiveLimit!, adjustAngle!, startingVoltage!, transferVoltage!
+export reactiveLimit!, adjustAngle!, setInitialPoint!
 export dcPowerFlow
 
 ######### Optimal Power Flow ##########

@@ -26,7 +26,7 @@ Additionally, specialized functions are available for calculating specific types
 ## [Bus Type Modification](@id BusTypeModificationManual)
 Depending on how the system is constructed, the types of buses that are initially set are checked and can be changed during the construction of the `ACPowerFlow` type.
 
-Assuming the Newton-Raphson method has been chosen, to explain the details, we can observe a power system:
+To explain the details, we consider a power system and assume that the Newton-Raphson method has been chosen:
 ```julia
 system = powerSystem()
 
@@ -74,10 +74,8 @@ Note that, if a bus is initially defined as the demand bus (`type = 1`) and late
 
 ---
 
-## [Setup Starting Voltages](@id SetupStartingVoltagesManual)
-To begin analyzing the AC power flow in JuliaGrid, we must first establish the `PowerSystem` type. Once the power system is set up, we can select one of the available methods for solving the AC power flow problem, such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel).
-
-Assuming we have selected the Newton-Raphson method, we can use the following code snippet:
+## [Setup Initial Voltages](@id SetupInitialVoltagesManual)
+Let us create the `PowerSystem` type and select the Newton-Raphson method:
 ```@example initializeACPowerFlow
 using JuliaGrid # hide
 @default(unit) # hide
@@ -98,9 +96,9 @@ analysis = newtonRaphson(system)
 nothing # hide
 ```
 
-Here, the function [`newtonRaphson`](@ref newtonRaphson) generates starting voltage vectors in polar coordinates.
+Here, the function [`newtonRaphson`](@ref newtonRaphson) initializes voltages in polar coordinates.
 
-The starting voltage magnitudes are set to:
+The initial voltage magnitudes are set to:
 ```@repl initializeACPowerFlow
 print(system.bus.label, analysis.voltage.magnitude)
 ```
@@ -110,7 +108,7 @@ This vector is created based on the bus types by selecting voltage magnitude val
 [system.bus.voltage.magnitude system.generator.voltage.magnitude]
 ```
 
-The starting voltage angles are set to:
+The initial voltage angles are set to:
 ```@repl initializeACPowerFlow
 print(system.bus.label, analysis.voltage.angle)
 ```
@@ -121,16 +119,16 @@ system.bus.voltage.angle
 ```
 
 !!! note "Info"
-    The rule governing the specification of starting voltage magnitudes is simple. If a bus has an in-service generator and is declared the generator bus (`type = 2`), then the starting voltage magnitudes are specified using the setpoint provided within the generator. This is because the generator bus has known values of voltage magnitude that are specified within the generator.
+    The rule governing the specification of initial voltage magnitudes is simple. If a bus has an in-service generator and is declared the generator bus (`type = 2`), then the initial voltage magnitudes are specified using the setpoint provided within the generator. This is because the generator bus has known values of voltage magnitude that are specified within the generator.
 
-    On the other hand, the slack bus (`type = 3`) always requires an in-service generator. The starting value of the voltage magnitude at the slack bus is determined exclusively by the setpoints provided within the generators connected to it. This is a result of the slack bus having a known voltage magnitude that must be maintained.
+    On the other hand, the slack bus (`type = 3`) always requires an in-service generator. The initial value of the voltage magnitude at the slack bus is determined exclusively by the setpoints provided within the generators connected to it. This is a result of the slack bus having a known voltage magnitude that must be maintained.
 
     If there are multiple generators connected to the generator or slack bus, the initial voltage magnitude will align with the magnitude setpoint specified for the first in-service generator in the list.
 
 ---
 
-##### Custom Starting Voltages
-This method of specifying starting values has a significant advantage in that it allows the user to easily change the starting voltage magnitudes and angles, which play a crucial role in iterative methods. For instance, suppose we define our power system as follows:
+##### Custom Initial Voltages
+This method of specifying initial values has a significant advantage in that it allows the user to easily change the initial voltage magnitudes and angles, which play a crucial role in iterative methods. For instance, suppose we define our power system as follows:
 ```@example initializeACPowerFlowFlat
 using JuliaGrid # hide
 @default(unit) # hide
@@ -160,7 +158,7 @@ analysis = newtonRaphson(system)
 nothing # hide
 ```
 
-The starting voltage values are:
+The initial voltage values are:
 ```@repl initializeACPowerFlowFlat
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
@@ -279,11 +277,7 @@ Next, we can initialize the Newton-Raphson method with the voltages obtained fro
 ```@example ACPowerFlowSolution
 analysis = newtonRaphson(system)
 
-for i = 1:system.bus.number
-    analysis.voltage.magnitude[i] = gs.voltage.magnitude[i]
-    analysis.voltage.angle[i] = gs.voltage.angle[i]
-end
-
+setInitialPoint!(analysis, gs)
 for iteration = 1:100
     stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
@@ -478,9 +472,9 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 Therefore, users possess the flexibility to adjust these initial values as needed by employing the `magnitude` and `angle` keywords within the [`updateBus!`](@ref updateBus!) and [`updateGenerator!`](@ref updateGenerator!) functions.
 
-If users prefer to set starting voltages according to the typical scenario, they can accomplish this through the [`startingVoltage!`](@ref startingVoltage!) function:
+If users prefer to set starting voltages according to the typical scenario, they can accomplish this through the [`setInitialPoint!`](@ref setInitialPoint!) function:
 ```@example ACPowerFlowSolution
-startingVoltage!(system, analysis)
+setInitialPoint!(system, analysis)
 ```
 
 Now, we have starting voltages defined exclusively according to the `PowerSystem`. These values are exactly the same as if we executed the [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) function after all the updates we performed:

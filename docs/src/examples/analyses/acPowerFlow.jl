@@ -74,7 +74,7 @@ printBranchData(system, fnr; show = show2, fmt = fmt2)
 updateBranch!(system; label = "Branch 3", status = 0)
 
 nr = newtonRaphson(system)
-transferVoltage!(fnr, nr)
+setInitialPoint!(fnr, nr)
 acPowerFlow!(system, nr)
 
 printBranchData(system, nr; show = show2, fmt = fmt2)

@@ -555,10 +555,14 @@ function infoObjective(label::Union{String, Int64})
     )
 end
 
-function errorTransfer()
-    throw(
-        DimensionMismatch(
-            "Voltages could not be transferred because of mismatched array sizes."
+function errorTransfer(a::Vector{Float64}, b::Vector{Float64})
+    if lastindex(a) != lastindex(b)
+        throw(
+            DimensionMismatch(
+                "Voltages could not be transferred because of mismatched array sizes."
+            )
         )
-    )
+    end
+
+
 end

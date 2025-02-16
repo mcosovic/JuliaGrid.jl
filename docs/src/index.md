@@ -64,14 +64,14 @@ printBusData(system, analysis)             # Print data related to buses
 ```julia
 using JuliaGrid
 
-@power(MW, MVAr, MVA)                    # Specify the power units for input data
+@power(MW, MVAr)                         # Specify the power unit system
 system = powerSystem("case14.h5")        # Build the power system model
 dcModel!(system)                         # Create matrices and vectors for the DC model
 
 analysis = dcPowerFlow(system)           # Build the power flow analysis
 solve!(system, analysis)                 # Compute voltage angles
 
-@generator(active = 20)                  # Define the template for generators
+@generator(active = 20.0)                # Define the template for generators
 addGenerator!(system, analysis; bus = 1) # Add the new generator to the power system
 solve!(system, analysis)                 # Recompute voltage angles with the updated model
 

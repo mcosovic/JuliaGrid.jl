@@ -283,7 +283,7 @@ end
     updateGenerator!(resystem, reusing; label = 4, status = 0)
     updateGenerator!(resystem, reusing; label = 7, reactive = 0.13, magnitude = 0.91)
 
-    startingVoltage!(resystem, reusing)
+    setInitialPoint!(resystem, reusing)
     for iteration = 1:1000
         stopping = mismatch!(resystem, reusing)
         if all(stopping .< 1e-12)
