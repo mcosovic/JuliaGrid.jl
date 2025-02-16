@@ -45,7 +45,7 @@ PrecompileTools.@setup_workload begin
 
         ########## AC Power Flow ###########
         analysis = newtonRaphson(system)
-        startingVoltage!(system, analysis)
+        setInitialPoint!(system, analysis)
         solve!(system, analysis)
         power!(system, analysis)
         current!(system, analysis)
