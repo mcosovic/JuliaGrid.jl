@@ -2,7 +2,7 @@
 In this example, we analyze a 6-bus power system, shown in Figure 1. The initial objective is to conduct an observability analysis to identify observable islands and restore observability. Later, we examine optimal PMU placement to ensure system observability using only phasor measurements.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/obs6bus.svg" width="400"/>
+    <img src="../../assets/obs6bus.svg" width="410"/>
     <p>Figure 1: The 6-bus power system.</p>
 </div>
 &nbsp;
@@ -47,7 +47,7 @@ Notably, observability analysis and optimal PMU placement are independent of bra
 Next, we define the measurement model. JuliaGrid employs standard observability analysis based on the linear decoupled measurement model. Active power measurements from wattmeters are used to estimate bus voltage angles, while reactive power measurements from varmeters estimate bus voltage magnitudes. In this example, the 6-bus power system is monitored by four meters, as shown in Figure 2.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/obs6bus_meter.svg" width="430"/>
+    <img src="../../assets/obs6bus_meter.svg" width="420"/>
     <p>Figure 2: The 6-bus power system monitoring with four power meters.</p>
 </div>
 &nbsp;
@@ -169,7 +169,7 @@ nothing # hide
 Figure 5 illustrates the measurement configuration that makes our 6-bus power system observable and ensures a unique state estimator.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/obs6bus_psudo.svg" width="400"/>
+    <img src="../../assets/obs6bus_psudo.svg" width="420"/>
     <p>Figure 5: Measurement configuration that makes the 6-bus power system observable.</p>
 </div>
 ```
@@ -195,7 +195,7 @@ nothing # hide
 Figure 6 illustrates the PMU configuration that ensures observability and guarantees a unique state estimator. Each installed PMU measures the bus voltage phasor and the current phasors of all connected branches.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/obs6bus_pmu.svg" width="430"/>
+    <img src="../../assets/obs6bus_pmu.svg" width="420"/>
     <p>Figure 6: PMU configuration that makes the 6-bus power system observable.</p>
 </div>
 &nbsp;

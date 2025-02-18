@@ -90,7 +90,7 @@ function printVolt(
     labels = pickLabel(volt, volt.label, label, "voltmeter")
     prt = voltData(system, voltg, volt, unitList, pfx, label, labels, repeat; kwargs...)
 
-    if isempty(volt.label) && ptr.notprint
+    if isempty(volt.label) && prt.notprint
         return
     end
 
@@ -252,7 +252,7 @@ function printAmp(
     labels = pickLabel(amp, amp.label, label, "ammeter")
     prt = ampData(system, amp, current, unitList, pfx, label, labels, repeat; kwargs...)
 
-    if isempty(amp.label) && ptr.notprint
+    if isempty(amp.label) && prt.notprint
         return
     end
 

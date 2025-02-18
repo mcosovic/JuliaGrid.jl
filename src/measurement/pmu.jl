@@ -38,8 +38,8 @@ Note that all voltage values are referenced to line-to-neutral voltages.
 The function updates the `pmu` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `varianceMagnitude = 1e-5`,
-`varianceAngle = 1e-5`, `status = 1`, `noise = false`, `correlated = false`, and
+Default settings for certain keywords are as follows: `varianceMagnitude = 1e-8`,
+`varianceAngle = 1e-8`, `status = 1`, `noise = false`, `correlated = false`, and
 `polar = false`, which apply to PMUs located at the bus, as well as at both the from-bus
 and to-bus ends. Users can fine-tune these settings by explicitly specifying the variance
 and status for PMUs positioned at the buses, from-bus ends, or to-bus ends of branches
@@ -223,7 +223,7 @@ Settings for handling phasor measurements include:
 The function updates the `pmu` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for variance keywords are established at `1e-5`, with all statuses set to
+Default settings for variance keywords are established at `1e-8`, with all statuses set to
 `1`, `polar = false`, `correlated = false`, and `noise = false`. Users can change these
 default settings using the [`@pmu`](@ref @pmu) macro.
 

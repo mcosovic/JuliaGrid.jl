@@ -24,7 +24,7 @@ The ammeter is defined with the following keywords:
 The function updates the `ammeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = false`,
+Default settings for certain keywords are as follows: `variance = 1e-4`, `noise = false`,
 `status = 1`, which apply to ammeters located at both the from-bus and to-bus ends.
 Users can fine-tune these settings by explicitly specifying the variance and status for
 ammeters positioned on either the from-bus or to-bus ends of branches using the
@@ -140,8 +140,8 @@ Settings for generating measurements include:
 The function updates the `ammeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for keywords are as follows: `varianceFrom = 1e-2`, `statusFrom = 1`,
-`varianceTo = 1e-2`, `statusTo = 1`, and `noise = false`. Users can change these default
+Default settings for keywords are as follows: `varianceFrom = 1e-4`, `statusFrom = 1`,
+`varianceTo = 1e-4`, `statusTo = 1`, and `noise = false`. Users can change these default
 settings using the [`@ammeter`](@ref @ammeter) macro.
 
 # Units

@@ -453,7 +453,7 @@ macro default(mode::Symbol)
     end
 
     if mode == :template || mode == :voltmeter
-        template.voltmeter.variance.value = 1e-2
+        template.voltmeter.variance.value = 1e-4
         template.voltmeter.variance.pu = true
 
         template.voltmeter.status = Int8(1)
@@ -462,9 +462,9 @@ macro default(mode::Symbol)
     end
 
     if mode == :template || mode == :ammeter
-      template.ammeter.varianceFrom.value = 1e-2
+      template.ammeter.varianceFrom.value = 1e-4
       template.ammeter.varianceFrom.pu = true
-      template.ammeter.varianceTo.value = 1e-2
+      template.ammeter.varianceTo.value = 1e-4
       template.ammeter.varianceTo.pu = true
 
       template.ammeter.statusFrom = Int8(1)
@@ -475,11 +475,11 @@ macro default(mode::Symbol)
     end
 
     if mode == :template || mode == :wattmeter
-      template.wattmeter.varianceBus.value = 1e-2
+      template.wattmeter.varianceBus.value = 1e-4
       template.wattmeter.varianceBus.pu = true
-      template.wattmeter.varianceFrom.value = 1e-2
+      template.wattmeter.varianceFrom.value = 1e-4
       template.wattmeter.varianceFrom.pu = true
-      template.wattmeter.varianceTo.value = 1e-2
+      template.wattmeter.varianceTo.value = 1e-4
       template.wattmeter.varianceTo.pu = true
 
       template.wattmeter.statusBus = Int8(1)
@@ -491,11 +491,11 @@ macro default(mode::Symbol)
     end
 
     if mode == :template || mode == :varmeter
-      template.varmeter.varianceBus.value = 1e-2
+      template.varmeter.varianceBus.value = 1e-4
       template.varmeter.varianceBus.pu = true
-      template.varmeter.varianceFrom.value = 1e-2
+      template.varmeter.varianceFrom.value = 1e-4
       template.varmeter.varianceFrom.pu = true
-      template.varmeter.varianceTo.value = 1e-2
+      template.varmeter.varianceTo.value = 1e-4
       template.varmeter.varianceTo.pu = true
 
       template.varmeter.statusBus = Int8(1)
@@ -507,19 +507,19 @@ macro default(mode::Symbol)
     end
 
     if mode == :template || mode == :pmu
-      template.pmu.varianceMagnitudeBus.value = 1e-5
+      template.pmu.varianceMagnitudeBus.value = 1e-8
       template.pmu.varianceMagnitudeBus.pu = true
-      template.pmu.varianceAngleBus.value = 1e-5
+      template.pmu.varianceAngleBus.value = 1e-8
       template.pmu.varianceAngleBus.pu = true
 
-      template.pmu.varianceMagnitudeFrom.value = 1e-5
+      template.pmu.varianceMagnitudeFrom.value = 1e-8
       template.pmu.varianceMagnitudeFrom.pu = true
-      template.pmu.varianceAngleFrom.value = 1e-5
+      template.pmu.varianceAngleFrom.value = 1e-8
       template.pmu.varianceAngleFrom.pu = true
 
-      template.pmu.varianceMagnitudeTo.value = 1e-5
+      template.pmu.varianceMagnitudeTo.value = 1e-8
       template.pmu.varianceMagnitudeTo.pu = true
-      template.pmu.varianceAngleTo.value = 1e-5
+      template.pmu.varianceAngleTo.value = 1e-8
       template.pmu.varianceAngleTo.pu = true
 
       template.pmu.statusBus = Int8(1)

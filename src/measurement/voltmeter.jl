@@ -25,7 +25,7 @@ Note that all voltage values are referenced to line-to-neutral voltages.
 The function updates the `voltmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = false`,
+Default settings for certain keywords are as follows: `variance = 1e-4`, `noise = false`,
 `status = 1`, and users can modify these default settings using the
 [`@voltmeter`](@ref @voltmeter) macro.
 
@@ -105,7 +105,7 @@ Voltmeters can be configured using:
 The function updates the `voltmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for keywords are as follows: `variance = 1e-2`, `noise = false`, and
+Default settings for keywords are as follows: `variance = 1e-4`, `noise = false`, and
 `status = 1`, and users can modify these default settings using the
 [`@voltmeter`](@ref @voltmeter) macro.
 

@@ -183,19 +183,19 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
 
 @voltmeter(label = "Voltmeter ? (!)")
-addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0, variance = 1e-2)
+addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0, variance = 1e-4)
 
 @ammeter(label = "Ammeter ? (!)")
-addAmmeter!(system, device; from = "Branch 3", magnitude = 0.947, variance = 1e-1)
-addAmmeter!(system, device; to = "Branch 2", magnitude = 1.674, variance = 1e-1)
+addAmmeter!(system, device; from = "Branch 3", magnitude = 0.947, variance = 1e-3)
+addAmmeter!(system, device; to = "Branch 2", magnitude = 1.674, variance = 1e-3)
 
 @wattmeter(label = "Wattmeter ? (!)")
-addWattmeter!(system, device; from = "Branch 1", active = 1.046, variance = 1e-3)
-addWattmeter!(system, device; bus = "Bus 2", active = -0.1, variance = 2e-3)
+addWattmeter!(system, device; from = "Branch 1", active = 1.046, variance = 1e-4)
+addWattmeter!(system, device; bus = "Bus 2", active = -0.1, variance = 2e-4)
 
 @varmeter(label = "Varmeter ? (!)")
 addVarmeter!(system, device; from = "Branch 1", reactive = 0.059, variance = 1e-4)
-addVarmeter!(system, device; bus = "Bus 2", reactive = -0.01, variance = 1e-3)
+addVarmeter!(system, device; bus = "Bus 2", reactive = -0.01, variance = 1e-5)
 nothing # hide
 ```
 

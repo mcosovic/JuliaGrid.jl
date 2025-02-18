@@ -27,7 +27,7 @@ Note that when powers are given in SI units, they correspond to three-phase powe
 The function updates the `wattmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = false`,
+Default settings for certain keywords are as follows: `variance = 1e-4`, `noise = false`,
 and `status = 1`, which apply to wattmeters located at the bus, as well as at both the
 from-bus and to-bus ends. Users can fine-tune these settings by explicitly specifying the
 variance and status for wattmeters positioned at the buses, from-bus ends, or to-bus
@@ -113,7 +113,7 @@ Note that when powers are given in SI units, they correspond to three-phase powe
 The function updates the `varmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-2`, `noise = false`,
+Default settings for certain keywords are as follows: `variance = 1e-4`, `noise = false`,
 and `status = 1`, which apply to varmeters located at the bus, as well as at both the
 from-bus and to-bus ends. Users can fine-tune these settings by explicitly specifying the
 variance and status for varmeters positioned at the buses, from-bus ends, or to-bus
@@ -270,8 +270,8 @@ Settings for generating measurements include:
 The function updates the `wattmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for keywords are as follows: `varianceBus = 1e-2`, `statusBus = 1`,
-`varianceFrom = 1e-2`, `statusFrom = 1`, `varianceTo = 1e-2`, `statusTo = 1`, and
+Default settings for keywords are as follows: `varianceBus = 1e-4`, `statusBus = 1`,
+`varianceFrom = 1e-4`, `statusFrom = 1`, `varianceTo = 1e-4`, `statusTo = 1`, and
 `noise = false`. Users can change these default settings using the
 [`@wattmeter`](@ref @wattmeter) macro.
 
@@ -359,8 +359,8 @@ Settings for generating measurements include:
 The function updates the `varmeter` field of the `Measurement` composite type.
 
 # Default Settings
-Default settings for keywords are as follows: `varianceBus = 1e-2`, `statusBus = 1`,
-`varianceFrom = 1e-2`, `statusFrom = 1`, `varianceTo = 1e-2`, `statusTo = 1`, and
+Default settings for keywords are as follows: `varianceBus = 1e-4`, `statusBus = 1`,
+`varianceFrom = 1e-4`, `statusFrom = 1`, `varianceTo = 1e-4`, `statusTo = 1`, and
 `noise = false`. Users can change these default settings using the
 [`@varmeter`](@ref @varmeter) macro.
 
@@ -992,7 +992,7 @@ addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-@wattmeter(label = "Wattmeter ?", varianceBus = 1e-1, varianceFrom = 1e-2)
+@wattmeter(label = "Wattmeter ?", varianceBus = 1e-1, varianceFrom = 1e-4)
 addWattmeter!(system, device; bus = "Bus 2", active = 40.0)
 addWattmeter!(system, device; from = "Branch 1", active = 10.0)
 ```
@@ -1074,7 +1074,7 @@ addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-@varmeter(label = "Varmeter ?", varianceBus = 1e-1, varianceFrom = 1e-2)
+@varmeter(label = "Varmeter ?", varianceBus = 1e-1, varianceFrom = 1e-4)
 addVarmeter!(system, device; bus = "Bus 2", reactive = 40.0)
 addVarmeter!(system, device; from = "Branch 1", reactive = 10.0)
 ```

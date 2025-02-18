@@ -143,15 +143,15 @@ Base.@kwdef mutable struct GeneratorTemplate
 end
 
 Base.@kwdef mutable struct VoltmeterTemplate
-    variance::ContainerTemplate = ContainerTemplate(1e-2, true)
+    variance::ContainerTemplate = ContainerTemplate(1e-4, true)
     status::Int8 = Int8(1)
     label::String = "?"
     noise::Bool = false
 end
 
 Base.@kwdef mutable struct AmmeterTemplate
-    varianceFrom::ContainerTemplate = ContainerTemplate(1e-2, true)
-    varianceTo::ContainerTemplate = ContainerTemplate(1e-2, true)
+    varianceFrom::ContainerTemplate = ContainerTemplate(1e-4, true)
+    varianceTo::ContainerTemplate = ContainerTemplate(1e-4, true)
     statusFrom::Int8 = Int8(1)
     statusTo::Int8 = Int8(1)
     label::String = "?"
@@ -159,9 +159,9 @@ Base.@kwdef mutable struct AmmeterTemplate
 end
 
 Base.@kwdef mutable struct WattmeterTemplate
-    varianceBus::ContainerTemplate = ContainerTemplate(1e-2, true)
-    varianceFrom::ContainerTemplate = ContainerTemplate(1e-2, true)
-    varianceTo::ContainerTemplate = ContainerTemplate(1e-2, true)
+    varianceBus::ContainerTemplate = ContainerTemplate(1e-4, true)
+    varianceFrom::ContainerTemplate = ContainerTemplate(1e-4, true)
+    varianceTo::ContainerTemplate = ContainerTemplate(1e-4, true)
     statusBus::Int8 = Int8(1)
     statusFrom::Int8 = Int8(1)
     statusTo::Int8 = Int8(1)
@@ -170,9 +170,9 @@ Base.@kwdef mutable struct WattmeterTemplate
 end
 
 Base.@kwdef mutable struct VarmeterTemplate
-    varianceBus::ContainerTemplate = ContainerTemplate(1e-2, true)
-    varianceFrom::ContainerTemplate = ContainerTemplate(1e-2, true)
-    varianceTo::ContainerTemplate = ContainerTemplate(1e-2, true)
+    varianceBus::ContainerTemplate = ContainerTemplate(1e-4, true)
+    varianceFrom::ContainerTemplate = ContainerTemplate(1e-4, true)
+    varianceTo::ContainerTemplate = ContainerTemplate(1e-4, true)
     statusBus::Int8 = Int8(1)
     statusFrom::Int8 = Int8(1)
     statusTo::Int8 = Int8(1)
@@ -181,12 +181,12 @@ Base.@kwdef mutable struct VarmeterTemplate
 end
 
 Base.@kwdef mutable struct PmuTemplate
-    varianceMagnitudeBus::ContainerTemplate = ContainerTemplate(1e-5, true)
-    varianceAngleBus::ContainerTemplate = ContainerTemplate(1e-5, true)
-    varianceMagnitudeFrom::ContainerTemplate = ContainerTemplate(1e-5, true)
-    varianceAngleFrom::ContainerTemplate = ContainerTemplate(1e-5, true)
-    varianceMagnitudeTo::ContainerTemplate = ContainerTemplate(1e-5, true)
-    varianceAngleTo::ContainerTemplate = ContainerTemplate(1e-5, true)
+    varianceMagnitudeBus::ContainerTemplate = ContainerTemplate(1e-8, true)
+    varianceAngleBus::ContainerTemplate = ContainerTemplate(1e-8, true)
+    varianceMagnitudeFrom::ContainerTemplate = ContainerTemplate(1e-8, true)
+    varianceAngleFrom::ContainerTemplate = ContainerTemplate(1e-8, true)
+    varianceMagnitudeTo::ContainerTemplate = ContainerTemplate(1e-8, true)
+    varianceAngleTo::ContainerTemplate = ContainerTemplate(1e-8, true)
     statusBus::Int8 = Int8(1)
     statusFrom::Int8 = Int8(1)
     statusTo::Int8 = Int8(1)
