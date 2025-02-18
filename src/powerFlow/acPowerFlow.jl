@@ -941,8 +941,8 @@ function reactiveLimit!(system::PowerSystem, analysis::ACPowerFlow)
                             old = iterate(system.bus.label, j)[1][1]
                             new = iterate(system.bus.label, k)[1][1]
                             @info(
-                                "The slack bus labeled " * old * " is converted to " *
-                                "generator bus. The bus labeled " * new * " is the " *
+                                "The slack bus labeled $old is converted to " *
+                                "generator bus. The bus labeled $new is the " *
                                 "new slack bus."
                             )
                             bus.layout.slack = k
