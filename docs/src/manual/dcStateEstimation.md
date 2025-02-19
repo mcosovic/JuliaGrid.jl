@@ -185,12 +185,12 @@ nothing # hide
 
 ---
 
-##### Setup Starting Primal Values
-In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})) function is executed. Starting primal values are determined based on the `voltage` fields within the `DCStateEstimation` type. By default, these values are initially established using the initial bus voltage angles from `PowerSystem` type:
+##### Setup Initial Primal Values
+In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})) function is executed. Initial primal values are determined based on the `voltage` fields within the `DCStateEstimation` type. By default, these values are initially established using the initial bus voltage angles from `PowerSystem` type:
 ```@repl WLSDCStateEstimationSolution
 print(system.bus.label, analysis.voltage.angle)
 ```
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the starting primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})) function.
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})) function.
 
 ---
 

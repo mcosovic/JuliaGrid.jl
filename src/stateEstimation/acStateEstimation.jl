@@ -968,8 +968,8 @@ data from the `source` argument. It is useful for initializing AC stateestimatio
 results from AC or DC analyses or for setting an initial point defined within the
 `PowerSystem` type.
 
-Note that when using DC analyses, only voltage angles are used to initialize AC power flow,
-while the magnitudes remain unchanged as provided in the `target` argument.
+Note that when using DC analyses, only voltage angles are used to initialize AC state
+estimation, while the magnitudes remain unchanged as provided in the `target` argument.
 
 # Example
 ```jldoctest
@@ -984,7 +984,7 @@ for iteration = 1:20
     end
 end
 
-residualTest!(system, device, analysis; threshold = 4.0)
+residualTest!(system, device, analysis; threshold = 1.0)
 
 setInitialPoint!(system, analysis)
 for iteration = 1:20

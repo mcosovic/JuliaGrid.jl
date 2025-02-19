@@ -213,13 +213,13 @@ nothing # hide
 
 ---
 
-##### Setup Starting Voltages
-The initial voltages for the Gauss-Newton method are determined based on the specified initial voltage magnitudes and angles within the buses of the `PowerSystem` type. These values are then forwarded to the `ACStateEstimation` during the execution of the [`gaussNewton`](@ref gaussNewton) function. Therefore, the starting voltages in this example are as follows:
+##### Setup Initial Voltages
+The initial voltages for the Gauss-Newton method are determined based on the specified initial voltage magnitudes and angles within the buses of the `PowerSystem` type. These values are then forwarded to the `ACStateEstimation` during the execution of the [`gaussNewton`](@ref gaussNewton) function. Therefore, the initial voltages in this example are as follows:
 ```@repl ACSEWLS
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Users have the flexibility to modify these vectors according to their own requirements in order to adjust the starting voltages. For instance, users can conduct an initial AC power flow analysis and utilize the obtained solution as the starting voltages for AC state estimation:
+Users have the flexibility to modify these vectors according to their own requirements in order to adjust the initial voltages. For instance, users can conduct an AC power flow analysis and utilize the obtained solution as the initial voltages for AC state estimation:
 ```@example ACSEWLS
 powerFlow = newtonRaphson(system)
 for iteration = 1:10
@@ -227,10 +227,7 @@ for iteration = 1:10
     solve!(system, powerFlow)
 end
 
-for i = 1:system.bus.number
-    analysis.voltage.magnitude[i] = powerFlow.voltage.magnitude[i]
-    analysis.voltage.angle[i] = powerFlow.voltage.angle[i]
-end
+setInitialPoint!(powerFlow, analysis)
 nothing # hide
 ```
 
@@ -406,13 +403,9 @@ outlier.label
 
 Hence, upon detecting bad data, the `detect` variable will hold `true`. The `maxNormalizedResidual` variable retains the value of the largest normalized residual, while the `label` contains the label of the measurement identified as bad data. JuliaGrid will mark the respective measurement as out-of-service within the `Measurement` type.
 
-After removing bad data, a new estimate can be computed without considering this specific measurement. The user has the option to either restart the [`gaussNewton`](@ref gaussNewton) function or proceed directly to the iteration loop. However, if the latter option is chosen, using voltages obtained with outlier presence as the starting point could significantly impede algorithm convergence. To avoid this undesirable outcome, the user should first establish a new starting point and commence the iteration procedure. For instance:
+After removing bad data, a new estimate can be computed without considering this specific measurement. The user has the option to either restart the [`gaussNewton`](@ref gaussNewton) function or proceed directly to the iteration loop. However, if the latter option is chosen, using voltages obtained with outlier presence as the initial point could significantly impede algorithm convergence. To avoid this undesirable outcome, the user should first establish a new initial point and commence the iteration procedure. For instance:
 ```@example ACSEWLS
-for i = 1:system.bus.number
-    analysis.voltage.magnitude[i] = system.bus.voltage.magnitude[i]
-    analysis.voltage.angle[i] = system.bus.voltage.angle[i]
-end
-
+setInitialPoint!(system, analysis)
 for iteration = 1:20
     stopping = solve!(system, analysis)
     if stopping < 1e-8
@@ -447,13 +440,13 @@ nothing # hide
 
 ---
 
-##### Setup Starting Primal Values
-In JuliaGrid, the assignment of starting primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function is executed. Starting primal values are determined based on the `voltage` fields within the `ACStateEstimation` type. By default, these values are initially established using the initial bus voltage magnitudes and angles from `PowerSystem` type:
+##### Setup Initial Primal Values
+In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function is executed. Initial primal values are determined based on the `voltage` fields within the `ACStateEstimation` type. By default, these values are established using the initial bus voltage magnitudes and angles from `PowerSystem` type:
 ```@repl ACSEWLS
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the starting primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function.
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function.
 
 ---
 
