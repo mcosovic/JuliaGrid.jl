@@ -101,10 +101,7 @@ function residualTest!(
         se.run = true
         bad.detect = true
 
-        colIndecies = findall(!iszero, se.coefficient[bad.index, :])
-        @inbounds for col in colIndecies
-            se.coefficient[bad.index, col] = 0.0
-        end
+        removeRow(se.coefficient, bad.index)
         se.mean[bad.index] = 0.0
     end
 
@@ -180,16 +177,10 @@ function residualTest!(
             alsoBad = bad.index + 1
         end
 
-        colIndecies = findall(!iszero, se.coefficient[bad.index, :])
-        @inbounds for col in colIndecies
-            se.coefficient[bad.index, col] = 0.0
-        end
+        removeRow(se.coefficient, bad.index)
         se.mean[bad.index] = 0.0
 
-        colIndecies = findall(!iszero, se.coefficient[alsoBad, :])
-        for col in colIndecies
-            se.coefficient[alsoBad, col] = 0.0
-        end
+        removeRow(se.coefficient, alsoBad)
         se.mean[alsoBad] = 0.0
     end
 
@@ -312,6 +303,7 @@ function residualTest!(
                     device.pmu.magnitude.status[idx] = 0
                     device.pmu.angle.status[idx] = 0
 
+                    removeRow(se.jacobian, alsoBad)
                     se.mean[alsoBad] = 0.0
                     se.residual[alsoBad] = 0.0
                     se.type[alsoBad] = 0
@@ -321,6 +313,7 @@ function residualTest!(
     end
 
     if bad.detect
+        removeRow(se.jacobian, bad.index)
         se.mean[bad.index] = 0.0
         se.residual[bad.index] = 0.0
         se.type[bad.index] = 0
@@ -547,3 +540,11 @@ function sparseinv(
 
     return Zpattern[invperm(q), invperm(p)]
 end
+
+function removeRow(A::SparseMatrixCSC{Float64, Int64}, idx::Int64)
+    colIdx = findall(!iszero, A[idx, :])
+    @inbounds for col in colIdx
+        A[idx, col] = 0.0
+    end
+end
+
