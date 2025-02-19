@@ -49,7 +49,8 @@ makedocs(
             "DC Power Flow" => "examples/dcPowerFlow.md",
             "AC Optimal Power Flow" => "examples/acOptimalPowerFlow.md",
             "DC Optimal Power Flow" => "examples/dcOptimalPowerFlow.md",
-            "Observability Analysis" => "examples/observability.md"
+            "Observability Analysis" => "examples/observability.md",
+            "AC State Estimation" => "examples/acStateEstimation.md"
         ],
         "API Reference" =>[
             "Power System Model" => "api/powerSystemModel.md",
