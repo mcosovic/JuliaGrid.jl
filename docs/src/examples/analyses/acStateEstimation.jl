@@ -3,7 +3,7 @@ using JuliaGrid
 
 ##### Wrapper Function #####
 function acStateEstimation!(system::PowerSystem, analysis::ACStateEstimation)
-    for iteration = 1:20
+    for iteration = 1:200
         stopping = solve!(system, analysis)
         if stopping < 1e-8
             println("The algorithm converged in $iteration iterations.")
@@ -15,6 +15,8 @@ end
 
 
 ##### Power System Model #####
+system = powerSystem()
+
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", magnitude = 1.01, angle = 0.0, type = 3)
@@ -35,6 +37,11 @@ show = Dict("Shunt Power" => false, "Status" => false)
 
 ##### Measurement Model #####
 device = measurement()
+
+updateBus!(system; label = "Bus 2", type = 1, active = 1.1, reactive = 0.3)
+updateBus!(system; label = "Bus 3", type = 1, active = 2.3, reactive = 0.2)
+
+updateGenerator!(system; label = "Generator 1", active = 3.3, reactive = 2.1)
 
 acModel!(system)
 powerFlow = newtonRaphson(system)
