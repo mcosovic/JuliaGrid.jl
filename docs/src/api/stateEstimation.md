@@ -49,7 +49,7 @@ restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)
 gaussNewton
 acLavStateEstimation
 solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})
-setInitialPoint!(@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation))
+setInitialPoint!(::PowerSystem, ::ACStateEstimation)
 ```
 
 ---
