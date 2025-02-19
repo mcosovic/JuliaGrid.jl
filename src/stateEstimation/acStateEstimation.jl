@@ -960,6 +960,69 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{LAV})
     end
 end
 
+"""
+    setInitialPoint!(source::Union{PowerSystem, Analysis}, target::ACStateEstimation)
+
+The function assigns the bus voltage magnitudes and angles in the `target` argument using
+data from the `source` argument. It is useful for initializing AC stateestimation with
+results from AC or DC analyses or for setting an initial point defined within the
+`PowerSystem` type.
+
+Note that when using DC analyses, only voltage angles are used to initialize AC power flow,
+while the magnitudes remain unchanged as provided in the `target` argument.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = gaussNewton(system, device)
+for iteration = 1:20
+    stopping = solve!(system, analysis)
+    if stopping < 1e-8
+        break
+    end
+end
+
+residualTest!(system, device, analysis; threshold = 4.0)
+
+setInitialPoint!(system, analysis)
+for iteration = 1:20
+    stopping = solve!(system, analysis)
+    if stopping < 1e-8
+        break
+    end
+end
+```
+"""
+function setInitialPoint!(system::PowerSystem, analysis::ACStateEstimation)
+    errorTransfer(system.bus.voltage.magnitude, analysis.voltage.magnitude)
+    errorTransfer(system.bus.voltage.angle, analysis.voltage.angle)
+
+    @inbounds for i = 1:system.bus.number
+        analysis.voltage.magnitude[i] = system.bus.voltage.magnitude[i]
+        analysis.voltage.angle[i] = system.bus.voltage.angle[i]
+    end
+end
+
+function setInitialPoint!(source::AC, target::ACStateEstimation)
+    errorTransfer(source.voltage.magnitude, target.voltage.magnitude)
+    errorTransfer(source.voltage.angle, target.voltage.angle)
+
+    @inbounds for i = 1:system.bus.number
+        target.voltage.magnitude[i] = source.voltage.magnitude[i]
+        target.voltage.angle[i] = source.voltage.angle[i]
+    end
+end
+
+function setInitialPoint!(source::DC, target::ACStateEstimation)
+    errorTransfer(source.voltage.angle, target.voltage.angle)
+
+    @inbounds for i = 1:system.bus.number
+        target.voltage.angle[i] = source.voltage.angle[i]
+    end
+end
+
 function oneIndices!(
     jcb::SparseModel,
     type::Vector{Int8},

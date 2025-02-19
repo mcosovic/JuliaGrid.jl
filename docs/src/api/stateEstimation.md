@@ -17,6 +17,7 @@ using JuliaGrid
 * [`gaussNewton`](@ref gaussNewton)
 * [`acLavStateEstimation`](@ref acLavStateEstimation)
 * [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}}))
+* [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation))
 
 ###### PMU State Estimation
 * [`pmuPlacement`](@ref pmuPlacement)
@@ -48,6 +49,7 @@ restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)
 gaussNewton
 acLavStateEstimation
 solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})
+setInitialPoint!(@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation))
 ```
 
 ---

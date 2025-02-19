@@ -1128,7 +1128,7 @@ function changeSlackBus!(system::PowerSystem)
 
                 slack = iterate(system.bus.label, i)[1][1]
                 @info(
-                    "The bus labeled " * slack * " is the new slack bus since no " *
+                    "The bus labeled $slack is the new slack bus since no " *
                     "in-service generator was available at the previous slack bus."
                 )
                 break
