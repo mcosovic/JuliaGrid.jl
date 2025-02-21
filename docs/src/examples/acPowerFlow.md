@@ -2,7 +2,7 @@
 In this example, we perform several AC power flow analyses using the power system shown in Figure 1. These analyses simulate quasi-steady-state conditions where the system undergoes parameter and topology changes, demonstrating JuliaGrid's efficiency in handling such scenarios.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/4bus.svg" width="400"/>
+    <img src="../../assets/acPowerFlow/4bus.svg" width="400"/>
     <p>Figure 1: The 4-bus power system.</p>
 </div>
 &nbsp;
@@ -131,11 +131,11 @@ Thus, using bus and branch data, we obtained the active and reactive power flows
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../../assets/ac4bus_base_active.svg"/>
+        <img src="../../assets/acPowerFlow/4bus_base_active.svg"/>
         <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
-        <img src="../../assets/ac4bus_base_reactive.svg"/>
+        <img src="../../assets/acPowerFlow/4bus_base_reactive.svg"/>
         <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
@@ -177,11 +177,11 @@ Compared to the base case, the directions of active power flows remain unchanged
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../../assets/ac4bus_power_active.svg"/>
+        <img src="../../assets/acPowerFlow/4bus_power_active.svg"/>
         <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
-        <img src="../../assets/ac4bus_power_reactive.svg"/>
+        <img src="../../assets/acPowerFlow/4bus_power_reactive.svg"/>
         <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
@@ -229,11 +229,11 @@ Compared to the previous cases, we observe that the reactive power flow at `Bran
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../../assets/ac4bus_service_active.svg"/>
+        <img src="../../assets/acPowerFlow/4bus_service_active.svg"/>
         <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
-        <img src="../../assets/ac4bus_service_reactive.svg"/>
+        <img src="../../assets/acPowerFlow/4bus_service_reactive.svg"/>
         <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">

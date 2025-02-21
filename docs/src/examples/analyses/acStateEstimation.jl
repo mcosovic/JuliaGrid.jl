@@ -17,8 +17,6 @@ end
 ##### Power System Model #####
 system = powerSystem()
 
-system = powerSystem()
-
 addBus!(system; label = "Bus 1", magnitude = 1.01, angle = 0.0, type = 3)
 addBus!(system; label = "Bus 2", magnitude = 0.92, angle = -0.04)
 addBus!(system; label = "Bus 3", magnitude = 0.93, angle = -0.05)

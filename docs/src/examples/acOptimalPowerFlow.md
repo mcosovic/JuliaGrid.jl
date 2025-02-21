@@ -2,7 +2,7 @@
 This example performs multiple AC optimal power flow analyses on the power system shown in Figure 1. These simulations capture quasi-steady-state conditions under varying constraints and topology changes.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/4busopt.svg" width="400"/>
+    <img src="../../assets/acOptimalPowerFlow/4bus.svg" width="400"/>
     <p>Figure 1: The 4-bus power system.</p>
 </div>
 &nbsp;
@@ -139,11 +139,11 @@ Thus, we obtained the active and reactive power flows, as illustrated in Figure 
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../../assets/acopt4bus_base_active.svg"/>
+        <img src="../../assets/acOptimalPowerFlow/4bus_base_active.svg"/>
         <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
-        <img src="../../assets/acopt4bus_base_reactive.svg"/>
+        <img src="../../assets/acOptimalPowerFlow/4bus_base_reactive.svg"/>
         <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
@@ -184,11 +184,11 @@ The obtained results allow us to illustrate the active and reactive power flows 
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../../assets/acopt4bus_demand_active.svg"/>
+        <img src="../../assets/acOptimalPowerFlow/4bus_demand_active.svg"/>
         <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
-        <img src="../../assets/acopt4bus_demand_reactive.svg"/>
+        <img src="../../assets/acOptimalPowerFlow/4bus_demand_reactive.svg"/>
         <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
@@ -230,11 +230,11 @@ Figure 4 illustrates the power flows for this scenario. Compared to the previous
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../../assets/acopt4bus_cost_active.svg"/>
+        <img src="../../assets/acOptimalPowerFlow/4bus_cost_active.svg"/>
         <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
-        <img src="../../assets/acopt4bus_cost_reactive.svg"/>
+        <img src="../../assets/acOptimalPowerFlow/4bus_cost_reactive.svg"/>
         <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
@@ -279,11 +279,11 @@ Based on the obtained results, we can illustrate the power flows in Figure 5.
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../../assets/acopt4bus_flow_active.svg"/>
+        <img src="../../assets/acOptimalPowerFlow/4bus_flow_active.svg"/>
         <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
-        <img src="../../assets/acopt4bus_flow_reactive.svg"/>
+        <img src="../../assets/acOptimalPowerFlow/4bus_flow_reactive.svg"/>
         <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
@@ -322,11 +322,11 @@ Figure 6 illustrates these results under the outage of `Branch 2`.
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../../assets/acopt4bus_service_active.svg"/>
+        <img src="../../assets/acOptimalPowerFlow/4bus_service_active.svg"/>
         <p>(a) Active powers.</p>
     </div>
     <div class="image-item">
-        <img src="../../assets/acopt4bus_service_reactive.svg"/>
+        <img src="../../assets/acOptimalPowerFlow/4bus_service_reactive.svg"/>
         <p>(b) Reactive powers.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">

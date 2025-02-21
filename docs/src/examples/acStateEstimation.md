@@ -3,7 +3,7 @@ In this example, we analyze a 3-bus power system, shown in Figure 1. The objecti
 
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/3bus_meter.svg" width="320"/>
+    <img src="../../assets/acStateEstimation/3bus_meter.svg" width="320"/>
     <p>Figure 1: The 3-bus power system with the given measurement configuration.</p>
 </div>
 &nbsp;
@@ -84,7 +84,7 @@ nothing # hide
 AC power flow analysis requires generator and load data. The system configuration is shown in Figure 2.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/3bus.svg" width="350"/>
+    <img src="../../assets/acStateEstimation/3bus.svg" width="350"/>
     <p>Figure 2: The 3-bus power system.</p>
 </div>
 &nbsp;

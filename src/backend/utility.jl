@@ -375,7 +375,7 @@ import Base.print
 
 function print(
     io::IO,
-    label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
+    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
     data::Vararg{Union{Vector{Float64}, Vector{Int64}, Vector{Int8}}}
 )
     for (key, idx) in label
@@ -385,7 +385,7 @@ end
 
 function print(
     io::IO,
-    label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
+    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
     data::Dict{Int64, Float64}
 )
     for (key, idx) in label
@@ -398,7 +398,7 @@ end
 
 function print(
     io::IO,
-    label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
+    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
     obj::Dict{Int64, ConstraintRef}
 )
     for (key, idx) in label
@@ -420,7 +420,7 @@ end
 
 function print(
     io::IO,
-    label::Union{OrderedDict{String, Int64}, OrderedDict{String, Int64}},
+    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
     obj::Dict{Int64, Vector{ConstraintRef}}
 )
     for (key, idx) in label
