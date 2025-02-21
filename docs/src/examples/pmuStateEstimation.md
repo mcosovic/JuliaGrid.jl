@@ -54,7 +54,7 @@ nothing # hide
 ---
 
 ## Optimal PMU Placement
-Next, PMUs need to be assigned to the power system shown in Figure 1. The placement is determined using an optimal PMU placement strategy that ensures observability with the minimal number of phasor measurements:
+Next, PMUs need to be assigned to the power system shown in Figure 1. The placement is determined using an optimal PMU placement strategy that ensures observability with the minimal number of PMUs:
 ```@example pmuStateEstimation
 placement = pmuPlacement(system, HiGHS.Optimizer; print = false)
 nothing # hide
@@ -239,7 +239,7 @@ With the updated measurement values, the estimated results deviate more signific
 ---
 
 ## Modifying Measurement Set
-This setup includes the minimal number of phasor measurements required to solve the state estimation problem. If a phasor measurement is taken out-of-service, additional measurements must be added to maintain system observability. For example:
+Excluding phasor measurements from the set, when obtained using optimal placement, should be done with caution, as it can easily render the system unobservable. In this example, two measurements will be taken out-of-service, and two additional measurements will be immediately included to maintain observability:
 ```@example pmuStateEstimation
 updatePmu!(system, device; label = "From Branch 2", status = 0)
 updatePmu!(system, device; label = "From Branch 8", status = 0)
