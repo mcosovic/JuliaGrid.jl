@@ -13,7 +13,7 @@ addBus!(system; label = "Bus 2", active = 20.2)
 addBus!(system; label = "Bus 3", conductance = 0.1)
 addBus!(system; label = "Bus 4", active = 50.8)
 
-@branch(reactance = 0.22, minDiffAngle = -4.2, maxDiffAngle = 4.2)
+@branch(reactance = 0.2, minDiffAngle = -4.2, maxDiffAngle = 4.2)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 3")
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2")
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3")
@@ -36,7 +36,9 @@ fmt = Dict("From-Bus Power" => "%.2f", "To-Bus Power" => "%.2f", "Power Output" 
 
 
 ##### Base Case Analysis #####
-analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
+analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; angle = "θ", active = "Pg")
+print(analysis.method.jump)
+
 solve!(system, analysis)
 power!(system, analysis)
 

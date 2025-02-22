@@ -36,7 +36,7 @@ nothing # hide
 
 We then define transmission line parameters by specifying `reactance` values. For phase-shifting transformer, we include the shift angle using the `shiftAngle` keyword. Additionally, we set bus voltage angle difference constraints between the from-bus and to-bus ends of each branch using `minDiffAngle` and `maxDiffAngle` keywords:
 ```@example 4bus
-@branch(reactance = 0.22, minDiffAngle = -4.2, maxDiffAngle = 4.2)
+@branch(reactance = 0.2, minDiffAngle = -4.1, maxDiffAngle = 4.1)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 3")
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2")
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3")
@@ -85,21 +85,30 @@ nothing # hide
 ---
 
 ## Base Case Analysis
-We begin by creating the DC optimal power flow model and selecting the Ipopt solver. After solving the model, we determine the bus voltage angles and the active power outputs of the generators. Next, we compute the active powers across buses and branches:
+The process starts by formulating the DC optimal power flow model and selecting the Ipopt solver. The optimization variables include bus voltage angles and generator active power outputs, denoted as `θ` and `Pg` for data printing:
+```@example 4bus
+analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; angle = "θ", active = "Pg")
+nothing # hide
+```
+
+The optimization problem being solved can then be printed:
+```@repl 4bus
+print(analysis.method.jump)
+```
+
+Solving the DC optimal power flow model provides the bus voltage angles and generator active power outputs. The next step involves computing active power flows across buses and branches:
 ```julia 4bus
-analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 power!(system, analysis)
 ```
 ```@setup 4bus
-analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 JuMP.set_silent(analysis.method.jump)  # hide
 solve!(system, analysis)
 power!(system, analysis)
 nothing # hide
 ```
 
-Once the DC optimal power flow is solved, we review bus-related results, including the optimal bus voltage angles:
+After obtaining the solution, bus-related results, including the optimal bus voltage angles, are examined:
 ```@example 4bus
 printBusData(system, analysis)
 ```
@@ -175,7 +184,7 @@ The obtained results allow us to illustrate the active power flows in Figure 3.
 ---
 
 ## Modifying Generator Costs
-We adjust the cost functions for `Generator 1` and `Generator 3`, making `Generator 1` the highest-cost generator and `Generator 3` the lowest-cost one in the system. By updating both the power system model and the AC optimal power flow model simultaneously, we enable a warm start for solving this new scenario:
+We adjust the cost functions for `Generator 1` and `Generator 3`, making `Generator 1` the highest-cost generator and `Generator 3` the lowest-cost one in the system. By updating both the power system model and the DC optimal power flow model simultaneously, we enable a warm start for solving this new scenario:
 ```@example 4bus
 cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [2.0; 40.0; 0.0])
 cost!(system, analysis; generator = "Generator 3", active = 2, polynomial = [0.5; 10.0; 0.0])
@@ -217,7 +226,7 @@ updateBranch!(system, analysis; label = "Branch 2", type = 1, maxFromBus = 15.0)
 updateBranch!(system, analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
 ```
 
-Next, we recalculate the AC optimal power flow:
+Next, we recalculate the DC optimal power flow:
 ```@example 4bus
 solve!(system, analysis)
 power!(system, analysis)
@@ -251,7 +260,7 @@ At the end, we set `Branch 2` out-of-service:
 updateBranch!(system, analysis; label = "Branch 2", status = 0)
 ```
 
-We then recalculate the AC optimal power flow:
+We then recalculate the DC optimal power flow:
 ```@example 4bus
 solve!(system, analysis)
 power!(system, analysis)
