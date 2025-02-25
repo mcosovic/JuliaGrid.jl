@@ -167,6 +167,8 @@ nothing # hide
 ```
 Current phasor measurements can also be generated in the same way as voltage phasors by invoking the [`current!`](@ref current!(::PowerSystem, ::AC)) function after AC state estimation has converged.
 
+Note that the formation of bus voltage and branch current measurements can be performed by calling the [pmuPlacement!](@ref pmuPlacement!) function, as demonstrated in the [PMU State Estimation](@ref PhasorMeasurementsManual) manual.
+
 ---
 
 ##### Phasor Measurements

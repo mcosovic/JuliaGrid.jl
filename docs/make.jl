@@ -27,6 +27,7 @@ makedocs(
             "AC Optimal Power Flow" => "manual/acOptimalPowerFlow.md",
             "DC Optimal Power Flow" => "manual/dcOptimalPowerFlow.md",
             "Measurement Model" => "manual/measurementModel.md",
+            "Observability Analysis" => "manual/observability.md",
             "AC State Estimation" => "manual/acStateEstimation.md",
             "PMU State Estimation" => "manual/pmuStateEstimation.md",
             "DC State Estimation" => "manual/dcStateEstimation.md"
@@ -38,6 +39,7 @@ makedocs(
             "AC Optimal Power Flow" => "tutorials/acOptimalPowerFlow.md",
             "DC Optimal Power Flow" => "tutorials/dcOptimalPowerFlow.md",
             "Measurement Model" => "tutorials/measurementModel.md",
+            "Observability Analysis" => "examples/observability.md",
             "AC State Estimation" => "tutorials/acStateEstimation.md",
             "PMU State Estimation" => "tutorials/pmuStateEstimation.md",
             "DC State Estimation" => "tutorials/dcStateEstimation.md",

@@ -22,7 +22,7 @@ Additionally, specialized functions are available for calculating specific types
 
 ---
 
-## [Optimal PMU Placement](@id OptimalPMUPlacementManual)
+## [Phasor Measurements](@id PhasorMeasurementsManual)
 Let us define the `PowerSystem` type and perform the AC power flow analysis solely for generating data to artificially create measurement values:
 ```@example PMUOptimalPlacement
 using JuliaGrid # hide
@@ -54,50 +54,31 @@ nothing # hide
 
 ---
 
-##### Optimal Solution
-Upon defining the `PowerSystem` type, JuliaGrid provides the possibility to determine the minimal number of PMUs required for system observability using the [`pmuPlacement`](@ref pmuPlacement) function:
+##### Optimal PMU Placment
+After defining the `PowerSystem` type, the next step is to define the `Measurement` type:
 ```@example PMUOptimalPlacement
-using GLPK
+device = measurement()
+nothing # hide
+```
 
-placement = pmuPlacement(system, GLPK.Optimizer)
+JuliaGrid enables the determination of the minimal number of PMUs and the formation of phasor measurements using AC power flow data to ensure system observability through the [`pmuPlacement!`](@ref pmuPlacement!) function:
+```@example PMUOptimalPlacement
+using HiGHS
+
+@pmu(label = "PMU ? (!)")
+placement = pmuPlacement!(system, device, analysis, HiGHS.Optimizer; print = false)
 nothing # hide
 ```
 
 The `placement` variable contains data regarding the optimal placement of measurements. In this instance, installing a PMU at `Bus 2` renders the system observable:
 ```@repl PMUOptimalPlacement
-placement.bus
+keys(placement.bus)
 ```
 
 This PMU installed at `Bus 2` will measure the bus voltage phasor at the corresponding bus and all current phasors at the branches incident to `Bus 2` located at the from-bus or to-bus ends:
 ```@repl PMUOptimalPlacement
-placement.from
-placement.to
-```
-
-!!! note "Info"
-    We suggest that readers refer to the tutorial on [Optimal PMU Placement](@ref optimalpmu) for insights into the implementation.
-
----
-
-##### Measurement Data
-Utilizing PMU placement and AC power flow data, which serves as the source for measurement values in this scenario, we can construct the `Measurement` type as follows:
-```@example PMUOptimalPlacement
-device = measurement()
-
-@pmu(label = "PMU ? (!)")
-for (bus, idx) in placement.bus
-    Vᵢ, θᵢ = analysis.voltage.magnitude[idx], analysis.voltage.angle[idx]
-    addPmu!(system, device; bus = bus, magnitude = Vᵢ, angle = θᵢ)
-end
-for branch in keys(placement.from)
-    Iᵢⱼ, ψᵢⱼ = fromCurrent(system, analysis; label = branch)
-    addPmu!(system, device; from = branch, magnitude = Iᵢⱼ, angle = ψᵢⱼ)
-end
-for branch in keys(placement.to)
-    Iⱼᵢ, ψⱼᵢ = toCurrent(system, analysis; label = branch)
-    addPmu!(system, device; to = branch, magnitude = Iⱼᵢ, angle = ψⱼᵢ)
-end
-nothing # hide
+keys(placement.from)
+keys(placement.to)
 ```
 
 For example, we can observe the obtained set of measurement values:

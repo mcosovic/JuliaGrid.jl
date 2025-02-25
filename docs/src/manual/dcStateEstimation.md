@@ -9,12 +9,6 @@ For resolving the DC state estimation problem and obtaining bus voltage angles, 
 After executing the function [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})), where the user employs the WLS method, the user has the ability to check if the measurement set contains outliers throughout bad data analysis and remove those measurements using:
 * [`residualTest!`](@ref residualTest!).
 
-Moreover, before creating the `DCStateEstimation` type, users can initiate observability analysis to identify observable islands and restore observability by employing:
-* [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Measurement)),
-* [`islandTopological`](@ref islandTopological(::PowerSystem, ::Measurement)),
-* [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)).
-For more detailed information, users can refer to the [Observability Analysis](@ref ACSEObservabilityAnalysisManual) section within AC state estimation documentation. It is worth noting that when the system becomes observable within the AC model, it will also be observable within the DC state estimation model.
-
 ---
 
 After obtaining the solution for DC state estimation, JuliaGrid offers a post-processing analysis function to compute active powers associated with buses and branches:

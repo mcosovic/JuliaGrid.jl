@@ -623,56 +623,6 @@ Users can retrieve the estimated bus voltage magnitudes ``\hat{\mathbf V} = [\ha
 
 ---
 
-## [Optimal PMU Placement](@id optimalpmu)
-JuliaGrid utilizes the optimal PMU placement algorithm proposed in [gou2008optimal](@cite). The optimal positioning of PMUs is framed as an integer linear programming problem, expressed as:
-```math
-  \begin{aligned}
-    \text{minimize}& \;\;\; \sum_{i=1}^n d_i\\
-    \text{subject\;to}& \;\;\; \mathbf A \mathbf d \ge \mathbf a.
-  \end{aligned}
-```
-Here, the vector ``\mathbf d = [d_1,\dots,d_n]^T`` serves as the optimization variable, where ``d_i \in \mathbb{F} = \{0,1\}`` is the PMU placement or a binary decision variable associated with the bus ``i \in \mathcal{N}``. The all-one vector ``\mathbf a`` is of dimension ``n``. The binary connectivity matrix ``\mathbf A \in \mathbb{F}^{n \times n}`` can be directly derived from the bus nodal matrix ``\mathbf Y`` by converting its entries into binary form [xu2004observability](@cite).
-
-Consequently, we obtain the binary vector ``\mathbf d = [d_1,\dots,d_n]^T``, where ``d_i = 1``, ``i \in \mathcal{N}``, suggests that a PMU should be placed at bus ``i``. The primary aim of PMU placement in the power system is to determine a minimal set of PMUs such that the entire system is observable without relying on traditional measurements [gou2008optimal](@cite). Specifically, when we observe ``d_i = 1``, it indicates that the PMU is installed at bus ``i \in \mathcal{N}`` to measure bus voltage phasor as well as all current phasors across branches incident to bus ``i``.
-
-Determining the optimal PMU placement involves analyzing the created power system. For example:
-```@example PMUSETutorial
-using GLPK
-using JuliaGrid # hide
-@default(unit) # hide
-@default(template) # hide
-
-system = powerSystem()
-
-addBus!(system; label = 1, type = 3, active = 0.5)
-addBus!(system; label = 2, type = 1, reactive = 0.3)
-addBus!(system; label = 3, type = 1, active = 0.5)
-
-@branch(resistance = 0.02, susceptance = 0.04)
-addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.6)
-addBranch!(system; label = 2, from = 1, to = 2, reactance = 0.7)
-addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.2)
-
-addGenerator!(system; label = 1, bus = 1, active = 3.2, reactive = 0.2)
-
-acModel!(system)
-placement = pmuPlacement(system, GLPK.Optimizer)
-nothing # hide
-```
-
-The `placement` variable contains data regarding the optimal placement of measurements. It lists all buses ``i \in \mathcal{N}`` that satisfy ``d_i = 1``:
-```@repl PMUSETutorial
-placement.bus
-```
-
-This PMU installed at bus `2` will measure the bus voltage phasor at the corresponding bus and all current phasors at the branches incident to bus `2` located at the from-bus or to-bus ends. These data are stored in the variables:
-```@repl PMUSETutorial
-placement.from
-placement.to
-```
-
----
-
 ## [Power Analysis](@id PMUPowerAnalysisTutorials)
 Once the computation of voltage magnitudes and angles at each bus is completed, various electrical quantities can be determined. JuliaGrid offers the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) function, which enables the calculation of powers associated with buses and branches. Here is an example code snippet demonstrating its usage:
 ```@example PMUSETutorial
