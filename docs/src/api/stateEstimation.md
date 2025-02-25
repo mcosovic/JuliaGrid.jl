@@ -21,6 +21,7 @@ using JuliaGrid
 
 ###### PMU State Estimation
 * [`pmuPlacement`](@ref pmuPlacement)
+* [`pmuPlacement!`](@ref pmuPlacement!)
 * [`pmuStateEstimation`](@ref pmuStateEstimation)
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation)
 * [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}}))
@@ -57,6 +58,7 @@ setInitialPoint!(::PowerSystem, ::ACStateEstimation)
 ## PMU State Estimation
 ```@docs
 pmuPlacement
+pmuPlacement!
 pmuStateEstimation
 pmuLavStateEstimation
 solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})

@@ -499,7 +499,7 @@ variables.
 
 # Example
 ```jldoctest
-using GLPK, Ipopt
+using HiGHS, Ipopt
 
 system = powerSystem("case14.h5")
 device = measurement()
@@ -508,7 +508,7 @@ analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 current!(system, analysis)
 
-placement = pmuPlacement(system, GLPK.Optimizer)
+placement = pmuPlacement(system, HiGHS.Optimizer)
 
 @pmu(label = "PMU ?: !")
 for (bus, i) in placement.bus
@@ -584,6 +584,139 @@ function pmuPlacement(
     end
 
     return placementPmu
+end
+
+"""
+    pmuPlacement!(system::PowerSystem, device::Measurement, analysis::AC, optimizer;
+        varianceMagnitudeBus, varianceAngleBus,
+        varianceMagnitudeFrom, varianceAngleFrom,
+        varianceMagnitudeTo, varianceAngleTo,
+        noise, correlated, polar,
+        bridge, name, print)
+
+The function determines the optimal placement of PMUs through integer linear programming.
+Specifically, it identifies the minimum set of PMU locations required for effective power
+system state estimation, ensuring observability with the least number of PMUs. Based on the
+results from the `AC` type, it generates phasor measurements and integrates them into the
+`Measurement` type. If current values are missing in the `AC` type, the function calculates
+the associated currents required to form measurement values.
+
+Additionally, the `optimizer` argument is a crucial component for formulating and solving
+the optimization problem. Typically, using the GLPK or HiGHS solver is sufficient. For
+more detailed information, please refer to the
+[JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
+
+# Keywords
+PMUs at the buses can be configured using:
+* `varianceMagnitudeBus` (pu or V): Variance of bus voltage magnitude measurements.
+* `varianceAngleBus` (rad or deg): Variance of bus voltage angle measurements.
+PMUs at the from-bus ends of the branches can be configured using:
+* `varianceMagnitudeFrom` (pu or A): Variance of current magnitude measurements.
+* `varianceAngleFrom` (rad or deg): Variance of current angle measurements.
+PMUs at the to-bus ends of the branches can be configured using:
+* `varianceMagnitudeTo` (pu or A): Variance of current magnitude measurements.
+* `varianceAngleTo` (rad or deg): Variance of current angle measurements.
+Settings for generating measurements include:
+* `noise`: Defines the method for generating the measurement means:
+  * `noise = true`: adds white Gaussian noise to the phasor values, using the defined variances,
+  * `noise = false`: uses the exact phasor values without adding noise.
+Settings for handling phasor measurements include:
+* `correlated`: Specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
+  * `correlated = true`: considers correlated errors,
+  * `correlated = false`: disregards correlations between errors.
+* `polar`: Chooses the coordinate system for including phasor measurements in AC state estimation:
+  * `polar = true`: adopts the polar coordinate system,
+  * `polar = false`: adopts the rectangular coordinate system.
+Settings for the optimization solver include:
+* `bridge`: controls the bridging mechanism (default: `false`),
+* `name`: handles the creation of string names (default: `false`),
+* `print`: controls solver output display (default: `true`).
+
+# Updates
+The function updates the `pmu` field of the `Measurement` composite type.
+
+# Returns
+The function returns an instance of the `PlacementPMU` type, containing variables such as:
+* `bus`: Bus labels with indices marking the positions of PMUs at buses.
+* `from`: Branch labels with indices marking the positions of PMUs at from-bus ends.
+* `to`: Branch labels with indices marking the positions of PMUs at to-bus ends.
+
+Note that if the conventional understanding of a PMU involves a device measuring the bus
+voltage phasor and all branch current phasors incident to the bus, the result is saved
+only in the bus variable. However, if we consider that a PMU measures individual phasors,
+each described with magnitude and angle, then measurements are needed at each bus in the
+`bus` variable, and each branch with positions given according to `from` and `to`
+variables.
+
+# Example
+```jldoctest
+using HiGHS, Ipopt
+
+system = powerSystem("case14.h5")
+device = measurement()
+
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+current!(system, analysis)
+
+pmuPlacement!(system, device, analysis, HiGHS.Optimizer)
+```
+"""
+function pmuPlacement!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::AC,
+    (@nospecialize optimizerFactory);
+    bridge::Bool = false,
+    name::Bool = false,
+    print::Bool = true,
+    varianceMagnitudeBus::FltIntMiss = missing,
+    varianceAngleBus::FltIntMiss = missing,
+    varianceMagnitudeFrom::FltIntMiss = missing,
+    varianceAngleFrom::FltIntMiss = missing,
+    varianceMagnitudeTo::FltIntMiss = missing,
+    varianceAngleTo::FltIntMiss = missing,
+    noise::Bool = template.pmu.noise,
+    correlated::Bool = template.pmu.correlated,
+    polar::Bool = template.pmu.polar
+)
+    placement = pmuPlacement(system, optimizerFactory; bridge, name, print)
+    errorVoltage(analysis.voltage.magnitude)
+
+    for (bus, idx) in placement.bus
+        Vᵢ, θᵢ = analysis.voltage.magnitude[idx], analysis.voltage.angle[idx]
+        addPmu!(
+            system, device; bus = bus, magnitude = Vᵢ, angle = θᵢ,
+            varianceMagnitude = varianceMagnitudeBus, varianceAngle = varianceAngleBus,
+            noise, correlated, polar
+        )
+    end
+    for (branch, idx) in placement.from
+        if isempty(analysis.current.from.magnitude)
+            Iᵢⱼ, ψᵢⱼ = fromCurrent(system, analysis; label = branch)
+        else
+            Iᵢⱼ, ψᵢⱼ = analysis.current.from.magnitude[idx], analysis.current.from.angle[idx]
+        end
+        addPmu!(
+            system, device; from = branch, magnitude = Iᵢⱼ, angle = ψᵢⱼ,
+            varianceMagnitude = varianceMagnitudeFrom, varianceAngle = varianceAngleFrom,
+            noise, correlated, polar
+        )
+    end
+    for (branch, idx) in placement.to
+        if isempty(analysis.current.to.magnitude)
+            Iⱼᵢ, ψⱼᵢ = toCurrent(system, analysis; label = branch)
+        else
+            Iⱼᵢ, ψⱼᵢ = analysis.current.to.magnitude[idx], analysis.current.to.angle[idx]
+        end
+        addPmu!(
+            system, device; to = branch, magnitude = Iⱼᵢ, angle = ψⱼᵢ,
+            varianceMagnitude = varianceMagnitudeTo, varianceAngle = varianceAngleTo,
+            noise, correlated, polar
+        )
+    end
+
+    return placement
 end
 
 ##### Indices of the Coefficient Matrix #####

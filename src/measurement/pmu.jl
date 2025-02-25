@@ -218,7 +218,6 @@ Settings for handling phasor measurements include:
   * `polar = true`: adopts the polar coordinate system,
   * `polar = false`: adopts the rectangular coordinate system.
 
-
 # Updates
 The function updates the `pmu` field of the `Measurement` composite type.
 

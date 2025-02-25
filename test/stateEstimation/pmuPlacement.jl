@@ -55,6 +55,11 @@ system30 = powerSystem(path * "case30test.m")
     solve!(system14, analysisLU)
     compstruct(analysisLU.voltage, analysis.voltage; atol = 1e-10)
 
+    # Adding Phasor Measurement
+    pmu = measurement()
+    pmuPlacement!(system14, pmu, analysis, GLPK.Optimizer)
+    compstruct(pmu.pmu, device.pmu)
+
     ########## IEEE 30-bus Test Case ##########
     acModel!(system30)
     analysis = newtonRaphson(system30)
@@ -92,4 +97,9 @@ system30 = powerSystem(path * "case30test.m")
     analysisLU = pmuStateEstimation(system30, device, LU)
     solve!(system30, analysisLU)
     compstruct(analysisLU.voltage, analysis.voltage; atol = 1e-10)
+
+    # Adding Phasor Measurement
+    pmu = measurement()
+    pmuPlacement!(system30, pmu, analysis, GLPK.Optimizer)
+    compstruct(pmu.pmu, device.pmu)
 end
