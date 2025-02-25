@@ -76,7 +76,7 @@ function setLabel(
     component::Union{P, M},
     label::Int64,
     ::String,
-    ::String;
+    ::IntStr;
     prefix::String = ""
 )
     labelStrInt = typeLabel(component.label, label)

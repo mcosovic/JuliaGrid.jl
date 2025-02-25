@@ -313,9 +313,9 @@ struct PMUStateEstimation{T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, L
 end
 
 mutable struct PlacementPMU
-    bus::OrderedDict{String, Int64}
-    from::OrderedDict{String, Int64}
-    to::OrderedDict{String, Int64}
+    bus::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
+    from::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
+    to::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
 end
 
 ##### AC State Estimation #####

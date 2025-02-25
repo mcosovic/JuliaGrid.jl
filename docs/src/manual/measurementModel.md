@@ -529,7 +529,7 @@ In all the previous examples, with the exception of the last one, we relied on a
 !!! tip "Tip"
     String labels improve readability, but in larger models, the overhead from using strings can become substantial. To reduce memory usage, users can configure ordered dictionaries to accept and store integers as labels:
     ```julia DCPowerFlowSolution
-    @labels(Integers)
+    @labels(Integer)
     ```
 ---
 

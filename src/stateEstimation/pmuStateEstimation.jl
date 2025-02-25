@@ -537,9 +537,9 @@ function pmuPlacement(
     ac = system.model.ac
 
     placementPmu = PlacementPMU(
-        OrderedDict{String, Int64}(),
-        OrderedDict{String, Int64}(),
-        OrderedDict{String, Int64}()
+        OrderedDict{template.system, Int64}(),
+        OrderedDict{template.system, Int64}(),
+        OrderedDict{template.system, Int64}()
     )
 
     model!(system, ac)
@@ -594,17 +594,10 @@ end
         noise, correlated, polar,
         bridge, name, print)
 
-The function determines the optimal placement of PMUs through integer linear programming.
-Specifically, it identifies the minimum set of PMU locations required for effective power
-system state estimation, ensuring observability with the least number of PMUs. Based on the
-results from the `AC` type, it generates phasor measurements and integrates them into the
-`Measurement` type. If current values are missing in the `AC` type, the function calculates
-the associated currents required to form measurement values.
-
-Additionally, the `optimizer` argument is a crucial component for formulating and solving
-the optimization problem. Typically, using the GLPK or HiGHS solver is sufficient. For
-more detailed information, please refer to the
-[JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
+The function finds the optimal placement by executing [pmuPlacement](@ref pmuPlacement).
+Then, based on the results from the `AC` type, it generates phasor measurements and
+integrates them into the `Measurement` type. If current values are missing in the `AC`
+type, the function calculates the associated currents required to form measurement values.
 
 # Keywords
 PMUs at the buses can be configured using:
