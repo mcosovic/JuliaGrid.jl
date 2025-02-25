@@ -12,6 +12,8 @@ using JuliaGrid
 * [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Measurement))
 * [`islandTopological`](@ref islandTopological(::PowerSystem, ::Measurement))
 * [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island))
+* [`pmuPlacement`](@ref pmuPlacement)
+* [`pmuPlacement!`](@ref pmuPlacement!)
 
 ###### AC State Estimation
 * [`gaussNewton`](@ref gaussNewton)
@@ -20,8 +22,6 @@ using JuliaGrid
 * [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation))
 
 ###### PMU State Estimation
-* [`pmuPlacement`](@ref pmuPlacement)
-* [`pmuPlacement!`](@ref pmuPlacement!)
 * [`pmuStateEstimation`](@ref pmuStateEstimation)
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation)
 * [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}}))
@@ -41,6 +41,8 @@ using JuliaGrid
 islandTopologicalFlow(::PowerSystem, ::Measurement)
 islandTopological(::PowerSystem, ::Measurement)
 restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)
+pmuPlacement
+pmuPlacement!
 ```
 
 ---
@@ -57,8 +59,6 @@ setInitialPoint!(::PowerSystem, ::ACStateEstimation)
 
 ## PMU State Estimation
 ```@docs
-pmuPlacement
-pmuPlacement!
 pmuStateEstimation
 pmuLavStateEstimation
 solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})
