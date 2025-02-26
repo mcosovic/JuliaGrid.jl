@@ -333,7 +333,7 @@ power!(system, flow)
 ```
 
 After obtaining the solution, we can use the active power outputs of the generators, along with bus voltage angles, to set the initial values:
-```@example ACOptimalPowerFlow
+```@example DCOptimalPowerFlow
 setInitialPoint!(flow, analysis)
 ```
 
