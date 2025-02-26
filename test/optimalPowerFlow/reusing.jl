@@ -1,7 +1,7 @@
 @testset "Reusing AC Optimal Power Flow" begin
     @default(unit)
     @default(template)
-    @labels(Integer)
+    @label(Integer)
 
     ########## First Pass ##########
     system = powerSystem(path * "case14optimal.m")
@@ -183,7 +183,7 @@
     cost!(resystem, reusing; generator = 11, active = 2, polynomial = [165.0])
     cost!(resystem, reusing; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
-    startingPrimal!(resystem, reusing)
+    setInitialPoint!(resystem, reusing)
     solve!(resystem, reusing)
     power!(resystem, reusing)
 
@@ -333,7 +333,7 @@ end
     cost!(resystem, reusing; generator = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
     cost!(resystem, reusing; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
-    startingPrimal!(resystem, reusing)
+    setInitialPoint!(resystem, reusing)
     solve!(resystem, reusing)
     power!(resystem, reusing)
 

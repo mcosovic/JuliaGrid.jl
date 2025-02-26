@@ -357,16 +357,21 @@ function costExpr(
 end
 
 """
-    startingPrimal!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+    setInitialPoint!(source::Union{PowerSystem, Analysis}, target::DCOptimalPowerFlow)
 
-The function retrieves the active power outputs of the generators and the bus voltage
-angles from the `PowerSystem` composite type. These values are then assigned to the
-`DCOptimalPowerFlow` type, enabling users to initialize starting primal values according
-to their requirements.
+The function can reset the initial point of the DC optimal power flow to values from the
+`PowerSystem` type. It can also initialize the DC optimal power flow based on results from
+the `Analysis` type, whether from an AC or DC analysis.
+
+The function assigns the active power outputs of the generators, along with the bus voltage
+angles in the `target` argument, using data from the `source` argument. This allows users
+to initialize primal values as needed. Additionally, if source is of type
+`ACOptimalPowerFlow` or `DCOptimalPowerFlow`, the function also assigns initial dual values
+in the `target` argument based on data from `source`.
 
 # Updates
-This function only updates the `voltage` and `generator` fields of the `DCOptimalPowerFlow`
-type.
+This function may modify the `voltage`, `generator`, and `method.dual` fields of the
+`DCOptimalPowerFlow` type.
 
 # Example
 ```jldoctest
@@ -378,49 +383,94 @@ solve!(system, analysis)
 
 updateBus!(system, analysis; label = 14, active = 0.1, angle = -0.17)
 
-startingPrimal!(system, analysis)
+setInitialPoint!(system, analysis)
 solve!(system, analysis)
 ```
 """
-function startingPrimal!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+function setInitialPoint!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     @inbounds for i = 1:system.bus.number
         analysis.voltage.angle[i] = system.bus.voltage.angle[i]
     end
     @inbounds for i = 1:system.generator.number
         analysis.power.generator.active[i] = system.generator.output.active[i]
     end
+
+    analysis.method.dual.slack.angle = Dict{Int64, Float64}()
+    analysis.method.dual.balance.active = Dict{Int64, Float64}()
+    analysis.method.dual.voltage.angle = Dict{Int64, Float64}()
+    analysis.method.dual.flow.active = Dict{Int64, Float64}()
+    analysis.method.dual.capability.active = Dict{Int64, Float64}()
+    analysis.method.dual.piecewise.active = Dict{Int64, Vector{Float64}}()
 end
 
-"""
-    startingDual!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+function setInitialPoint!(source::DC, target::DCOptimalPowerFlow)
+    if !isempty(source.voltage.angle)
+        errorTransfer(source.voltage.angle, target.voltage.angle)
 
-The function removes all values of the dual variables.
+        @inbounds for i = 1:system.bus.number
+            target.voltage.angle[i] = source.voltage.angle[i]
+        end
+    end
 
-# Updates
-This function only updates the `dual` field of the `DCOptimalPowerFlow`
-type.
+    if !isempty(source.power.generator.active)
+        errorTransfer(source.power.generator.active, target.power.generator.active)
+        @inbounds for i = 1:system.generator.number
+            target.power.generator.active[i] = source.power.generator.active[i]
+        end
+    end
 
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-dcModel!(system)
+    if isdefined(target.method, :dual)
+        for (key, value) in source.method.dual.slack.angle
+            target.method.dual.slack.angle[key] = value
+        end
+        for (key, value) in source.method.dual.balance.active
+            target.method.dual.balance.active[key] = value
+        end
+        for (key, value) in source.method.dual.voltage.angle
+            target.method.dual.voltage.angle[key] = value
+        end
+        for (key, value) in source.method.dual.flow.active
+            target.method.dual.flow.active[key] = value
+        end
+        for (key, value) in source.method.dual.capability.active
+            target.method.dual.capability.active[key] = value
+        end
+        for (key, value) in source.method.dual.piecewise.active
+            target.method.dual.piecewise.active[key] = value
+        end
+    end
+end
 
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
-solve!(system, analysis)
+function setInitialPoint!(source::AC, target::DCOptimalPowerFlow)
+    if !isempty(source.voltage.angle)
+        errorTransfer(source.voltage.angle, target.voltage.angle)
+        @inbounds for i = 1:system.bus.number
+            target.voltage.angle[i] = source.voltage.angle[i]
+        end
+    end
 
-updateBus!(system, analysis; label = 14, active = 0.1, angle = -0.17)
+    if !isempty(source.power.generator.active)
+        errorTransfer(source.power.generator.active, target.power.generator.active)
+        @inbounds for i = 1:system.generator.number
+            target.power.generator.active[i] = source.power.generator.active[i]
+        end
+    end
 
-startingDual!(system, analysis)
-solve!(system, analysis)
-```
-"""
-function startingDual!(::PowerSystem, analysis::DCOptimalPowerFlow)
-    dual = analysis.method.dual
-
-    dual.slack.angle = Dict{Int64, Float64}()
-    dual.balance.active = Dict{Int64, Float64}()
-    dual.voltage.angle = Dict{Int64, Float64}()
-    dual.flow.active = Dict{Int64, Float64}()
-    dual.capability.active = Dict{Int64, Float64}()
-    dual.piecewise.active = Dict{Int64, Vector{Float64}}()
+    if isdefined(target.method, :dual)
+        for (key, value) in source.method.dual.slack.angle
+            target.method.dual.slack.angle[key] = value
+        end
+        for (key, value) in source.method.dual.balance.active
+            target.method.dual.balance.active[key] = value
+        end
+        for (key, value) in source.method.dual.voltage.angle
+            target.method.dual.voltage.angle[key] = value
+        end
+        for (key, value) in source.method.dual.capability.active
+            target.method.dual.capability.active[key] = value
+        end
+        for (key, value) in source.method.dual.piecewise.active
+            target.method.dual.piecewise.active[key] = value
+        end
+    end
 end

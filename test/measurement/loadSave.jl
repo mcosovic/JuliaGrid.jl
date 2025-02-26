@@ -50,7 +50,7 @@
 end
 
 @testset "Load and Save Measurements with Integer Labels" begin
-    @labels(Integer)
+    @label(Integer)
 
     ########## Build Measurement Data ##########
     system = powerSystem(path * "case14test.m")

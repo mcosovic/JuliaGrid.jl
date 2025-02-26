@@ -794,7 +794,7 @@ Additionally, it forms the precision or weighting matrix denoted as ``\mathbf W 
 𝐖 = analysis.method.precision
 ```
 
-Finally, using initial bus voltage magnitudes and angles from the `PowerSystem` type, the function creates the starting vector ``\mathbf{x}^{(0)}`` of bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\Theta}^{(0)}`` for the Gauss-Newton method:
+Finally, using initial bus voltage magnitudes and angles from the `PowerSystem` type, the function creates the initial vector ``\mathbf{x}^{(0)}`` of bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\Theta}^{(0)}`` for the Gauss-Newton method:
 ```@repl ACSETutorial
 𝐕⁽⁰⁾ = analysis.voltage.magnitude
 𝚯⁽⁰⁾ = analysis.voltage.angle

@@ -529,7 +529,7 @@ In all the previous examples, with the exception of the last one, we relied on a
 !!! tip "Tip"
     String labels improve readability, but in larger models, the overhead from using strings can become substantial. To reduce memory usage, users can configure ordered dictionaries to accept and store integers as labels:
     ```julia DCPowerFlowSolution
-    @labels(Integer)
+    @label(Integer)
     ```
 ---
 
@@ -539,7 +539,7 @@ Let us take a look at the following illustration:
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
-@labels(Integers)
+@label(Integer)
 
 system = powerSystem()
 device = measurement()
@@ -555,7 +555,7 @@ addAmmeter!(system, device; label = 2, to = 1, magnitude = 0.9)
 nothing # hide
 ```
 
-In this example, we use the macro [`@labels`](@ref @labels) to specify that labels will be stored as integers. It is essential to run this macro; otherwise, even if integers are used in subsequent functions, they will be stored as strings.
+In this example, we use the macro [`@label`](@ref @label) to specify that labels will be stored as integers. It is essential to run this macro; otherwise, even if integers are used in subsequent functions, they will be stored as strings.
 
 ---
 
@@ -667,7 +667,7 @@ This procedure is applicable to all measurement devices, including voltmeters, a
 ---
 
 ##### Loading and Saving Labels
-When saving the measurements to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Likewise, when loading data from an HDF5 file, the label type will be preserved as saved, regardless of what is set by the [`@labels`](@ref @labels) macro.
+When saving the measurements to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Likewise, when loading data from an HDF5 file, the label type will be preserved as saved, regardless of what is set by the [`@label`](@ref @label) macro.
 
 
 ---

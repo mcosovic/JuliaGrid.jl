@@ -207,7 +207,7 @@ nr = newtonRaphson(system)
 nothing # hide
 ```
 
-When the model is created, we also initialize the Newton-Raphson method, with the starting voltage magnitudes and angles corresponding to the values defined when the power system model was first created. If we want to use the results from the fast Newton-Raphson method and start the Newton-Raphson method with a warm start, we can transfer the voltage magnitudes and angles:
+When the model is created, we also initialize the Newton-Raphson method, with the initial voltage magnitudes and angles corresponding to the values defined when the power system model was first created. If we want to use the results from the fast Newton-Raphson method and start the Newton-Raphson method with a warm start, we can transfer the voltage magnitudes and angles:
 ```@example 4bus
 setInitialPoint!(fnr, nr)
 

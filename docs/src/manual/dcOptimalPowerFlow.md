@@ -309,43 +309,38 @@ JuMP.objective_function(analysis.method.jump)
 
 ---
 
-## [Setup Starting Values](@id SetupStartingPrimalValuesManual)
-In JuliaGrid, the assignment of starting primal and dual values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function is executed.
+## [Setup Initial Values](@id SetupStartingPrimalValuesManual)
+In JuliaGrid, the assignment of initial primal and dual values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function is executed.
 
 ---
 
-##### Starting Primal Values
-Starting primal values are determined based on the `generator` and `voltage` fields within the `DCOptimalPowerFlow` type. By default, these values are initially established using the active power outputs of the generators and the initial bus voltage angles:
+##### Initial Primal Values
+Initial primal values are determined based on the `generator` and `voltage` fields within the `DCOptimalPowerFlow` type. By default, these values are initially established using the active power outputs of the generators and the initial bus voltage angles:
 ```@repl DCOptimalPowerFlow
 print(system.generator.label, analysis.power.generator.active)
 print(system.bus.label, analysis.voltage.angle)
 ```
-Users have the flexibility to adjust these values according to their specifications, which will then be used as the starting primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function.
+Users have the flexibility to adjust these values according to their specifications, which will then be used as the initial primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function.
 
 ---
 
 ##### Using DC Power Flow
-In this perspective, users have the capability to conduct the DC power flow analysis and leverage the resulting solution to configure starting primal values. Here is an illustration of how this can be achieved:
+In this perspective, users have the capability to conduct the DC power flow analysis and leverage the resulting solution to configure initial primal values. Here is an illustration of how this can be achieved:
 ```@example DCOptimalPowerFlow
 flow = dcPowerFlow(system)
 solve!(system, flow)
+power!(system, flow)
 ```
 
-After obtaining the solution, we can calculate the active power outputs of the generators and utilize the bus voltage angles to set the starting values. In this case, the `generator` and `voltage` fields of the `DCOptimalPowerFlow` type can be employed to store the new starting values:
-```@example DCOptimalPowerFlow
-for (key, idx) in system.generator.label
-    analysis.power.generator.active[idx] = generatorPower(system, flow; label = key)
-end
-
-for i = 1:system.bus.number
-    analysis.voltage.angle[i] = flow.voltage.angle[i]
-end
+After obtaining the solution, we can use the active power outputs of the generators, along with bus voltage angles, to set the initial values:
+```@example ACOptimalPowerFlow
+setInitialPoint!(flow, analysis)
 ```
 
 ---
 
-##### Starting Dual Values
-Dual variables, often referred to as Lagrange multipliers or Kuhn-Tucker multipliers, represent the shadow prices or marginal costs associated with constraints. The assignment of initial dual values occurs when the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function is executed. Initially, the starting dual values are unknown, but users can access and manually set them. For example:
+##### Setup Initial Dual Values
+Dual variables, often referred to as Lagrange multipliers or Kuhn-Tucker multipliers, represent the shadow prices or marginal costs associated with constraints. The assignment of initial dual values occurs when the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function is executed. Initially, the initial dual values are unknown, but users can access and manually set them. For example:
 ```@example DCOptimalPowerFlow
 analysis.method.dual.balance.active[1] = 0.4
 nothing # hide
@@ -425,7 +420,7 @@ CSV.write("constraint.csv", CSV.File(take!(io); delim = "|"))
 ---
 
 ## Primal and Dual Warm Start
-Utilizing the `DCOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the starting primal and dual values for the subsequent solving step correspond to the solution obtained from the previous step.
+Utilizing the `DCOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the initial primal and dual values for the subsequent solving step correspond to the solution obtained from the previous step.
 
 ---
 
@@ -453,7 +448,7 @@ updateGenerator!(system, analysis; label = "Generator 2", maxActive = 0.08)
 nothing # hide
 ```
 
-Next, we want to solve this modified optimal power flow problem. If we use [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) at this point, the primal and dual starting values will be set to the previously obtained values:
+Next, we want to solve this modified optimal power flow problem. If we use [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) at this point, the primal and dual initial values will be set to the previously obtained values:
 ```@example DCOptimalPowerFlow
 solve!(system, analysis)
 ```
@@ -467,18 +462,11 @@ print(system.bus.label, analysis.voltage.angle)
 ---
 
 ##### Reset Primal and Dual Values
-Users retain the flexibility to reset these initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active power outputs of the generators and the initial bus voltage angles extracted from the `PowerSystem` type, employing the [`startingPrimal!`](@ref startingPrimal!) function:
+Users retain the flexibility to reset these initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active power outputs of the generators and the initial bus voltage angles extracted from the `PowerSystem` type, employing the [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::DCOptimalPowerFlow)) function:
 ```@example DCOptimalPowerFlow
-startingPrimal!(system, analysis)
+setInitialPoint!(system, analysis)
 ```
-The primal starting values will now be identical to those that would be obtained if the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function were executed after all the updates have been applied.
-
-Using the [`startingDual!`](@ref startingDual!) function, users can clear all dual variable values, resetting them to their default state:
-```@example DCOptimalPowerFlow
-startingDual!(system, analysis)
-nothing # hide
-```
-
+The primal initial values will now be identical to those that would be obtained if the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function were executed after all the updates have been applied, while all dual variable values will be removed.
 
 ---
 

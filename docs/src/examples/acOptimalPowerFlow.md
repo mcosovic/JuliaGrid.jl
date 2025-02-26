@@ -46,7 +46,7 @@ addBranch!(system; from = "Bus 3", to = "Bus 4", turnsRatio = 0.98)
 nothing # hide
 ```
 
-We define the `active` and `reactive` power outputs of the generators, which serve as starting primal values for the optimization variables related to generator outputs. Reactive power outputs of the generators are limited by `minReactive` and `maxReactive`, while active power outputs vary between `minActive` and `maxActive`:
+We define the `active` and `reactive` power outputs of the generators, which serve as initial primal values for the optimization variables related to generator outputs. Reactive power outputs of the generators are limited by `minReactive` and `maxReactive`, while active power outputs vary between `minActive` and `maxActive`:
 ```@example 4bus
 @generator(label = "Generator ?", minActive = 2.0, minReactive = -15.5, maxReactive = 15.5)
 addGenerator!(system; bus = "Bus 1", active = 63.1, reactive = 8.2, maxActive = 65.5)

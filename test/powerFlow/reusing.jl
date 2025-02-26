@@ -1,7 +1,7 @@
 @testset "Reusing Newton-Raphson Method" begin
     @default(unit)
     @default(template)
-    @labels(integer)
+    @label(integer)
 
     ########## First Pass ##########
     system = powerSystem(path * "case14test.m")

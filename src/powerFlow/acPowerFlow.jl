@@ -1019,12 +1019,16 @@ end
 """
     setInitialPoint!(source::Union{PowerSystem, Analysis}, target::ACPowerFlow)
 
-The function assigns the bus voltage magnitudes and angles in the `target` argument using
-data from the `source` argument. It is useful for initializing AC power flow with results
-from AC or DC analyses or for setting an initial point defined within the `PowerSystem` type.
+The function can reset the initial point of the AC power flow to values from the
+`PowerSystem` type. It can also initialize the AC power flow based on results from the
+`Analysis` type, whether from an AC or DC analysis.
 
-Note that when using DC analyses, only voltage angles are used to initialize AC power flow,
-while the magnitudes remain unchanged as provided in the `target` argument.
+The function assigns the bus voltage magnitudes and angles in the `target` argument,
+using data from the `source` argument. This allows users to initialize AC power flow as
+needed.
+
+If `source` comes from a DC analysis, only the bus voltage angles are assigned in the
+`target` argument, while the bus voltage magnitudes remain unchanged.
 
 # Example
 ```jldoctest

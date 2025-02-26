@@ -164,7 +164,7 @@ analysis = newtonRaphson(system)
 nothing # hide
 ```
 
-This results in the creation of the starting vectors of bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\Theta}^{(0)}``, as shown below:
+This results in the creation of the initial vectors of bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\Theta}^{(0)}``, as shown below:
 ```@repl PowerFlowSolution
 𝐕⁽⁰⁾ = analysis.voltage.magnitude
 𝚯⁽⁰⁾ = analysis.voltage.angle
@@ -518,7 +518,7 @@ When a user creates the fast Newton-Raphson method in JuliaGrid, the Jacobian ma
 𝐁₂ = analysis.method.reactive.jacobian
 ```
 
-Additionally, during this stage, JuliaGrid generates the starting vectors for bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\Theta}^{(0)}`` as demonstrated below:
+Additionally, during this stage, JuliaGrid generates the initial vectors for bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\Theta}^{(0)}`` as demonstrated below:
 ```@repl PowerFlowSolution
 𝐕⁽⁰⁾ = analysis.voltage.magnitude
 𝚯⁽⁰⁾ = analysis.voltage.angle
@@ -657,7 +657,7 @@ analysis = gaussSeidel(system)
 nothing # hide
 ```
 
-This results in the creation of the starting vectors of bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\Theta}^{(0)}``, as shown below:
+This results in the creation of the initial vectors of bus voltage magnitudes ``\mathbf{V}^{(0)}`` and angles ``\bm{\Theta}^{(0)}``, as shown below:
 ```@repl PowerFlowSolution
 𝐕⁽⁰⁾ = analysis.voltage.magnitude
 𝚯⁽⁰⁾ = analysis.voltage.angle

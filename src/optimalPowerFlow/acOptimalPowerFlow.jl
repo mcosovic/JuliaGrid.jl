@@ -813,16 +813,27 @@ function checkLimit(system::PowerSystem, minFlow::Float64, maxFlow::Float64, i::
 end
 
 """
-    startingPrimal!(system::PowerSystem, analysis::ACOptimalPowerFlow)
+    setInitialPoint!(source::Union{PowerSystem, Analysis}, target::ACOptimalPowerFlow)
 
-The function retrieves the active and reactive power outputs of the generators, as well as
-the voltage magnitudes and angles from the `PowerSystem` composite type. It then assigns
-these values to the `ACOptimalPowerFlow` type, allowing users to initialize starting primal
-values as needed.
+The function can reset the initial point of the AC optimal power flow to values from the
+`PowerSystem` type. It can also initialize the AC optimal power flow based on results from
+the `Analysis` type, whether from an AC or DC analysis.
+
+The function assigns the active and reactive power outputs of the generators, along with
+the bus voltage magnitudes and angles in the `target` argument, using data from the
+`source` argument. This allows users to initialize primal values as needed. Additionally,
+if `source` is of type `ACOptimalPowerFlow`, the function also assigns initial dual values
+in the `target` argument based on data from `source`.
+
+If `source` comes from a DC analysis, only the active power outputs of the generators and
+bus voltage angles are assigned in the `target` argument, while the reactive power outputs
+of the generators and bus voltage magnitudes remain unchanged. Additionally, if `source`
+is of type `DCOptimalPowerFlow`, the corresponding dual variable values are also assigned
+in the `target` argument.
 
 # Updates
-This function only updates the `voltage` and `generator` fields of the `ACOptimalPowerFlow`
-type.
+This function may modify the `voltage`, `generator`, and `method.dual` fields of the
+`ACOptimalPowerFlow` type.
 
 # Example
 ```jldoctest
@@ -834,11 +845,11 @@ solve!(system, analysis)
 
 updateBus!(system, analysis; label = 14, reactive = 0.13, magnitude = 1.2, angle = -0.17)
 
-startingPrimal!(system, analysis)
+setInitialPoint!(system, analysis)
 solve!(system, analysis)
 ```
 """
-function startingPrimal!(system::PowerSystem, analysis::ACOptimalPowerFlow)
+function setInitialPoint!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     @inbounds for i = 1:system.bus.number
         analysis.voltage.magnitude[i] = system.bus.voltage.magnitude[i]
         analysis.voltage.angle[i] = system.bus.voltage.angle[i]
@@ -848,46 +859,118 @@ function startingPrimal!(system::PowerSystem, analysis::ACOptimalPowerFlow)
         analysis.power.generator.reactive[i] = system.generator.output.reactive[i]
     end
 
-    startingDual!(system, analysis)
+    analysis.method.dual.slack.angle = Dict{Int64, Float64}()
+    analysis.method.dual.balance.active = Dict{Int64, Float64}()
+    analysis.method.dual.balance.reactive = Dict{Int64, Float64}()
+    analysis.method.dual.voltage.magnitude = Dict{Int64, Float64}()
+    analysis.method.dual.voltage.angle = Dict{Int64, Float64}()
+    analysis.method.dual.flow.from = Dict{Int64, Float64}()
+    analysis.method.dual.flow.to = Dict{Int64, Float64}()
+    analysis.method.dual.capability.active = Dict{Int64, Float64}()
+    analysis.method.dual.capability.reactive = Dict{Int64, Float64}()
+    analysis.method.dual.capability.lower = Dict{Int64, Float64}()
+    analysis.method.dual.capability.upper = Dict{Int64, Float64}()
+    analysis.method.dual.piecewise.active = Dict{Int64, Vector{Float64}}()
+    analysis.method.dual.piecewise.reactive = Dict{Int64, Vector{Float64}}()
 end
 
-"""
-    startingDual!(system::PowerSystem, analysis::ACOptimalPowerFlow)
+function setInitialPoint!(source::AC, target::ACOptimalPowerFlow)
+    if !isempty(source.voltage.magnitude) && !isempty(source.voltage.angle)
+        errorTransfer(source.voltage.magnitude, target.voltage.magnitude)
+        errorTransfer(source.voltage.angle, target.voltage.angle)
+        @inbounds for i = 1:system.bus.number
+            target.voltage.magnitude[i] = source.voltage.magnitude[i]
+            target.voltage.angle[i] = source.voltage.angle[i]
+        end
+    end
 
-The function removes all values of the dual variables.
+    if !isempty(source.power.generator.active) && !isempty(source.power.generator.reactive)
+        errorTransfer(source.power.generator.active, target.power.generator.active)
+        errorTransfer(source.power.generator.reactive, target.power.generator.reactive)
+        @inbounds for i = 1:system.generator.number
+            target.power.generator.active[i] = source.power.generator.active[i]
+            target.power.generator.reactive[i] = source.power.generator.reactive[i]
+        end
+    end
 
-# Updates
-This function only updates the `dual` field of the `ACOptimalPowerFlow`
-type.
+    if isdefined(target.method, :dual)
+        for (key, value) in source.method.dual.slack.angle
+            target.method.dual.slack.angle[key] = value
+        end
 
-# Example
-```jldoctest
-system = powerSystem("case14.h5")
-acModel!(system)
+        for (key, value) in source.method.dual.balance.active
+            target.method.dual.balance.active[key] = value
+        end
+        for (key, value) in source.method.dual.balance.reactive
+            target.method.dual.balance.reactive[key] = value
+        end
 
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
+        for (key, value) in source.method.dual.voltage.magnitude
+            target.method.dual.voltage.magnitude[key] = value
+        end
+        for (key, value) in source.method.dual.voltage.angle
+            target.method.dual.voltage.angle[key] = value
+        end
 
-updateBus!(system, analysis; label = 14, reactive = 0.13, magnitude = 1.2, angle = -0.17)
+        for (key, value) in source.method.dual.flow.from
+            target.method.dual.flow.from[key] = value
+        end
+        for (key, value) in source.method.dual.flow.to
+            target.method.dual.flow.to[key] = value
+        end
 
-startingDual!(system, analysis)
-solve!(system, analysis)
-```
-"""
-function startingDual!(::PowerSystem, analysis::ACOptimalPowerFlow)
-    dual = analysis.method.dual
+        for (key, value) in source.method.dual.capability.active
+            target.method.dual.capability.active[key] = value
+        end
+        for (key, value) in source.method.dual.capability.reactive
+            target.method.dual.capability.reactive[key] = value
+        end
+        for (key, value) in source.method.dual.capability.lower
+            target.method.dual.capability.lower[key] = value
+        end
+        for (key, value) in source.method.dual.capability.upper
+            target.method.dual.capability.upper[key] = value
+        end
 
-    dual.slack.angle = Dict{Int64, Float64}()
-    dual.balance.active = Dict{Int64, Float64}()
-    dual.balance.reactive = Dict{Int64, Float64}()
-    dual.voltage.magnitude = Dict{Int64, Float64}()
-    dual.voltage.angle = Dict{Int64, Float64}()
-    dual.flow.from = Dict{Int64, Float64}()
-    dual.flow.to = Dict{Int64, Float64}()
-    dual.capability.active = Dict{Int64, Float64}()
-    dual.capability.reactive = Dict{Int64, Float64}()
-    dual.capability.lower = Dict{Int64, Float64}()
-    dual.capability.upper = Dict{Int64, Float64}()
-    dual.piecewise.active = Dict{Int64, Vector{Float64}}()
-    dual.piecewise.reactive = Dict{Int64, Vector{Float64}}()
+        for (key, value) in source.method.dual.piecewise.active
+            target.method.dual.piecewise.active[key] = value
+        end
+        for (key, value) in source.method.dual.piecewise.reactive
+            target.method.dual.piecewise.reactive[key] = value
+        end
+    end
+end
+
+function setInitialPoint!(source::DC, target::ACOptimalPowerFlow)
+    if !isempty(source.voltage.angle)
+        errorTransfer(source.voltage.angle, target.voltage.angle)
+        @inbounds for i = 1:system.bus.number
+            target.voltage.angle[i] = source.voltage.angle[i]
+        end
+    end
+
+    if !isempty(source.power.generator.active)
+        errorTransfer(source.power.generator.active, target.power.generator.active)
+        @inbounds for i = 1:system.generator.number
+            target.power.generator.active[i] = source.power.generator.active[i]
+        end
+    end
+
+    if isdefined(target.method, :dual)
+        for (key, value) in source.method.dual.slack.angle
+            target.method.dual.slack.angle[key] = value
+        end
+        for (key, value) in source.method.dual.balance.active
+            target.method.dual.balance.active[key] = value
+        end
+        for (key, value) in source.method.dual.voltage.angle
+            target.method.dual.voltage.angle[key] = value
+        end
+        for (key, value) in source.method.dual.capability.active
+            target.method.dual.capability.active[key] = value
+        end
+        for (key, value) in source.method.dual.piecewise.active
+            target.method.dual.piecewise.active[key] = value
+        end
+    end
 end

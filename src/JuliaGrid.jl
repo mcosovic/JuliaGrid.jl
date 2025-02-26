@@ -20,7 +20,7 @@ include("backend/utility.jl")
 include("backend/internal.jl")
 include("backend/equations.jl")
 include("backend/expressions.jl")
-export @base, @power, @voltage, @current, @parameter, @default, @labels
+export @base, @power, @voltage, @current, @parameter, @default, @label
 
 ######### Print ##########
 include("print/utility.jl")
@@ -58,7 +58,7 @@ export dcPowerFlow
 ######### Optimal Power Flow ##########
 include("optimalPowerFlow/acOptimalPowerFlow.jl")
 include("optimalPowerFlow/dcOptimalPowerFlow.jl")
-export acOptimalPowerFlow, startingPrimal!, startingDual!
+export acOptimalPowerFlow
 export dcOptimalPowerFlow
 
 ######### Measurement ##########

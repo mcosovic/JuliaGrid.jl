@@ -465,18 +465,18 @@ updateGenerator!(system, analysis; label = "Generator 2", reactive = 0.2, magnit
 nothing # hide
 ```
 
-With these modifications we are not only altering the power system, but also starting voltages. For the next uses of one of the methods, these values now are:
+With these modifications we are not only altering the power system, but also initial voltages. For the next uses of one of the methods, these values now are:
 ```@repl ACPowerFlowSolution
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 Therefore, users possess the flexibility to adjust these initial values as needed by employing the `magnitude` and `angle` keywords within the [`updateBus!`](@ref updateBus!) and [`updateGenerator!`](@ref updateGenerator!) functions.
 
-If users prefer to set starting voltages according to the typical scenario, they can accomplish this through the [`setInitialPoint!`](@ref setInitialPoint!) function:
+If users prefer to set initial voltages according to the typical scenario, they can accomplish this through the [`setInitialPoint!`](@ref setInitialPoint!) function:
 ```@example ACPowerFlowSolution
 setInitialPoint!(system, analysis)
 ```
 
-Now, we have starting voltages defined exclusively according to the `PowerSystem`. These values are exactly the same as if we executed the [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) function after all the updates we performed:
+Now, we have initial voltages defined exclusively according to the `PowerSystem`. These values are exactly the same as if we executed the [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) function after all the updates we performed:
 ```@repl ACPowerFlowSolution
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
