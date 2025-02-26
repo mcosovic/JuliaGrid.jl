@@ -4,7 +4,7 @@ JuliaGrid employs standard network components and the [Unified Branch Model](@re
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
-@label(Integer)
+@labels(Integer)
 @power(MW, MVAr)
 @voltage(pu, deg)
 

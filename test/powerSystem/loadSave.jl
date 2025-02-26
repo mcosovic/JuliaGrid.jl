@@ -30,7 +30,7 @@
 end
 
 @testset "Load and Save Power System with Integer Labels" begin
-    @label(Integer)
+    @labels(Integer)
 
     ########## Load Power System ##########
     matlab = powerSystem(path * "case14test.m")

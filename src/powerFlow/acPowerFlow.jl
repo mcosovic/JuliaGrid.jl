@@ -1078,7 +1078,7 @@ function setInitialPoint!(source::AC, target::ACPowerFlow)
     errorTransfer(source.voltage.magnitude, target.voltage.magnitude)
     errorTransfer(source.voltage.angle, target.voltage.angle)
 
-    @inbounds for i = 1:system.bus.number
+    @inbounds for i = 1:length(source.voltage.magnitude)
         target.voltage.magnitude[i] = source.voltage.magnitude[i]
         target.voltage.angle[i] = source.voltage.angle[i]
 
@@ -1091,7 +1091,7 @@ end
 function setInitialPoint!(source::DC, target::ACPowerFlow)
     errorTransfer(source.voltage.angle, target.voltage.angle)
 
-    @inbounds for i = 1:system.bus.number
+    @inbounds for i = 1:length(source.voltage.angle)
         target.voltage.angle[i] = source.voltage.angle[i]
 
         if isdefined(target.method, :voltage)

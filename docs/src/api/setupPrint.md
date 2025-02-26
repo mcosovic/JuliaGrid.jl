@@ -18,7 +18,7 @@ using JuliaGrid
 * [`@parameter`](@ref @parameter)
 
 ###### Label Types
-* [`@label`](@ref @label)
+* [`@labels`](@ref @labels)
 
 ###### Default Settings
 * [`@default`](@ref @default)
@@ -66,7 +66,7 @@ using JuliaGrid
 
 ## Label Types
 ```@docs
-@label
+@labels
 ```
 
 ---

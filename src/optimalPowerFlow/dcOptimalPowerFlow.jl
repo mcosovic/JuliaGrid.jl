@@ -407,14 +407,14 @@ function setInitialPoint!(source::DC, target::DCOptimalPowerFlow)
     if !isempty(source.voltage.angle)
         errorTransfer(source.voltage.angle, target.voltage.angle)
 
-        @inbounds for i = 1:system.bus.number
+        @inbounds for i = 1:length(source.voltage.angle)
             target.voltage.angle[i] = source.voltage.angle[i]
         end
     end
 
     if !isempty(source.power.generator.active)
         errorTransfer(source.power.generator.active, target.power.generator.active)
-        @inbounds for i = 1:system.generator.number
+        @inbounds for i = 1:length(source.power.generator.active)
             target.power.generator.active[i] = source.power.generator.active[i]
         end
     end
@@ -444,14 +444,14 @@ end
 function setInitialPoint!(source::AC, target::DCOptimalPowerFlow)
     if !isempty(source.voltage.angle)
         errorTransfer(source.voltage.angle, target.voltage.angle)
-        @inbounds for i = 1:system.bus.number
+        @inbounds for i = 1:length(source.voltage.angle)
             target.voltage.angle[i] = source.voltage.angle[i]
         end
     end
 
     if !isempty(source.power.generator.active)
         errorTransfer(source.power.generator.active, target.power.generator.active)
-        @inbounds for i = 1:system.generator.number
+        @inbounds for i = 1:length(source.power.generator.active)
             target.power.generator.active[i] = source.power.generator.active[i]
         end
     end

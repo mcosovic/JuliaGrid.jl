@@ -878,7 +878,7 @@ function setInitialPoint!(source::AC, target::ACOptimalPowerFlow)
     if !isempty(source.voltage.magnitude) && !isempty(source.voltage.angle)
         errorTransfer(source.voltage.magnitude, target.voltage.magnitude)
         errorTransfer(source.voltage.angle, target.voltage.angle)
-        @inbounds for i = 1:system.bus.number
+        @inbounds for i = 1:length(source.voltage.magnitude)
             target.voltage.magnitude[i] = source.voltage.magnitude[i]
             target.voltage.angle[i] = source.voltage.angle[i]
         end
@@ -887,7 +887,7 @@ function setInitialPoint!(source::AC, target::ACOptimalPowerFlow)
     if !isempty(source.power.generator.active) && !isempty(source.power.generator.reactive)
         errorTransfer(source.power.generator.active, target.power.generator.active)
         errorTransfer(source.power.generator.reactive, target.power.generator.reactive)
-        @inbounds for i = 1:system.generator.number
+        @inbounds for i = 1:length(source.power.generator.active)
             target.power.generator.active[i] = source.power.generator.active[i]
             target.power.generator.reactive[i] = source.power.generator.reactive[i]
         end
@@ -944,14 +944,14 @@ end
 function setInitialPoint!(source::DC, target::ACOptimalPowerFlow)
     if !isempty(source.voltage.angle)
         errorTransfer(source.voltage.angle, target.voltage.angle)
-        @inbounds for i = 1:system.bus.number
+        @inbounds for i = 1:length(source.voltage.angle)
             target.voltage.angle[i] = source.voltage.angle[i]
         end
     end
 
     if !isempty(source.power.generator.active)
         errorTransfer(source.power.generator.active, target.power.generator.active)
-        @inbounds for i = 1:system.generator.number
+        @inbounds for i = 1:length(source.power.generator.active)
             target.power.generator.active[i] = source.power.generator.active[i]
         end
     end

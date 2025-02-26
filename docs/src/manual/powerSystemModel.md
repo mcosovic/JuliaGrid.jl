@@ -358,7 +358,7 @@ As we have shown, JuliaGrid mandates a distinctive label for every bus, branch, 
 !!! tip "Tip"
     String labels improve readability, but in larger models, the overhead from using strings can become substantial. To reduce memory usage, users can configure ordered dictionaries to accept and store integers as labels:
     ```julia DCPowerFlowSolution
-    @label(Integer)
+    @labels(Integer)
     ```
 
 ---
@@ -369,7 +369,7 @@ Let us take a look at the following illustration:
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
-@label(Integer)
+@labels(Integer)
 
 system = powerSystem()
 
@@ -382,7 +382,7 @@ addGenerator!(system; label = 1, bus = 2, active = 0.5, reactive = 0.1)
 nothing # hide
 ```
 
-In this example, we use the macro [`@label`](@ref @label) to specify that labels will be stored as integers. It is essential to run this macro; otherwise, even if integers are used in subsequent functions, they will be stored as strings.
+In this example, we use the macro [`@labels`](@ref @labels) to specify that labels will be stored as integers. It is essential to run this macro; otherwise, even if integers are used in subsequent functions, they will be stored as strings.
 
 Here, two buses are created with labels `1` and `2`. A branch connects these two buses, assigned a unique label of `1`. Finally, a generator is connected to bus `2`, with its own label set to `1`.
 
@@ -406,7 +406,7 @@ addGenerator!(system; bus = 2, active = 0.5, reactive = 0.1)
 nothing # hide
 ```
 
-This example models the same power system as before. In the previous case, we manually assigned labels using incremental integers. Here, we rely on the automatic labeling behavior, but since the macro [`@label`](@ref @label) is not used, the labels will be stored as strings.
+This example models the same power system as before. In the previous case, we manually assigned labels using incremental integers. Here, we rely on the automatic labeling behavior, but since the macro [`@labels`](@ref @labels) is not used, the labels will be stored as strings.
 
 ---
 
@@ -495,9 +495,9 @@ label[system.generator.layout.bus]
 ---
 
 ##### Loading and Saving Labels
-When a user loads a power system from a Matpower file, the default behavior is to store labels as strings. However, this can be overridden by using the [`@label`](@ref @label) macro to store labels as integers.
+When a user loads a power system from a Matpower file, the default behavior is to store labels as strings. However, this can be overridden by using the [`@labels`](@ref @labels) macro to store labels as integers.
 
-When saving the power system to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Likewise, when loading data from an HDF5 file, the label type will be preserved as saved, regardless of what is set by the [`@label`](@ref @label) macro.
+When saving the power system to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Likewise, when loading data from an HDF5 file, the label type will be preserved as saved, regardless of what is set by the [`@labels`](@ref @labels) macro.
 
 ---
 

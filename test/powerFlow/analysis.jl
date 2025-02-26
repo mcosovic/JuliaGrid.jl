@@ -362,7 +362,7 @@ end
 end
 
 @testset "Fast Newton-Raphson XB Method" begin
-    @label(Integer)
+    @labels(Integer)
 
     ########## IEEE 14-bus Test Case ##########
     system14 = powerSystem(path * "case14test.m")

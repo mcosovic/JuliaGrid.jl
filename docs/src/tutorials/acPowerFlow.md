@@ -6,7 +6,7 @@ To begin, let us generate the `PowerSystem` type, as illustrated by the followin
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
-@label(Integer)
+@labels(Integer)
 @power(MW, MVAr)
 @voltage(pu, deg)
 

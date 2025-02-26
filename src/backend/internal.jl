@@ -231,10 +231,8 @@ macro parameter(impedance::Symbol, admittance::Symbol)
     pfx.admittance = parsePrefix(admittanceString, suffix)
 end
 
-import Base.@label
-
 """
-    @label(type)
+    @labels(type)
 
 JuliaGrid keeps all labels in ordered dictionaries as Strings. Users have the option to
 use Integers instead, which can be a more efficient way to store labels, particularly for
@@ -242,10 +240,10 @@ large-scale systems.
 
 # Example
 ```jldoctest
-@label(Integer)
+@labels(Integer)
 ```
 """
-macro label(type::Symbol)
+macro labels(type::Symbol)
     if type == :Integer || type == :Int64
         template.system = Int64
         template.device = Int64
