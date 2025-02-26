@@ -254,11 +254,6 @@ macro labels(type::Symbol)
     end
 end
 
-macro label(sym::Symbol)
-    return :(println("Custom Label: ", $(QuoteNode(sym))))
-end
-
-
 ##### Parse Suffix (Unit) #####
 function parseSuffix(input::String, unitList, type::String)
     suffix = ""
