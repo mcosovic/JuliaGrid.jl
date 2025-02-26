@@ -172,7 +172,7 @@ solve!(system, analysis)                 # Recompute voltage angles with the upd
 
 ---
 
-#### Citing
+#### Citing JuliaGrid
 Please consider citing the following [preprint](https://arxiv.org/abs/2502.18229) if JuliaGrid contributes to your research or projects:
 ```latex
 @article{juliagrid,

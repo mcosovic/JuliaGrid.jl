@@ -8,6 +8,8 @@ JuliaGrid is an open-source and easy-to-use simulation tool and solver designed 
 
 We've rigorously tested and validated our simulation tool across various scenarios to the best of our abilities. Your feedback on errors, or bugs as a user would be highly appreciated and can help improve future versions. For more details, visit our [documentation][documentation] site.
 
+---
+
 ### Installation
 JuliaGrid is compatible with Julia version 1.9 and newer. To get the JuliaGrid package installed, execute the following Julia command:
 ```
@@ -15,7 +17,9 @@ import Pkg
 Pkg.add("JuliaGrid")
 ```
 
-### Citing
+---
+
+### Citing JuliaGrid
 Please consider citing the following [preprint](https://arxiv.org/abs/2502.18229) if JuliaGrid contributes to your research or projects:
 ```bibtex
 @article{juliagrid,
