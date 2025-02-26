@@ -172,6 +172,19 @@ solve!(system, analysis)                 # Recompute voltage angles with the upd
 
 ---
 
+#### Citing
+Please consider citing the following [preprint](https://arxiv.org/abs/2502.18229) if JuliaGrid contributes to your research or projects:
+```latex
+@article{juliagrid,
+    title={JuliaGrid: An Open-Source Julia-Based Framework for Power System State Estimation},
+    author={M. Cosovic, O. Kundacina, M. Delalic, A. Teskeredzic, D. Raca, A. Mesanovic, D. Miskovic, D. Vukobratovic, A. Monti},
+    journal={arXiv preprint arXiv:2502.18229},
+    year={2025}
+}
+```
+
+---
+
 ### Contributors
  - [Ognjen Kundacina](https://www.linkedin.com/in/ognjen-kundacina-machine-learning-guy/) - The Institute for Artificial Intelligence Research and Development of Serbia
  - [Muhamed Delalic](https://www.linkedin.com/in/muhameddelalic/) - University of Sarajevo, Bosnia and Herzegovina

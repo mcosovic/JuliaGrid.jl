@@ -15,16 +15,14 @@ import Pkg
 Pkg.add("JuliaGrid")
 ```
 
-### Citing JuliaGrid
+### Citing
 Please consider citing the following [preprint](https://arxiv.org/abs/2502.18229) if JuliaGrid contributes to your research or projects:
 ```bibtex
-@misc{juliagrid,
+@article{juliagrid,
     title={JuliaGrid: An Open-Source Julia-Based Framework for Power System State Estimation},
-    author={Mirsad Cosovic and Ognjen Kundacina and Muhamed Delalic and Armin Teskeredzic and Darijo Raca and Amer Mesanovic and Dragisa Miskovic and Dejan Vukobratovic and Antonello Monti},
-    year={2025},
-    eprint={2502.18229},
-    archivePrefix={arXiv},
-    primaryClass={cs.SE}
+    author={M. Cosovic, O. Kundacina, M. Delalic, A. Teskeredzic, D. Raca, A. Mesanovic, D. Miskovic, D. Vukobratovic, A. Monti},
+    journal={arXiv preprint arXiv:2502.18229},
+    year={2025}
 }
 ```
 
