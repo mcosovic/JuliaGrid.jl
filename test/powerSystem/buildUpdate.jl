@@ -102,6 +102,8 @@
         compstruct(load.generator, build.generator)
         compstruct(load.base, build.base)
     end
+
+    @label(aaaa)
 end
 
 @testset "Build and Update Power System in SI Units" begin
