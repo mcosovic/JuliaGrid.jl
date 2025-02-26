@@ -893,7 +893,7 @@ function setInitialPoint!(source::AC, target::ACOptimalPowerFlow)
         end
     end
 
-    if isdefined(target.method, :dual)
+    if isdefined(source.method, :dual)
         for (key, value) in source.method.dual.slack.angle
             target.method.dual.slack.angle[key] = value
         end
@@ -956,7 +956,7 @@ function setInitialPoint!(source::DC, target::ACOptimalPowerFlow)
         end
     end
 
-    if isdefined(target.method, :dual)
+    if isdefined(source.method, :dual)
         for (key, value) in source.method.dual.slack.angle
             target.method.dual.slack.angle[key] = value
         end
