@@ -339,7 +339,7 @@ setInitialPoint!(flow, analysis)
 
 ---
 
-##### Setup Initial Dual Values
+##### Initial Dual Values
 Dual variables, often referred to as Lagrange multipliers or Kuhn-Tucker multipliers, represent the shadow prices or marginal costs associated with constraints. The assignment of initial dual values occurs when the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function is executed. Initially, the initial dual values are unknown, but users can access and manually set them. For example:
 ```@example DCOptimalPowerFlow
 analysis.method.dual.balance.active[1] = 0.4

@@ -563,6 +563,4 @@ function errorTransfer(a::Vector{Float64}, b::Vector{Float64})
             )
         )
     end
-
-
 end
