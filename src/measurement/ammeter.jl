@@ -453,34 +453,36 @@ addAmmeter!(system, device; label = "Ammeter 1", to = "Branch 1", magnitude = 48
 ```
 """
 macro ammeter(kwargs...)
-    for kwarg in kwargs
-        parameter::Symbol = kwarg.args[1]
+    quote
+        for kwarg in $(esc(kwargs))
+            parameter::Symbol = kwarg.args[1]
 
-        if hasfield(AmmeterTemplate, parameter)
-            if parameter in [:varianceFrom, :varianceTo]
-                container::ContainerTemplate = getfield(template.ammeter, parameter)
-                val = Float64(eval(kwarg.args[2]))
-                if pfx.currentMagnitude != 0.0
-                    setfield!(container, :value, pfx.currentMagnitude * val)
-                    setfield!(container, :pu, false)
-                else
-                    setfield!(container, :value, val)
-                    setfield!(container, :pu, true)
+            if hasfield(AmmeterTemplate, parameter)
+                if parameter in [:varianceFrom, :varianceTo]
+                    container::ContainerTemplate = getfield(template.ammeter, parameter)
+                    val = Float64(eval(kwarg.args[2]))
+                    if pfx.currentMagnitude != 0.0
+                        setfield!(container, :value, pfx.currentMagnitude * val)
+                        setfield!(container, :pu, false)
+                    else
+                        setfield!(container, :value, val)
+                        setfield!(container, :pu, true)
+                    end
+                elseif parameter in [:statusFrom, :statusTo]
+                    setfield!(template.ammeter, parameter, Int8(eval(kwarg.args[2])))
+                elseif parameter == :noise
+                    setfield!(template.ammeter, parameter, Bool(eval(kwarg.args[2])))
+                elseif parameter == :label
+                    label = string(kwarg.args[2])
+                    if contains(label, "?") || contains(label, "!")
+                        setfield!(template.ammeter, parameter, label)
+                    else
+                        errorTemplateLabel()
+                    end
                 end
-            elseif parameter in [:statusFrom, :statusTo]
-                setfield!(template.ammeter, parameter, Int8(eval(kwarg.args[2])))
-            elseif parameter == :noise
-                setfield!(template.ammeter, parameter, Bool(eval(kwarg.args[2])))
-            elseif parameter == :label
-                label = string(kwarg.args[2])
-                if contains(label, "?") || contains(label, "!")
-                    setfield!(template.ammeter, parameter, label)
-                else
-                    errorTemplateLabel()
-                end
+            else
+                errorTemplateKeyword(parameter)
             end
-        else
-            errorTemplateKeyword(parameter)
         end
     end
 end

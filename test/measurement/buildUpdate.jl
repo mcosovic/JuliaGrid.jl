@@ -941,7 +941,7 @@ end
         err = ErrorException("The label Volt 1 is not unique.")
         @test_throws err addVoltmeter!(system, device; label = "Volt 1", bus = "Bus 1", magnitude = 1)
 
-        @test_throws LoadError @eval @voltmeter(label = "Voltmeter ?", means = 1)
+        @test_throws ErrorException @eval @voltmeter(label = "Voltmeter ?", means = 1)
     end
 
     @testset "Ammeter Errors" begin
@@ -957,7 +957,7 @@ end
         err = ErrorException("The current values are missing.")
         @test_throws err addAmmeter!(system, device, analysis)
 
-        @test_throws LoadError @eval @ammeter(label = "Ammeter ?", means = 1)
+        @test_throws ErrorException @eval @ammeter(label = "Ammeter ?", means = 1)
     end
 
     @testset "Wattmeter Errors" begin
@@ -973,7 +973,7 @@ end
         err = ErrorException("The power values are missing.")
         @test_throws err addWattmeter!(system, device, analysis)
 
-        @test_throws LoadError @eval @wattmeter(label = "Wattmeter ?", means = 1)
+        @test_throws ErrorException @eval @wattmeter(label = "Wattmeter ?", means = 1)
     end
 
     @testset "Varmeter Errors" begin
@@ -986,7 +986,7 @@ end
         err = ErrorException("The power values are missing.")
         @test_throws err addVarmeter!(system, device, analysis)
 
-        @test_throws LoadError @eval @varmeter(label = "Varmeter ?", means = 1)
+        @test_throws ErrorException @eval @varmeter(label = "Varmeter ?", means = 1)
     end
 
     @testset "PMU Errors" begin
@@ -996,7 +996,7 @@ end
         err = ErrorException("The current values are missing.")
         @test_throws err addPmu!(system, device, analysis)
 
-        @test_throws LoadError @eval @pmu(label = "PMU ?", means = 1)
+        @test_throws ErrorException @eval @pmu(label = "PMU ?", means = 1)
     end
 
     @testset "Configuration Errors" begin

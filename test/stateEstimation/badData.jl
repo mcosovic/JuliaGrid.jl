@@ -24,6 +24,7 @@ system30 = powerSystem(path * "case30test.m")
     device = measurement()
     @varmeter(label = "Varmeter ?", varianceBus = 1e-2, varianceFrom = 1e-2, varianceTo = 1e-2)
     @voltmeter(variance = 1e-2)
+    @wattmeter(varianceBus = 1e-2, varianceFrom = 1e-2, varianceTo = 1e-2)
     for (key, idx) in system14.bus.label
         addVoltmeter!(
             system14, device; bus = key, magnitude = analysis.voltage.magnitude[idx]
@@ -36,7 +37,6 @@ system30 = powerSystem(path * "case30test.m")
         )
     end
 
-    @wattmeter(varianceBus = 1e-2, varianceFrom = 1e-2, varianceTo = 1e-2)
     for (key, idx) in system14.branch.label
         addWattmeter!(system14, device; from = key, active = analysis.power.from.active[idx])
         addWattmeter!(system14, device; to = key, active = analysis.power.to.active[idx])
@@ -68,13 +68,12 @@ system30 = powerSystem(path * "case30test.m")
         compstruct(analysisSE.voltage, analysis.voltage; atol = 1e-10)
     end
 
-    @pmu(
+    @pmu(label = "PMU ?",
         varianceMagnitudeBus = 1e-5, varianceAngleBus = 1e-5,
         varianceMagnitudeFrom = 1e-5, varianceAngleFrom = 1e-5,
         varianceMagnitudeTo = 1e-5, varianceAngleTo = 1e-5
     )
     @testset "Two Outliers" begin
-        @pmu(label = "PMU ?")
         for (key, idx) in system14.bus.label
             addPmu!(
                 system14, device; bus = key, magnitude = analysis.voltage.magnitude[idx],

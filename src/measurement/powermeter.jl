@@ -998,34 +998,36 @@ addWattmeter!(system, device; from = "Branch 1", active = 10.0)
 ```
 """
 macro wattmeter(kwargs...)
-    for kwarg in kwargs
-        parameter::Symbol = kwarg.args[1]
+    quote
+        for kwarg in $(esc(kwargs))
+            parameter::Symbol = kwarg.args[1]
 
-        if hasfield(WattmeterTemplate, parameter)
-            if parameter in [:varianceBus, :varianceFrom, :varianceTo]
-                container::ContainerTemplate = getfield(template.wattmeter, parameter)
-                val = Float64(eval(kwarg.args[2]))
-                if pfx.activePower != 0.0
-                    setfield!(container, :value, pfx.activePower * val)
-                    setfield!(container, :pu, false)
-                else
-                    setfield!(container, :value, val)
-                    setfield!(container, :pu, true)
+            if hasfield(WattmeterTemplate, parameter)
+                if parameter in [:varianceBus, :varianceFrom, :varianceTo]
+                    container::ContainerTemplate = getfield(template.wattmeter, parameter)
+                    val = Float64(eval(kwarg.args[2]))
+                    if pfx.activePower != 0.0
+                        setfield!(container, :value, pfx.activePower * val)
+                        setfield!(container, :pu, false)
+                    else
+                        setfield!(container, :value, val)
+                        setfield!(container, :pu, true)
+                    end
+                elseif parameter in [:statusBus, :statusFrom, :statusTo]
+                    setfield!(template.wattmeter, parameter, Int8(eval(kwarg.args[2])))
+                elseif parameter == :noise
+                    setfield!(template.wattmeter, parameter, Bool(eval(kwarg.args[2])))
+                elseif parameter == :label
+                    label = string(kwarg.args[2])
+                    if contains(label, "?") || contains(label, "!")
+                        setfield!(template.wattmeter, parameter, label)
+                    else
+                        errorTemplateLabel()
+                    end
                 end
-            elseif parameter in [:statusBus, :statusFrom, :statusTo]
-                setfield!(template.wattmeter, parameter, Int8(eval(kwarg.args[2])))
-            elseif parameter == :noise
-                setfield!(template.wattmeter, parameter, Bool(eval(kwarg.args[2])))
-            elseif parameter == :label
-                label = string(kwarg.args[2])
-                if contains(label, "?") || contains(label, "!")
-                    setfield!(template.wattmeter, parameter, label)
-                else
-                    errorTemplateLabel()
-                end
+            else
+                errorTemplateKeyword(parameter)
             end
-        else
-            errorTemplateKeyword(parameter)
         end
     end
 end
@@ -1080,34 +1082,36 @@ addVarmeter!(system, device; from = "Branch 1", reactive = 10.0)
 ```
 """
 macro varmeter(kwargs...)
-    for kwarg in kwargs
-        parameter::Symbol = kwarg.args[1]
+    quote
+        for kwarg in $(esc(kwargs))
+            parameter::Symbol = kwarg.args[1]
 
-        if hasfield(VarmeterTemplate, parameter)
-            if parameter in [:varianceBus, :varianceFrom, :varianceTo]
-                container::ContainerTemplate = getfield(template.varmeter, parameter)
-                val = Float64(eval(kwarg.args[2]))
-                if pfx.reactivePower != 0.0
-                    setfield!(container, :value, pfx.reactivePower * val)
-                    setfield!(container, :pu, false)
-                else
-                    setfield!(container, :value, val)
-                    setfield!(container, :pu, true)
+            if hasfield(VarmeterTemplate, parameter)
+                if parameter in [:varianceBus, :varianceFrom, :varianceTo]
+                    container::ContainerTemplate = getfield(template.varmeter, parameter)
+                    val = Float64(eval(kwarg.args[2]))
+                    if pfx.reactivePower != 0.0
+                        setfield!(container, :value, pfx.reactivePower * val)
+                        setfield!(container, :pu, false)
+                    else
+                        setfield!(container, :value, val)
+                        setfield!(container, :pu, true)
+                    end
+                elseif parameter in [:statusBus, :statusFrom, :statusTo]
+                    setfield!(template.varmeter, parameter, Int8(eval(kwarg.args[2])))
+                elseif parameter == :noise
+                    setfield!(template.varmeter, parameter, Bool(eval(kwarg.args[2])))
+                elseif parameter == :label
+                    label = string(kwarg.args[2])
+                    if contains(label, "?") || contains(label, "!")
+                        setfield!(template.varmeter, parameter, label)
+                    else
+                        errorTemplateLabel()
+                    end
                 end
-            elseif parameter in [:statusBus, :statusFrom, :statusTo]
-                setfield!(template.varmeter, parameter, Int8(eval(kwarg.args[2])))
-            elseif parameter == :noise
-                setfield!(template.varmeter, parameter, Bool(eval(kwarg.args[2])))
-            elseif parameter == :label
-                label = string(kwarg.args[2])
-                if contains(label, "?") || contains(label, "!")
-                    setfield!(template.varmeter, parameter, label)
-                else
-                    errorTemplateLabel()
-                end
+            else
+                errorTemplateKeyword(parameter)
             end
-        else
-            errorTemplateKeyword(parameter)
         end
     end
 end

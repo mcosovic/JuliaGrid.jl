@@ -979,52 +979,54 @@ addPmu!(system, device; from = "Branch 1", magnitude = 481.125, angle = -11.46)
 ```
 """
 macro pmu(kwargs...)
-    for kwarg in kwargs
-        parameter::Symbol = kwarg.args[1]
+    quote
+        for kwarg in $(esc(kwargs))
+            parameter::Symbol = kwarg.args[1]
 
-        if hasfield(PmuTemplate, parameter)
-            if parameter in [
-                    :varianceMagnitudeBus; :varianceAngleBus; :varianceMagnitudeFrom;
-                    :varianceAngleFrom; :varianceMagnitudeTo; :varianceAngleTo
-                    ]
-                container::ContainerTemplate = getfield(template.pmu, parameter)
-                if parameter == :varianceMagnitudeBus
-                    prefixLive = pfx.voltageMagnitude
-                elseif parameter in [:varianceMagnitudeFrom; :varianceMagnitudeTo]
-                    prefixLive = pfx.currentMagnitude
-                elseif parameter == :varianceAngleBus
-                    prefixLive = pfx.voltageAngle
-                else
-                    prefixLive = pfx.currentAngle
-                end
-                val = Float64(eval(kwarg.args[2]))
-                if prefixLive != 0.0
-                    setfield!(container, :value, prefixLive * val)
-                    setfield!(container, :pu, false)
-                else
-                    setfield!(container, :value, val)
-                    setfield!(container, :pu, true)
-                end
-            else
-                if parameter in [:statusBus; :statusFrom; :statusTo]
-                    setfield!(template.pmu, parameter, Int8(eval(kwarg.args[2])))
-                elseif parameter == :noise
-                    setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))
-                elseif parameter == :correlated
-                    setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))
-                elseif parameter == :polar
-                    setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))
-                elseif parameter == :label
-                    label = string(kwarg.args[2])
-                    if contains(label, "?") || contains(label, "!")
-                        setfield!(template.pmu, parameter, label)
+            if hasfield(PmuTemplate, parameter)
+                if parameter in [
+                        :varianceMagnitudeBus; :varianceAngleBus; :varianceMagnitudeFrom;
+                        :varianceAngleFrom; :varianceMagnitudeTo; :varianceAngleTo
+                        ]
+                    container::ContainerTemplate = getfield(template.pmu, parameter)
+                    if parameter == :varianceMagnitudeBus
+                        prefixLive = pfx.voltageMagnitude
+                    elseif parameter in [:varianceMagnitudeFrom; :varianceMagnitudeTo]
+                        prefixLive = pfx.currentMagnitude
+                    elseif parameter == :varianceAngleBus
+                        prefixLive = pfx.voltageAngle
                     else
-                        errorTemplateLabel()
+                        prefixLive = pfx.currentAngle
+                    end
+                    val = Float64(eval(kwarg.args[2]))
+                    if prefixLive != 0.0
+                        setfield!(container, :value, prefixLive * val)
+                        setfield!(container, :pu, false)
+                    else
+                        setfield!(container, :value, val)
+                        setfield!(container, :pu, true)
+                    end
+                else
+                    if parameter in [:statusBus; :statusFrom; :statusTo]
+                        setfield!(template.pmu, parameter, Int8(eval(kwarg.args[2])))
+                    elseif parameter == :noise
+                        setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))
+                    elseif parameter == :correlated
+                        setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))
+                    elseif parameter == :polar
+                        setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))
+                    elseif parameter == :label
+                        label = string(kwarg.args[2])
+                        if contains(label, "?") || contains(label, "!")
+                            setfield!(template.pmu, parameter, label)
+                        else
+                            errorTemplateLabel()
+                        end
                     end
                 end
+            else
+                errorTemplateKeyword(parameter)
             end
-        else
-            errorTemplateKeyword(parameter)
         end
     end
 end

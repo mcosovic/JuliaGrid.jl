@@ -686,49 +686,51 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 50, reactiv
 ```
 """
 macro generator(kwargs...)
-    for kwarg in kwargs
-        parameter::Symbol = kwarg.args[1]
+    quote
+        for kwarg in $(esc(kwargs))
+            parameter::Symbol = kwarg.args[1]
 
-        if hasfield(GeneratorTemplate, parameter)
-            if !(parameter in [:area; :status; :label])
-                container::ContainerTemplate = getfield(template.generator, parameter)
+            if hasfield(GeneratorTemplate, parameter)
+                if !(parameter in [:area; :status; :label])
+                    container::ContainerTemplate = getfield(template.generator, parameter)
 
-                if parameter in [
-                    :active; :minActive; :maxActive; :lowActive; :upActive;
-                    :loadFollowing; :reserve10min; :reserve30min
-                    ]
-                    pfxLive = pfx.activePower
-                elseif parameter in [
-                    :reactive; :minReactive; :maxReactive; :minLowReactive;
-                    :maxLowReactive; :minUpReactive; :maxUpReactive; :reactiveRamp
-                    ]
-                    pfxLive = pfx.reactivePower
-                elseif parameter == :magnitude
-                    pfxLive = pfx.voltageMagnitude
-                end
-                if pfxLive != 0.0
-                    setfield!(container, :value, pfxLive * Float64(eval(kwarg.args[2])))
-                    setfield!(container, :pu, false)
-                else
-                    setfield!(container, :value, Float64(eval(kwarg.args[2])))
-                    setfield!(container, :pu, true)
-                end
-            else
-                if parameter == :status
-                    setfield!(template.generator, parameter, Int8(eval(kwarg.args[2])))
-                elseif parameter == :area
-                    setfield!(template.generator, parameter, Int64(eval(kwarg.args[2])))
-                elseif parameter == :label
-                    label = string(kwarg.args[2])
-                    if contains(label, "?")
-                        setfield!(template.generator, parameter, label)
+                    if parameter in [
+                        :active; :minActive; :maxActive; :lowActive; :upActive;
+                        :loadFollowing; :reserve10min; :reserve30min
+                        ]
+                        pfxLive = pfx.activePower
+                    elseif parameter in [
+                        :reactive; :minReactive; :maxReactive; :minLowReactive;
+                        :maxLowReactive; :minUpReactive; :maxUpReactive; :reactiveRamp
+                        ]
+                        pfxLive = pfx.reactivePower
+                    elseif parameter == :magnitude
+                        pfxLive = pfx.voltageMagnitude
+                    end
+                    if pfxLive != 0.0
+                        setfield!(container, :value, pfxLive * Float64(eval(kwarg.args[2])))
+                        setfield!(container, :pu, false)
                     else
-                        errorTemplateSymbol()
+                        setfield!(container, :value, Float64(eval(kwarg.args[2])))
+                        setfield!(container, :pu, true)
+                    end
+                else
+                    if parameter == :status
+                        setfield!(template.generator, parameter, Int8(eval(kwarg.args[2])))
+                    elseif parameter == :area
+                        setfield!(template.generator, parameter, Int64(eval(kwarg.args[2])))
+                    elseif parameter == :label
+                        label = string(kwarg.args[2])
+                        if contains(label, "?")
+                            setfield!(template.generator, parameter, label)
+                        else
+                            errorTemplateSymbol()
+                        end
                     end
                 end
+            else
+                errorTemplateKeyword(parameter)
             end
-        else
-            errorTemplateKeyword(parameter)
         end
     end
 end

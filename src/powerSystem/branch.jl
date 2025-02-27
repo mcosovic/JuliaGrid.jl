@@ -549,57 +549,59 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 ```
 """
 macro branch(kwargs...)
-    for kwarg in kwargs
-        parameter::Symbol = kwarg.args[1]
-        if parameter == :type
-            setfield!(template.branch, parameter, Int8(eval(kwarg.args[2])))
+    quote
+        for kwarg in $(esc(kwargs))
+            parameter::Symbol = kwarg.args[1]
+            if parameter == :type
+                setfield!(template.branch, parameter, Int8(eval(kwarg.args[2])))
+            end
         end
-    end
 
-    for kwarg in kwargs
-        parameter::Symbol = kwarg.args[1]
+        for kwarg in $(esc(kwargs))
+            parameter::Symbol = kwarg.args[1]
 
-        if hasfield(BranchTemplate, parameter)
-            if !(parameter in [:status; :type; :label; :turnsRatio])
-                container::ContainerTemplate = getfield(template.branch, parameter)
-                if parameter in [:resistance; :reactance]
-                    pfxLive = pfx.impedance
-                elseif parameter in [:conductance; :susceptance]
-                    pfxLive = pfx.admittance
-                elseif parameter in [:shiftAngle; :minDiffAngle; :maxDiffAngle]
-                    pfxLive = pfx.voltageAngle
-                elseif parameter in [:minFromBus; :maxFromBus; :minToBus; :maxToBus]
-                    if template.branch.type == 1
-                        pfxLive = pfx.activePower
-                    elseif template.branch.type in [2, 3]
-                        pfxLive = pfx.apparentPower
-                    elseif template.branch.type in [4, 5]
-                        pfxLive = pfx.currentMagnitude
+            if hasfield(BranchTemplate, parameter)
+                if !(parameter in [:status; :type; :label; :turnsRatio])
+                    container::ContainerTemplate = getfield(template.branch, parameter)
+                    if parameter in [:resistance; :reactance]
+                        pfxLive = pfx.impedance
+                    elseif parameter in [:conductance; :susceptance]
+                        pfxLive = pfx.admittance
+                    elseif parameter in [:shiftAngle; :minDiffAngle; :maxDiffAngle]
+                        pfxLive = pfx.voltageAngle
+                    elseif parameter in [:minFromBus; :maxFromBus; :minToBus; :maxToBus]
+                        if template.branch.type == 1
+                            pfxLive = pfx.activePower
+                        elseif template.branch.type in [2, 3]
+                            pfxLive = pfx.apparentPower
+                        elseif template.branch.type in [4, 5]
+                            pfxLive = pfx.currentMagnitude
+                        end
                     end
-                end
-                if pfxLive != 0.0
-                    setfield!(container, :value, pfxLive * Float64(eval(kwarg.args[2])))
-                    setfield!(container, :pu, false)
+                    if pfxLive != 0.0
+                        setfield!(container, :value, pfxLive * Float64(eval(kwarg.args[2])))
+                        setfield!(container, :pu, false)
+                    else
+                        setfield!(container, :value, Float64(eval(kwarg.args[2])))
+                        setfield!(container, :pu, true)
+                    end
                 else
-                    setfield!(container, :value, Float64(eval(kwarg.args[2])))
-                    setfield!(container, :pu, true)
+                    if parameter == :status
+                        setfield!(template.branch, parameter, Int8(eval(kwarg.args[2])))
+                    elseif parameter == :turnsRatio
+                        setfield!(template.branch, parameter, Float64(eval(kwarg.args[2])))
+                    elseif parameter == :label
+                        label = string(kwarg.args[2])
+                        if contains(label, "?")
+                            setfield!(template.branch, parameter, label)
+                        else
+                            errorTemplateSymbol()
+                        end
+                    end
                 end
             else
-                if parameter == :status
-                    setfield!(template.branch, parameter, Int8(eval(kwarg.args[2])))
-                elseif parameter == :turnsRatio
-                    setfield!(template.branch, parameter, Float64(eval(kwarg.args[2])))
-                elseif parameter == :label
-                    label = string(kwarg.args[2])
-                    if contains(label, "?")
-                        setfield!(template.branch, parameter, label)
-                    else
-                        errorTemplateSymbol()
-                    end
-                end
+                errorTemplateKeyword(parameter)
             end
-        else
-            errorTemplateKeyword(parameter)
         end
     end
 end

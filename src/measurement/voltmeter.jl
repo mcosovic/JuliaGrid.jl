@@ -66,7 +66,7 @@ function addVoltmeter!(
 )
     volt = device.voltmeter
     def = template.voltmeter
-    key = meterkwargs(template.ammeter.noise; kwargs...)
+    key = meterkwargs(template.voltmeter.noise; kwargs...)
 
     volt.number += 1
     lblBus = getLabel(system.bus, bus, "bus")
@@ -141,7 +141,7 @@ function addVoltmeter!(
     volt = device.voltmeter
     def = template.voltmeter
     baseVoltg = system.base.voltage
-    key = meterkwargs(template.ammeter.noise; kwargs...)
+    key = meterkwargs(template.voltmeter.noise; kwargs...)
 
     status = givenOrDefault(key.status, def.status)
     checkWideStatus(status)
@@ -220,7 +220,7 @@ function updateVoltmeter!(
     kwargs...
 )
     volt = device.voltmeter
-    key = meterkwargs(template.ammeter.noise; kwargs...)
+    key = meterkwargs(template.voltmeter.noise; kwargs...)
 
     idx = volt.label[getLabel(volt, label, "voltmeter")]
     idxBus = volt.layout.index[idx]
@@ -243,7 +243,7 @@ function updateVoltmeter!(
 
     voltmeter = device.voltmeter
     se = analysis.method
-    key = meterkwargs(template.ammeter.noise; kwargs...)
+    key = meterkwargs(template.voltmeter.noise; kwargs...)
 
     idx = voltmeter.label[getLabel(voltmeter, label, "voltmeter")]
     idxBus = voltmeter.layout.index[idx]
@@ -281,7 +281,7 @@ function updateVoltmeter!(
 )
     volt = device.voltmeter
     se = analysis.method
-    key = meterkwargs(template.ammeter.noise; kwargs...)
+    key = meterkwargs(template.voltmeter.noise; kwargs...)
 
     idx = volt.label[getLabel(volt, label, "voltmeter")]
     idxBus = volt.layout.index[idx]
@@ -339,34 +339,36 @@ addVoltmeter!(system, device; bus = "Bus 1", magnitude = 145.2)
 ```
 """
 macro voltmeter(kwargs...)
-    for kwarg in kwargs
-        parameter::Symbol = kwarg.args[1]
+    quote
+        for kwarg in $(esc(kwargs))
+            parameter::Symbol = kwarg.args[1]
 
-        if hasfield(VoltmeterTemplate, parameter)
-            if parameter == :variance
-                container::ContainerTemplate = getfield(template.voltmeter, parameter)
-                val = Float64(eval(kwarg.args[2]))
-                if pfx.voltageMagnitude != 0.0
-                    setfield!(container, :value, pfx.voltageMagnitude * val)
-                    setfield!(container, :pu, false)
-                else
-                    setfield!(container, :value, val)
-                    setfield!(container, :pu, true)
+            if hasfield(VoltmeterTemplate, parameter)
+                if parameter == :variance
+                    container::ContainerTemplate = getfield(template.voltmeter, parameter)
+                    val = Float64(eval(kwarg.args[2]))
+                    if pfx.voltageMagnitude != 0.0
+                        setfield!(container, :value, pfx.voltageMagnitude * val)
+                        setfield!(container, :pu, false)
+                    else
+                        setfield!(container, :value, val)
+                        setfield!(container, :pu, true)
+                    end
+                elseif parameter == :status
+                    setfield!(template.voltmeter, parameter, Int8(eval(kwarg.args[2])))
+                elseif parameter == :noise
+                    setfield!(template.voltmeter, parameter, Bool(eval(kwarg.args[2])))
+                elseif parameter == :label
+                    label = string(kwarg.args[2])
+                    if contains(label, "?") || contains(label, "!")
+                        setfield!(template.voltmeter, parameter, label)
+                    else
+                        errorTemplateLabel()
+                    end
                 end
-            elseif parameter == :status
-                setfield!(template.voltmeter, parameter, Int8(eval(kwarg.args[2])))
-            elseif parameter == :noise
-                setfield!(template.voltmeter, parameter, Bool(eval(kwarg.args[2])))
-            elseif parameter == :label
-                label = string(kwarg.args[2])
-                if contains(label, "?") || contains(label, "!")
-                    setfield!(template.voltmeter, parameter, label)
-                else
-                    errorTemplateLabel()
-                end
+            else
+                errorTemplateKeyword(parameter)
             end
-        else
-            errorTemplateKeyword(parameter)
         end
     end
 end

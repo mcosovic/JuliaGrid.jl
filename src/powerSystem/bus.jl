@@ -448,49 +448,51 @@ addBus!(system; label = "Bus 1", reactive = -4.0)
 ```
 """
 macro bus(kwargs...)
-    for kwarg in kwargs
-        parameter::Symbol = kwarg.args[1]
+    quote
+        for kwarg in $(esc(kwargs))
+            parameter::Symbol = kwarg.args[1]
 
-        if hasfield(BusTemplate, parameter)
-            if !(parameter in [:base; :type; :area; :lossZone; :label])
-                container::ContainerTemplate = getfield(template.bus, parameter)
-                if parameter in [:active; :conductance]
-                    pfxLive = pfx.activePower
-                elseif parameter in [:reactive; :susceptance]
-                    pfxLive = pfx.reactivePower
-                elseif parameter in [:magnitude; :minMagnitude; :maxMagnitude]
-                    pfxLive = pfx.voltageMagnitude
-                elseif parameter == :angle
-                    pfxLive = pfx.voltageAngle
-                end
-                if pfxLive != 0.0
-                    setfield!(container, :value, pfxLive * Float64(eval(kwarg.args[2])))
-                    setfield!(container, :pu, false)
-                else
-                    setfield!(container, :value, Float64(eval(kwarg.args[2])))
-                    setfield!(container, :pu, true)
-                end
-            else
-                if parameter == :base
-                    setfield!(
-                        template.bus, parameter,
-                        Float64(eval(kwarg.args[2])) * pfx.baseVoltage
-                    )
-                elseif parameter == :type
-                    setfield!(template.bus, parameter, Int8(eval(kwarg.args[2])))
-                elseif parameter in [:area; :lossZone]
-                    setfield!(template.bus, parameter, Int64(eval(kwarg.args[2])))
-                elseif parameter == :label
-                    label = string(kwarg.args[2])
-                    if contains(label, "?")
-                        setfield!(template.bus, parameter, label)
+            if hasfield(BusTemplate, parameter)
+                if !(parameter in [:base; :type; :area; :lossZone; :label])
+                    container::ContainerTemplate = getfield(template.bus, parameter)
+                    if parameter in [:active; :conductance]
+                        pfxLive = pfx.activePower
+                    elseif parameter in [:reactive; :susceptance]
+                        pfxLive = pfx.reactivePower
+                    elseif parameter in [:magnitude; :minMagnitude; :maxMagnitude]
+                        pfxLive = pfx.voltageMagnitude
+                    elseif parameter == :angle
+                        pfxLive = pfx.voltageAngle
+                    end
+                    if pfxLive != 0.0
+                        setfield!(container, :value, pfxLive * Float64(eval(kwarg.args[2])))
+                        setfield!(container, :pu, false)
                     else
-                        errorTemplateSymbol()
+                        setfield!(container, :value, Float64(eval(kwarg.args[2])))
+                        setfield!(container, :pu, true)
+                    end
+                else
+                    if parameter == :base
+                        setfield!(
+                            template.bus, parameter,
+                            Float64(eval(kwarg.args[2])) * pfx.baseVoltage
+                        )
+                    elseif parameter == :type
+                        setfield!(template.bus, parameter, Int8(eval(kwarg.args[2])))
+                    elseif parameter in [:area; :lossZone]
+                        setfield!(template.bus, parameter, Int64(eval(kwarg.args[2])))
+                    elseif parameter == :label
+                        label = string(kwarg.args[2])
+                        if contains(label, "?")
+                            setfield!(template.bus, parameter, label)
+                        else
+                            errorTemplateSymbol()
+                        end
                     end
                 end
+            else
+                errorTemplateKeyword(parameter)
             end
-        else
-            errorTemplateKeyword(parameter)
         end
     end
 end

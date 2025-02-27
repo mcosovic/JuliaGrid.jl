@@ -105,6 +105,7 @@
 end
 
 @testset "Build and Update Power System in SI Units" begin
+    @default(template)
     @labels(Integer)
     load = powerSystem(path * "build.m")
     @base(load, MVA, kV)
@@ -113,7 +114,6 @@ end
     @power(kW, MVAr, GVA)
     @voltage(kV, deg, MV)
     @parameter(Ω, S)
-    @default(template)
 
     build = powerSystem()
     @base(build, MVA, kV)
@@ -622,7 +622,7 @@ end
         @test_throws err updateBus!(system, fnrbx; label = "Bus 1", type = 1)
         @test_throws err updateBus!(system, gs; label = "Bus 1", type = 1)
 
-        @test_throws LoadError @eval @bus(label = "Bus ?", typee = 1)
+        @test_throws ErrorException @eval @bus(label = "Bus ?", typee = 1)
     end
 
     @testset "Add and Update Branch Errors" begin
@@ -640,7 +640,7 @@ end
         )
         @test_throws err addBranch!(system; from = "Bus 1", to = "Bus 2", resistance = 0.1, status = 2)
 
-        @test_throws LoadError @eval @branch(label = "Branch ?", resistances = 1)
+        @test_throws ErrorException @eval @branch(label = "Branch ?", resistances = 1)
 
         err = ErrorException("The label Generator 1 is not unique.")
         @test_throws err addGenerator!(system; label = "Generator 1", bus = "Bus 1")
@@ -684,12 +684,12 @@ end
         )
         @test_throws err cost!(system; generator = "Generator 1", active = 1)
 
-        @test_throws LoadError @eval @generator(label = "Generator ?", actives = 1)
+        @test_throws ErrorException @eval @generator(label = "Generator ?", actives = 1)
     end
 
     @testset "Unit Errors" begin
-        @test_throws LoadError @eval @current(sA, deg)
-        @test_throws LoadError @eval @current(kV, deg)
+        @test_throws ErrorException @eval @current(sA, deg)
+        @test_throws ErrorException @eval @current(kV, deg)
     end
 
     @testset "Voltage Errors" begin
