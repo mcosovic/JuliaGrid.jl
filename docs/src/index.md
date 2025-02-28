@@ -1,7 +1,6 @@
-JuliaGrid
-=============
+# JuliaGrid
 
-JuliaGrid is a fast, flexible, and easy-to-use open-source tool for analyzing and modifying power system configurations and measurement data. It represents a comprehensive framework for steady-state power system analysis written in the Julia programming language. The framework is available as a Julia package under MIT License. JuliaGrid is primarily designed for  researchers and academics, providing various state-of-the-art algorithms.
+JuliaGrid is a fast, flexible, and easy-to-use open-source tool for steady-state power system analysis, developed in the Julia programming language. The framework enables easy modification of power system configurations and measurement data, allowing efficient quasi-steady-state analyses. It is available as a Julia package under the MIT License. JuliaGrid is primarily designed for researchers and academics, offering various state-of-the-art algorithms.
 
 The framework's architecture centres around code-reusability paradigm, allowing users a high level of customization for their experiments. To simplify, the overall logic for setting the experiments and its analysis can be as follows:
 * Users define a power system with/without measurement data.
@@ -172,7 +171,7 @@ solve!(system, analysis)                 # Recompute voltage angles with the upd
 
 ---
 
-#### Citing JuliaGrid
+### Citing JuliaGrid
 Please consider citing the following [preprint](https://arxiv.org/abs/2502.18229) if JuliaGrid contributes to your research or projects:
 ```latex
 @article{juliagrid,

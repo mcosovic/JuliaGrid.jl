@@ -30,8 +30,8 @@ Default settings for certain keywords are as follows: `variance = 1e-4`, `noise 
 [`@voltmeter`](@ref @voltmeter) macro.
 
 # Units
-The default units for the `magnitude` and `variance` keywords are per-units (pu). However,
-users can choose to use volts (V) as the units by applying the [`@voltage`](@ref @voltage)
+The default units for the `magnitude` and `variance` keywords are per-units. However,
+users can choose to use volts as the units by applying the [`@voltage`](@ref @voltage)
 macro.
 
 # Examples
@@ -98,7 +98,7 @@ Voltmeters can be configured using:
   * `status = 1`: in-service,
   * `status = 0`: out-of-service.
 * `noise`: Defines the method for generating the measurement means:
-  * `noise = true`: adds white Gaussian noise to the voltage magnitudes, using the defined variance,
+  * `noise = true`: adds white Gaussian noise to the voltage magnitudes using the defined variance,
   * `noise = false`: uses the exact voltage magnitude values without adding noise.
 
 # Updates
@@ -110,8 +110,8 @@ Default settings for keywords are as follows: `variance = 1e-4`, `noise = false`
 [`@voltmeter`](@ref @voltmeter) macro.
 
 # Units
-By default, the unit for `variance` is per-unit (pu). However, users can choose to use
-volts (V) as the units by applying the [`@voltage`](@ref @voltage) macro.
+By default, the unit for `variance` is per-unit. However, users can choose to use
+volts as the units by applying the [`@voltage`](@ref @voltage) macro.
 
 # Example
 ```jldoctest
@@ -311,8 +311,8 @@ To establish the voltmeter template, users can specify default values for the `v
 `noise`, and `status` keywords, along with pattern for labels using the `label` keyword.
 
 # Units
-By default, the unit for `variance` is per-unit (pu). However, users can choose to use
-volts (V) as the units by applying the [`@voltage`](@ref @voltage) macro.
+By default, the unit for `variance` is per-unit. However, users can choose to use volts
+as the units by applying the [`@voltage`](@ref @voltage) macro.
 
 # Examples
 Adding a voltmeter using the default unit system:

@@ -31,9 +31,8 @@ ammeters positioned on either the from-bus or to-bus ends of branches using the
 [`@ammeter`](@ref @ammeter) macro.
 
 # Units
-The default units for the `magnitude` and `variance` keywords are per-units (pu). However,
-users can choose to use amperes (A) as the units by applying the [`@current`](@ref @current)
-macro.
+The default units for the `magnitude` and `variance` keywords are per-units. However, users
+can choose to use amperes as the units by applying the [`@current`](@ref @current) macro.
 
 # Examples
 Adding ammeters using the default unit system:
@@ -133,7 +132,7 @@ Ammeters at the to-bus ends of the branches can be configured using:
   * `statusTo = -1`: not included in the `Measurement` type.
 Settings for generating measurements include:
 * `noise`: Defines the method for generating the measurement means:
-  * `noise = true`: adds white Gaussian noise to the current magnitudes, using the defined variances,
+  * `noise = true`: adds white Gaussian noise to the current magnitudes using defined variances,
   * `noise = false`: uses the exact current magnitude values without adding noise.
 
 # Updates
@@ -145,9 +144,9 @@ Default settings for keywords are as follows: `varianceFrom = 1e-4`, `statusFrom
 settings using the [`@ammeter`](@ref @ammeter) macro.
 
 # Units
-The default units for the `varianceFrom` and `varianceTo` keywords are per-units (pu).
-However, users can choose to use amperes (A) as the units by applying the
-[`@current`](@ref @current) macro.
+The default units for the `varianceFrom` and `varianceTo` keywords are per-units. However,
+users can choose to use amperes as the units by applying the [`@current`](@ref @current)
+macro.
 
 # Example
 ```jldoctest
@@ -420,9 +419,9 @@ ammeters at both the from-bus and to-bus ends of branches, using `varianceFrom` 
 configure label patterns with the `label` keyword, as well as specify the `noise` type.
 
 # Units
-The default units for the `varianceFrom` and `varianceTo` keywords are per-units (pu).
-However, users can choose to use amperes (A) as the units by applying the
-[`@current`](@ref @current) macro.
+The default units for the `varianceFrom` and `varianceTo` keywords are per-units. However,
+users can choose to use amperes as the units by applying the [`@current`](@ref @current)
+macro.
 
 # Examples
 Adding an ammeter using the default unit system:

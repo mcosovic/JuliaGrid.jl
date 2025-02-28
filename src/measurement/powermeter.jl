@@ -34,9 +34,8 @@ variance and status for wattmeters positioned at the buses, from-bus ends, or to
 ends of branches using the [`@wattmeter`](@ref @wattmeter) macro.
 
 # Units
-The default units for the `active` and `variance` keywords are per-units (pu). However,
-users can choose to use watts (W) as the units by applying the [`@power`](@ref @power)
-macro.
+The default units for the `active` and `variance` keywords are per-units. However, users
+can choose to use watts as the units by applying the [`@power`](@ref @power) macro.
 
 # Examples
 Adding wattmeters using the default unit system:
@@ -120,9 +119,9 @@ variance and status for varmeters positioned at the buses, from-bus ends, or to-
 ends of branches using the [`@varmeter`](@ref @varmeter) macro.
 
 # Units
-The default units for the `reactive` and `variance` keywords are per-units (pu). However,
-users can choose to use volt-amperes reactive (VAr) as the units by applying the
-[`@power`](@ref @power) macro.
+The default units for the `reactive` and `variance` keywords are per-units. However, users
+can choose to use volt-amperes reactive as the units by applying the [`@power`](@ref @power)
+macro.
 
 # Examples
 Adding varmeters using the default unit system:
@@ -263,7 +262,7 @@ Wattmeters at the to-bus ends of the branches can be configured using:
   * `statusTo = -1`: not included in the `Measurement` type.
 Settings for generating measurements include:
 * `noise`: Defines the method for generating the measurement means:
-  * `noise = true`: adds white Gaussian noise to the active power values, using the defined variances,
+  * `noise = true`: adds white Gaussian noise to the active power values using defined variances,
   * `noise = false`: uses the exact active power values without adding noise.
 
 # Updates
@@ -277,7 +276,7 @@ Default settings for keywords are as follows: `varianceBus = 1e-4`, `statusBus =
 
 # Units
 The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are
-per-units (pu). However, users can choose to use watts (W) as the units by applying the
+per-units. However, users can choose to use watts as the units by applying the
 [`@power`](@ref @power) macro.
 
 # Example
@@ -352,7 +351,7 @@ Varmeters at the to-bus ends of the branches can be configured using:
   * `statusTo = -1`: not included in the `Measurement` type.
 Settings for generating measurements include:
 * `noise`: Defines the method for generating the measurement means:
-  * `noise = true`: adds white Gaussian noise to the reactive power values, using the defined variances,
+  * `noise = true`: adds white Gaussian noise to the reactive power values using defined variances,
   * `noise = false`: uses the exact reactive power values without adding noise.
 
 # Updates
@@ -366,8 +365,8 @@ Default settings for keywords are as follows: `varianceBus = 1e-4`, `statusBus =
 
 # Units
 The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are
-per-units (pu). However, users can choose to use volt-amperes reactive (VAr) as the units
-by applying the [`@power`](@ref @power) macro.
+per-units. However, users can choose to use volt-amperes reactive as the units by applying
+the [`@power`](@ref @power) macro.
 
 # Example
 ```jldoctest
@@ -964,7 +963,7 @@ as well as specify the `noise` type.
 
 # Units
 The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are
-per-units (pu). However, users can choose to use watts (W) as the units by applying the
+per-units. However, users can choose to use watts as the units by applying the
 [`@power`](@ref @power) macro.
 
 # Examples
@@ -1048,8 +1047,8 @@ as well as specify the `noise` type.
 
 # Units
 The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are
-per-units (pu). However, users can choose to usevolt-amperes reactive (VAr) as the units
-by applying the [`@power`](@ref @power) macro.
+per-units. However, users can choose to usevolt-amperes reactive as the units by applying
+the [`@power`](@ref @power) macro.
 
 # Examples
 Adding varmeters using the default unit system:

@@ -47,10 +47,10 @@ using the [`@pmu`](@ref @pmu) macro.
 
 # Units
 The default units for the `magnitude`, `varianceMagnitude`, and `angle`, `varianceAngle`
-keywords are per-units (pu) and radians (rad). However, users have the option to switch
-to volts (V) and degrees (deg) when the PMU is located at a bus using the
-[`@voltage`](@ref @voltage) macro, or amperes (A) and degrees (deg) when the PMU is located
-at a branch through the use of the [`@current`](@ref @current) macro.
+keywords are per-units and radians. However, users have the option to switch to volts and
+degrees when the PMU is located at a bus using the [`@voltage`](@ref @voltage) macro, or
+amperes and degrees when the PMU is located at a branch through the use of the
+[`@current`](@ref @current) macro.
 
 # Examples
 Adding PMUs using the default unit system:
@@ -208,7 +208,7 @@ PMUs at the to-bus ends of the branches can be configured using:
   * `statusTo = -1`: not included in the `Measurement` type.
 Settings for generating measurements include:
 * `noise`: Defines the method for generating the measurement means:
-  * `noise = true`: adds white Gaussian noise to the phasor values, using the defined variances,
+  * `noise = true`: adds white Gaussian noise to the phasor values using defined variances,
   * `noise = false`: uses the exact phasor values without adding noise.
 Settings for handling phasor measurements include:
 * `correlated`: Specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
@@ -227,10 +227,10 @@ Default settings for variance keywords are established at `1e-8`, with all statu
 default settings using the [`@pmu`](@ref @pmu) macro.
 
 # Units
-The default units for the variance keywords are in per-units (pu) and radians (rad). However,
-users have the option to switch to volts (V) and degrees (deg) when the PMU is located at
-a bus using the [`@voltage`](@ref @voltage) macro, or amperes (A) and degrees (deg) when
-the PMU is located at a branch through the use of the [`@current`](@ref @current) macro.
+The default units for the variance keywords are in per-units and radians. However, users
+have the option to switch to volts and degrees when the PMU is located at a bus using the
+[`@voltage`](@ref @voltage) macro, or amperes and degrees when the PMU is located at a
+branch through the use of the [`@current`](@ref @current) macro.
 
 # Example
 ```jldoctest
@@ -941,11 +941,10 @@ For PMUs located at the to-bus ends of the branches, users can use the `variance
 `varianceAngleTo`, and `statusTo` keywords.
 
 # Units
-By default, the units for variances are per-units (pu) and radians (rad). However, users
-have the option to switch to volts (V) and degrees (deg) as the units for PMUs located at
-the buses by using the [`@voltage`](@ref @voltage) macro, or they can switch to amperes (A)
-and degrees (deg) as the units for PMUs located at the branches by using the
-[`@current`](@ref @current) macro.
+By default, the units for variances are per-units and radians. However, users have the
+option to switch to volts and degrees as the units for PMUs located at the buses by using
+the [`@voltage`](@ref @voltage) macro, or they can switch to amperes  and degrees as the
+units for PMUs located at the branches by using the [`@current`](@ref @current) macro.
 
 # Examples
 Adding PMUs using the default unit system:

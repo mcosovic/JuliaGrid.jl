@@ -17,7 +17,7 @@ Once the `Measurement` type has been established, we can incorporate voltmeters,
 * [`addVarmeter!`](@ref addVarmeter!),
 * [`addPmu!`](@ref addPmu!).
 
-Also, JuliaGrid provides macros [`@voltmeter`](@ref @voltmeter), [`@ambmeter`](@ref @ammeter), [`@wattmeter`](@ref @wattmeter), [`@varmeter`](@ref @varmeter), and [`@pmu`](@ref @pmu) to define templates that aid in creating measurement devices. These templates help avoid entering the same parameters repeatedly.
+Also, JuliaGrid provides macros [`@voltmeter`](@ref @voltmeter), [`@ammeter`](@ref @ammeter), [`@wattmeter`](@ref @wattmeter), [`@varmeter`](@ref @varmeter), and [`@pmu`](@ref @pmu) to define templates that aid in creating measurement devices. These templates help avoid entering the same parameters repeatedly.
 
 !!! note "Info"
     It is important to note that measurement devices associated with branches can only be incorporated if the branch is in-service. This reflects JuliaGrid's approach to mimic a network topology processor, where logical data analysis configures the energized components of the power system.
@@ -124,7 +124,7 @@ In this example, we have established two voltmeters designed to measure the bus 
 ---
 
 ##### Customizing Input Units for Keywords
-By default, the `magnitude` and `variance` keywords are expected to be provided in per-units (pu). However, users have the flexibility to specify these values in volts (V) if they prefer. For instance, consider the following example:
+By default, the `magnitude` and `variance` keywords are expected to be provided in per-units. However, users have the flexibility to specify these values in volts if they prefer. For instance, consider the following example:
 ```@example addVoltmeterSI
 using JuliaGrid # hide
 
@@ -187,7 +187,7 @@ For the first ammeter, we assume that the measurement value is already known, de
 ---
 
 ##### Customizing Input Units for Keywords
-By default, the `magnitude` and `variance` keywords are expected to be provided in per-unit (pu). However, users have the flexibility to express these values in amperes (A) if they prefer. Take a look at the following example:
+By default, the `magnitude` and `variance` keywords are expected to be provided in per-unit. However, users have the flexibility to express these values in amperes (A) if they prefer. Take a look at the following example:
 ```@example addAmmeterSI
 using JuliaGrid # hide
 @default(unit)  # hide
@@ -204,7 +204,7 @@ addAmmeter!(system, device; from = "Branch 1", magnitude = 342.13, variance = 0.
 addAmmeter!(system, device; to = "Branch 1", magnitude = 385, variance = 42.8, noise = true)
 ```
 
-In this example, we have opted to specify the `magnitude` and `variance` in amperes (A). It is worth noting that, despite using amperes as the input units, these keywords will still be stored in the per-unit system:
+In this example, we have opted to specify the `magnitude` and `variance` in amperes. It is worth noting that, despite using amperes as the input units, these keywords will still be stored in the per-unit system:
 ```@repl addAmmeterSI
 [device.ammeter.magnitude.mean device.ammeter.magnitude.variance]
 ```
@@ -250,7 +250,7 @@ For the first and second wattmeters, we assume that the measurement values are a
 ---
 
 ##### Customizing Input Units for Keywords
-By default, the `active` and `variance` keywords are expected to be provided in per-unit (pu) values. However, users have the option to express these values in watts (W) if they prefer, as demonstrated in the following example:
+By default, the `active` and `variance` keywords are expected to be provided in per-unit values. However, users have the option to express these values in watts if they prefer, as demonstrated in the following example:
 ```@example addWattmeterSI
 using JuliaGrid # hide
 @default(unit)  # hide
@@ -402,7 +402,7 @@ Next, in AC state estimation, the first PMU measurement will be integrated into 
 ---
 
 ##### Customizing Input Units for Keywords
-By default, the `magnitude` and `varianceMagnitude` keywords are expected to be provided in per-unit (pu), while the `angle` and `varianceAngle` keywords are expected to be provided in radians (rad). However, users have the flexibility to express these values in different units, such as volts (V) and degrees (deg) if the PMU is set to a bus, or amperes (A) and degrees (deg) if the PMU is set to a branch. This flexibility is demonstrated in the following:
+By default, the `magnitude` and `varianceMagnitude` keywords are expected to be provided in per-unit, while the `angle` and `varianceAngle` keywords are expected to be provided in radians. However, users have the flexibility to express these values in different units, such as volts (V) and degrees (deg) if the PMU is set to a bus, or amperes (A) and degrees (deg) if the PMU is set to a branch. This flexibility is demonstrated in the following:
 ```@example addPmuSI
 using JuliaGrid # hide
 @default(unit)  # hide
