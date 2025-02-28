@@ -4,7 +4,7 @@ Similar to [AC Optimal Power Flow](@ref ACOptimalPowerFlowManual), JuliaGrid uti
 To perform the DC optimal power flow, we first need to have the `PowerSystem` type that has been created with the DC model. After that, create the `DCOptimalPowerFlow` type to establish the DC optimal power flow framework using the function:
 * [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow).
 
-To solve the DC optimal power flow problem and acquire generator active power outputs and bus voltage angles, make use of the following function:
+To solve the DC optimal power flow problem and acquire generator active power outputs and bus voltage angles, use of the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)).
 
 ---
@@ -12,7 +12,7 @@ To solve the DC optimal power flow problem and acquire generator active power ou
 After obtaining the solution for DC optimal power flow, JuliaGrid offers a post-processing analysis function to compute powers associated with buses and branches:
 * [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
 
-Additionally, specialized functions are available for calculating specific types of [powers](@ref DCPowerAnalysisAPI) for individual buses, branches, or generators.
+Additionally, we have specialized functions for computing specific [powers](@ref DCPowerAnalysisAPI) for buses and branches.
 
 ---
 
@@ -72,7 +72,7 @@ fieldnames(typeof(analysis.method.variable))
 ---
 
 ##### Variable Names
-Users have the option to define custom variable names for printing and writing equations, which can help present them in a more compact form. For example:
+Users have the option to define custom variable names for printing equations, which can help present them in a more compact form. For example:
 ```@example DCOptimalPowerFlow
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer; active = "P", angle = "θ")
 nothing # hide
@@ -222,7 +222,7 @@ It is important to note that bringing back `Generator 2` into service will also 
 ---
 
 ##### Active Power Piecewise Constraints
-In the context of active power modelling, the `piecewise` field serves as a reference to the inequality constraints related to linear piecewise cost functions. These constraints are created using the [`cost!`](@ref cost!) function with `active = 1` specified when dealing with piecewise linear cost functions comprising multiple segments. JuliaGrid takes care of establishing the appropriate inequality constraints for each segment of the linear piecewise cost:
+In the context of active power modelling, the `piecewise` field serves as a reference to the inequality constraints related to linear piecewise cost functions. These constraints are created using the [`cost!`](@ref cost!) function with `active = 1` specified when dealing with piecewise linear cost functions comprising multiple segments. JuliaGrid takes care of establishing the appropriate inequality constraints for each segment of the piecewise linear cost:
 ```@repl DCOptimalPowerFlow
 print(system.generator.label, analysis.method.constraint.piecewise.active)
 ```
@@ -465,6 +465,7 @@ print(system.bus.label, analysis.voltage.angle)
 Users retain the flexibility to reset these initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active power outputs of the generators and the initial bus voltage angles extracted from the `PowerSystem` type, employing the [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::DCOptimalPowerFlow)) function:
 ```@example DCOptimalPowerFlow
 setInitialPoint!(system, analysis)
+nothing # hide
 ```
 The primal initial values will now be identical to those that would be obtained if the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function were executed after all the updates have been applied, while all dual variable values will be removed.
 
@@ -475,6 +476,8 @@ After obtaining the solution from the DC optimal power flow, we can calculate po
 ```@example DCOptimalPowerFlowPower
 using JuliaGrid, JuMP # hide
 using HiGHS
+@default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 
@@ -494,8 +497,7 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, maxAct
 cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
 cost!(system; generator = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8])
 
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
-JuMP.set_silent(analysis.method.jump) # hide
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer; print = false)
 solve!(system, analysis)
 nothing # hide
 ```

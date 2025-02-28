@@ -64,7 +64,7 @@ cost!(system; generator = "Generator 3", active = 2, polynomial = [1.00; 20.0; 0
 nothing # hide
 ```
 
-After defining the power system data, we generate an AC model that includes essential vectors and matrices for analysis, such as the nodal admittance matrix. This model is automatically updated with data changes and can be shared across different analyses:
+After defining the power system data, we generate an AC model that includes essential vectors and matrices for analysis, such as the nodal admittance matrix:
 ```@example 4bus
 acModel!(system)
 
@@ -74,7 +74,7 @@ nothing # hide
 ---
 
 ##### Display Data Settings
-Before running simulations, we configure the data display settings, including the selection of displayed data elements and the numeric format for relevant power flow values.
+Before running simulations, we configure the data display settings, including the selection of displayed data elements and the numeric format for relevant power values.
 
 For bus-related data, we set:
 ```@example 4bus
@@ -100,7 +100,7 @@ nothing # hide
 ---
 
 ## Base Case Analysis
-First, we create the AC optimal power flow model and select the Ipopt solver. Next, we solve the model to determine bus voltage magnitudes and angles, along with the active and reactive power outputs of the generators. Afterward, we compute the remaining power values for buses and branches:
+First, we create the AC optimal power flow model and select the `Ipopt` solver. Next, we solve the model to determine bus voltage magnitudes and angles, along with the active and reactive power outputs of the generators. Afterward, we compute the remaining power values for buses and branches:
 ```julia 4bus
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)

@@ -735,22 +735,16 @@ nothing # hide
 
 The function stores the computed powers in the rectangular coordinate system. It calculates the following powers related to buses, branches, and generators:
 
-| Bus                                                         | Active                                          | Reactive                                        |
-|:------------------------------------------------------------|:------------------------------------------------|:------------------------------------------------|
-| [Injections](@ref BusInjectionsTutorials)                   | ``\mathbf{P} = [P_i]``                          | ``\mathbf{Q} = [Q_i]``                          |
-| [Generator injections](@ref GeneratorPowerInjectionsManual) | ``\mathbf{P}_\mathrm{p} = [P_{\mathrm{p}i}]``   | ``\mathbf{Q}_\mathrm{p} = [Q_{\mathrm{p}i}]``   |
-| [Shunt elements](@ref BusShuntElementTutorials)             | ``\mathbf{P}_\mathrm{sh} = [P_{\mathrm{sh}i}]`` | ``\mathbf{Q}_\mathrm{sh} = [Q_{\mathrm{sh}i}]`` |
-
-| Branch                                                     | Active                                         | Reactive                                       |
-|:-----------------------------------------------------------|:-----------------------------------------------|:-----------------------------------------------|
-| [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{P}_\mathrm{i} = [P_{ij}]``           | ``\mathbf{Q}_\mathrm{i} = [Q_{ij}]``           |
-| [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{P}_\mathrm{j} = [P_{ji}]``           | ``\mathbf{Q}_\mathrm{j} = [Q_{ji}]``           |
-| [Shunt elements](@ref BranchShuntElementsTutorials)        | ``\mathbf{P}_\mathrm{s} = [P_{\mathrm{s}ij}]`` | ``\mathbf{P}_\mathrm{s} = [P_{\mathrm{s}ij}]`` |
-| [Series elements](@ref BranchSeriesElementTutorials)       | ``\mathbf{P}_\mathrm{l} = [P_{\mathrm{l}ij}]`` | ``\mathbf{Q}_\mathrm{l} = [Q_{\mathrm{l}ij}]`` |
-
-| Generator                                   | Active                                         | Reactive                                      |
-|:--------------------------------------------|:-----------------------------------------------|:----------------------------------------------|
-| [Outputs](@ref GeneratorPowerOutputsManual) | ``\mathbf{P}_\mathrm{g} = [P_{\mathrm{g}i}]``  | ``\mathbf{Q}_\mathrm{g} = [Q_{\mathrm{g}i}]`` |
+| Type      | Power                                                       | Active                                         | Reactive                                       |
+|:----------|:------------------------------------------------------------|:-----------------------------------------------|:-----------------------------------------------|
+| Bus       | [Injections](@ref BusInjectionsTutorials)                   | ``\mathbf P = [P_i]``                          | ``\mathbf Q = [Q_i]``                          |
+| Bus       | [Generator injections](@ref GeneratorPowerInjectionsManual) | ``\mathbf P_\mathrm{p} = [P_{\mathrm{p}i}]``   | ``\mathbf Q_\mathrm{p} = [Q_{\mathrm{p}i}]``   |
+| Bus       | [Shunt elements](@ref BusShuntElementTutorials)             | ``\mathbf P_\mathrm{sh} = [P_{\mathrm{sh}i}]`` | ``\mathbf Q_\mathrm{sh} = [Q_{\mathrm{sh}i}]`` |
+| Branch    | [From-bus end flows](@ref BranchNetworkEquationsTutorials)  | ``\mathbf P_\mathrm{i} = [P_{ij}]``            | ``\mathbf Q_\mathrm{i} = [Q_{ij}]``            |
+| Branch    | [To-bus end flows](@ref BranchNetworkEquationsTutorials)    | ``\mathbf P_\mathrm{j} = [P_{ji}]``            | ``\mathbf Q_\mathrm{j} = [Q_{ji}]``            |
+| Branch    | [Shunt elements](@ref BranchShuntElementsTutorials)         | ``\mathbf P_\mathrm{s} = [P_{\mathrm{s}ij}]``  | ``\mathbf P_\mathrm{s} = [P_{\mathrm{s}ij}]``  |
+| Branch    | [Series elements](@ref BranchSeriesElementTutorials)        | ``\mathbf P_\mathrm{l} = [P_{\mathrm{l}ij}]``  | ``\mathbf Q_\mathrm{l} = [Q_{\mathrm{l}ij}]``  |
+| Generator | [Outputs](@ref GeneratorPowerOutputsManual)                 | ``\mathbf P_\mathrm{g} = [P_{\mathrm{g}i}]``   | ``\mathbf Q_\mathrm{g} = [Q_{\mathrm{g}i}]``   |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
@@ -863,15 +857,12 @@ nothing # hide
 
 The function stores the computed currents in the polar coordinate system. It calculates the following currents related to buses and branches:
 
-| Bus                                       | Magnitude              | Angle                    |
-|:------------------------------------------|:-----------------------|:-------------------------|
-| [Injections](@ref BusInjectionsTutorials) | ``\mathbf{I} = [I_i]`` | ``\bm{\psi} = [\psi_i]`` |
-
-| Branch                                                     | Magnitude                                      | Angle                                            |
-|:-----------------------------------------------------------|:-----------------------------------------------|:-------------------------------------------------|
-| [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{I}_\mathrm{i} = [I_{ij}]``           | ``\bm{\psi}_\mathrm{i} = [\psi_{ij}]``           |
-| [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{I}_\mathrm{j} = [I_{ji}]``           | ``\bm{\psi}_\mathrm{j} = [\psi_{ji}]``           |
-| [Series elements](@ref BranchSeriesElementTutorials)       | ``\mathbf{I}_\mathrm{l} = [I_{\mathrm{l}ij}]`` | ``\bm{\psi}_\mathrm{l} = [\psi_{\mathrm{l}ij}]`` |
+| Type      | Current                                                    | Magnitude                                     | Angle                                           |
+|:----------|:-----------------------------------------------------------|:----------------------------------------------|:------------------------------------------------|
+| Bus       | [Injections](@ref BusInjectionsTutorials)                  | ``\mathbf I = [I_i]``                         | ``\bm \psi = [\psi_i]``                         |
+| Branch    | [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf I_\mathrm{i} = [I_{ij}]``           | ``\bm \psi_\mathrm{i} = [\psi_{ij}]``           |
+| Branch    | [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf I_\mathrm{j} = [I_{ji}]``           | ``\bm \psi_\mathrm{j} = [\psi_{ji}]``           |
+| Branch    | [Series elements](@ref BranchSeriesElementTutorials)       | ``\mathbf I_\mathrm{l} = [I_{\mathrm{l}ij}]`` | ``\bm \psi_\mathrm{l} = [\psi_{\mathrm{l}ij}]`` |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).

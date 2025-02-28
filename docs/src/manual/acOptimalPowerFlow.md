@@ -4,7 +4,7 @@ JuliaGrid utilizes the [JuMP](https://jump.dev/JuMP.jl/stable/) package to const
 To perform the AC optimal power flow, we first need to have the `PowerSystem` type that has been created with the AC model. After that, create the `ACOptimalPowerFlow` type to establish the AC optimal power flow framework using the function:
 * [`acOptimalPowerFlow`](@ref acOptimalPowerFlow).
 
-To solve the AC optimal power flow problem and acquire bus voltage magnitudes and angles, and generator active and reactive power outputs, make use of the following function:
+To solve the AC optimal power flow problem and obtain generator active and reactive power outputs, as well as bus voltage magnitudes and angles, use the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)).
 
 ---
@@ -13,8 +13,7 @@ After obtaining the AC optimal power flow solution, JuliaGrid offers post-proces
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::ACPowerFlow)).
 
-Additionally, specialized functions are available for calculating specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators.
-
+Additionally, specialized functions are available for calculating specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses and branches.
 
 ---
 
@@ -65,7 +64,7 @@ JuMP.all_variables(analysis.method.jump)
 
 It is important to note that this is not a comprehensive set of optimization variables. When the cost function is defined as a piecewise linear function comprising multiple segments, as illustrated in the case of the active power output cost for `Generator 2`, JuliaGrid automatically generates helper optimization variables named `actwise` and `reactwise`, and formulates a set of linear constraints to effectively address these cost functions. For the sake of simplicity, we initially assume that `Generator 2` is out-of-service. Consequently, the helper variable is not included in the set of optimization variables. However, as we progress through this manual, we will activate the generator, introducing the helper variable and additional constraints to the optimization model.
 
-It is worth emphasizing that in instances where a piecewise linear cost function consists of only a single segment, as demonstrated by the reactive power output cost of `Generator 2`, the function is modeled as a standard linear function, obviating the need for additional helper optimization variables.
+It is worth emphasizing that in instances where a piecewise linear cost function consists of only a single segment, as demonstrated by the reactive power output cost of `Generator 2`, the function is modeled as a standard linear function, avoiding the need for additional helper optimization variables.
 
 Please be aware that JuliaGrid maintains references to all variables, which are categorized into six fields:
 ```@repl ACOptimalPowerFlow
@@ -75,7 +74,7 @@ fieldnames(typeof(analysis.method.variable))
 ---
 
 ##### Variable Names
-Users have the option to define custom variable names for printing and writing equations, which can help present them in a more compact form. For example:
+Users have the option to define custom variable names for printing equations, which can help present them in a more compact form. For example:
 ```@example ACOptimalPowerFlow
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; magnitude = "V", angle = "θ")
 nothing # hide
@@ -84,7 +83,7 @@ nothing # hide
 ---
 
 ##### Add Variables
-The user has the ability to easily add new variables to the defined AC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@variable) macro from the JuMP package:
+Users can easily add new variables to the defined AC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@variable) macro:
 ```@example ACOptimalPowerFlow
 JuMP.@variable(analysis.method.jump, newVariable)
 nothing # hide
@@ -184,7 +183,7 @@ print(system.branch.label, analysis.method.constraint.voltage.angle)
 !!! note "Info"
     Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
 
-Additionally, by employing the [`updateBus!`](@ref updateBus!) and [`updateBranch!`](@ref updateBranch!) functions, the user has the ability to modify these specific constraints:
+By employing the [`updateBus!`](@ref updateBus!) and [`updateBranch!`](@ref updateBranch!) functions, users have the ability to modify these constraints:
 ```@example ACOptimalPowerFlow
 updateBus!(system, analysis; label = "Bus 1", minMagnitude = 1.0, maxMagnitude = 1.0)
 updateBranch!(system, analysis; label = "Branch 1", minDiffAngle = -1.7, maxDiffAngle = 1.7)
@@ -269,7 +268,7 @@ print(system.generator.label, analysis.method.constraint.capability.reactive)
 ---
 
 ##### Power Piecewise Constraints
-In the context of cost modeling, the `piecewise` field acts as a reference to the inequality constraints associated with linear piecewise cost functions. These constraints are established using the [`cost!`](@ref cost!) function, with `active = 1` or `reactive = 1` specified when working with piecewise linear cost functions that consist of multiple segments.
+In cost modeling, the `piecewise` field serves as a reference to the inequality constraints associated with piecewise linear cost functions. These constraints are defined using the [`cost!`](@ref cost!) function with `active = 1` or `reactive = 1`.
 
 In our example, only the active power cost of `Generator 2` is modeled as a piecewise linear function with two segments, and JuliaGrid takes care of setting up the appropriate inequality constraints for each segment:
 ```@repl ACOptimalPowerFlow
@@ -332,7 +331,7 @@ In the provided example, the objective function to be minimized in order to obta
 JuMP.objective_function(analysis.method.jump)
 ```
 
-JuliaGrid also stores the objective function in a separate variable, which can be accessed by referring to the variable `analysis.objective`. In this variable, the objective function is organized in a way that separates the quadratic and nonlinear components of the objective function.
+The objective function is stored in the variable `analysis.objective`, where it is organized to separate its quadratic and nonlinear components.
 
 ---
 
@@ -535,7 +534,7 @@ Users retain the flexibility to reset initial primal and dual values to their de
 setInitialPoint!(system, analysis)
 nothing # hide
 ```
-The primal initial values will now be identical to those that would be obtained if the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function were executed after all the updates have been applied, , while all dual variable values will be removed.
+The primal initial values will now be identical to those that would be obtained if the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function were executed after all the updates have been applied, while all dual variable values will be removed.
 
 ---
 
@@ -566,8 +565,7 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, reacti
 cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
 cost!(system; generator = "Generator 2", active = 1, piecewise = [10 12.3; 14.7 16.8; 18 19])
 
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-JuMP.set_silent(analysis.method.jump) # hide
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; print = false)
 solve!(system, analysis)
 nothing # hide
 ```

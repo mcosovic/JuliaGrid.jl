@@ -46,7 +46,6 @@ nothing # hide
 ```
 At this stage, no active power flow constraints are imposed, but they will be introduced later in the example.
 
-
 Next, we define the `active` power outputs of the generators, which serve as initial values for the optimization variables. Generator outputs are constrained using `minActive` and `maxActive` keywords:
 ```@example 4bus
 @generator(label = "Generator ?")
@@ -65,7 +64,7 @@ cost!(system; generator = "Generator 3", active = 2, polynomial = [1.00; 20.0; 0
 nothing # hide
 ```
 
-Once the power system data is defined, we generate a DC model that includes key matrices and vectors for analysis, such as the nodal admittance matrix. This model is automatically updated when data changes and can be shared across multiple analyses:
+Once the power system data is defined, we generate a DC model that includes key matrices and vectors for analysis, such as the nodal admittance matrix:
 ```@example 4bus
 dcModel!(system)
 
@@ -85,7 +84,7 @@ nothing # hide
 ---
 
 ## Base Case Analysis
-The process starts by formulating the DC optimal power flow model and selecting the Ipopt solver. The optimization variables include bus voltage angles and generator active power outputs, denoted as `θ` and `Pg` for data printing:
+The process starts by formulating the DC optimal power flow model and selecting the `Ipopt` solver. The optimization variables include bus voltage angles and generator active power outputs, denoted as `θ` and `Pg`:
 ```@example 4bus
 analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; angle = "θ", active = "Pg")
 nothing # hide
@@ -96,7 +95,7 @@ The optimization problem being solved can then be printed:
 print(analysis.method.jump)
 ```
 
-Solving the DC optimal power flow model provides the bus voltage angles and generator active power outputs. The next step involves computing active power flows across buses and branches:
+Solving the DC optimal power flow model provides the bus voltage angles and generator active power outputs. Then, active powers across buses and branches are computed:
 ```julia 4bus
 solve!(system, analysis)
 power!(system, analysis)
