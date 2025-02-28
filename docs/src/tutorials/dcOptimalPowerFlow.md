@@ -129,12 +129,15 @@ Furthermore, it is worth noting that the function can be given simply as a const
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/cost_function_linear.svg" width="65%"/>
-        <p>Figure 1a: The linear cost function.</p>
+        <p>(a) The linear function.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/cost_function_quadratic.svg" width="65%"/>
-        <p>Figure 1b: The quadratic cost function.</p>
+        <p>(b) The quadratic function.</p>
     </div>
+    <p style="text-align: center; margin-top: -5px;">
+    Figure 1: Different types of polynomial cost functions that are typically used.
+    </p>
 </div>
 &nbsp;
 ```
@@ -158,12 +161,15 @@ The DC optimal power flow in JuliaGrid offers another option for defining cost f
 <div class="image-container">
     <div class="image-item">
         <img src="../../assets/cost_function_piecewise_one.svg" width="65%"/>
-        <p>Figure 2a: The piecewise linear function with one segment.</p>
+        <p>(a) One-segment function.</p>
     </div>
     <div class="image-item">
         <img src="../../assets/cost_function_piecewise_two.svg" width="65%"/>
-        <p>Figure 2b: The piecewise linear function with two segments.</p>
+        <p>(b) Two-segment function.</p>
     </div>
+    <p style="text-align: center; margin-top: -5px;">
+    Figure 2: Different types of piecewise linear cost functions that are typically used.
+    </p>
 </div>
 &nbsp;
 ```

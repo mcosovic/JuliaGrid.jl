@@ -23,10 +23,11 @@ Pkg.add("JuliaGrid")
 Please consider citing the following [preprint](https://arxiv.org/abs/2502.18229) if JuliaGrid contributes to your research or projects:
 ```bibtex
 @article{juliagrid,
-    title={JuliaGrid: An Open-Source Julia-Based Framework for Power System State Estimation},
-    author={M. Cosovic, O. Kundacina, M. Delalic, A. Teskeredzic, D. Raca, A. Mesanovic, D. Miskovic, D. Vukobratovic, A. Monti},
-    journal={arXiv preprint arXiv:2502.18229},
-    year={2025}
+   title={JuliaGrid: An Open-Source Julia-Based Framework for Power System State Estimation},
+   author={M. Cosovic, O. Kundacina, M. Delalic, A. Teskeredzic, D. Raca,
+           A. Mesanovic, D. Miskovic, D. Vukobratovic, A. Monti},
+   journal={arXiv preprint arXiv:2502.18229},
+   year={2025}
 }
 ```
 
