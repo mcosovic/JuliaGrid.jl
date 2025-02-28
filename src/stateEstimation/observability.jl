@@ -1,15 +1,15 @@
 """
     islandTopologicalFlow(system::PowerSystem, device::Measurement)
 
-The function utilizes a topological approach to detect flow observable islands, resulting
+The function utilizes a topological approach to detect flow-observable islands, resulting
 in the formation of disconnected and loop-free subgraphs. It is assumed that active and
 reactive power measurements are paired, indicating a standard observability analysis. In
 this analysis, islands formed by active power measurements correspond to those formed by
 reactive power measurements.
 
 # Arguments
-To define flow observable islands, this function necessitates the composite types
-`PowerSystem` and `Measurement`.
+To define flow-observable islands, this function needs the composite types `PowerSystem`
+and `Measurement`.
 
 # Returns
 The function returns an `Island` type, containing information about the islands:
@@ -45,8 +45,8 @@ end
 """
     islandTopological(system::PowerSystem, meter::Measurement)
 
-The function employs a topological method to identify maximal observable islands.
-Specifically, it employs active power measurements to pinpoint flow observable islands.
+The function employs a topological method to identify maximal-observable islands.
+Specifically, it employs active power measurements to pinpoint flow-observable islands.
 Subsequently, these islands are merged based on the available injection measurements.
 
 It is assumed that active and reactive power measurements are paired, indicating a
@@ -54,8 +54,8 @@ standard observability analysis. In this analysis, islands formed by active powe
 measurements correspond to those formed by reactive power measurements.
 
 # Arguments
-To define flow observable islands, this function necessitates the composite types
-`PowerSystem` and `Measurement`.
+To define flow observable islands, this function needs the composite types `PowerSystem`
+and `Measurement`.
 
 # Returns
 The function returns an `Island` type, containing information about the islands:
@@ -374,7 +374,7 @@ end
     restorationGram!(system::PowerSystem, device::Measurement, pseudo::Measurement,
         islands::Island; threshold)
 
-Upon identifying the `islands`, the function incorporates measurements from the available
+Upon identifying the `Island`, the function incorporates measurements from the available
 pseudo-measurements in the `pseudo` variable into the `device` variable to reinstate
 observability. This method relies on reduced coefficient matrices and the Gram matrix.
 
@@ -610,4 +610,245 @@ function pushIndirect!(jcb::SparseModel, fromIsland::Int64, toIsland::Int64)
     push!(jcb.row, jcb.idx)
     push!(jcb.col, toIsland)
     push!(jcb.val, -1)
+end
+
+"""
+    pmuPlacement(system::PowerSystem, optimizer; bridge, name, print)
+
+The function determines the optimal placement of PMUs through integer linear programming.
+It identifies the minimum set of PMUs required to ensure observability and a unique state
+estimator.
+
+The function accepts a `PowerSystem` type as input to establish the framework for finding
+the optimal PMU placement. If the `ac` field within the `PowerSystem` type is not yet
+created, the function automatically initiates an update process.
+
+Additionally, the `optimizer` argument is a crucial component for formulating and solving
+the optimization problem. Typically, using the HiGHS or GLPK solver is sufficient. For
+more detailed information, please refer to the
+[JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
+
+# Keywords
+The function accepts the following keywords:
+* `bridge`: controls the bridging mechanism (default: `false`),
+* `name`: handles the creation of string names (default: `false`),
+* `print`: controls solver output display (default: `true`).
+
+# Returns
+The function returns an instance of the `PlacementPMU` type, containing variables such as:
+* `bus`: Bus labels with indices marking the positions of PMUs at buses.
+* `from`: Branch labels with indices marking the positions of PMUs at from-bus ends.
+* `to`: Branch labels with indices marking the positions of PMUs at to-bus ends.
+
+Note that if a PMU is understood as a device that measures the bus voltage phasor and all
+branch current phasors incident to the bus, users only need the results stored in the `bus`
+variable. However, if a PMU is considered to measure individual phasor, then all required
+phasor measurements can be found in the `bus`, `from`, and `to` variables.
+
+# Example
+```jldoctest
+using HiGHS, Ipopt
+
+system = powerSystem("case14.h5")
+device = measurement()
+
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+current!(system, analysis)
+
+placement = pmuPlacement(system, HiGHS.Optimizer)
+
+@pmu(label = "PMU ?: !")
+for (bus, i) in placement.bus
+    Vi, θi = analysis.voltage.magnitude[i], analysis.voltage.angle[i]
+    addPmu!(system, device; bus = bus, magnitude = Vi, angle = θi)
+end
+for branch in keys(placement.from)
+    Iij, ψij = fromCurrent(system, analysis; label = branch)
+    addPmu!(system, device; from = branch, magnitude = Iij, angle = ψij)
+end
+for branch in keys(placement.to)
+    Iji, ψji = toCurrent(system, analysis; label = branch)
+    addPmu!(system, device; to = branch, magnitude = Iji, angle = ψji)
+end
+```
+"""
+function pmuPlacement(
+    system::PowerSystem,
+    (@nospecialize optimizerFactory);
+    bridge::Bool = false,
+    name::Bool = false,
+    print::Bool = true,
+)
+    bus = system.bus
+    branch = system.branch
+    ac = system.model.ac
+
+    placementPmu = PlacementPMU(
+        OrderedDict{template.system, Int64}(),
+        OrderedDict{template.system, Int64}(),
+        OrderedDict{template.system, Int64}()
+    )
+
+    model!(system, ac)
+    dropZeros!(ac)
+
+    jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
+
+    if !print
+        JuMP.set_silent(jump)
+    end
+
+    set_string_names_on_creation(jump, name)
+
+    placement = @variable(jump, 0 <= placement[i = 1:bus.number] <= 1, Int)
+
+    @inbounds for i = 1:bus.number
+        angleJacobian = @expression(jump, AffExpr())
+        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+            k = ac.nodalMatrix.rowval[j]
+            add_to_expression!(angleJacobian, placement[k])
+        end
+        @constraint(jump, angleJacobian >= 1)
+    end
+
+    @objective(jump, Min, sum(placement))
+    optimize!(jump)
+
+    @inbounds for i = 1:bus.number
+        if value(placement[i]) == 1
+            placementPmu.bus[iterate(bus.label, i)[1][1]] = i
+            for j = 1:branch.number
+                if branch.layout.status[j] == 1
+                    if branch.layout.from[j] == i
+                        placementPmu.from[iterate(system.branch.label, j)[1][1]] = j
+                    end
+                    if branch.layout.to[j] == i
+                        placementPmu.to[iterate(system.branch.label, j)[1][1]] = j
+                    end
+                end
+            end
+        end
+    end
+
+    return placementPmu
+end
+
+"""
+    pmuPlacement!(system::PowerSystem, device::Measurement, analysis::AC, optimizer;
+        varianceMagnitudeBus, varianceAngleBus,
+        varianceMagnitudeFrom, varianceAngleFrom,
+        varianceMagnitudeTo, varianceAngleTo,
+        noise, correlated, polar,
+        bridge, name, print)
+
+The function finds the optimal PMU placement by executing [pmuPlacement](@ref pmuPlacement).
+Then, based on the results from the `AC` type, it generates phasor measurements and
+integrates them into the `Measurement` type. If current values are missing in the `AC`
+type, the function calculates the associated currents required to form measurement values.
+
+# Keywords
+PMUs at the buses can be configured using:
+* `varianceMagnitudeBus` (pu or V): Variance of bus voltage magnitude measurements.
+* `varianceAngleBus` (rad or deg): Variance of bus voltage angle measurements.
+PMUs at the from-bus ends of the branches can be configured using:
+* `varianceMagnitudeFrom` (pu or A): Variance of current magnitude measurements.
+* `varianceAngleFrom` (rad or deg): Variance of current angle measurements.
+PMUs at the to-bus ends of the branches can be configured using:
+* `varianceMagnitudeTo` (pu or A): Variance of current magnitude measurements.
+* `varianceAngleTo` (rad or deg): Variance of current angle measurements.
+Settings for generating measurements include:
+* `noise`: Defines the method for generating the measurement means:
+  * `noise = true`: adds white Gaussian noise to the phasor values, using the defined variances,
+  * `noise = false`: uses the exact phasor values without adding noise.
+Settings for handling phasor measurements include:
+* `correlated`: Specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
+  * `correlated = true`: considers correlated errors,
+  * `correlated = false`: disregards correlations between errors.
+* `polar`: Chooses the coordinate system for including phasor measurements in AC state estimation:
+  * `polar = true`: adopts the polar coordinate system,
+  * `polar = false`: adopts the rectangular coordinate system.
+Settings for the optimization solver include:
+* `bridge`: controls the bridging mechanism (default: `false`),
+* `name`: handles the creation of string names (default: `false`),
+* `print`: controls solver output display (default: `true`).
+
+# Updates
+The function updates the `pmu` field of the `Measurement` composite type.
+
+# Returns
+The function returns an instance of the `PlacementPMU` type, containing variables such as:
+* `bus`: Bus labels with indices marking the positions of PMUs at buses.
+* `from`: Branch labels with indices marking the positions of PMUs at from-bus ends.
+* `to`: Branch labels with indices marking the positions of PMUs at to-bus ends.
+
+# Example
+```jldoctest
+using HiGHS, Ipopt
+
+system = powerSystem("case14.h5")
+device = measurement()
+
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+current!(system, analysis)
+
+pmuPlacement!(system, device, analysis, HiGHS.Optimizer)
+```
+"""
+function pmuPlacement!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::AC,
+    (@nospecialize optimizerFactory);
+    bridge::Bool = false,
+    name::Bool = false,
+    print::Bool = true,
+    varianceMagnitudeBus::FltIntMiss = missing,
+    varianceAngleBus::FltIntMiss = missing,
+    varianceMagnitudeFrom::FltIntMiss = missing,
+    varianceAngleFrom::FltIntMiss = missing,
+    varianceMagnitudeTo::FltIntMiss = missing,
+    varianceAngleTo::FltIntMiss = missing,
+    noise::Bool = template.pmu.noise,
+    correlated::Bool = template.pmu.correlated,
+    polar::Bool = template.pmu.polar
+)
+    placement = pmuPlacement(system, optimizerFactory; bridge, name, print)
+    errorVoltage(analysis.voltage.magnitude)
+
+    for (bus, idx) in placement.bus
+        Vᵢ, θᵢ = analysis.voltage.magnitude[idx], analysis.voltage.angle[idx]
+        addPmu!(
+            system, device; bus = bus, magnitude = Vᵢ, angle = θᵢ,
+            varianceMagnitude = varianceMagnitudeBus, varianceAngle = varianceAngleBus,
+            noise, correlated, polar
+        )
+    end
+    for (branch, idx) in placement.from
+        if isempty(analysis.current.from.magnitude)
+            Iᵢⱼ, ψᵢⱼ = fromCurrent(system, analysis; label = branch)
+        else
+            Iᵢⱼ, ψᵢⱼ = analysis.current.from.magnitude[idx], analysis.current.from.angle[idx]
+        end
+        addPmu!(
+            system, device; from = branch, magnitude = Iᵢⱼ, angle = ψᵢⱼ,
+            varianceMagnitude = varianceMagnitudeFrom, varianceAngle = varianceAngleFrom,
+            noise, correlated, polar
+        )
+    end
+    for (branch, idx) in placement.to
+        if isempty(analysis.current.to.magnitude)
+            Iⱼᵢ, ψⱼᵢ = toCurrent(system, analysis; label = branch)
+        else
+            Iⱼᵢ, ψⱼᵢ = analysis.current.to.magnitude[idx], analysis.current.to.angle[idx]
+        end
+        addPmu!(
+            system, device; to = branch, magnitude = Iⱼᵢ, angle = ψⱼᵢ,
+            varianceMagnitude = varianceMagnitudeTo, varianceAngle = varianceAngleTo,
+            noise, correlated, polar
+        )
+    end
+
+    return placement
 end

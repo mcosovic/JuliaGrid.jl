@@ -72,15 +72,17 @@ addVarmeter!(system, device; label = "Meter 4", to = "Branch 6", reactive = 0.3)
 nothing # hide
 ```
 
-Attempting to solve nonlinear state estimation with these measurements would not be possible, as the gain matrix would be singular. The same issue arises with DC state estimation. To prevent this, users can perform observability analysis, which adds non-redundant measurements to ensure a nonsingular gain matrix and a unique state estimator.
+Attempting to solve AC state estimation with these measurements would not be possible, as the gain matrix would be singular. The same issue arises with DC state estimation. To prevent this, users can perform observability analysis, which adds non-redundant measurements to ensure a nonsingular gain matrix and a unique state estimator.
 
-Observability analysis begins with identifying observable islands. We have the ability to identify both flow observable and maximal observable islands, each of which can be used as the foundation for the restoration step. To provide a comprehensive analysis, we will explore both types of islands. In the first step, we focus on determining the flow observable islands:
+Observability analysis begins with identifying observable islands. We have the ability to identify both flow-observable and maximal-observable islands, each of which can be used as the foundation for the restoration step. To provide a comprehensive analysis, we will explore both types of islands.
+
+In the first step, we focus on determining the flow-observable islands:
 ```@example 6bus
 islands = islandTopologicalFlow(system, device)
 nothing # hide
 ```
 
-As the result, four flow observable islands are identified:
+As the result, four flow-observable islands are identified:
 ```@repl 6bus
 islands.island
 nothing # hide
@@ -90,33 +92,33 @@ The first observable island consists of `Bus 1` and `Bus 2`, the second island i
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/observability/6bus_flow.svg" width="430"/>
-    <p>Figure 3: Flow observable islands in the 6-bus power system.</p>
+    <p>Figure 3: Flow-observable islands in the 6-bus power system.</p>
 </div>
 &nbsp;
 ```
 
-In addition to flow islands, we can also identify maximal observable islands:
+In addition to flow islands, we can also identify maximal-observable islands:
 ```@example 6bus
 islands = islandTopological(system, device)
 nothing # hide
 ```
 
-The results reveal the identification of two maximal observable islands:
+The results reveal the identification of two-maximal observable islands:
 ```@repl 6bus
 islands.island
 nothing # hide
 ```
 
-As observed, the devices `Meter 2` and `Meter 3` together merge the first, second, and third flow observable islands into one, as shown in Figure 4.
+As observed, the devices `Meter 2` and `Meter 3` together merge the first, second, and third flow-observable islands into one, as shown in Figure 4.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/observability/6bus_maximal.svg" width="430"/>
-    <p>Figure 4: Maximal observable islands in the 6-bus power system.</p>
+    <p>Figure 4: Maximal-observable islands in the 6-bus power system.</p>
 </div>
 &nbsp;
 ```
 
-From the standpoint of island identification, detecting power flow islands requires less computational effort compared to identifying maximal observable islands. However, when it comes to restoring observability, the process involving power flow islands tends to be more computationally demanding than with maximal observable islands.
+From the standpoint of island identification, detecting flow-observable islands requires less computational effort compared to identifying maximal-observable islands. However, when it comes to restoring observability, the process involving flow islands tends to be more computationally demanding than with maximal islands.
 
 ---
 
@@ -140,12 +142,12 @@ nothing # hide
 ```
 This function identifies the minimal set of pseudo-measurements needed to make the system observable, which in this case is `Pseudo 2`. This pseudo-measurement is then transferred to the measurement model.
 
-As a result, the final set of wattmeters measuring active power is:
+As a result, the final set of wattmeters used for measuring active power consists of:
 ```@example 6bus
 printWattmeterData(system, device)
 ```
 
-Likewise, the final set of varmeters measuring reactive power is:
+Likewise, the final set of varmeters used for measuring reactive power consists of:
 ```@example 6bus
 printVarmeterData(system, device)
 ```
@@ -160,7 +162,7 @@ islands.island
 nothing # hide
 ```
 
-To proceed with the nonlinear state estimation algorithm, we need one additional step to make the state estimation solvable. Specifically, it is crucial to ensure that the system has at least one bus voltage magnitude measurement. This requirement stems from the fact that observable islands are identified using wattmeters, which estimate voltage angles. Since the voltage angle at the slack bus is already known, the same approach should be applied to bus voltage magnitudes. To fulfill this condition, we add the following measurement:
+To proceed with the AC state estimation algorithm, we need one additional step to make the state estimation solvable. Specifically, it is crucial to ensure that the system has at least one bus voltage magnitude measurement. This requirement stems from the fact that observable islands are identified using wattmeters, which estimate voltage angles. Since the voltage angle at the slack bus is already known, the same approach should be applied to bus voltage magnitudes. To fulfill this condition, we add the following measurement:
 ```@example 6bus
 addVoltmeter!(system, device; label = "Pseudo 3", bus = "Bus 1", magnitude = 1.0)
 nothing # hide
@@ -206,13 +208,15 @@ The configuration of phasor measurements includes voltage phasor measurements at
 keys(placement.from)
 nothing # hide
 ```
-To complete the measurement setup, the set should also include current phasor measurements at the to-bus ends of the branches, as specified in the following information:
+To complete the measurement setup, the set should also include current phasor measurements at the to-bus ends of the branches, as specified in the following:
 ```@repl 6bus
 keys(placement.to)
 nothing # hide
 ```
 
-These variables provide users with a convenient way to define phasor measurement values, whether based on AC power flow or AC optimal power flow analyses, which have been thoroughly explored in state estimation examples. Additionally, users have the option to manually specify measurement values, an example of this approach is presented below:
+These variables provide users with a convenient way to define phasor measurement values, whether based on AC power flow or AC optimal power flow analyses, which have been explored in [PMU state estimation](@ref PMUStateEstimationExamples) example.
+
+However, users have the option to manually specify phasor measurement values:
 ```@example 6bus
 pmu = measurement()
 

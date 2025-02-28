@@ -1,20 +1,20 @@
 # [Observability Analysis](@id ObservabilityAnalysisManual)
-Observability analysis can preceeds to AC state estimation and DC state estimation. The observability analysis determines the existence and uniqueness of the solution. In cases where a unique solution is not guaranteed, it identifies observable islands and prescribes an additional set of measurements to achieve full observability.
+Observability analysis can typically be performed prior to executing the state estimation algorithm, and its primary task is to ensure the existence of a unique state estimator. In other words, the system of equations used in the state estimation algorithm should be solvable.
 
-Users can perform observability analysis to detect two types of islands, flow and maximal observable islands:
+Traditionally, observability analysis, which involves identifying observable islands and restoring observability using set of pseudo-measurements, can be performed before both AC and DC state estimation. In this context, users can detect two types of observable islands: flow islands and maximal islands:
 * [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Measurement)),
 * [`islandTopological`](@ref islandTopological(::PowerSystem, ::Measurement)).
 
-Once islands are identified, observability can be restored by applying:
+Once observable islands are identified, observability can be restored by applying:
 * [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)).
 
-The optimal PMU placement algorithm can also be viewed from the perspective of observability, as it determines the minimal set of PMUs required to make the system observable and guarantee a unique solution in AC and PMU state estimation, regardless of other measurements:
+Additionally, the optimal PMU placement algorithm can also be viewed from the perspective of observability, as it determines the minimal set of PMUs required to make the system observable and guarantee a unique solution in AC and PMU state estimation, regardless of other measurements:
 * [`pmuPlacement`](@ref pmuPlacement).
 
 ---
 
 ## Identification of Observable Islands
-The first step in the observability analysis process is to define observable islands. JuliaGrid offers two distinct options for identifying these islands: flow observable islands and maximal observable islands. The choice depends on the power system's structure and available measurements. Identifying only flow observable islands simplifies the island detection process but makes the restoration function more complex.
+The first step in the process is to define observable islands. JuliaGrid offers two distinct options for identifying these islands: flow-observable islands and maximal-observable islands. The choice depends on the power system's structure and available measurements. Identifying only flow-observable islands simplifies the island detection process but makes the restoration function more complex.
 
 Let us begin by defining a power system with measurements at specific locations:
 ```@example ACSEObservabilityAnalysis
@@ -70,14 +70,14 @@ JuliaGrid employs standard observability analysis performed on the linear decoup
 
 ---
 
-##### Flow Observable Islands
-Now, let us identify flow observable islands:
+##### Flow-Observable Islands
+Now, let us identify flow-observable islands:
 ```@example ACSEObservabilityAnalysis
 islands = islandTopologicalFlow(system, device)
 nothing # hide
 ```
 
-As a result, four flow observable islands are identified: `Bus 1` and `Bus 2` form the first island, `Bus 3` and `Bus 4` form the second island, `Bus 5` and `Bus 6` constitute the third island, while `Bus 7` forms the fourth island:
+As a result, four flow-observable islands are identified: `Bus 1` and `Bus 2` form the first island, `Bus 3` and `Bus 4` form the second island, `Bus 5` and `Bus 6` constitute the third island, while `Bus 7` forms the fourth island:
 ```@repl ACSEObservabilityAnalysis
 islands.island
 nothing # hide
@@ -85,19 +85,19 @@ nothing # hide
 
 ---
 
-##### Maximal Observable Islands
-Following that, we will instruct the user on obtaining maximal observable islands:
+##### Maximal-Observable Islands
+Following that, we will instruct the user on obtaining maximal-observable islands:
 ```@example ACSEObservabilityAnalysis
 islands = islandTopological(system, device)
 nothing # hide
 ```
 
-The outcome reveals the identification of two maximal observable islands:
+The outcome reveals the identification of two maximal-observable islands:
 ```@repl ACSEObservabilityAnalysis
 islands.island
 nothing # hide
 ```
-It is evident that upon comparing this result with the flow islands, the merging of the two injection measurements at `Bus 2` and `Bus 3` consolidated the first, second, and third flow observable islands into a single island.
+It is evident that upon comparing this result with the flow-observable islands, the merging of the two injection measurements at `Bus 2` and `Bus 3` consolidated the first, second, and third flow-observable islands into a single island.
 
 ---
 
@@ -137,7 +137,7 @@ nothing # hide
 ```
 Consequently, the power system becomes observable, allowing the user to proceed with forming the AC state estimation model and solving it. Ensuring the observability of the system does not guarantee obtaining accurate estimates of the state variables. Numerical ill-conditioning may adversely impact the state estimation algorithm. However, in most cases, efficient estimation becomes feasible when the system is observable [korres2011observability](@cite).
 
-Additionally, it is worth mentioning that restoration might encounter difficulties due to the default zero pivot threshold set at `1e-5`. This threshold can be modified using the [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)) function.
+It is also important to note that restoration may face challenges if an inappropriate zero pivot threshold value is selected. By default, this threshold is set to `1e-5`, but it can be adjusted using the [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)) function.
 
 !!! note "Info"
     During the restoration step, if users define bus phasor measurements, these measurements will be considered. Consequently, the system may achieve observability even if multiple islands persist.
@@ -206,6 +206,6 @@ addPmu!(system, device; to = "Branch 2", magnitude = 1.17, angle = 0.16)
 ```
 
 !!! note "Info"
-    For different approaches to defining measurements after determining the optimal PMU placement, refer to the [PMU State Estimation](@ref PhasorMeasurementsManual) manual.
+    For different approaches to defining measurements after determining the optimal PMU placement, refer to the [PMU State Estimation](@ref PhasorMeasurementsManual) manual or the API documentation for the [`pmuPlacement!`](@ref pmuPlacement!) function.
 
 
