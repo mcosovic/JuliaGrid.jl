@@ -563,7 +563,7 @@ The function stores the computed powers in the rectangular coordinate system. It
 | Bus    | [Shunt elements](@ref BusShuntElementTutorials)                | ``\mathbf P_\mathrm{sh} = [P_{\mathrm{sh}i}]`` | ``\mathbf Q_\mathrm{sh} = [Q_{\mathrm{sh}i}]`` |
 | Branch | [From-bus end flows](@ref BranchNetworkEquationsTutorials)     | ``\mathbf P_\mathrm{i} = [P_{ij}]``            | ``\mathbf Q_\mathrm{i} = [Q_{ij}]``            |
 | Branch | [To-bus end flows](@ref BranchNetworkEquationsTutorials)       | ``\mathbf P_\mathrm{j} = [P_{ji}]``            | ``\mathbf Q_\mathrm{j} = [Q_{ji}]``            |
-| Branch | [Shunt elements](@ref BranchShuntElementsTutorials)            | ``\mathbf P_\mathrm{s} = [P_{\mathrm{s}ij}]``  | ``\mathbf P_\mathrm{s} = [P_{\mathrm{s}ij}]``  |
+| Branch | [Shunt elements](@ref BranchShuntElementsTutorials)            | ``\mathbf P_\mathrm{s} = [P_{\mathrm{s}ij}]``  | ``\mathbf Q_\mathrm{s} = [Q_{\mathrm{s}ij}]``  |
 | Branch | [Series elements](@ref BranchSeriesElementTutorials)           | ``\mathbf P_\mathrm{l} = [P_{\mathrm{l}ij}]``  | ``\mathbf Q_\mathrm{l} = [Q_{\mathrm{l}ij}]``  |
 
 !!! note "Info"

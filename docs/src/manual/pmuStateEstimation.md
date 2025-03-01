@@ -61,7 +61,7 @@ device = measurement()
 nothing # hide
 ```
 
-JuliaGrid enables the determination of the minimal number of PMUs and the formation of phasor measurements using AC power flow data to ensure system observability through the [`pmuPlacement!`](@ref pmuPlacement!) function:
+JuliaGrid allows users to determine the minimum number of PMUs needed for observability while also generating phasor measurements based on results from AC power flow through the [`pmuPlacement!`](@ref pmuPlacement!) function:
 ```@example PMUOptimalPlacement
 using HiGHS
 
@@ -69,6 +69,8 @@ using HiGHS
 placement = pmuPlacement!(system, device, analysis, HiGHS.Optimizer; print = false)
 nothing # hide
 ```
+Note that users can also generate phasor measurements using results from AC optimal power flow.
+
 
 The `placement` variable contains data regarding the optimal placement of measurements. In this instance, installing a PMU at `Bus 2` renders the system observable:
 ```@repl PMUOptimalPlacement
@@ -81,7 +83,7 @@ keys(placement.from)
 keys(placement.to)
 ```
 
-For example, we can observe the obtained set of measurement values:
+Finally, we can observe the obtained set of measurement values:
 ```@repl PMUOptimalPlacement
 print(device.pmu.label, device.pmu.magnitude.mean, device.pmu.angle.mean)
 ```
@@ -261,7 +263,7 @@ In JuliaGrid, the assignment of initial primal values for optimization variables
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})) function. It is important to note that JuliaGrid utilizes the provided data to set initial primal values in the rectangular coordinate system.
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})) function. It is important to note that JuliaGrid utilizes the provided data to set initial primal values in the rectangular coordinate system. Additionally, the [setInitialPoint!](@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation)) function allows users to configure the initial point as required.
 
 ---
 

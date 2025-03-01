@@ -763,7 +763,7 @@ Jacobian expressions associated with the branch current magnitude function ``h_{
 ---
 
 ## [Weighted Least-Squares Estimation](@id ACSEWLSStateEstimationTutorials)
-Given the available set of measurements ``\mathcal M``, the weighted least-squares estimator ``\hat{\mathbf x}`` can be found using the Gauss-Newton method:
+Given the available set of measurements ``\mathcal M``, the weighted least-squares (WLS) estimator ``\hat{\mathbf x}`` can be found using the Gauss-Newton method:
 ```math
 \begin{gathered}
 		\Big[\mathbf J (\mathbf x^{(\nu)})^T \bm \Sigma^{-1} \mathbf J (\mathbf x^{(\nu)})\Big] \mathbf \Delta \mathbf x^{(\nu)} =
@@ -1083,8 +1083,8 @@ This section outlines the method as described in [aburbook; Sec. 6.5](@cite). He
 Subsequently, the LAV state estimator is derived as the solution to the optimization problem:
 ```math
   \begin{aligned}
-    \text{minimize}& \;\;\; \sum_{i \in \mathcal{M}} |r_i|\\
-    \text{subject\;to}& \;\;\; z_i - h_i(\mathbf x) =  r_i, \;\;\; \forall i \in \mathcal{M},
+    \text{minimize}& \;\;\; \sum_{i \in \mathcal M} |r_i|\\
+    \text{subject\;to}& \;\;\; z_i - h_i(\mathbf x) =  r_i, \;\;\; \forall i \in \mathcal M,
   \end{aligned}
 ```
 where ``r_i`` represents the ``i``-th measurement residual. Let ``\eta_i`` be defined in a manner that ensures:
@@ -1122,7 +1122,7 @@ that is:
   \end{aligned}
 ```
 
-Next, we define a vector of state variables according to two additional nonnegative vectors ``\overline{\mathbf x}  \in \mathbb {R}_{\ge 0}^{n_\text{u}}`` and ``\underline{\mathbf x} \in \mathbb {R}_{\ge 0}^{n_\text{u}}``, which satisfy the following relationships:
+Next, we define a vector of state variables according to two additional nonnegative vectors ``\overline{\mathbf x} \in \mathbb {R}_{\ge 0}^s`` and ``\underline{\mathbf x} \in \mathbb {R}_{\ge 0}^s``, which satisfy the following relationships:
 ```math
     \mathbf x = \overline{\mathbf x} - \underline{\mathbf x}
 ```
@@ -1130,9 +1130,9 @@ Next, we define a vector of state variables according to two additional nonnegat
 Hence, the optimization problem can be written:
 ```math
   \begin{aligned}
-    \text{minimize}& \;\;\; \sum_{i \in \mathcal{M}} (\overline{r}_i + \underline{r}_i) \\
-    \text{subject\;to}  & \;\;\; h_i(\overline{\mathbf x} - \underline{\mathbf x}) + \overline{r}_i - \underline{r}_i = z_i, \;\;\; \forall i \in \mathcal{M} \\
-                        & \;\;\; \overline{r}_i \geq  0, \; \underline{r}_i \geq  0, \;\;\; \forall i \in \mathcal{M} \\
+    \text{minimize}& \;\;\; \sum_{i \in \mathcal M} (\overline{r}_i + \underline{r}_i) \\
+    \text{subject\;to}  & \;\;\; h_i(\overline{\mathbf x} - \underline{\mathbf x}) + \overline{r}_i - \underline{r}_i = z_i, \;\;\; \forall i \in \mathcal M \\
+                        & \;\;\; \overline{r}_i \geq  0, \; \underline{r}_i \geq  0, \;\;\; \forall i \in \mathcal M \\
                         & \;\;\; \overline{\mathbf x} \succeq \mathbf 0, \; \underline{\mathbf x} \succeq \mathbf 0.
   \end{aligned}
 ```
@@ -1157,7 +1157,7 @@ As a result, we obtain optimal values for the four non-negative variables, while
     \hat{\mathbf x} = \overline{\mathbf x} - \underline{\mathbf x}.
 ```
 
-Users can retrieve the estimated bus voltage magnitudes ``\hat{\mathbf V} = [\hat{V}_i]`` and angles ``\hat{\bm {\Theta}} = [\hat{\theta}_i]``, ``i \in \mathcal{N}``, using:
+Users can retrieve the estimated bus voltage magnitudes ``\hat{\mathbf V} = [\hat{V}_i]`` and angles ``\hat{\bm \Theta} = [\hat{\theta}_i]``, ``i \in \mathcal N``, using:
 ```@repl ACSETutorial
 𝐕 = analysis.voltage.magnitude
 𝚯 = analysis.voltage.angle
@@ -1174,15 +1174,15 @@ nothing # hide
 
 The function stores the computed powers in the rectangular coordinate system. It calculates the following powers related to buses and branches:
 
-| Type   | Power                                                         | Active                                          | Reactive                                        |
-|:-------|:--------------------------------------------------------------|:------------------------------------------------|:------------------------------------------------|
-| Bus    | [Injections](@ref BusInjectionsTutorials)                     | ``\mathbf{P} = [P_i]``                          | ``\mathbf{Q} = [Q_i]``                          |
-| Bus    | [Generator injections](@ref ACGeneratorPowerInjectionsManual) | ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``     | ``\mathbf{Q}_{\text{p}} = [Q_{\text{p}i}]``     |
-| Bus    | [Shunt elements](@ref BusShuntElementTutorials)               | ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]`` | ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]`` |
-| Branch | [From-bus end flows](@ref BranchNetworkEquationsTutorials)    | ``\mathbf{P}_{\text{i}} = [P_{ij}]``            | ``\mathbf{Q}_{\text{i}} = [Q_{ij}]``            |
-| Branch | [To-bus end flows](@ref BranchNetworkEquationsTutorials)      | ``\mathbf{P}_{\text{j}} = [P_{ji}]``            | ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``            |
-| Branch | [Shunt elements](@ref BranchShuntElementsTutorials)           | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]``    | ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]``    |
-| Branch | [Series elements](@ref BranchSeriesElementTutorials)          | ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]``    | ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``    |
+| Type   | Power                                                         | Active                                           | Reactive                                         |
+|:-------|:--------------------------------------------------------------|:-------------------------------------------------|:-------------------------------------------------|
+| Bus    | [Injections](@ref BusInjectionsTutorials)                     | ``\mathbf P = [P_i]``                            | ``\mathbf Q = [Q_i]``                            |
+| Bus    | [Generator injections](@ref ACGeneratorPowerInjectionsManual) | ``\mathbf P_\mathrm{p} = [P_{\mathrm{p}i}]``     | ``\mathbf Q_\mathrm{p} = [Q_{\mathrm{p}i}]``     |
+| Bus    | [Shunt elements](@ref BusShuntElementTutorials)               | ``\mathbf P_\mathrm{sh} = [{P}_{\mathrm{sh}i}]`` | ``\mathbf Q_\mathrm{sh} = [{Q}_{\mathrm{sh}i}]`` |
+| Branch | [From-bus end flows](@ref BranchNetworkEquationsTutorials)    | ``\mathbf P_\mathrm{i} = [P_{ij}]``              | ``\mathbf Q_\mathrm{i} = [Q_{ij}]``              |
+| Branch | [To-bus end flows](@ref BranchNetworkEquationsTutorials)      | ``\mathbf P_\mathrm{j} = [P_{ji}]``              | ``\mathbf Q_\mathrm{j} = [Q_{ji}]``              |
+| Branch | [Shunt elements](@ref BranchShuntElementsTutorials)           | ``\mathbf P_\mathrm{s} = [P_{\mathrm{s}ij}]``    | ``\mathbf Q_\mathrm{s} = [Q_{\mathrm{s}ij}]``    |
+| Branch | [Series elements](@ref BranchSeriesElementTutorials)          | ``\mathbf P_\mathrm{l} = [P_{\mathrm{l}ij}]``    | ``\mathbf Q_\mathrm{l} = [Q_{\mathrm{l}ij}]``    |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
@@ -1199,15 +1199,15 @@ The function stores the computed powers in the rectangular coordinate system. It
 ----
 
 ##### [Generator Power Injections](@id ACGeneratorPowerInjectionsManual)
-We can calculate the active and reactive power injections supplied by generators at each bus ``i \in \mathcal{N}`` by summing the active and reactive power injections and the active and reactive power demanded by consumers at each bus:
+We can calculate the active and reactive power injections supplied by generators at each bus ``i \in \mathcal N`` by summing the active and reactive power injections and the active and reactive power demanded by consumers at each bus:
 ```math
   \begin{aligned}
-    P_{\text{p}i} &= P_i + P_{\text{d}i}\\
-    Q_{\text{p}i} &= Q_i + Q_{\text{d}i}.
+    P_{\mathrm{p}i} &= P_i + P_{\mathrm{d}i}\\
+    Q_{\mathrm{p}i} &= Q_i + Q_{\mathrm{d}i}.
   \end{aligned}
 ```
 
-The active and reactive power injections from the generators at each bus are stored as vectors, denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]`` and ``\mathbf{Q}_{\text{p}} = [Q_{\text{p}i}]``, which can be obtained using:
+The active and reactive power injections from the generators at each bus are stored as vectors, denoted by ``\mathbf{P}_\mathrm{p} = [P_{\mathrm{p}i}]`` and ``\mathbf{Q}_\mathrm{p} = [Q_{\mathrm{p}i}]``, which can be obtained using:
 ```@repl ACSETutorial
 𝐏ₚ = analysis.power.supply.active
 𝐐ₚ = analysis.power.supply.reactive
@@ -1216,7 +1216,7 @@ The active and reactive power injections from the generators at each bus are sto
 ---
 
 ##### Power at Bus Shunt Elements
-[Active and reactive powers](@ref BusShuntElementTutorials) associated with the shunt elements at each bus are represented by the vectors ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]`` and ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]``. To retrieve these powers in JuliaGrid, use the following commands:
+[Active and reactive powers](@ref BusShuntElementTutorials) associated with the shunt elements at each bus are represented by the vectors ``\mathbf{P}_\mathrm{sh} = [{P}_{\mathrm{sh}i}]`` and ``\mathbf{Q}_\mathrm{sh} = [{Q}_{\mathrm{sh}i}]``. To retrieve these powers in JuliaGrid, use the following commands:
 ```@repl ACSETutorial
 𝐏ₛₕ = analysis.power.shunt.active
 𝐐ₛₕ = analysis.power.shunt.reactive
@@ -1225,13 +1225,13 @@ The active and reactive power injections from the generators at each bus are sto
 ---
 
 ##### Power Flows
-The resulting [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at each from-bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
+The resulting [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at each from-bus end are stored as the vectors ``\mathbf{P}_\mathrm{i} = [P_{ij}]`` and ``\mathbf{Q}_\mathrm{i} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
 ```@repl ACSETutorial
 𝐏ᵢ = analysis.power.from.active
 𝐐ᵢ = analysis.power.from.reactive
 ```
 
-Similarly, the vectors of [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at the to-bus end are stored as ``\mathbf{P}_{\text{j}} = [P_{ji}]`` and ``\mathbf{Q}_{\text{j}} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
+The vectors of [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at the to-bus end are stored as ``\mathbf{P}_\mathrm{j} = [P_{ji}]`` and ``\mathbf{Q}_\mathrm{j} = [Q_{ji}]``, respectively, and can be retrieved using the following code:
 ```@repl ACSETutorial
 𝐏ⱼ = analysis.power.to.active
 𝐐ⱼ = analysis.power.to.reactive
@@ -1240,7 +1240,7 @@ Similarly, the vectors of [active and reactive power flows](@ref BranchNetworkEq
 ---
 
 ##### Power at Branch Shunt Elements
-[Active and reactive powers](@ref BranchShuntElementsTutorials) associated with the branch shunt elements at each branch are represented by the vectors ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` and ``\mathbf{Q}_{\text{s}} = [Q_{\text{s}ij}]``. We can retrieve these values using the following code:
+[Active and reactive powers](@ref BranchShuntElementsTutorials) associated with the branch shunt elements at each branch are represented by the vectors ``\mathbf{P}_\mathrm{s} = [P_{\mathrm{s}ij}]`` and ``\mathbf{Q}_\mathrm{s} = [Q_{\mathrm{s}ij}]``. We can retrieve these values using the following code:
 ```@repl ACSETutorial
 𝐏ₛ = analysis.power.charging.active
 𝐐ₛ = analysis.power.charging.reactive
@@ -1249,7 +1249,7 @@ Similarly, the vectors of [active and reactive power flows](@ref BranchNetworkEq
 ---
 
 ##### Power at Branch Series Elements
-[Active and reactive powers](@ref BranchSeriesElementTutorials) associated with the branch series element at each branch are represented by the vectors ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` and ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``. We can retrieve these values using the following code:
+[Active and reactive powers](@ref BranchSeriesElementTutorials) associated with the branch series element at each branch are represented by the vectors ``\mathbf{P}_\mathrm{l} = [P_{\mathrm{l}ij}]`` and ``\mathbf{Q}_\mathrm{l} = [Q_{\mathrm{l}ij}]``. We can retrieve these values using the following code:
 ```@repl ACSETutorial
 𝐏ₗ = analysis.power.series.active
 𝐐ₗ = analysis.power.series.reactive
@@ -1266,12 +1266,12 @@ nothing # hide
 
 The function stores the computed currents in the polar coordinate system. It calculates the following currents related to buses and branches:
 
-| Type   | Current                                                    | Magnitude                                    | Angle                                          |
-|:-------|:-----------------------------------------------------------|:---------------------------------------------|:-----------------------------------------------|
-| Bus    | [Injections](@ref BusInjectionsTutorials)                  | ``\mathbf{I} = [I_i]``                       | ``\bm{\psi} = [\psi_i]``                       |
-| Branch | [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf{I}_{\text{i}} = [I_{ij}]``         | ``\bm{\psi}_{\text{i}} = [\psi_{ij}]``         |
-| Branch | [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf{I}_{\text{j}} = [I_{ji}]``         | ``\bm{\psi}_{\text{j}} = [\psi_{ji}]``         |
-| Branch | [Series elements](@ref BranchSeriesElementTutorials)       | ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]`` | ``\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]`` |
+| Type   | Current                                                    | Magnitude                                     | Angle                                           |
+|:-------|:-----------------------------------------------------------|:----------------------------------------------|:------------------------------------------------|
+| Bus    | [Injections](@ref BusInjectionsTutorials)                  | ``\mathbf I = [I_i]``                         | ``\bm \psi = [\psi_i]``                         |
+| Branch | [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf I_\mathrm{i} = [I_{ij}]``           | ``\bm \psi_\mathrm{i} = [\psi_{ij}]``           |
+| Branch | [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf I_\mathrm{j} = [I_{ji}]``           | ``\bm \psi_\mathrm{j} = [\psi_{ji}]``           |
+| Branch | [Series elements](@ref BranchSeriesElementTutorials)       | ``\mathbf I_\mathrm{l} = [I_{\mathrm{l}ij}]`` | ``\bm \psi_\mathrm{l} = [\psi_{\mathrm{l}ij}]`` |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
@@ -1279,7 +1279,7 @@ The function stores the computed currents in the polar coordinate system. It cal
 ---
 
 ##### Current Injections
-In JuliaGrid, [complex current injections](@ref BusInjectionsTutorials) are stored in the vector of magnitudes denoted as ``\mathbf{I} = [I_i]`` and the vector of angles represented as ``\bm{\psi} = [\psi_i]``. You can retrieve them using the following commands:
+In JuliaGrid, [complex current injections](@ref BusInjectionsTutorials) are stored in the vector of magnitudes denoted as ``\mathbf I = [I_i]`` and the vector of angles represented as ``\bm \psi = [\psi_i]``. You can retrieve them using the following commands:
 ```@repl ACSETutorial
 𝐈 = analysis.current.injection.magnitude
 𝛙 = analysis.current.injection.angle
@@ -1288,13 +1288,13 @@ In JuliaGrid, [complex current injections](@ref BusInjectionsTutorials) are stor
 ---
 
 ##### Current Flows
-To obtain the vectors of magnitudes ``\mathbf{I}_{\text{i}} = [I_{ij}]`` and angles ``\bm{\psi}_{\text{i}} = [\psi_{ij}]`` for the resulting [complex current flows](@ref BranchNetworkEquationsTutorials), you can use the following commands:
+To obtain the vectors of magnitudes ``\mathbf{I}_\mathrm{i} = [I_{ij}]`` and angles ``\bm{\psi}_\mathrm{i} = [\psi_{ij}]`` for the resulting [complex current flows](@ref BranchNetworkEquationsTutorials), you can use the following commands:
 ```@repl ACSETutorial
 𝐈ᵢ = analysis.current.from.magnitude
 𝛙ᵢ = analysis.current.from.angle
 ```
 
-Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting [complex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
+Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_mathrm{j} = [I_{ji}]`` and angles ``\bm{\psi}_\mathrm{j} = [\psi_{ji}]`` of the resulting [complex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
 ```@repl ACSETutorial
 𝐈ⱼ = analysis.current.to.magnitude
 𝛙ⱼ = analysis.current.to.angle
@@ -1303,7 +1303,7 @@ Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_
 ---
 
 ##### Current at Branch Series Elements
-To obtain the vectors of magnitudes ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]`` and angles ``\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]`` of the resulting [complex current flows](@ref BranchSeriesElementTutorials), one can use the following code:
+To obtain the vectors of magnitudes ``\mathbf{I}_\mathrm{l} = [I_{\mathrm{l}ij}]`` and angles ``\bm{\psi}_\mathrm{l} = [\psi_{\mathrm{l}ij}]`` of the resulting [complex current flows](@ref BranchSeriesElementTutorials), one can use the following code:
 ```@repl ACSETutorial
 𝐈ₗ = analysis.current.series.magnitude
 𝛙ₗ = analysis.current.series.angle
