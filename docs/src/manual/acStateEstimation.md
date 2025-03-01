@@ -128,7 +128,7 @@ nothing # hide
 The [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function returns the maximum absolute values of the state variable increment, which are commonly used as a convergence criterion in the iterative Gauss-Newton algorithm.
 
 !!! note "Info"
-    We suggest that readers refer to the tutorial on [AC State Estimation](@ref ACStateEstimationTutorials) for insights into the implementation.
+    Readers can refer to the [AC State Estimation](@ref ACStateEstimationTutorials) tutorial for implementation insights.
 
 ---
 
@@ -179,7 +179,7 @@ This inclusion of PMUs provides more accurate state estimates compared to rectan
 ---
 
 ##### Alternative Formulation
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [aburbook; Sec. 3.2](@cite).
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal method [aburbook; Sec. 3.2](@cite).
 
 This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
 ```@example ACSEWLS
@@ -198,6 +198,10 @@ for iteration = 1:20
 end
 nothing # hide
 ```
+
+!!! note "Info"
+    Readers can refer to the [Alternative Formulation](@ref ACAlternativeFormulationTutorials) tutorial for implementation insights.
+
 
 ---
 
@@ -284,7 +288,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
 !!! note "Info"
-    We suggest that readers refer to the tutorial on [Bad Data Processing](@ref ACBadDataTutorials) for insights into the implementation.
+    Readers can refer to the [Bad Data Processing](@ref ACBadDataTutorials) tutorial for implementation insights.
 
 ---
 
@@ -309,7 +313,7 @@ In JuliaGrid, the assignment of initial primal values for optimization variables
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function.
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})) function. Additionally, the [setInitialPoint!](@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation)) function allows users to configure the initial point as required.
 
 ---
 
@@ -327,7 +331,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    We suggest that readers refer to the tutorial on [Least Absolute Value Estimation](@ref ACLAVTutorials) for insights into the implementation.
+    Readers can refer to the [Least Absolute Value Estimation](@ref ACLAVTutorials) tutorial for implementation insights.
 
 ---
 

@@ -22,7 +22,7 @@ acModel!(system)
 nothing # hide
 ```
 
-To review, we can conceptualize the bus/branch model as the graph denoted by ``\mathcal{G} = (\mathcal{N}, \mathcal{E})``, where we have the set of buses ``\mathcal{N} = \{1, \dots, n\}``, and the set of branches ``\mathcal{E} \subseteq \mathcal{N} \times \mathcal{N}`` within the power system:
+To review, we can conceptualize the bus/branch model as the graph denoted by ``\mathcal G = (\mathcal N, \mathcal E)``, where we have the set of buses ``\mathcal N = \{1, \dots, n\}``, and the set of branches ``\mathcal E \subseteq \mathcal N \times \mathcal N`` within the power system:
 ```@repl ACSETutorial
 𝒩 = collect(keys(system.bus.label))
 ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]
@@ -30,7 +30,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 ---
 
-Following that, we will introduce the `Measurement` type and incorporate a set of measurement devices ``\mathcal{M}`` into the graph ``\mathcal{G}``. The AC state estimation includes a set of voltmeters ``\mathcal{V}``, ammeters ``\mathcal{I}``, wattmeters ``\mathcal{P}``, varmeters ``\mathcal{Q}``, and PMUs ``\bar{\mathcal{P}}``, with PMUs being able to integrate into AC state estimation in either rectangular coordinates or polar coordinates. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref ACSEModelTutorials) section. Currently, we are only initializing the `Measurement` type at this stage:
+Following that, we will introduce the `Measurement` type and incorporate a set of measurement devices ``\mathcal M`` into the graph ``\mathcal G``. The AC state estimation includes a set of voltmeters ``\mathcal V``, ammeters ``\mathcal I``, wattmeters ``\mathcal P``, varmeters ``\mathcal Q``, and PMUs ``\bar{\mathcal P}``, with PMUs being able to integrate into AC state estimation in either rectangular coordinates or polar coordinates. To start, we initialize the `Measurement` type:
 ```@example ACSETutorial
 device = measurement()
 nothing # hide
@@ -39,62 +39,62 @@ nothing # hide
 ---
 
 !!! ukw "Notation"
-    Here, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element related with bus ``i \in \mathcal{N}`` or measurement ``i \in \mathcal{M}``, while ``a_{ij}`` denotes the element related with branch ``(i,j) \in \mathcal{E}``.
+    Here, when referring to a vector ``\mathbf a``, we use the notation ``\mathbf a = [a_i]`` or ``\mathbf a = [a_{ij}]``, where ``a_i`` represents the element related with bus ``i \in \mathcal N`` or measurement ``i \in \mathcal M``, while ``a_{ij}`` denotes the element related with branch ``(i,j) \in \mathcal E``.
 
 ---
 
 ## [State Estimation Model](@id ACSEModelTutorials)
-In accordance with the [AC Model](@ref ACModelTutorials), the AC state estimation treats bus voltages as state variables, which we denoted by ``\mathbf x \equiv [\bm {\Theta}, \mathbf{V}]^T``. The state vector encompasses two components:
-* ``\bm {\Theta} \in \mathbb{R}^{n-1}``, representing bus voltage angles,
-* ``\mathbf {V} \in \mathbb{R}^n``, representing bus voltage magnitudes.
-Consequently, the total number of state variables is ``n_\text{u} = 2n-1``, accounting for the fact that the voltage angle for the slack bus is known.
+In accordance with the [AC Model](@ref ACModelTutorials), the AC state estimation treats bus voltages as state variables, which we denoted by ``\mathbf x \equiv [\bm \Theta, \mathbf V]^T``. The state vector encompasses two components:
+* ``\bm \Theta \in \mathbb{R}^{n-1}``, representing bus voltage angles,
+* ``\mathbf V \in \mathbb{R}^n``, representing bus voltage magnitudes.
+Consequently, the total number of state variables is ``s = 2n-1``, accounting for the fact that the voltage angle for the slack bus is known.
 
 Within the JuliaGrid framework for AC state estimation, the methodology encompasses bus voltage magnitudes, branch current magnitudes, active powers, reactive powers, and phasor measurements. These measurements contribute to the construction of a nonlinear system of equations:
 ```math
     \mathbf{z}=\mathbf{h}(\mathbf {x}) + \mathbf{u}.
 ```
 
-Here, ``\mathbf{h}(\mathbf {x})= [h_1(\mathbf {x})``, ``\dots``, ``h_k(\mathbf {x})]^{{T}}`` represents the vector of nonlinear measurement functions, where ``k`` is the number of measurements, ``\mathbf{z} = [z_1,\dots,z_k]^{T}`` denotes the vector of measurement values, and ``\mathbf{u} = [u_1,\dots,u_k]^T`` represents the vector of measurement errors. It is worth noting that the number of equations in the system is equal to ``k = |\mathcal{V} \cup \mathcal{I} \cup \mathcal{P} \cup \mathcal{Q}| + 2|\bar{\mathcal{P}}|``.
+Here, ``\mathbf h(\mathbf x)= [h_1(\mathbf x)``, ``\dots``, ``h_k(\mathbf x)]^T`` represents the vector of nonlinear measurement functions, where ``k`` is the number of measurements, ``\mathbf z = [z_1, \dots, z_k]^T`` denotes the vector of measurement values, and ``\mathbf u = [u_1, \dots, u_k]^T`` represents the vector of measurement errors. It is worth noting that the number of equations in the system is equal to ``k = |\mathcal V \cup \mathcal I \cup \mathcal P \cup \mathcal Q| + 2|\bar{\mathcal P}|``.
 
-These errors are assumed to follow a Gaussian distribution with a zero mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf{v} = [v_1,\dots,v_k]^T``, while the off-diagonal elements represent the covariances between the measurement errors ``\mathbf{w} = [w_1,\dots,w_k]^{T}``. These covariances exist only if PMUs are observed in rectangular coordinates and correlation is required.
+These errors are assumed to follow a Gaussian distribution with a zero mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf v = [v_1, \dots, v_k]^T``, while the off-diagonal elements represent the covariances between the measurement errors ``\mathbf w = [w_1, \dots, w_k]^T``. These covariances exist only if PMUs are observed in rectangular coordinates and correlation is required.
 
 Hence, the nonlinear system of equations is structured according to the specific devices:
 ```math
     \begin{bmatrix}
-      \mathbf{z}_\mathcal{V}\\[3pt]
-      \mathbf{z}_\mathcal{I}\\[3pt]
-      \mathbf{z}_\mathcal{P}\\[3pt]
-      \mathbf{z}_\mathcal{Q}\\[3pt]
-      \mathbf{z}_{\bar{\mathcal{P}}}
+      \mathbf z_\mathcal V\\[3pt]
+      \mathbf z_\mathcal I\\[3pt]
+      \mathbf z_\mathcal P\\[3pt]
+      \mathbf z_\mathcal Q\\[3pt]
+      \mathbf z_{\bar{\mathcal P}}
     \end{bmatrix} =
     \begin{bmatrix}
-      \mathbf{h}_\mathcal{V}(\mathbf {x})\\[3pt]
-      \mathbf{h}_\mathcal{I}(\mathbf {x})\\[3pt]
-      \mathbf{h}_\mathcal{P}(\mathbf {x})\\[3pt]
-      \mathbf{h}_\mathcal{Q}(\mathbf {x})\\[3pt]
-      \mathbf{h}_{\bar{\mathcal{P}}}(\mathbf {x})
+      \mathbf h_\mathcal V(\mathbf x)\\[3pt]
+      \mathbf h_\mathcal I(\mathbf x)\\[3pt]
+      \mathbf h_\mathcal P(\mathbf x)\\[3pt]
+      \mathbf h_\mathcal Q(\mathbf x)\\[3pt]
+      \mathbf h_{\bar{\mathcal P}}(\mathbf x)
     \end{bmatrix} +
     \begin{bmatrix}
-      \mathbf{u}_\mathcal{V}\\[3pt]
-      \mathbf{u}_\mathcal{I}\\[3pt]
-      \mathbf{u}_\mathcal{P}\\[3pt]
-      \mathbf{u}_\mathcal{Q}\\[3pt]
-      \mathbf{u}_{\bar{\mathcal{P}}}
+      \mathbf u_\mathcal V\\[3pt]
+      \mathbf u_\mathcal I\\[3pt]
+      \mathbf u_\mathcal P\\[3pt]
+      \mathbf u_\mathcal Q\\[3pt]
+      \mathbf u_{\bar{\mathcal P}}
     \end{bmatrix}
 ```
 
-Please note that each error vector, denoted as ``\mathbf{u}_i``, where ``i \in \{\mathcal{V}, \mathcal{I}, \mathcal{P}, \mathcal{Q}\}``, is associated with the variance vector ``\mathbf{v}_i``.  However, for PMUs, the error vector ``\mathbf{u}_{\bar{\mathcal{P}}}``, along with its variance vector ``\mathbf{v}_{\bar{\mathcal{P}}}``, can also be associated with the covariance vector ``\mathbf{w}_{\bar{\mathcal{P}}}``.
+Please note that each error vector, denoted as ``\mathbf{u}_i``, where ``i \in \{\mathcal V, \mathcal I, \mathcal P, \mathcal Q\}``, is associated with the variance vector ``\mathbf{v}_i``.  However, for PMUs, the error vector ``\mathbf{u}_{\bar{\mathcal P}}``, along with its variance vector ``\mathbf{v}_{\bar{\mathcal P}}``, can also be associated with the covariance vector ``\mathbf{w}_{\bar{\mathcal P}}``.
 
-In summary, upon user definition of the measurement devices, each ``i``-th legacy measurement device is linked to the measurement function ``h_i(\mathbf {x})``, the corresponding measurement value ``z_i``, and the measurement variance ``v_i``. Meanwhile, each ``i``-th PMU is associated with two measurement functions ``h_{2i-1}(\mathbf x)``, ``h_{2i}(\mathbf x)``, along with their respective measurement values ``z_{2i-1}``, ``z_{2i}``, as well as their variances ``v_{2i-1}``, ``v_{2i}``, and possibly covariances ``w_{2i-1}``, ``w_{2i}``.
+In summary, upon user definition of the measurement devices, each ``i``-th legacy measurement device is linked to the measurement function ``h_i(\mathbf x)``, the corresponding measurement value ``z_i``, and the measurement variance ``v_i``. Meanwhile, each ``i``-th PMU is associated with two measurement functions ``h_{2i-1}(\mathbf x)``, ``h_{2i}(\mathbf x)``, along with their respective measurement values ``z_{2i-1}``, ``z_{2i}``, as well as their variances ``v_{2i-1}``, ``v_{2i}``, and possibly covariances ``w_{2i-1}``, ``w_{2i}``.
 
 Typically, the AC state estimator is obtained using the Gauss-Newton method or its variation, which involves constructing the Jacobian matrix. Therefore, in addition to the aforementioned elements, we also need Jacobian expressions corresponding to the measurement functions, which are also provided below.
 
 ---
 
 ##### Bus Voltage Magnitude Measurements
-When introducing a voltmeter ``V_i \in \mathcal{V}`` at bus ``i \in \mathcal{N}``, users specify the measurement value, variance, and measurement function of vectors:
+When introducing a voltmeter ``V_i \in \mathcal V`` at bus ``i \in \mathcal N``, users specify the measurement value, variance, and measurement function of vectors:
 ```math
-    \mathbf{z}_\mathcal{V} = [z_{V_i}], \;\;\; \mathbf{v}_\mathcal{V} = [v_{V_i}], \;\;\; \mathbf{h}_\mathcal{V}(\mathbf {x}) = [h_{V_{i}}(\mathbf {x})].
+    \mathbf{z}_\mathcal{V} = [z_{V_i}], \;\;\; \mathbf{v}_\mathcal{V} = [v_{V_i}], \;\;\; \mathbf{h}_\mathcal{V}(\mathbf x) = [h_{V_i}(\mathbf x)].
 ```
 
 For example:
@@ -105,20 +105,20 @@ nothing # hide
 
 Here, the bus voltage magnitude measurement function is simply defined as:
 ```math
-    h_{V_{i}}(\mathbf {x}) = V_{i},
+    h_{V_i}(\mathbf x) = V_i,
 ```
 
 with the following Jacobian expression:
 ```math
-   	\cfrac{\mathrm \partial{{h_{V_{i}}(\mathbf x)}}} {\mathrm \partial V_{i}}=1.
+   	\cfrac{\mathrm \partial{{h_{V_i}(\mathbf x)}}} {\mathrm \partial V_i} = 1.
 ```
 
 ---
 
-##### [From-Bus End Current Magnitude Measurements](@id FromCurrentMagnitudeMeasurements)
-When introducing an ammeter at branch ``(i,j) \in \mathcal{E}``, it can be placed at the from-bus end, denoted as ``I_{ij} \in \mathcal{I}``, specifying the measurement value, variance, and measurement function of vectors:
+##### [From-Bus Current Magnitude Measurements](@id FromCurrentMagnitudeMeasurements)
+When introducing an ammeter at branch ``(i,j) \in \mathcal E``, it can be placed at the from-bus end, denoted as ``I_{ij} \in \mathcal I``, specifying the measurement value, variance, and measurement function of vectors:
 ```math
-    \mathbf{z}_\mathcal{I} = [z_{I_{ij}}], \;\;\; \mathbf{v}_\mathcal{I} = [v_{I_{ij}}], \;\;\; \mathbf{h}_\mathcal{I}(\mathbf {x}) = [h_{I_{ij}}(\mathbf {x})].
+    \mathbf{z}_\mathcal{I} = [z_{I_{ij}}], \;\;\; \mathbf{v}_\mathcal{I} = [v_{I_{ij}}], \;\;\; \mathbf{h}_\mathcal{I}(\mathbf x) = [h_{I_{ij}}(\mathbf x)].
 ```
 
 For example:
@@ -129,35 +129,37 @@ nothing # hide
 
 Here, following the guidelines outlined in the [AC Model](@ref BranchNetworkEquationsTutorials), the function defining the current magnitude at the from-bus end is expressed as:
 ```math
-    h_{I_{ij}}(\mathbf {x}) = \sqrt{A_{I_{ij}}V_i^2 + B_{I_{ij}}V_j^2 - 2[C_{I_{ij}} \cos(\theta_{ij} - \phi_{ij}) - D_{I_{ij}}\sin(\theta_{ij} - \phi_{ij})]V_iV_j},
+    h_{I_{ij}}(\mathbf x) = \sqrt{A_{I_{ij}}V_i^2 + B_{I_{ij}}V_j^2 - 2[C_{I_{ij}} \cos(\theta_{ij} - \phi_{ij}) - D_{I_{ij}}\sin(\theta_{ij} - \phi_{ij})]V_iV_j},
 ```
 where:
 ```math
   \begin{gathered}
-    A_{I_{ij}} = \cfrac{(g_{ij} + g_{\text{s}i})^2+(b_{ij}+b_{\text{s}i})^2}{\tau_{ij}^4}, \;\;\; B_{I_{ij}} =  \cfrac{g_{ij}^2+b_{ij}^2}{\tau_{ij}^2} \\
-    C_{I_{ij}} = \cfrac{g_{ij}(g_{ij}+g_{\text{s}i})+b_{ij}(b_{ij}+b_{\text{s}i})}{\tau_{ij}^3}, \;\;\; D_{I_{ij}} = \cfrac{g_{ij}b_{\text{s}i} - b_{ij}g_{\text{s}i}}{\tau_{ij}^3}.
+    A_{I_{ij}} = \cfrac{(g_{ij} + g_{\mathrm{s}i})^2 + (b_{ij} + b_{\mathrm{s}i})^2}{\tau_{ij}^4}, \;\;\;
+    B_{I_{ij}} = \cfrac{g_{ij}^2 + b_{ij}^2}{\tau_{ij}^2} \\
+    C_{I_{ij}} = \cfrac{g_{ij}(g_{ij} + g_{\mathrm{s}i}) + b_{ij}(b_{ij} + b_{\mathrm{s}i})}{\tau_{ij}^3}, \;\;\;
+    D_{I_{ij}} = \cfrac{g_{ij}b_{\mathrm{s}i} - b_{ij}g_{\mathrm{s}i}}{\tau_{ij}^3}.
   \end{gathered}
 ```
 
 Jacobian expressions corresponding to the measurement function ``h_{I_{ij}}(\mathbf x)`` are defined as follows:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{I_{ij}}(\mathbf x)}}{\mathrm \partial \theta_{i}} &=-
-    \cfrac{\mathrm \partial{h_{I_{ij}}(\mathbf x)}}{\mathrm \partial \theta_{j}} =
+    \cfrac{\mathrm \partial{h_{I_{ij}}(\mathbf x)}}{\mathrm \partial \theta_i} &=-
+    \cfrac{\mathrm \partial{h_{I_{ij}}(\mathbf x)}}{\mathrm \partial \theta_j} =
     \cfrac{ [C_{I_{ij}}\sin(\theta_{ij} - \phi_{ij}) + D_{I_{ij}}\cos(\theta_{ij} - \phi_{ij})]V_i V_j}{h_{I_{ij}}(\mathbf x)} \\
-    \cfrac{\mathrm \partial{h_{I_{ij}}(\mathbf x)}}{\mathrm \partial V_{i}} &=
+    \cfrac{\mathrm \partial{h_{I_{ij}}(\mathbf x)}}{\mathrm \partial V_i} &=
     \cfrac{A_{I_{ij}}V_i - [C_{I_{ij}}\cos(\theta_{ij} - \phi_{ij}) - D_{I_{ij}}\sin(\theta_{ij} - \phi_{ij})]V_j}{h_{I_{ij}}(\mathbf x)} \\
-    \cfrac{\mathrm \partial{h_{I_{ij}}(\mathbf x)}}{\mathrm \partial V_{j}} &=
-    \cfrac{B_{I_{ij}}V_j - [C_{I_{ij}}\cos(\theta_{ij} - \phi_{ij}) - D_{I_{ij}}\sin(\theta_{ij} - \phi_{ij})]V_i}{h_{I_{ij}}(\mathbf x)} .
+    \cfrac{\mathrm \partial{h_{I_{ij}}(\mathbf x)}}{\mathrm \partial V_j} &=
+    \cfrac{B_{I_{ij}}V_j - [C_{I_{ij}}\cos(\theta_{ij} - \phi_{ij}) - D_{I_{ij}}\sin(\theta_{ij} - \phi_{ij})]V_i}{h_{I_{ij}}(\mathbf x)}.
 	\end{aligned}
 ```
 
 ---
 
-##### [To-Bus End Current Magnitude Measurements](@id ToCurrentMagnitudeMeasurements)
-In addition to the scenario where we add ammeters at the from-bus end, an ammeter can also be positioned at the to-bus end, denoted as ``I_{ji} \in \mathcal{I}``, specifying the measurement value, variance, and measurement function of vectors:
+##### [To-Bus Current Magnitude Measurements](@id ToCurrentMagnitudeMeasurements)
+In addition to the scenario where we add ammeters at the from-bus end, an ammeter can also be positioned at the to-bus end, denoted as ``I_{ji} \in \mathcal I``, specifying the measurement value, variance, and measurement function of vectors:
 ```math
-    \mathbf{z}_\mathcal{I} = [z_{I_{ji}}], \;\;\; \mathbf{v}_\mathcal{I} = [v_{I_{ji}}], \;\;\; \mathbf{h}_\mathcal{I}(\mathbf {x}) = [h_{I_{ji}}(\mathbf {x})].
+    \mathbf{z}_\mathcal{I} = [z_{I_{ji}}], \;\;\; \mathbf{v}_\mathcal{I} = [v_{I_{ji}}], \;\;\; \mathbf{h}_\mathcal{I}(\mathbf x) = [h_{I_{ji}}(\mathbf x)].
 ```
 
 For example:
@@ -168,25 +170,27 @@ nothing # hide
 
 Now, the measurement function is as follows:
 ```math
-    h_{I_{ji}}(\mathbf {x}) = \sqrt{A_{I_{ji}}V_i^2 + B_{I_{ji}}V_j^2 - 2[C_{I_{ji}} \cos(\theta_{ij} - \phi_{ij}) + D_{I_{ji}}\sin(\theta_{ij} - \phi_{ij})]V_iV_j},
+    h_{I_{ji}}(\mathbf x) = \sqrt{A_{I_{ji}}V_i^2 + B_{I_{ji}}V_j^2 - 2[C_{I_{ji}} \cos(\theta_{ij} - \phi_{ij}) + D_{I_{ji}}\sin(\theta_{ij} - \phi_{ij})]V_iV_j},
 ```
 where:
 ```math
   \begin{gathered}
-    A_{I_{ji}} = \cfrac{g_{ij}^2+b_{ij}^2}{\tau_{ij}^2}, \;\;\; B_{I_{ji}} = (g_{ij} + g_{\text{s}i})^2+(b_{ij}+b_{\text{s}i})^2 \\
-    C_{I_{ji}} = \cfrac{g_{ij}(g_{ij}+g_{\text{s}i})+b_{ij}(b_{ij}+b_{\text{s}i})}{\tau_{ij}}, \;\;\; D_{I_{ji}} = \cfrac{g_{ij}b_{\text{s}i} - b_{ij}g_{\text{s}i}}{\tau_{ij}}.
+    A_{I_{ji}} = \cfrac{g_{ij}^2 + b_{ij}^2}{\tau_{ij}^2}, \;\;\;
+    B_{I_{ji}} = (g_{ij} + g_{\mathrm{s}i})^2 + (b_{ij} + b_{\mathrm{s}i})^2 \\
+    C_{I_{ji}} = \cfrac{g_{ij}(g_{ij} + g_{\mathrm{s}i}) + b_{ij}(b_{ij} + b_{\mathrm{s}i})}{\tau_{ij}}, \;\;\;
+    D_{I_{ji}} = \cfrac{g_{ij}b_{\mathrm{s}i} - b_{ij}g_{\mathrm{s}i}}{\tau_{ij}}.
   \end{gathered}
 ```
 
 Jacobian expressions corresponding to the measurement function ``h_{I_{ji}}(\mathbf x)`` are defined as follows:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{I_{ji}}(\mathbf x)}}{\mathrm \partial \theta_{i}} &=-
-    \cfrac{\mathrm \partial{h_{I_{ji}}(\mathbf x)}}{\mathrm \partial \theta_{j}} =
+    \cfrac{\mathrm \partial{h_{I_{ji}}(\mathbf x)}}{\mathrm \partial \theta_i} &=-
+    \cfrac{\mathrm \partial{h_{I_{ji}}(\mathbf x)}}{\mathrm \partial \theta_j} =
     \cfrac{[C_{I_{ji}}\sin(\theta_{ij} - \phi_{ij}) - D_{I_{ji}}\cos(\theta_{ij}- \phi_{ij})]V_i V_j}{h_{I_{ji}}(\mathbf x)} \\
-    \cfrac{\mathrm \partial{h_{I_{ji}}(\mathbf x)}}{\mathrm \partial V_{i}} &=
+    \cfrac{\mathrm \partial{h_{I_{ji}}(\mathbf x)}}{\mathrm \partial V_i} &=
     \cfrac{A_{I_{ji}}V_i - [C_{I_{ji}}\cos(\theta_{ij} - \phi_{ij}) + D_{I_{ji}}\sin(\theta_{ij} - \phi_{ij})]V_j}{h_{I_{ji}}(\mathbf x)} \\
-    \cfrac{\mathrm \partial{h_{I_{ji}}(\mathbf x)}}{\mathrm \partial V_{j}} &=
+    \cfrac{\mathrm \partial{h_{I_{ji}}(\mathbf x)}}{\mathrm \partial V_j} &=
     \cfrac{B_{I_{ji}}V_j - [C_{I_{ji}}\cos(\theta_{ij} - \phi_{ij}) + D_{I_{ji}}\sin(\theta_{ij} - \phi_{ij})]V_i}{h_{I_{ji}}(\mathbf x)} .
 	\end{aligned}
 ```
@@ -194,9 +198,9 @@ Jacobian expressions corresponding to the measurement function ``h_{I_{ji}}(\mat
 ---
 
 ##### Active Power Injection Measurements
-When adding a wattmeter ``P_i \in \mathcal{P}`` at bus ``i \in \mathcal{N}``, users specify that the wattmeter measures active power injection and define measurement value, variance, and measurement function of vectors:
+When adding a wattmeter ``P_i \in \mathcal P`` at bus ``i \in \mathcal N``, users specify that the wattmeter measures active power injection and define measurement value, variance, and measurement function of vectors:
 ```math
-    \mathbf{z}_\mathcal{P} = [z_{P_{i}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{i}}], \;\;\; \mathbf{h}_\mathcal{P}(\mathbf {x}) = [h_{P_{i}}(\mathbf {x})].
+    \mathbf{z}_\mathcal{P} = [z_{P_i}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_i}], \;\;\; \mathbf{h}_\mathcal{P}(\mathbf x) = [h_{P_i}(\mathbf x)].
 ```
 
 For example:
@@ -207,28 +211,28 @@ nothing # hide
 
 Here, utilizing the [AC Model](@ref NodalNetworkEquationsTutorials), we derive the function defining the active power injection as follows:
 ```math
-   h_{P_{i}}(\mathbf {x}) = {V}_{i}\sum\limits_{j \in \mathcal{N}_i} (G_{ij}\cos\theta_{ij} + B_{ij}\sin\theta_{ij}){V}_{j},
+   h_{P_i}(\mathbf x) = V_i\sum\limits_{j \in \mathcal{N}_i} (G_{ij}\cos\theta_{ij} + B_{ij}\sin\theta_{ij}) V_j,
 ```
 where ``\mathcal{N}_i`` contains buses incident to bus ``i``, including bus ``i``, with the following Jacobian expressions:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{P_{i}}(\mathbf x)}}{\mathrm \partial \theta_{i}} &=
-    {V}_{i}\sum_{j \in \mathcal{N}_i} (-G_{ij}\sin\theta_{ij}+B_{ij}\cos\theta_{ij}){V}_{j}  - B_{ii}V_i^2\\
-    \cfrac{\mathrm \partial{h_{P_{i}}(\mathbf x)}}{\mathrm \partial \theta_{j}} &=
-    (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}){V}_{i}{V}_{j} \\
-    \cfrac{\mathrm \partial{h_{P_{i}}(\mathbf x)}}{\mathrm \partial V_{i}} &=
-    \sum_{j \in \mathcal{N}_i} (G_{ij}\cos\theta_{ij}+B_{ij} \sin\theta_{ij})V_{j} + G_{ii} V_i\\
-    \cfrac{\mathrm \partial{h_{P_{i}}(\mathbf x)}}{\mathrm \partial V_{j}} &=
-    (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}){V}_{i}.
+    \cfrac{\mathrm \partial{h_{P_i}(\mathbf x)}}{\mathrm \partial \theta_i} &=
+    V_i\sum_{j \in \mathcal{N}_i} (-G_{ij}\sin\theta_{ij} + B_{ij}\cos\theta_{ij})V_j - B_{ii}V_i^2\\
+    \cfrac{\mathrm \partial{h_{P_i}(\mathbf x)}}{\mathrm \partial \theta_j} &=
+    (G_{ij}\sin\theta_{ij} - B_{ij}\cos\theta_{ij})V_iV_j \\
+    \cfrac{\mathrm \partial{h_{P_i}(\mathbf x)}}{\mathrm \partial V_i} &=
+    \sum_{j \in \mathcal{N}_i} (G_{ij}\cos\theta_{ij} + B_{ij}\sin\theta_{ij})V_j + G_{ii}V_i\\
+    \cfrac{\mathrm \partial{h_{P_i}(\mathbf x)}}{\mathrm \partial V_j} &=
+    (G_{ij}\cos\theta_{ij} + B_{ij}\sin\theta_{ij})V_i.
   \end{aligned}
 ```
 
 ---
 
-##### From-Bus End Active Power Flow Measurements
-Additionally, when introducing a wattmeter at branch ``(i,j) \in \mathcal{E}``, users specify that the wattmeter measures active power flow. It can be positioned at the from-bus end, denoted as ``P_{ij} \in \mathcal{P}``, specifying the measurement value, variance, and measurement function of vectors:
+##### From-Bus Active Power Flow Measurements
+Additionally, when introducing a wattmeter at branch ``(i,j) \in \mathcal E``, users specify that the wattmeter measures active power flow. It can be positioned at the from-bus end, denoted as ``P_{ij} \in \mathcal P``, specifying the measurement value, variance, and measurement function of vectors:
 ```math
-    \mathbf{z}_\mathcal{P} = [z_{P_{ij}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{ij}}], \;\;\; \mathbf{h}_\mathcal{P}(\mathbf {x}) = [h_{P_{ij}}(\mathbf {x})].
+    \mathbf{z}_\mathcal{P} = [z_{P_{ij}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{ij}}], \;\;\; \mathbf{h}_\mathcal{P}(\mathbf x) = [h_{P_{ij}}(\mathbf x)].
 ```
 
 For example:
@@ -239,28 +243,28 @@ nothing # hide
 
 Here, the function describing active power flow at the from-bus end is defined as follows:
 ```math
-    h_{P_{ij}}(\mathbf {x}) = \cfrac{g_{ij} + g_{\text{s}i}}{\tau_{ij}^2} V_{i}^2 - \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right]V_{i}V_{j},
+    h_{P_{ij}}(\mathbf x) = \cfrac{g_{ij} + g_{\mathrm{s}i}}{\tau_{ij}^2} V_i^2 - \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right]V_iV_j,
 ```
 with the following Jacobian expressions:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{P_{ij}}(\mathbf x)}}{\mathrm \partial \theta_{i}} &=-
-    \cfrac{\mathrm \partial{h_{P_{ij}}(\mathbf x)}}{\mathrm \partial \theta_{j}} =
-    \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) - b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_{i}V_{j} \\
+    \cfrac{\mathrm \partial{h_{P_{ij}}(\mathbf x)}}{\mathrm \partial \theta_i} &=-
+    \cfrac{\mathrm \partial{h_{P_{ij}}(\mathbf x)}}{\mathrm \partial \theta_j} =
+    \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) - b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_iV_j \\
     \cfrac{\mathrm \partial{h_{P_{ij}}(\mathbf x)}}{\mathrm \partial V_{i}} &=
-    2\cfrac{g_{ij} + g_{\text{s}i}}{\tau_{ij}^2} V_{i} -
-    \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_{j} \\
-    \cfrac{\mathrm \partial{h_{P_{ij}}(\mathbf x)}}{\mathrm \partial V_{j}} &= -
-    \cfrac{1}{\tau_{ij}} \left[g_{ij} \cos(\theta_{ij} - \phi_{ij}) + b_{ij} \sin(\theta_{ij} - \phi_{ij})\right] V_{i}.
+    2\cfrac{g_{ij} + g_{\mathrm{s}i}}{\tau_{ij}^2} V_i -
+    \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_j \\
+    \cfrac{\mathrm \partial{h_{P_{ij}}(\mathbf x)}}{\mathrm \partial V_j} &= -
+    \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_i.
 	\end{aligned}
 ```
 
 ---
 
-##### To-Bus End Active Power Flow Measurements
+##### To-Bus Active Power Flow Measurements
 Similarly, a wattmeter can be placed at the to-bus end, denoted as ``P_{ji} \in \mathcal{P}``, specifying the measurement value, variance, and measurement function of vectors:
 ```math
-    \mathbf{z}_\mathcal{P} = [z_{P_{ji}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{ji}}], \;\;\; \mathbf{h}_\mathcal{P}(\mathbf {x}) = [h_{P_{ji}}(\mathbf {x})].
+    \mathbf{z}_\mathcal{P} = [z_{P_{ji}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{ji}}], \;\;\; \mathbf{h}_\mathcal{P}(\mathbf x) = [h_{P_{ji}}(\mathbf x)].
 ```
 
 For example:
@@ -271,27 +275,27 @@ nothing # hide
 
 Thus, the function describing active power flow at the to-bus end is defined as follows:
 ```math
-    h_{P_{ji}}(\mathbf {x}) = (g_{ij} + g_{\text{s}i}) V_{j}^2 - \cfrac{1}{\tau_{ij}} \left[g_{ij} \cos(\theta_{ij} - \phi_{ij}) - b_{ij} \sin(\theta_{ij}- \phi_{ij})\right] V_{i} V_j,
+    h_{P_{ji}}(\mathbf x) = (g_{ij} + g_{\mathrm{s}i}) V_j^2 - \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) - b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_iV_j,
 ```
 with the following Jacobian expressions:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{P_{ji}}(\mathbf x)}}{\mathrm \partial \theta_{i}} &= -
-    \cfrac{\mathrm \partial{h_{P_{ji}}(\mathbf x)}}{\mathrm \partial \theta_{j}} =
-    \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) + b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_{i}V_{j} \\
+    \cfrac{\mathrm \partial{h_{P_{ji}}(\mathbf x)}}{\mathrm \partial \theta_i} &= -
+    \cfrac{\mathrm \partial{h_{P_{ji}}(\mathbf x)}}{\mathrm \partial \theta_j} =
+    \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) + b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_iV_j \\
     \cfrac{\mathrm \partial{h_{P_{ji}}(\mathbf x)}}{\mathrm \partial V_{i}} &=  -
-    \cfrac{1}{\tau_{ij}} \left[g_{ij} \cos(\theta_{ij} - \phi_{ij}) - b_{ij} \sin(\theta_{ij} - \phi_{ij})\right] V_j \\
-    \cfrac{\mathrm \partial{h_{P_{ji}}(\mathbf x)}}{\mathrm \partial V_{j}} &= 2(g_{ij} + g_{\text{s}i}) V_{j}-
-    \cfrac{1}{\tau_{ij}} \left[g_{ij} \cos(\theta_{ij} - \phi_{ij}) - b_{ij} \sin(\theta_{ij} - \phi_{ij})\right] V_{i}.
+    \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) - b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_j \\
+    \cfrac{\mathrm \partial{h_{P_{ji}}(\mathbf x)}}{\mathrm \partial V_{j}} &= 2(g_{ij} + g_{\mathrm{s}i}) V_j -
+    \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) - b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_i.
 	\end{aligned}
 ```
 
 ---
 
 ##### Reactive Power Injection Measurements
-When adding a varmeter ``Q_i \in \mathcal{Q}`` at bus ``i \in \mathcal{N}``, users specify that the varmeter measures reactive power injection and define the measurement value, variance, and measurement function of vectors:
+When adding a varmeter ``Q_i \in \mathcal Q`` at bus ``i \in \mathcal N``, users specify that the varmeter measures reactive power injection and define the measurement value, variance, and measurement function of vectors:
 ```math
-    \mathbf{z}_\mathcal{Q} = [z_{Q_{i}}], \;\;\; \mathbf{v}_\mathcal{Q} = [v_{Q_{i}}], \;\;\; \mathbf{h}_\mathcal{Q}(\mathbf {x}) = [h_{Q_{i}}(\mathbf {x})].
+    \mathbf{z}_\mathcal{Q} = [z_{Q_i}], \;\;\; \mathbf{v}_\mathcal{Q} = [v_{Q_i}], \;\;\; \mathbf{h}_\mathcal{Q}(\mathbf x) = [h_{Q_i}(\mathbf x)].
 ```
 
 For example:
@@ -302,28 +306,28 @@ nothing # hide
 
 Here, utilizing the [AC Model](@ref NodalNetworkEquationsTutorials), we derive the function defining the reactive power injection as follows:
 ```math
-   h_{Q_{i}}(\mathbf {x}) = {V}_{i}\sum\limits_{j \in \mathcal{N}_i} (G_{ij}\sin\theta_{ij} - B_{ij}\cos\theta_{ij}){V}_{j},
+   h_{Q_i}(\mathbf x) = V_i\sum\limits_{j \in \mathcal{N}_i} (G_{ij}\sin\theta_{ij} - B_{ij}\cos\theta_{ij})V_j,
 ```
 where ``\mathcal{N}_i`` contains buses incident to bus ``i``, including bus ``i``, with the following Jacobian expressions:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{Q_{i}}(\mathbf x)}}{\mathrm \partial \theta_{i}} &=
-    {V}_{i}\sum_{j \in \mathcal{N}_i} (G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}){V}_{j} - G_{ii}V_i^2\\
-    \cfrac{\mathrm \partial{h_{Q_{i}}(\mathbf x)}}{\mathrm \partial \theta_{j}} &=
-    -(G_{ij}\cos\theta_{ij}+B_{ij}\sin\theta_{ij}){V}_{i}{V}_{j} \\
-    \cfrac{\mathrm \partial{h_{Q_{i}}(\mathbf x)}}{\mathrm \partial V_{i}} &=
-    \sum_{j \in \mathcal{N}_i} (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}){V}_{j} - B_{ii}{V}_{i}\\
-    \cfrac{\mathrm \partial{h_{Q_{i}}(\mathbf x)}}{\mathrm \partial V_{j}} &=
-    (G_{ij}\sin\theta_{ij}-B_{ij}\cos\theta_{ij}){V}_{i}.
+    \cfrac{\mathrm \partial{h_{Q_i}(\mathbf x)}}{\mathrm \partial \theta_i} &=
+    V_i\sum_{j \in \mathcal{N}_i} (G_{ij}\cos\theta_{ij} + B_{ij}\sin\theta_{ij})V_j - G_{ii}V_i^2\\
+    \cfrac{\mathrm \partial{h_{Q_i}(\mathbf x)}}{\mathrm \partial \theta_j} &=
+    -(G_{ij}\cos\theta_{ij} + B_{ij}\sin\theta_{ij})V_iV_j \\
+    \cfrac{\mathrm \partial{h_{Q_i}(\mathbf x)}}{\mathrm \partial V_i} &=
+    \sum_{j \in \mathcal{N}_i} (G_{ij}\sin\theta_{ij} - B_{ij}\cos\theta_{ij})V_j - B_{ii}V_i\\
+    \cfrac{\mathrm \partial{h_{Q_i}(\mathbf x)}}{\mathrm \partial V_j} &=
+    (G_{ij}\sin\theta_{ij} - B_{ij}\cos\theta_{ij})V_i.
   \end{aligned}
 ```
 
 ---
 
-##### From-Bus End Reactive Power Flow Measurements
-Additionally, when introducing a varmeter at branch ``(i,j) \in \mathcal{E}``, users specify that the varmeter measures reactive power flow. It can be positioned at the from-bus end, denoted as ``Q_{ij} \in \mathcal{Q}``, with its measurement value, variance, and measurement function included in vectors:
+##### From-Bus Reactive Power Flow Measurements
+Additionally, when introducing a varmeter at branch ``(i,j) \in \mathcal E``, users specify that the varmeter measures reactive power flow. It can be positioned at the from-bus end, denoted as ``Q_{ij} \in \mathcal Q``, with its measurement value, variance, and measurement function included in vectors:
 ```math
-    \mathbf{z}_\mathcal{Q} = [z_{Q_{ij}}], \;\;\; \mathbf{v}_\mathcal{Q} = [v_{Q_{ij}}], \;\;\; \mathbf{h}_\mathcal{Q}(\mathbf {x}) = [h_{Q_{ij}}(\mathbf {x})].
+    \mathbf{z}_\mathcal{Q} = [z_{Q_{ij}}], \;\;\; \mathbf{v}_\mathcal{Q} = [v_{Q_{ij}}], \;\;\; \mathbf{h}_\mathcal{Q}(\mathbf x) = [h_{Q_{ij}}(\mathbf x)].
 ```
 
 For example:
@@ -334,28 +338,28 @@ nothing # hide
 
 Here, the function describing reactive power flow at the from-bus end is defined as follows:
 ```math
-    h_{Q_{ij}}(\mathbf {x}) = -\cfrac{b_{ij} + b_{\text{s}i}}{\tau_{ij}^2} V_{i}^2 - \cfrac{1}{\tau_{ij}}  \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) - b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_{i}V_{j},
+    h_{Q_{ij}}(\mathbf x) = -\cfrac{b_{ij} + b_{\mathrm{s}i}}{\tau_{ij}^2} V_i^2 - \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) - b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_iV_j,
 ```
 with the following Jacobian expressions:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{Q_{ij}}(\mathbf x)}}{\mathrm \partial \theta_{i}} &= -
-    \cfrac{\mathrm \partial{h_{Q_{ij}}(\mathbf x)}}{\mathrm \partial \theta_{j}} = -
-    \cfrac{1}{\tau_{ij}}  \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_{i}V_{j} \\
-    \cfrac{\mathrm \partial{h_{Q_{ij}}(\mathbf x)}}{\mathrm \partial V_{i}} &= -
-    2\cfrac{b_{ij} + b_{\text{s}i}}{\tau_{ij}^2} V_{i} -
-    \cfrac{1}{\tau_{ij}}  \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) - b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_{j}\\
-    \cfrac{\mathrm \partial{h_{Q_{ij}}(\mathbf x)}}{\mathrm \partial V_{j}} &= -
-    \cfrac{1}{\tau_{ij}}  \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) - b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_{i}.
+    \cfrac{\mathrm \partial{h_{Q_{ij}}(\mathbf x)}}{\mathrm \partial \theta_i} &= -
+    \cfrac{\mathrm \partial{h_{Q_{ij}}(\mathbf x)}}{\mathrm \partial \theta_j} = -
+    \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_iV_j \\
+    \cfrac{\mathrm \partial{h_{Q_{ij}}(\mathbf x)}}{\mathrm \partial V_i} &= -
+    2\cfrac{b_{ij} + b_{\mathrm{s}i}}{\tau_{ij}^2} V_i -
+    \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) - b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_j\\
+    \cfrac{\mathrm \partial{h_{Q_{ij}}(\mathbf x)}}{\mathrm \partial V_j} &= -
+    \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) - b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_i.
 	\end{aligned}
 ```
 
 ---
 
-##### To-Bus End Reactive Power Flow Measurements
-Similarly, a varmeter can be placed at the to-bus end, denoted as ``Q_{ji} \in \mathcal{Q}``, with its own measurement value, variance, and measurement function included in vectors:
+##### To-Bus Reactive Power Flow Measurements
+Similarly, a varmeter can be placed at the to-bus end, denoted as ``Q_{ji} \in \mathcal Q``, with its own measurement value, variance, and measurement function included in vectors:
 ```math
-    \mathbf{z}_\mathcal{Q} = [z_{Q_{ji}}], \;\;\; \mathbf{v}_\mathcal{Q} = [v_{Q_{ji}}], \;\;\; \mathbf{h}_\mathcal{Q}(\mathbf {x}) = [h_{Q_{ji}}(\mathbf {x})].
+    \mathbf{z}_\mathcal{Q} = [z_{Q_{ji}}], \;\;\; \mathbf{v}_\mathcal{Q} = [v_{Q_{ji}}], \;\;\; \mathbf{h}_\mathcal{Q}(\mathbf x) = [h_{Q_{ji}}(\mathbf x)].
 ```
 
 For example:
@@ -366,28 +370,30 @@ nothing # hide
 
 Thus, the function describing reactive power flow at the to-bus end is defined as follows:
 ```math
-    h_{Q_{ji}}(\mathbf {x}) = -(b_{ij} + b_{\text{s}i}) V_{j}^2 + \cfrac{1}{\tau_{ij}} \left[g_{ij} \sin(\theta_{ij} - \phi_{ij}) + b_{ij} \cos(\theta_{ij} - \phi_{ij})\right] V_{i}V_{j},
+    h_{Q_{ji}}(\mathbf x) = -(b_{ij} + b_{\mathrm{s}i}) V_j^2 + \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) + b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_iV_j,
 ```
 with the following Jacobian expressions:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{Q_{ji}}(\mathbf x)}}{\mathrm \partial \theta_{i}} &= -
-    \cfrac{\mathrm \partial{h_{Q_{ji}}(\mathbf x)}}{\mathrm \partial \theta_{j}} =
-    \cfrac{1}{\tau_{ij}}  \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) - b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_{i}V_{j} \\
-    \cfrac{\mathrm \partial{h_{Q_{ji}}(\mathbf x)}}{\mathrm \partial V_{i}} &=
-    \cfrac{1}{\tau_{ij}} \left[g_{ij} \sin(\theta_{ij} - \phi_{ij}) + b_{ij} \cos(\theta_{ij} - \phi_{ij})\right] V_{j}\\
-    \cfrac{\mathrm \partial{h_{Q_{ji}}(\mathbf x)}}{\mathrm \partial V_{j}} &= -
-    2(b_{ij} + b_{\text{s}i}) V_{j} +
-    \cfrac{1}{\tau_{ij}} \left[g_{ij} \sin(\theta_{ij} - \phi_{ij}) + b_{ij} \cos(\theta_{ij} - \phi_{ij})\right] V_{i}.
+    \cfrac{\mathrm \partial{h_{Q_{ji}}(\mathbf x)}}{\mathrm \partial \theta_i} &= -
+    \cfrac{\mathrm \partial{h_{Q_{ji}}(\mathbf x)}}{\mathrm \partial \theta_j} =
+    \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) - b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_iV_j \\
+    \cfrac{\mathrm \partial{h_{Q_{ji}}(\mathbf x)}}{\mathrm \partial V_i} &=
+    \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) + b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_j\\
+    \cfrac{\mathrm \partial{h_{Q_{ji}}(\mathbf x)}}{\mathrm \partial V_j} &=
+    -2(b_{ij} + b_{\mathrm{s}i}) V_{j} +
+    \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) + b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_i.
 	\end{aligned}
 ```
 
 ---
 
 ##### Rectangular Bus Voltage Phasor Measurements
-When a PMU ``(V_i, \theta_i) \in \bar{\mathcal{P}}`` is introduced at bus ``i \in \mathcal{N}``, it will be incorporated into the AC state estimation model using rectangular coordinates by default. It will define the measurement values, variances, and measurement functions of vectors:
+When a PMU ``(V_i, \theta_i) \in \bar{\mathcal P}`` is introduced at bus ``i \in \mathcal N``, it will be incorporated into the AC state estimation model using rectangular coordinates by default. It will define the measurement values, variances, and measurement functions of vectors:
 ```math
-    \mathbf{z}_{\bar{\mathcal{P}}} = [z_{\Re(\bar{V}_{i})}, z_{\Im(\bar{V}_{i})}], \;\;\; \mathbf{v}_{\bar{\mathcal{P}}} = [v_{\Re(\bar{V}_{i})}, v_{\Im(\bar{V}_{i})}], \;\;\; \mathbf{h}_{\bar{\mathcal{P}}}(\mathbf {x}) = [h_{\Re(\bar{V}_{i})}(\mathbf {x}), h_{\Im(\bar{V}_{i})}(\mathbf {x})].
+    \mathbf{z}_{\bar{\mathcal P}} = [z_{\Re(\bar{V}_i)}, z_{\Im(\bar{V}_i)}], \;\;\;
+    \mathbf{v}_{\bar{\mathcal P}} = [v_{\Re(\bar{V}_i)}, v_{\Im(\bar{V}_i)}], \;\;\;
+    \mathbf{h}_{\bar{\mathcal P}}(\mathbf x) = [h_{\Re(\bar{V}_i)}(\mathbf x), h_{\Im(\bar{V}_i)}(\mathbf x)].
 ```
 
 For example:
@@ -422,29 +428,29 @@ Utilizing the classical theory of propagation of uncertainty [iso1993guide](@cit
 Lastly, the functions defining the bus voltage phasor measurement are:
 ```math
   \begin{aligned}
-    h_{\Re(\bar{V}_{i})}(\mathbf {x}) = V_{i}\cos \theta_i\\
-    h_{\Im(\bar{V}_{i})}(\mathbf {x}) = V_{i}\sin \theta_i.
+    h_{\Re(\bar{V}_i)}(\mathbf x) = V_i \cos \theta_i\\
+    h_{\Im(\bar{V}_i)}(\mathbf x) = V_i \sin \theta_i.
   \end{aligned}
 ```
 
-Jacobian expressions corresponding to the measurement function ``h_{\Re(\bar{V}_{i})}(\mathbf x)`` are defined as follows:
+Jacobian expressions corresponding to the measurement function ``h_{\Re(\bar{V}_i)}(\mathbf x)`` are defined as follows:
 ```math
   \begin{aligned}
-   	\cfrac{\mathrm \partial{h_{\Re(\bar{V}_{i})}(\mathbf x)}}{\mathrm \partial \theta_{i}}=-V_{i}\sin \theta_i, \;\;\;
-   	\cfrac{\mathrm \partial{h_{\Re(\bar{V}_{i})}(\mathbf x)}}{\mathrm \partial V_{i}}=\cos \theta_i,
+   	\cfrac{\mathrm \partial{h_{\Re(\bar{V}_i)}(\mathbf x)}}{\mathrm \partial \theta_i} = -V_i \sin \theta_i, \;\;\;
+   	\cfrac{\mathrm \partial{h_{\Re(\bar{V}_i)}(\mathbf x)}}{\mathrm \partial V_i} = \cos \theta_i,
     \end{aligned}
 ```
-while Jacobian expressions corresponding to the measurement function ``h_{\Im(\bar{V}_{i})}(\mathbf x)`` are:
+while Jacobian expressions corresponding to the measurement function ``h_{\Im(\bar{V}_i)}(\mathbf x)`` are:
 ```math
   \begin{aligned}
-   	\cfrac{\mathrm \partial{h_{\Im(\bar{V}_{i})}(\mathbf x)}}{\mathrm \partial \theta_{i}}=V_{i}\cos \theta_i,\;\;\;
-   	\cfrac{\mathrm \partial{h_{\Im(\bar{V}_{i})}(\mathbf x)}}{\mathrm \partial V_{i}}=\sin \theta_i.
+   	\cfrac{\mathrm \partial{h_{\Im(\bar{V}_i)}(\mathbf x)}}{\mathrm \partial \theta_i} = V_i \cos \theta_i,\;\;\;
+   	\cfrac{\mathrm \partial{h_{\Im(\bar{V}_i)}(\mathbf x)}}{\mathrm \partial V_i} = \sin \theta_i.
   \end{aligned}
 ```
 
 In the previous example, the user neglects the covariances between the real and imaginary parts of the measurement. However, if desired, the user can also include them in the state estimation model by specifying the covariances of the vector:
 ```math
-    \mathbf{w}_{\bar{\mathcal{P}}} = [w_{\Re(\bar{V}_{i})}, w_{\Im(\bar{V}_{i})}].
+    \mathbf{w}_{\bar{\mathcal P}} = [w_{\Re(\bar{V}_i)}, w_{\Im(\bar{V}_i)}].
 ```
 ```@example ACSETutorial
 addPmu!(system, device; label = "V₃, θ₃", bus = 3, magnitude = 0.9, angle = -0.2,
@@ -454,7 +460,7 @@ nothing # hide
 
 Then, the covariances are obtained as follows:
 ```math
-    w_{\Re(\bar{V}_{i})} = w_{\Im(\bar{V}_{i})} =
+    w_{\Re(\bar{V}_i)} = w_{\Im(\bar{V}_i)} =
     v_{V_i} \cfrac{\mathrm \partial} {\mathrm \partial z_{V_i}} (z_{V_i} \cos z_{\theta_i})
     \cfrac{\mathrm \partial} {\mathrm \partial z_{V_i}} (z_{V_i} \sin z_{\theta_i})  +
     v_{\theta_i} \cfrac{\mathrm \partial} {\mathrm \partial z_{\theta_i}} (z_{V_i} \cos z_{\theta_i})
@@ -462,15 +468,16 @@ Then, the covariances are obtained as follows:
 ```
 which results in the solution:
 ```math
-    w_{\Re(\bar{V}_{i})} = w_{\Im(\bar{V}_{i})} = \cos z_{\theta_i} \sin z_{\theta_i}(v_{V_i} - v_{\theta_i} z_{V_i}^2).
+    w_{\Re(\bar{V}_i)} = w_{\Im(\bar{V}_i)} = \cos z_{\theta_i} \sin z_{\theta_i}(v_{V_i} - v_{\theta_i} z_{V_i}^2).
 ```
 
 ---
 
 ##### Polar Bus Voltage Phasor Measurements
-If the user chooses to include phasor measurement ``(V_i, \theta_i) \in \bar{\mathcal{P}}`` in polar coordinates in the AC state estimation model, the user will specify the measurement values, variances, and measurement functions of vectors:
+If the user chooses to include phasor measurement ``(V_i, \theta_i) \in \bar{\mathcal P}`` in polar coordinates in the AC state estimation model, the user will specify the measurement values, variances, and measurement functions of vectors:
 ```math
-    \mathbf{z}_{\bar{\mathcal{P}}} = [z_{V_i}, z_{\theta_i}], \;\;\; \mathbf{v}_{\bar{\mathcal{P}}} = [v_{V_i}, v_{\theta_i}], \;\;\; \mathbf{h}_{\bar{\mathcal{P}}}(\mathbf {x}) = [h_{V_{i}}(\mathbf {x}), h_{\theta_{i}}(\mathbf {x})].
+    \mathbf{z}_{\bar{\mathcal P}} = [z_{V_i}, z_{\theta_i}], \;\;\; \mathbf{v}_{\bar{\mathcal P}} = [v_{V_i}, v_{\theta_i}], \;\;\;
+    \mathbf{h}_{\bar{\mathcal P}}(\mathbf x) = [h_{V_{i}}(\mathbf x), h_{\theta_{i}}(\mathbf x)].
 ```
 
 For example:
@@ -483,26 +490,28 @@ nothing # hide
 Here, the functions defining the bus voltage phasor measurement are straightforward:
 ```math
   \begin{aligned}
-    h_{V_{i}}(\mathbf {x}) = V_{i}\\
-    h_{\theta_{i}}(\mathbf {x}) = \theta_{i},
+    h_{V_i}(\mathbf x) = V_i\\
+    h_{\theta_i}(\mathbf x) = \theta_i,
   \end{aligned}
 ```
 with the following Jacobian expressions:
 ```math
   \begin{aligned}
-   	\cfrac{\mathrm \partial{{h_{{V}_{i}}(\mathbf x)}}}{\mathrm \partial V_{i}}=1, \;\;\;
-    \cfrac{\mathrm \partial{{h_{\theta_i}(\mathbf x)}}}{\mathrm \partial \theta_{i}}=1.
+   	\cfrac{\mathrm \partial{{h_{V_i}(\mathbf x)}}}{\mathrm \partial V_i} = 1, \;\;\;
+    \cfrac{\mathrm \partial{{h_{\theta_i}(\mathbf x)}}}{\mathrm \partial \theta_i} = 1.
     \end{aligned}
 ```
 
 ---
 
-##### Rectangular From-Bus End Current Phasor Measurements
-When introducing a PMU at branch ``(i,j) \in \mathcal{E}``, it can be placed at the from-bus end, denoted as ``(I_{ij}, \psi_{ij}) \in \bar{\mathcal{P}}``, and it will be integrated into the AC state estimation model using rectangular coordinates by default. Incorporating current phasor measurements in the polar coordinate system is highly susceptible to ill-conditioned problems, especially when dealing with small values of current magnitudes. This is the reason why we typically include PMUs in the rectangular coordinate system by default.
+##### Rectangular From-Bus Current Phasor Measurements
+When introducing a PMU at branch ``(i,j) \in \mathcal E``, it can be placed at the from-bus end, denoted as ``(I_{ij}, \psi_{ij}) \in \bar{\mathcal P}``, and it will be integrated into the AC state estimation model using rectangular coordinates by default. Incorporating current phasor measurements in the polar coordinate system is highly susceptible to ill-conditioned problems, especially when dealing with small values of current magnitudes. This is the reason why we typically include PMUs in the rectangular coordinate system by default.
 
 Therefore, here we specify the measurement values, variances, and measurement functions of vectors:
 ```math
-    \mathbf{z}_{\bar{\mathcal{P}}} = [z_{\Re(\bar{I}_{ij})}, z_{\Im(\bar{I}_{ij})}], \;\;\; \mathbf{v}_{\bar{\mathcal{P}}} = [v_{\Re(\bar{I}_{ij})}, v_{\Im(\bar{I}_{ij})}], \;\;\; \mathbf{h}_{\bar{\mathcal{P}}}(\mathbf {x}) = [h_{\Re(\bar{I}_{ij})}(\mathbf {x}), h_{\Im(\bar{I}_{ij})}(\mathbf {x})].
+    \mathbf{z}_{\bar{\mathcal P}} = [z_{\Re(\bar{I}_{ij})}, z_{\Im(\bar{I}_{ij})}], \;\;\;
+    \mathbf{v}_{\bar{\mathcal P}} = [v_{\Re(\bar{I}_{ij})}, v_{\Im(\bar{I}_{ij})}], \;\;\;
+    \mathbf{h}_{\bar{\mathcal P}}(\mathbf x) = [h_{\Re(\bar{I}_{ij})}(\mathbf x), h_{\Im(\bar{I}_{ij})}(\mathbf x)].
 ```
 
 For example:
@@ -531,34 +540,34 @@ Utilizing the classical theory of propagation of uncertainty [iso1993guide](@cit
 The functions defining the current phasor measurement at the from-bus end are:
 ```math
   \begin{aligned}
-    h_{\Re(\bar{I}_{ij})}(\mathbf {x}) &= (A_{\psi_{ij}} \cos \theta_i - B_{\psi_{ij}} \sin \theta_i)V_i - [C_{\psi_{ij}} \cos (\theta_j + \phi_{ij}) - D_{\psi_{ij}} \sin (\theta_j + \phi_{ij})]V_j, \\
-    h_{\Im(\bar{I}_{ij})}(\mathbf {x}) &= (A_{\psi_{ij}} \sin \theta_i + B_{\psi_{ij}} \cos \theta_i)V_i - [C_{\psi_{ij}} \sin (\theta_j + \phi_{ij}) + D_{\psi_{ij}} \cos (\theta_j + \phi_{ij})]V_j.
+    h_{\Re(\bar{I}_{ij})}(\mathbf x) &= (A_{\psi_{ij}} \cos\theta_i - B_{\psi_{ij}} \sin\theta_i)V_i - [C_{\psi_{ij}} \cos(\theta_j + \phi_{ij}) - D_{\psi_{ij}} \sin(\theta_j + \phi_{ij})]V_j, \\
+    h_{\Im(\bar{I}_{ij})}(\mathbf x) &= (A_{\psi_{ij}} \sin\theta_i + B_{\psi_{ij}} \cos\theta_i)V_i - [C_{\psi_{ij}} \sin(\theta_j + \phi_{ij}) + D_{\psi_{ij}} \cos(\theta_j + \phi_{ij})]V_j.
   \end{aligned}
 ```
 
 Jacobian expressions corresponding to the measurement function ``h_{\Re(\bar{I}_{ij})}(\mathbf x)`` are defined as follows:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \theta_{i}} &=
-    -(A_{\psi_{ij}} \sin \theta_{i} + B_{\psi_{ij}} \cos \theta_{i})V_i\\
-    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \theta_{j}} &=
+    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \theta_i} &=
+    -(A_{\psi_{ij}} \sin\theta_{i} + B_{\psi_{ij}} \cos\theta_i)V_i\\
+    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \theta_j} &=
     [C_{\psi_{ij}} \sin(\theta_j + \phi_{ij}) + D_{\psi_{ij}} \cos(\theta_j + \phi_{ij})] V_j \\
-    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial V_{i}} &=
-     A_{\psi_{ij}}  \cos \theta_{i} - B_{\psi_{ij}}  \sin\theta_{i}\\
-    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial V_{j}} &=
+    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial V_i} &=
+     A_{\psi_{ij}}  \cos\theta_{i} - B_{\psi_{ij}} \sin\theta_i\\
+    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial V_j} &=
     -C_{\psi_{ij}} \cos(\theta_j + \phi_{ij}) + D_{\psi_{ij}}  \sin(\theta_j + \phi_{ij}).
   \end{aligned}
 ```
 while Jacobian expressions corresponding to the measurement function ``h_{\Im(\bar{I}_{ij})}(\mathbf x)`` are:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \theta_{i}} &=
-    (A_{\psi_{ij}} \cos \theta_{i} - B_{\psi_{ij}} \sin \theta_{i})V_i\\
-    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \theta_{j}} &=
+    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \theta_i} &=
+    (A_{\psi_{ij}} \cos \theta_{i} - B_{\psi_{ij}} \sin \theta_i)V_i\\
+    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial \theta_j} &=
     [-C_{\psi_{ij}} \cos(\theta_j + \phi_{ij}) + D_{\psi_{ij}} \sin(\theta_j + \phi_{ij})] V_j \\
-    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial V_{i}} &=
-     A_{\psi_{ij}}  \sin \theta_{i} + B_{\psi_{ij}}  \cos\theta_{i}\\
-    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial V_{j}} &=
+    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial V_i} &=
+     A_{\psi_{ij}}  \sin \theta_{i} + B_{\psi_{ij}} \cos\theta_i\\
+    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ij})}(\mathbf x)}}{\mathrm \partial V_j} &=
     -C_{\psi_{ij}} \sin(\theta_j + \phi_{ij}) - D_{\psi_{ij}}  \cos(\theta_j + \phi_{ij}).
   \end{aligned}
 ```
@@ -580,10 +589,12 @@ Then, the covariances are obtained as follows:
 
 ---
 
-##### Polar From-Bus End Current Phasor Measurements
-If the user chooses to include phasor measurement ``(I_{ij}, \psi_{ij}) \in \bar{\mathcal{P}}`` in polar coordinates in the AC state estimation model, the user will specify the measurement values, variances, and measurement functions of vectors:
+##### Polar From-Bus Current Phasor Measurements
+If the user chooses to include phasor measurement ``(I_{ij}, \psi_{ij}) \in \bar{\mathcal P}`` in polar coordinates in the AC state estimation model, the user will specify the measurement values, variances, and measurement functions of vectors:
 ```math
-    \mathbf{z}_{\bar{\mathcal{P}}} = [z_{I_{ij}}, z_{\psi_{ij}}], \;\;\; \mathbf{v}_{\bar{\mathcal{P}}} = [v_{I_{ij}}, v_{\psi_{ij}}], \;\;\; \mathbf{h}_{\bar{\mathcal{P}}}(\mathbf {x}) = [h_{I_{ij}}(\mathbf {x}), h_{\psi_{ij}}(\mathbf {x})].
+    \mathbf{z}_{\bar{\mathcal P}} = [z_{I_{ij}}, z_{\psi_{ij}}], \;\;\;
+    \mathbf{v}_{\bar{\mathcal P}} = [v_{I_{ij}}, v_{\psi_{ij}}], \;\;\;
+    \mathbf{h}_{\bar{\mathcal P}}(\mathbf x) = [h_{I_{ij}}(\mathbf x), h_{\psi_{ij}}(\mathbf x)].
 ```
 
 For example:
@@ -593,38 +604,42 @@ varianceMagnitude = 1e-5, varianceAngle = 1e-4, polar = true)
 nothing # hide
 ```
 
-Here, the function associated with the branch current magnitude at the from-bus end remains identical to the one provided in [From-Bus End Current Magnitude Measurements](@ref FromCurrentMagnitudeMeasurements). However, the function defining the branch current angle measurement is expressed as:
+Here, the function associated with the branch current magnitude at the from-bus end remains identical to the one provided in [From-Bus Current Magnitude Measurements](@ref FromCurrentMagnitudeMeasurements). However, the function defining the branch current angle measurement is expressed as:
 ```math
-    h_{\psi_{ij}}(\mathbf {x}) = \mathrm{atan}\Bigg[
-    \cfrac{(A_{\psi_{ij}} \sin\theta_i + B_{\psi_{ij}} \cos\theta_i)V_i - [C_{\psi_{ij}} \sin(\theta_{j}+\phi_{ij}) + D_{\psi_{ij}}\cos(\theta_{j}+\phi_{ij})]V_j}
-    {(A_{\psi_{ij}} \cos\theta_i - B_{\psi_{ij}} \sin\theta_i)V_i - [C_{\psi_{ij}} \cos(\theta_{j}+\phi_{ij}) - D_{\psi_{ij}} \sin(\theta_{j}+\phi_{ij})]V_j} \Bigg],
+    h_{\psi_{ij}}(\mathbf x) = \mathrm{atan} \Bigg[
+    \cfrac{(A_{\psi_{ij}} \sin\theta_i + B_{\psi_{ij}} \cos\theta_i)V_i - [C_{\psi_{ij}} \sin(\theta_j + \phi_{ij}) + D_{\psi_{ij}}\cos(\theta_j + \phi_{ij})]V_j}
+    {(A_{\psi_{ij}} \cos\theta_i - B_{\psi_{ij}} \sin\theta_i)V_i - [C_{\psi_{ij}} \cos(\theta_j + \phi_{ij}) - D_{\psi_{ij}} \sin(\theta_j + \phi_{ij})]V_j} \Bigg],
 ```
 where:
 ```math
-    A_{\psi_{ij}} = \cfrac{g_{ij} + g_{\text{s}i}}{\tau_{ij}^2}, \;\;\; B_{\psi_{ij}} = \cfrac{b_{ij}+b_{\text{s}i}}{\tau_{ij}^2}, \;\;\;
-    C_{\psi_{ij}} = \cfrac{g_{ij}}{\tau_{ij}}, \;\;\; D_{\psi_{ij}} = \cfrac{b_{ij}}{\tau_{ij}}.
+    A_{\psi_{ij}} = \cfrac{g_{ij} + g_{\mathrm{s}i}}{\tau_{ij}^2}, \;\;\;
+    B_{\psi_{ij}} = \cfrac{b_{ij}+b_{\mathrm{s}i}}{\tau_{ij}^2}, \;\;\;
+    C_{\psi_{ij}} = \cfrac{g_{ij}}{\tau_{ij}}, \;\;\;
+    D_{\psi_{ij}} = \cfrac{b_{ij}}{\tau_{ij}}.
 ```
 
-Jacobian expressions associated with the branch current magnitude function ``h_{I_{ij}}(\mathbf x)`` remains identical to the one provided in [From-Bus End Current Magnitude Measurements](@ref FromCurrentMagnitudeMeasurements). Further, Jacobian expressions corresponding to the measurement function ``h_{\psi_{ij}}(\mathbf x)`` are defined as follows:
+Jacobian expressions associated with the branch current magnitude function ``h_{I_{ij}}(\mathbf x)`` remains identical to the one provided in [From-Bus Current Magnitude Measurements](@ref FromCurrentMagnitudeMeasurements). Further, Jacobian expressions corresponding to the measurement function ``h_{\psi_{ij}}(\mathbf x)`` are defined as follows:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial \theta_{i}} &=
-    \cfrac{A_{I_{ij}} V_i^2- [C_{I_{ij}} \cos(\theta_{ij}- \phi_{ij}) - D_{I_{ij}} \sin (\theta_{ij} - \phi_{ij}) ]V_iV_j}{h_{{I}_{ij}}^2(\mathbf x)} \\
-    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial \theta_{j}} &=
+    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial \theta_i} &=
+    \cfrac{A_{I_{ij}} V_i^2- [C_{I_{ij}} \cos(\theta_{ij}- \phi_{ij}) - D_{I_{ij}} \sin (\theta_{ij} - \phi_{ij})]V_iV_j}{h_{{I}_{ij}}^2(\mathbf x)} \\
+    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial \theta_j} &=
     \cfrac{B_{I_{ij}} V_j^2 - [C_{I_{ij}} \cos (\theta_{ij} - \phi_{ij}) - D_{I_{ij}} \sin(\theta_{ij}- \phi_{ij})]V_iV_j}{h_{{I}_{ij}}^2(\mathbf x)} \\
-    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial V_{i}} &= -
+    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial V_i} &= -
     \cfrac{[C_{I_{ij}} \sin (\theta_{ij} - \phi_{ij}) + D_{I_{ij}} \cos(\theta_{ij}- \phi_{ij})]V_j }{h_{{I}_{ij}}^2(\mathbf x)}\\
-    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial V_{j}} &=
+    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial V_j} &=
     \cfrac{[C_{I_{ij}} \sin (\theta_{ij} - \phi_{ij}) + D_{I_{ij}} \cos(\theta_{ij}- \phi_{ij})]V_i }{h_{{I}_{ij}}^2(\mathbf x)}.
   \end{aligned}
 ```
 
 ---
 
-##### Rectangular To-Bus End Current Phasor Measurements
-When introducing a PMU at branch ``(i,j) \in \mathcal{E}``, it can be placed at the to-bus end, denoted as ``(I_{ji}, \psi_{ji}) \in \bar{\mathcal{P}}``, and it will be integrated into the AC state estimation model using rectangular coordinates by default. The user will specify the measurement values, variances, and measurement functions of vectors:
+##### Rectangular To-Bus Current Phasor Measurements
+When introducing a PMU at branch ``(i,j) \in \mathcal E``, it can be placed at the to-bus end, denoted as ``(I_{ji}, \psi_{ji}) \in \bar{\mathcal P}``, and it will be integrated into the AC state estimation model using rectangular coordinates by default. The user will specify the measurement values, variances, and measurement functions of vectors:
 ```math
-    \mathbf{z}_{\bar{\mathcal{P}}} = [z_{\Re(\bar{I}_{ji})}, z_{\Im(\bar{I}_{ji})}], \;\;\; \mathbf{v}_{\bar{\mathcal{P}}} = [v_{\Re(\bar{I}_{ji})}, v_{\Im(\bar{I}_{ji})}], \;\;\; \mathbf{h}_{\bar{\mathcal{P}}}(\mathbf {x}) = [h_{\Re(\bar{I}_{ji})}(\mathbf {x}), h_{\Im(\bar{I}_{ji})}(\mathbf {x})].
+    \mathbf{z}_{\bar{\mathcal P}} = [z_{\Re(\bar{I}_{ji})}, z_{\Im(\bar{I}_{ji})}], \;\;\;
+    \mathbf{v}_{\bar{\mathcal P}} = [v_{\Re(\bar{I}_{ji})}, v_{\Im(\bar{I}_{ji})}], \;\;\;
+    \mathbf{h}_{\bar{\mathcal P}}(\mathbf x) = [h_{\Re(\bar{I}_{ji})}(\mathbf x), h_{\Im(\bar{I}_{ji})}(\mathbf x)].
 ```
 
 For example:
@@ -653,34 +668,34 @@ The variances can be calculated as follows:
 The functions defining the current phasor measurement at the to-bus end are:
 ```math
   \begin{aligned}
-    h_{\Re(\bar{I}_{ji})}(\mathbf {x}) &= (A_{\psi_{ji}} \cos \theta_j - B_{\psi_{ji}} \sin \theta_j)V_j - [C_{\psi_{ji}} \cos (\theta_i - \phi_{ij}) - D_{\psi_{ji}} \sin (\theta_i + \phi_{ij})]V_i\\
-    h_{\Im(\bar{I}_{ji})}(\mathbf {x}) &= (A_{\psi_{ji}} \sin \theta_j + B_{\psi_{ji}} \cos \theta_j)V_j - [C_{\psi_{ji}} \sin (\theta_i + \phi_{ij}) + D_{\psi_{ji}} \cos (\theta_i + \phi_{ij})]V_i.
+    h_{\Re(\bar{I}_{ji})}(\mathbf x) &= (A_{\psi_{ji}} \cos\theta_j - B_{\psi_{ji}} \sin\theta_j)V_j - [C_{\psi_{ji}} \cos(\theta_i - \phi_{ij}) - D_{\psi_{ji}} \sin (\theta_i + \phi_{ij})]V_i\\
+    h_{\Im(\bar{I}_{ji})}(\mathbf x) &= (A_{\psi_{ji}} \sin\theta_j + B_{\psi_{ji}} \cos\theta_j)V_j - [C_{\psi_{ji}} \sin(\theta_i + \phi_{ij}) + D_{\psi_{ji}} \cos (\theta_i + \phi_{ij})]V_i.
   \end{aligned}
 ```
 
 Jacobian expressions corresponding to the measurement function ``h_{\Re(\bar{I}_{ji})}(\mathbf x)`` are defined as follows:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \theta_{i}} &=
-    [C_{\psi_{ji}} \sin (\theta_{i} - \phi_{ij}) + D_{\psi_{ji}} \cos (\theta_{i} - \phi_{ij})]V_i\\
-    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \theta_{j}} &=
+    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \theta_i} &=
+    [C_{\psi_{ji}} \sin (\theta_{i} - \phi_{ij}) + D_{\psi_{ji}} \cos (\theta_i - \phi_{ij})]V_i\\
+    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \theta_j} &=
     -(A_{\psi_{ji}} \sin\theta_j + B_{\psi_{ji}} \cos \theta_j ) V_j \\
-    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial V_{i}} &=
-    - C_{\psi_{ji}} \cos (\theta_{i} - \phi_{ij}) + D_{\psi_{ji}}  \sin(\theta_{i} - \phi_{ij})\\
-    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial V_{j}} &=
+    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial V_i} &=
+    - C_{\psi_{ji}} \cos (\theta_i - \phi_{ij}) + D_{\psi_{ji}} \sin(\theta_i - \phi_{ij})\\
+    \cfrac{\mathrm \partial{h_{\Re(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial V_j} &=
     A_{\psi_{ji}} \cos \theta_j - B_{\psi_{ji}}  \sin \theta_j.
   \end{aligned}
 ```
 while Jacobian expressions corresponding to the measurement function ``h_{\Im(\bar{I}_{ji})}(\mathbf x)`` are:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \theta_{i}} &=
-    [-C_{\psi_{ji}} \cos (\theta_{i} - \phi_{ij}) + D_{\psi_{ji}} \sin (\theta_{i} - \phi_{ij})]V_i\\
-    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \theta_{j}} &=
+    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \theta_i} &=
+    [-C_{\psi_{ji}} \cos (\theta_{i} - \phi_{ij}) + D_{\psi_{ji}} \sin (\theta_i - \phi_{ij})]V_i\\
+    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial \theta_j} &=
     (A_{\psi_{ji}} \cos\theta_j - B_{\psi_{ji}} \sin \theta_j ) V_j \\
-    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial V_{i}} &=
-    - C_{\psi_{ji}} \sin (\theta_{i} - \phi_{ij}) - D_{\psi_{ji}}  \cos(\theta_{i} - \phi_{ij})\\
-    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial V_{j}} &=
+    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial V_i} &=
+    - C_{\psi_{ji}} \sin (\theta_i - \phi_{ij}) - D_{\psi_{ji}}  \cos(\theta_i - \phi_{ij})\\
+    \cfrac{\mathrm \partial{h_{\Im(\bar{I}_{ji})}(\mathbf x)}}{\mathrm \partial V_j} &=
     A_{\psi_{ji}} \sin \theta_j + B_{\psi_{ji}}  \cos \theta_j.
   \end{aligned}
 ```
@@ -702,10 +717,12 @@ Then, the covariances are obtained as follows:
 
 ---
 
-##### Polar To-Bus End Current Phasor Measurements
-If the user chooses to include phasor measurement ``(I_{ji}, \psi_{ji}) \in \bar{\mathcal{P}}`` in polar coordinates in the AC state estimation model, the user will specify the measurement values, variances, and measurement functions of vectors:
+##### Polar To-Bus Current Phasor Measurements
+If the user chooses to include phasor measurement ``(I_{ji}, \psi_{ji}) \in \bar{\mathcal P}`` in polar coordinates in the AC state estimation model, the user will specify the measurement values, variances, and measurement functions of vectors:
 ```math
-    \mathbf{z}_{\bar{\mathcal{P}}} = [z_{I_{ji}}, z_{\psi_{ji}}], \;\;\; \mathbf{v}_{\bar{\mathcal{P}}} = [v_{I_{ji}}, v_{\psi_{ji}}], \;\;\; \mathbf{h}_{\bar{\mathcal{P}}}(\mathbf {x}) = [h_{I_{ji}}(\mathbf {x}), h_{\psi_{ji}}(\mathbf {x})].
+    \mathbf{z}_{\bar{\mathcal P}} = [z_{I_{ji}}, z_{\psi_{ji}}], \;\;\;
+    \mathbf{v}_{\bar{\mathcal P}} = [v_{I_{ji}}, v_{\psi_{ji}}], \;\;\;
+    \mathbf{h}_{\bar{\mathcal P}}(\mathbf x) = [h_{I_{ji}}(\mathbf x), h_{\psi_{ji}}(\mathbf x)].
 ```
 
 For example:
@@ -715,28 +732,30 @@ varianceMagnitude = 1e-2, varianceAngle = 1e-3, polar = true)
 nothing # hide
 ```
 
-Here, the function associated with the branch current magnitude at the to-bus end remains identical to the one provided in [To-Bus End Current Magnitude Measurements](@ref ToCurrentMagnitudeMeasurements). However, the function defining the branch current angle measurement is expressed as:
+Here, the function associated with the branch current magnitude at the to-bus end remains identical to the one provided in [To-Bus Current Magnitude Measurements](@ref ToCurrentMagnitudeMeasurements). However, the function defining the branch current angle measurement is expressed as:
 ```math
-    h_{\psi_{ji}}(\mathbf {x}) =  \mathrm{atan}\Bigg[
-    \cfrac{(A_{\psi_{ji}} \sin\theta_j + B_{\psi_{ji}} \cos\theta_j)V_j - [C_{\psi_{ji}} \sin(\theta_{i}-\phi_{ij}) + D_{\psi_{ji}}\cos(\theta_{i}-\phi_{ij})]V_i}
-    {(A_{\psi_{ji}} \cos\theta_j - B_{\psi_{ji}} \sin\theta_j)V_j - [C_{\psi_{ji}} \cos(\theta_{i}-\phi_{ij}) - D_{\psi_{ji}} \sin(\theta_{i}-\phi_{ij})]V_i} \Bigg],
+    h_{\psi_{ji}}(\mathbf {x}) = \mathrm{atan}\Bigg[
+    \cfrac{(A_{\psi_{ji}} \sin\theta_j + B_{\psi_{ji}} \cos\theta_j)V_j - [C_{\psi_{ji}} \sin(\theta_i - \phi_{ij}) + D_{\psi_{ji}}\cos(\theta_i - \phi_{ij})]V_i}
+    {(A_{\psi_{ji}} \cos\theta_j - B_{\psi_{ji}} \sin\theta_j)V_j - [C_{\psi_{ji}} \cos(\theta_i - \phi_{ij}) - D_{\psi_{ji}} \sin(\theta_i - \phi_{ij})]V_i} \Bigg],
 ```
 where:
 ```math
-    A_{\psi_{ji}} = g_{ij} + g_{\text{s}i}, \;\;\; B_{\psi_{ji}} = b_{ij} + b_{\text{s}i}, \;\;\;
-    C_{\psi_{ji}} = \cfrac{g_{ij}}{\tau_{ij}}, \;\;\; D_{\psi_{ji}} = \cfrac{b_{ij}}{\tau_{ij}}.
+    A_{\psi_{ji}} = g_{ij} + g_{\mathrm{s}i}, \;\;\;
+    B_{\psi_{ji}} = b_{ij} + b_{\mathrm{s}i}, \;\;\;
+    C_{\psi_{ji}} = \cfrac{g_{ij}}{\tau_{ij}}, \;\;\;
+    D_{\psi_{ji}} = \cfrac{b_{ij}}{\tau_{ij}}.
 ```
 
-Jacobian expressions associated with the branch current magnitude function ``h_{I_{ji}}(\mathbf x)`` remains identical to the one provided in [To-Bus End Current Magnitude Measurements](@ref ToCurrentMagnitudeMeasurements). Further, Jacobian expressions corresponding to the measurement function ``h_{\psi_{ji}}(\mathbf x)`` are defined as follows:
+Jacobian expressions associated with the branch current magnitude function ``h_{I_{ji}}(\mathbf x)`` remains identical to the one provided in [To-Bus Current Magnitude Measurements](@ref ToCurrentMagnitudeMeasurements). Further, Jacobian expressions corresponding to the measurement function ``h_{\psi_{ji}}(\mathbf x)`` are defined as follows:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial \theta_{i}} &=
+    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial \theta_i} &=
     \cfrac{A_{I_{ji}} V_i^2- [C_{I_{ji}} \cos(\theta_{ij}- \phi_{ij}) + D_{I_{ji}} \sin (\theta_{ij} - \phi_{ij}) ]V_iV_j}{h_{{I}_{ji}}^2(\mathbf x)} \\
-    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial \theta_{j}} &=
+    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial \theta_j} &=
     \cfrac{B_{I_{ji}} V_j^2 - [C_{I_{ji}} \cos (\theta_{ij} - \phi_{ij}) + D_{I_{ji}} \sin(\theta_{ij}- \phi_{ij})]V_iV_j}{h_{{I}_{ji}}^2(\mathbf x)} \\
-    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial V_{i}} &=
+    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial V_i} &=
     -\cfrac{[C_{I_{ji}} \sin (\theta_{ij} - \phi_{ij}) - D_{I_{ji}} \cos(\theta_{ij}- \phi_{ij})]V_j }{h_{{I}_{ji}}^2(\mathbf x)}\\
-    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial V_{j}} &=
+    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial V_j} &=
     \cfrac{[C_{I_{ji}} \sin (\theta_{ij} - \phi_{ij}) - D_{I_{ji}} \cos(\theta_{ij}- \phi_{ij})]V_i }{h_{{I}_{ji}}^2(\mathbf x)}.
   \end{aligned}
 ```
@@ -744,17 +763,17 @@ Jacobian expressions associated with the branch current magnitude function ``h_{
 ---
 
 ## [Weighted Least-Squares Estimation](@id ACSEWLSStateEstimationTutorials)
-Given the available set of measurements ``\mathcal{M}``, the weighted least-squares estimator ``\hat{\mathbf x}``, i.e., the solution of the weighted least-squares problem, can be found using the Gauss-Newton method:
+Given the available set of measurements ``\mathcal M``, the weighted least-squares estimator ``\hat{\mathbf x}`` can be found using the Gauss-Newton method:
 ```math
-		\Big[\mathbf J (\mathbf x^{(\nu)})^{T} \bm \Sigma^{-1} \mathbf J (\mathbf x^{(\nu)})\Big] \mathbf \Delta \mathbf x^{(\nu)} =
-		\mathbf J (\mathbf x^{(\nu)})^{T} \bm \Sigma^{-1} \mathbf r (\mathbf x^{(\nu)})
+\begin{gathered}
+		\Big[\mathbf J (\mathbf x^{(\nu)})^T \bm \Sigma^{-1} \mathbf J (\mathbf x^{(\nu)})\Big] \mathbf \Delta \mathbf x^{(\nu)} =
+		\mathbf J (\mathbf x^{(\nu)})^T \bm \Sigma^{-1} \mathbf r (\mathbf x^{(\nu)}) \\
+    \mathbf x^{(\nu+1)} = \mathbf x^{(\nu)} + \mathbf \Delta \mathbf x^{(\nu)},
+\end{gathered}
 ```
-```math
-		\mathbf x^{(\nu+1)} = \mathbf x^{(\nu)} + \mathbf \Delta \mathbf x^{(\nu)},
-```
-where ``\nu = \{0,1,2,\dots\} `` is the iteration index, ``\mathbf \Delta \mathbf x \in \mathbb {R}^{n_{\text{u}}} `` is the vector of increments of the state variables, ``\mathbf J (\mathbf x)\in \mathbb {R}^{k \times n_{\text{u}}}`` is the Jacobian matrix of measurement functions ``\mathbf h (\mathbf x)`` at ``\mathbf x=\mathbf x^{(\nu)}``, ``\bm \Sigma \in \mathbb {R}^{k \times k}`` is a measurement error covariance matrix, and ``\mathbf r (\mathbf x) = \mathbf{z} - \mathbf h (\mathbf x)`` is the vector of residuals [monticellibook; Ch. 10](@cite). It is worth noting that assuming uncorrelated measurement errors leads to a diagonal covariance matrix ``\bm \Sigma`` corresponding to measurement variances. However, when incorporating PMUs in a rectangular coordinate system and aiming to observe error correlation, this matrix loses its diagonal form.
+where ``\nu = \{0,1,2,\dots\} `` is the iteration index, ``\mathbf \Delta \mathbf x \in \mathbb {R}^s`` is the vector of increments of the state variables, ``\mathbf J (\mathbf x)\in \mathbb {R}^{k \times s}`` is the Jacobian matrix of measurement functions ``\mathbf h (\mathbf x)`` at ``\mathbf x = \mathbf x^{(\nu)}``, ``\bm \Sigma \in \mathbb {R}^{k \times k}`` is a measurement error covariance matrix, and ``\mathbf r (\mathbf x) = \mathbf{z} - \mathbf h (\mathbf x)`` is the vector of residuals [monticellibook; Ch. 10](@cite). It is worth noting that assuming uncorrelated measurement errors leads to a diagonal covariance matrix ``\bm \Sigma`` corresponding to measurement variances. However, when incorporating PMUs in a rectangular coordinate system and aiming to observe error correlation, this matrix loses its diagonal form.
 
-The non-linear or AC state estimation represents a non-convex problem arising from the non-linear measurement functions [weng2012semidefinite](@cite). Due to the fact that the values of state variables usually fluctuate in narrow boundaries, the non-linear model represents the mildly non-linear problem, where solutions are in a reasonable-sized neighborhood which enables the use of the Gauss-Newton method. The Gauss-Newton method can produce different rates of convergence, which can be anywhere from linear to quadratic [hansen2013least; Sec. 9.2](@cite). The convergence rate in regard to power system state estimation depends on the topology and measurements, and if parameters are consistent (e.g., free bad data measurement set), the method shows near quadratic convergence rate [monticellibook; Sec. 11.2](@cite).
+The nonlinear or AC state estimation represents a non-convex problem arising from the nonlinear measurement functions [weng2012semidefinite](@cite). Due to the fact that the values of state variables usually fluctuate in narrow boundaries, the model represents the mildly nonlinear problem, where solutions are in a reasonable-sized neighborhood which enables the use of the Gauss-Newton method. The Gauss-Newton method can produce different rates of convergence, which can be anywhere from linear to quadratic [hansen2013least; Sec. 9.2](@cite). The convergence rate in regard to power system state estimation depends on the topology and measurements, and if parameters are consistent (e.g., free bad data measurement set), the method shows near quadratic convergence rate [monticellibook; Sec. 11.2](@cite).
 
 ---
 
@@ -823,9 +842,9 @@ The resulting vector from these calculations is stored in the residual variable 
 𝐫 = analysis.method.residual
 ```
 
-The order of the residual vector follows a specific pattern. If all device types exist, the first ``|\mathcal{V}|`` elements correspond to voltmeters, followed by ``|\mathcal{I}|`` elements corresponding to ammeters. Then we have ``|\mathcal{P}|`` elements for wattmeters and ``|\mathcal{Q}|`` elements for varmeters. Finally, we have ``2|\bar{\mathcal{P}}|`` elements for PMUs. The order of these elements within specific devices follows the same order as they appear in the input data defined by the `Measurement` type.
+The order of the residual vector follows a specific pattern. If all device types exist, the first ``|\mathcal V|`` elements correspond to voltmeters, followed by ``|\mathcal I|`` elements corresponding to ammeters. Then we have ``|\mathcal P|`` elements for wattmeters and ``|\mathcal Q|`` elements for varmeters. Finally, we have ``2|\bar{\mathcal P}|`` elements for PMUs. The order of these elements within specific devices follows the same order as they appear in the input data defined by the `Measurement` type.
 
-At the same time, the function forms the Jacobian matrix ``\mathbf{J} (\mathbf{x}^{(\nu)})`` and calculates the gain matrix ``\mathbf{G} (\mathbf{x}^{(\nu)})`` using:
+At the same time, the function forms the Jacobian matrix ``\mathbf J (\mathbf x^{(\nu)})`` and calculates the gain matrix ``\mathbf G (\mathbf{x}^{(\nu)})`` using:
 ```math
 		\mathbf G (\mathbf x^{(\nu)}) = \mathbf J (\mathbf x^{(\nu)})^{T} \bm \Sigma^{-1} \mathbf J (\mathbf x^{(\nu)})
 ```
@@ -873,7 +892,7 @@ Finally, the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{Nonlinear
 ---
 
 ##### Jacobian Matrix
-As a reminder, the Jacobian matrix consists of ``n`` columns representing bus voltage angles ``\bm{\Theta}``, followed by ``n`` columns representing bus voltage magnitudes ``\mathbf{V}``. The arrangement of rows is structured such that the first ``|\mathcal{V}|`` rows correspond to voltmeters, followed by ``|\mathcal{I}|`` rows corresponding to ammeters. Then, we have ``|\mathcal{P}|`` rows for wattmeters and ``|\mathcal{Q}|`` rows for varmeters. Finally, there are ``2|\bar{\mathcal{P}}|`` rows for PMUs. The elements are computed based on the provided Jacobian expressions.
+As a reminder, the Jacobian matrix consists of ``n`` columns representing bus voltage angles ``\bm \Theta``, followed by ``n`` columns representing bus voltage magnitudes ``\mathbf V``. The arrangement of rows is structured such that the first ``|\mathcal V|`` rows correspond to voltmeters, followed by ``|\mathcal I|`` rows corresponding to ammeters. Then, we have ``|\mathcal P|`` rows for wattmeters and ``|\mathcal Q|`` rows for varmeters. Finally, there are ``2|\bar{\mathcal P}|`` rows for PMUs. The elements are computed based on the provided Jacobian expressions.
 
 ---
 
@@ -893,8 +912,8 @@ Observing the precision matrix, we notice that it loses its diagonal form due to
 
 ---
 
-##### Alternative Formulation
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [aburbook; Sec. 3.2](@cite).
+##### [Alternative Formulation](@id ACAlternativeFormulationTutorials)
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal method [aburbook; Sec. 3.2](@cite).
 
 This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
 ```@example ACSETutorial
@@ -917,27 +936,28 @@ nothing # hide
 
 To explain the method, we begin with the WLS equation:
 ```math
-	  \Big[\mathbf J (\mathbf x^{(\nu)})^{T} \mathbf W \mathbf J (\mathbf x^{(\nu)})\Big] \mathbf \Delta \mathbf x^{(\nu)} =
-		\mathbf J (\mathbf x^{(\nu)})^{T} \mathbf W \mathbf r (\mathbf x^{(\nu)})
+	  \Big[\mathbf J (\mathbf x^{(\nu)})^T \mathbf W \mathbf J (\mathbf x^{(\nu)})\Big] \mathbf \Delta \mathbf x^{(\nu)} =
+		\mathbf J (\mathbf x^{(\nu)})^T \mathbf W \mathbf r (\mathbf x^{(\nu)})
 ```
 where ``\mathbf W = \bm \Sigma^{-1}``. Subsequently, we can write:
 ```math
-  \left[{\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)})\right]^{T}  {\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)})  \Delta \mathbf x^{(\nu)} =
-  \left[{\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)})\right]^{T} {\mathbf W^{1/2}} \mathbf r (\mathbf x^{(\nu)}).
+  \left[{\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)})\right]^T  {\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)})  \Delta \mathbf x^{(\nu)} =
+  \left[{\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)})\right]^T {\mathbf W^{1/2}} \mathbf r (\mathbf x^{(\nu)}).
 ```
 
 Consequently, we have:
 ```math
-  \bar{\mathbf J}(\mathbf x^{(\nu)})^{T}  \bar{\mathbf J}(\mathbf x^{(\nu)}) \Delta \mathbf x^{(\nu)} = \bar{\mathbf J}(\mathbf x^{(\nu)})^{T}  \bar{\mathbf r} (\mathbf x^{(\nu)}),
+  \bar{\mathbf J} (\mathbf x^{(\nu)})^T  \bar{\mathbf J}(\mathbf x^{(\nu)}) \Delta \mathbf x^{(\nu)} = \bar{\mathbf J}(\mathbf x^{(\nu)})^{T}  \bar{\mathbf r} (\mathbf x^{(\nu)}),
 ```
 where:
 ```math
-  \bar{\mathbf J}(\mathbf x^{(\nu)}) = {\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)}), \;\;\; \bar{\mathbf r} (\mathbf x^{(\nu)}) = {\mathbf W^{1/2}} \mathbf r (\mathbf x^{(\nu)}).
+  \bar{\mathbf J}(\mathbf x^{(\nu)}) = {\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)}), \;\;\;
+  \bar{\mathbf r} (\mathbf x^{(\nu)}) = {\mathbf W^{1/2}} \mathbf r (\mathbf x^{(\nu)}).
 ```
 
 Therefore, within each iteration of the Gauss-Newton method, JuliaGrid conducts QR factorization on the rectangular matrix:
 ```math
-  \bar{\mathbf J}(\mathbf x^{(\nu)}) = {\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)}) = \mathbf{Q}\mathbf{R}.
+  \bar{\mathbf J}(\mathbf x^{(\nu)}) = {\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)}) = \mathbf Q \mathbf R.
 ```
 
 Access to the factorized matrix is possible through:
@@ -946,7 +966,7 @@ Access to the factorized matrix is possible through:
 𝐑 = analysis.method.factorization.R
 ```
 
-To obtain the solution, JuliaGrid avoids explicitly forming the orthogonal matrix ``\mathbf{Q}``. Once the algorithm converges, estimates of bus voltage magnitudes ``\hat{\mathbf V} = [\hat{V}_i]`` and angles ``\hat{\bm {\Theta}} = [\hat{\theta}_i]``, where ``i \in \mathcal{N}``  can be accessed using variables:
+To obtain the solution, JuliaGrid avoids explicitly forming the orthogonal matrix ``\mathbf Q``. Once the algorithm converges, estimates of bus voltage magnitudes ``\hat{\mathbf V} = [\hat{V}_i]`` and angles ``\hat{\bm \Theta} = [\hat{\theta}_i]``, where ``i \in \mathcal N``  can be accessed using variables:
 ```@repl ACSETutorial
 𝐕 = analysis.voltage.magnitude
 𝚯 = analysis.voltage.angle
@@ -983,12 +1003,12 @@ nothing # hide
 
 In this step, we employ the largest normalized residual test, guided by the analysis outlined in [aburbook; Sec. 5.7](@cite). To be more precise, we compute all measurement residuals based on the obtained estimate of state variables:
 ```math
-    r_i = z_i - h_i(\hat {\mathbf x}), \;\;\; i \in \mathcal{M}.
+    r_i = z_i - h_i(\hat {\mathbf x}), \;\;\; i \in \mathcal M.
 ```
 
 The normalized residuals for all measurements are computed as follows:
 ```math
-    \bar{r}_{i} = \cfrac{|r_i|}{\sqrt{C_{ii}}} = \cfrac{|r_i|}{\sqrt{S_{ii}\Sigma_{ii}}}, \;\;\; i \in \mathcal{M}.
+    \bar{r}_i = \cfrac{|r_i|}{\sqrt{C_{ii}}} = \cfrac{|r_i|}{\sqrt{S_{ii}\Sigma_{ii}}}, \;\;\; i \in \mathcal M.
 ```
 
 In this equation, we denote the diagonal entries of the residual covariance matrix ``\mathbf C \in \mathbb{R}^{k \times k}`` as ``C_{ii} = S_{ii}\Sigma_{ii}``, where ``S_{ii}`` is the diagonal entry of the residual sensitivity matrix ``\mathbf S`` representing the sensitivity of the measurement residuals to the measurement errors. For this specific configuration, the relationship is expressed as:
@@ -999,7 +1019,7 @@ It is important to note that only the diagonal entries of ``\mathbf C`` are requ
 
 The subsequent step involves selecting the largest normalized residual, and the ``j``-th measurement is then suspected as bad data and potentially removed from the measurement set ``\mathcal{M}``:
 ```math
-    \bar{r}_{j} = \text{max} \{\bar{r}_{i}, i \in \mathcal{M} \}.
+    \bar{r}_{j} = \text{max} \{\bar{r}_{i}, \forall i \in \mathcal{M} \}.
 ```
 
 Users can access this information using the variable:
