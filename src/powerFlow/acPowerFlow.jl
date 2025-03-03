@@ -1147,7 +1147,7 @@ end
 
 """
     acPowerFlow!(system::PowerSystem, analysis::ACPowerFlow;
-        maxIteration, stopping, print, power, current)
+        maxIteration, stopping, power, current, print, exit)
 
 The function serves as a wrapper for solving AC power flow. It calculates bus voltage
 magnitudes and angles, with the option to compute powers and currents.
@@ -1156,9 +1156,10 @@ magnitudes and angles, with the option to compute powers and currents.
 Users can use the following keywords:
 * `maxIteration`: Specifies the maximum number of iteration (default: `20`).
 * `stopping`: Defines the stopping criterion for the iterative algorithm (default: `1e-8`).
-* `print`: Controls solver output display (default: `true`).
 * `power`: Enables power computation upon convergence or reaching the iteration limit (default: `true`).
 * `current`: Enables current computation upon convergence or reaching the iteration limit (default: `false`).
+* `print`: Controls solver output display (default: `true`).
+* `exit`: Prints only exit information about algorithm convergence (default: `false`).
 
 # Updates
 The calculated voltages are stored in the `voltage` field of the `ACPowerFlow` type, with
@@ -1178,17 +1179,25 @@ function acPowerFlow!(
     analysis::ACPowerFlow;
     maxIteration::Int64 = 20,
     stopping::Float64 = 1e-8,
-    print::Bool = true,
     power::Bool = true,
-    current::Bool = true
+    current::Bool = true,
+    print::Bool = true,
+    exit::Bool = false,
 )
     converged = false
+
+    if exit
+        print = false
+    end
+
+    iter = 0
     printPowerFlowData(system, analysis, print)
     for iteration = 0:maxIteration
         delP, delQ = mismatch!(system, analysis)
 
         printPowerFlowIteration(iteration, delP, delQ, print)
         if delP < stopping && delQ < stopping
+            iter = iteration
             converged = true
             break
         end
@@ -1196,7 +1205,7 @@ function acPowerFlow!(
         solve!(system, analysis)
     end
 
-    printPowerFlowExit(system, analysis, print, converged)
+    printPowerFlowExit(system, analysis, iter, converged, print, exit)
 
     if power
         power!(system, analysis)
@@ -1211,7 +1220,7 @@ function printPowerFlowData(system::PowerSystem, analysis::ACPowerFlow, printpf:
         elements = nnz(analysis.method.jacobian)
         width = textwidth(string(elements)) + 2
 
-        print("\nNumber of buses:")
+        print("Number of buses:")
         print(format(Format("%*i\n"), width + 19, system.bus.number))
 
         print("Number of branches:")
@@ -1246,8 +1255,10 @@ end
 function printPowerFlowExit(
     system::PowerSystem,
     analysis::ACPowerFlow{NewtonRaphson},
+    iter::Int64,
+    converged::Bool,
     printpf::Bool,
-    converged::Bool
+    exitpf::Bool
 )
     if printpf
         minDelθ = extrema(analysis.method.increment[1:(system.bus.number - 1)])
@@ -1261,36 +1272,38 @@ function printPowerFlowExit(
         print("Maximum Magnitude Increment: ")
         print(format(Format("%*.4e\n"), 12, minDelV[2]))
         print("Maximum Angle Increment:     ")
-        print(format(Format("%*.4e\n"), 12, minDelθ[2]))
+        print(format(Format("%*.4e\n\n"), 12, minDelθ[2]))
+    end
 
+    if exitpf || printpf
         if converged
-            printMethodConverged(analysis)
+            printMethodConverged(analysis, iter)
         else
-            printMethodNotConverged(analysis)
+            printMethodNotConverged(analysis, iter)
         end
     end
 end
 
-function printMethodConverged(::ACPowerFlow{NewtonRaphson})
-    println("\nEXIT: The solution was found using the Newton-Raphson method.")
+function printMethodConverged(::ACPowerFlow{NewtonRaphson}, iter::Int64)
+    println("EXIT: The solution was found using the Newton-Raphson method in $iter iterations.")
 end
 
-function printMethodConverged(::ACPowerFlow{GaussSeidel})
-    println("\nEXIT: The solution was found using the Gauss-Seidel method.")
+function printMethodConverged(::ACPowerFlow{GaussSeidel}, iter::Int64)
+    println("EXIT: The solution was found using the Gauss-Seidel method in $iter iterations.")
 end
 
-function printMethodConverged(::ACPowerFlow{FastNewtonRaphson})
-    println("\nEXIT: The solution was found using the fast Newton-Raphson method.")
+function printMethodConverged(::ACPowerFlow{FastNewtonRaphson}, iter::Int64)
+    println("EXIT: The solution was found using the fast Newton-Raphson method in $iter iterations.")
 end
 
-function printMethodNotConverged(::ACPowerFlow{NewtonRaphson})
-    println("\nEXIT: The Newton-Raphson method failed to converge.")
+function printMethodNotConverged(::ACPowerFlow{NewtonRaphson}, ::Int64)
+    println("EXIT: The Newton-Raphson method failed to converge.")
 end
 
-function printMethodNotConverged(::ACPowerFlow{GaussSeidel})
-    println("\nEXIT: The Gauss-Seidel method failed to converge.")
+function printMethodNotConverged(::ACPowerFlow{GaussSeidel}, ::Int64)
+    println("EXIT: The Gauss-Seidel method failed to converge.")
 end
 
-function printMethodNotConverged(::ACPowerFlow{FastNewtonRaphson})
-    println("\nEXIT: The Fast Newton-Raphson method failed to converge.")
+function printMethodNotConverged(::ACPowerFlow{FastNewtonRaphson}, ::Int64)
+    println("EXIT: The Fast Newton-Raphson method failed to converge.")
 end

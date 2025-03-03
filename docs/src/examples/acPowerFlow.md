@@ -66,25 +66,6 @@ nothing # hide
 
 ---
 
-##### AC Power Flow Analysis Wrapper Function
-Throughout the simulations below, AC power flow is run multiple times. To avoid repeatedly calling multiple JuliaGrid built-in functions, we define a wrapper function that performs the AC power flow analysis, allowing us to call a single function each time. This wrapper function computes bus voltage magnitudes and angles. Once the algorithm converges, it then calculates the powers at buses, branches, and generators:
-```@example 4bus
-function acPowerFlow!(system::PowerSystem, analysis::ACPowerFlow)
-    for iteration = 1:20
-        stopping = mismatch!(system, analysis)
-        if all(stopping .< 1e-8)
-            println("The algorithm converged in $(iteration - 1) iterations.")
-            break
-        end
-        solve!(system, analysis)
-    end
-    power!(system, analysis)
-end
-nothing # hide
-```
-
----
-
 ##### Display Data Settings
 Before running simulations, we configure the data display settings, including the selection of displayed data elements and the numeric format for relevant power flow values.
 
@@ -111,7 +92,7 @@ fnr = fastNewtonRaphsonXB(system)
 nothing # hide
 ```
 
-Next, we run the iterative algorithm to calculate bus voltages and active and reactive powers:
+Then, we use the AC power flow wrapper function to iteratively compute bus voltages as well as active and reactive powers:
 ```@example 4bus
 acPowerFlow!(system, fnr)
 nothing # hide
@@ -163,7 +144,7 @@ nothing # hide
 
 Next, we run the AC power flow again to compute the new state of the power system, without having to recreate the fast Newton-Raphson model. Additionally, this step will start the fast Newton-Raphson method with a warm start, as the initial voltage magnitudes and angles will correspond to the solution from the base case analysis:
 ```@example 4bus
-acPowerFlow!(system, fnr)
+acPowerFlow!(system, fnr; exit = true)
 nothing # hide
 ```
 Since no power system changes were introduced that affect the Jacobian matrices, JuliaGrid reuses the Jacobian matrix factorizations from the base case analysis, significantly reducing computational complexity.
@@ -214,7 +195,7 @@ nothing # hide
 
 Now, we can solve the AC power flow for this scenario:
 ```@example 4bus
-acPowerFlow!(system, nr)
+acPowerFlow!(system, nr; exit = true)
 nothing # hide
 ```
 
