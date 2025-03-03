@@ -1037,18 +1037,18 @@ acModel!(system)
 
 gs = gaussSeidel(system)
 for i = 1:10
-    solve!(system, analysis1)
+    solve!(system, gs)
 end
 
 nr = newtonRaphson(system)
 
 setInitialPoint!(gs, nr)
 for i = 1:10
-    stopping = mismatch!(system, analysis2)
+    stopping = mismatch!(system, nr)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, analysis2)
+    solve!(system, nr)
 end
 ```
 """
@@ -1143,4 +1143,154 @@ function changeSlackBus!(system::PowerSystem)
             errorSlackDefinition()
         end
     end
+end
+
+"""
+    acPowerFlow!(system::PowerSystem, analysis::ACPowerFlow;
+        maxIteration, stopping, print, power, current)
+
+The function serves as a wrapper for solving AC power flow. It calculates bus voltage
+magnitudes and angles, with the option to compute powers and currents.
+
+# Keywords
+Users can use the following keywords:
+* `maxIteration`: Specifies the maximum number of iteration (default: `20`).
+* `stopping`: Defines the stopping criterion for the iterative algorithm (default: `1e-8`).
+* `print`: Controls solver output display (default: `true`).
+* `power`: Enables power computation upon convergence or reaching the iteration limit (default: `true`).
+* `current`: Enables current computation upon convergence or reaching the iteration limit (default: `false`).
+
+# Updates
+The calculated voltages are stored in the `voltage` field of the `ACPowerFlow` type, with
+optional storage in the `power` and `current` fields.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+analysis = newtonRaphson(system)
+acPowerFlow!(system, analysis; stopping = 1e-10, current = true)
+```
+"""
+function acPowerFlow!(
+    system::PowerSystem,
+    analysis::ACPowerFlow;
+    maxIteration::Int64 = 20,
+    stopping::Float64 = 1e-8,
+    print::Bool = true,
+    power::Bool = true,
+    current::Bool = true
+)
+    converged = false
+    printPowerFlowData(system, analysis, print)
+    for iteration = 0:maxIteration
+        delP, delQ = mismatch!(system, analysis)
+
+        printPowerFlowIteration(iteration, delP, delQ, print)
+        if delP < stopping && delQ < stopping
+            converged = true
+            break
+        end
+
+        solve!(system, analysis)
+    end
+
+    printPowerFlowExit(system, analysis, print, converged)
+
+    if power
+        power!(system, analysis)
+    end
+    if current
+        current!(system, analysis)
+    end
+end
+
+function printPowerFlowData(system::PowerSystem, analysis::ACPowerFlow, printpf::Bool)
+    if printpf
+        elements = nnz(analysis.method.jacobian)
+        width = textwidth(string(elements)) + 2
+
+        print("\nNumber of buses:")
+        print(format(Format("%*i\n"), width + 19, system.bus.number))
+
+        print("Number of branches:")
+        print(format(Format("%*i\n"), width + 16, system.branch.number))
+        print("Number of in-service branches:")
+        print(format(Format("%*i\n"), width + 5, system.branch.layout.inservice))
+
+        print("Number of generators:")
+        print(format(Format("%*i\n"), width + 14, system.generator.number))
+        print("Number of in-service generators:")
+        print(format(Format("%*i\n"), width + 3, system.generator.layout.inservice))
+
+        print("Number of state variables:")
+        print(format(Format("%*i\n"), width + 9, lastindex(analysis.method.increment)))
+
+        print("Number of nonzeros in the Jacobian:")
+        print(format(Format("%*i\n\n"), width, elements))
+    end
+end
+
+function printPowerFlowIteration(iter::Int64, delP::Float64, delQ::Float64, printpf::Bool)
+    if printpf
+        if iter % 10 == 0
+            println("Iteration  Active Mismatch  Reactive Mismatch")
+        end
+        print(format(Format("%*i "), 9, iter))
+        print(format(Format("%*.4e"), 16, delP))
+        print(format(Format("%*.4e \n"), 19, delQ))
+    end
+end
+
+function printPowerFlowExit(
+    system::PowerSystem,
+    analysis::ACPowerFlow{NewtonRaphson},
+    printpf::Bool,
+    converged::Bool
+)
+    if printpf
+        minDelθ = extrema(analysis.method.increment[1:(system.bus.number - 1)])
+        minDelV = extrema(analysis.method.increment[system.bus.number:end])
+
+        print("\nMinimum Magnitude Increment: ")
+        print(format(Format("%*.4e\n"), 12, minDelV[1]))
+        print("Minimum Angle Increment:     ")
+        print(format(Format("%*.4e\n"), 12, minDelθ[1]))
+
+        print("Maximum Magnitude Increment: ")
+        print(format(Format("%*.4e\n"), 12, minDelV[2]))
+        print("Maximum Angle Increment:     ")
+        print(format(Format("%*.4e\n"), 12, minDelθ[2]))
+
+        if converged
+            printMethodConverged(analysis)
+        else
+            printMethodNotConverged(analysis)
+        end
+    end
+end
+
+function printMethodConverged(::ACPowerFlow{NewtonRaphson})
+    println("\nEXIT: The solution was found using the Newton-Raphson method.")
+end
+
+function printMethodConverged(::ACPowerFlow{GaussSeidel})
+    println("\nEXIT: The solution was found using the Gauss-Seidel method.")
+end
+
+function printMethodConverged(::ACPowerFlow{FastNewtonRaphson})
+    println("\nEXIT: The solution was found using the fast Newton-Raphson method.")
+end
+
+function printMethodNotConverged(::ACPowerFlow{NewtonRaphson})
+    println("\nEXIT: The Newton-Raphson method failed to converge.")
+end
+
+function printMethodNotConverged(::ACPowerFlow{GaussSeidel})
+    println("\nEXIT: The Gauss-Seidel method failed to converge.")
+end
+
+function printMethodNotConverged(::ACPowerFlow{FastNewtonRaphson})
+    println("\nEXIT: The Fast Newton-Raphson method failed to converge.")
 end

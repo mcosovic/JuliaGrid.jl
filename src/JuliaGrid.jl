@@ -51,7 +51,7 @@ export addGenerator!, updateGenerator!, cost!, @generator
 include("powerFlow/acPowerFlow.jl")
 include("powerFlow/dcPowerFlow.jl")
 export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel
-export mismatch!, solve!
+export mismatch!, solve!, acPowerFlow!
 export reactiveLimit!, adjustAngle!, setInitialPoint!
 export dcPowerFlow
 

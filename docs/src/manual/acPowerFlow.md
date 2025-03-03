@@ -262,6 +262,18 @@ The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) f
 
 ---
 
+##### Wrapper Function
+JuliaGrid includes a wrapper function, [`acPowerFlow!`](@ref acPowerFlow!), for solving AC power flow. If users aim to compute the AC power flow with a minimal number of function calls, the process would be:
+```@example ACPowerFlowSolution
+setInitialPoint!(system, analysis) # hide
+analysis = newtonRaphson(system)
+acPowerFlow!(system, analysis)
+nothing # hide
+```
+This execution also computes power values, but their computation can be controlled using keywords within the [`acPowerFlow!`](@ref acPowerFlow!) function.
+
+---
+
 ##### Combining Methods
 The `PowerSystem` type, once created, can be shared among different methods, offering several advantages.
 
