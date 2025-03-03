@@ -1207,6 +1207,14 @@ function acPowerFlow!(
 
     printPowerFlowExit(system, analysis, iter, converged, print, exit)
 
+    if exit || print
+        if converged
+            printMethodConverged(analysis, iter)
+        else
+            printMethodNotConverged(analysis, iter)
+        end
+    end
+
     if power
         power!(system, analysis)
     end
@@ -1215,31 +1223,62 @@ function acPowerFlow!(
     end
 end
 
-function printPowerFlowData(system::PowerSystem, analysis::ACPowerFlow, printpf::Bool)
+function printPowerFlowData(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson}, printpf::Bool)
     if printpf
-        elements = nnz(analysis.method.jacobian)
-        width = textwidth(string(elements)) + 2
+        nnzJac = nnz(analysis.method.jacobian)
+        width = textwidth(string(nnzJac)) + 2
 
-        print("Number of buses:")
-        print(format(Format("%*i\n"), width + 19, system.bus.number))
-
-        print("Number of branches:")
-        print(format(Format("%*i\n"), width + 16, system.branch.number))
-        print("Number of in-service branches:")
-        print(format(Format("%*i\n"), width + 5, system.branch.layout.inservice))
-
-        print("Number of generators:")
-        print(format(Format("%*i\n"), width + 14, system.generator.number))
-        print("Number of in-service generators:")
-        print(format(Format("%*i\n"), width + 3, system.generator.layout.inservice))
+        printPowerSystemData(system, width)
 
         print("Number of state variables:")
         print(format(Format("%*i\n"), width + 9, lastindex(analysis.method.increment)))
 
         print("Number of nonzeros in the Jacobian:")
-        print(format(Format("%*i\n\n"), width, elements))
+        print(format(Format("%*i\n\n"), width, nnzJac))
     end
 end
+
+function printPowerFlowData(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson}, printpf::Bool)
+    if printpf
+        nnzJac = nnz(analysis.method.active.jacobian) + nnz(analysis.method.reactive.jacobian)
+        width = textwidth(string(nnzJac)) + 2
+
+        printPowerSystemData(system, width)
+
+        sv = lastindex(analysis.method.active.increment) + lastindex(analysis.method.reactive.increment)
+        print("Number of state variables:")
+        print(format(Format("%*i\n"), width + 9, sv))
+
+        print("Number of nonzeros in the Jacobian:")
+        print(format(Format("%*i\n\n"), width, nnzJac))
+    end
+end
+
+function printPowerFlowData(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel}, printpf::Bool)
+    if printpf
+        printPowerSystemData(system, 0)
+
+        print("Number of state variables:")
+        print(format(Format("%*i\n\n"), 0 + 9, lastindex(analysis.method.voltage)))
+    end
+end
+
+
+function printPowerSystemData(system::PowerSystem, width::Int64)
+    print("Number of buses:")
+    print(format(Format("%*i\n"), width + 19, system.bus.number))
+
+    print("Number of branches:")
+    print(format(Format("%*i\n"), width + 16, system.branch.number))
+    print("Number of in-service branches:")
+    print(format(Format("%*i\n"), width + 5, system.branch.layout.inservice))
+
+    print("Number of generators:")
+    print(format(Format("%*i\n"), width + 14, system.generator.number))
+    print("Number of in-service generators:")
+    print(format(Format("%*i\n"), width + 3, system.generator.layout.inservice))
+end
+
 
 function printPowerFlowIteration(iter::Int64, delP::Float64, delQ::Float64, printpf::Bool)
     if printpf
@@ -1248,13 +1287,13 @@ function printPowerFlowIteration(iter::Int64, delP::Float64, delQ::Float64, prin
         end
         print(format(Format("%*i "), 9, iter))
         print(format(Format("%*.4e"), 16, delP))
-        print(format(Format("%*.4e \n"), 19, delQ))
+        print(format(Format("%*.4e\n"), 19, delQ))
     end
 end
 
 function printPowerFlowExit(
     system::PowerSystem,
-    analysis::ACPowerFlow{NewtonRaphson},
+    analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{FastNewtonRaphson}},
     iter::Int64,
     converged::Bool,
     printpf::Bool,
@@ -1263,6 +1302,42 @@ function printPowerFlowExit(
     if printpf
         minDelθ = extrema(analysis.method.increment[1:(system.bus.number - 1)])
         minDelV = extrema(analysis.method.increment[system.bus.number:end])
+
+        print("\nMinimum Magnitude Increment: ")
+        print(format(Format("%*.4e\n"), 12, minDelV[1]))
+        print("Minimum Angle Increment:     ")
+        print(format(Format("%*.4e\n"), 12, minDelθ[1]))
+
+        print("Maximum Magnitude Increment: ")
+        print(format(Format("%*.4e\n"), 12, minDelV[2]))
+        print("Maximum Angle Increment:     ")
+        print(format(Format("%*.4e\n\n"), 12, minDelθ[2]))
+    end
+end
+
+function printPowerFlowExit(
+    system::PowerSystem,
+    analysis::ACPowerFlow{GaussSeidel},
+    iter::Int64,
+    converged::Bool,
+    printpf::Bool,
+    exitpf::Bool
+)
+    print("\n")
+end
+
+
+function printPowerFlowExit(
+    system::PowerSystem,
+    analysis::ACPowerFlow{FastNewtonRaphson},
+    iter::Int64,
+    converged::Bool,
+    printpf::Bool,
+    exitpf::Bool
+)
+    if printpf
+        minDelθ = extrema(analysis.method.active.increment)
+        minDelV = extrema(analysis.method.reactive.increment)
 
         print("\nMinimum Magnitude Increment: ")
         print(format(Format("%*.4e\n"), 12, minDelV[1]))
@@ -1283,6 +1358,8 @@ function printPowerFlowExit(
         end
     end
 end
+
+
 
 function printMethodConverged(::ACPowerFlow{NewtonRaphson}, iter::Int64)
     println("EXIT: The solution was found using the Newton-Raphson method in $iter iterations.")
