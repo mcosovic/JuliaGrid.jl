@@ -1349,14 +1349,6 @@ function printPowerFlowExit(
         print("Maximum Angle Increment:     ")
         print(format(Format("%*.4e\n\n"), 12, minDelθ[2]))
     end
-
-    if exitpf || printpf
-        if converged
-            printMethodConverged(analysis, iter)
-        else
-            printMethodNotConverged(analysis, iter)
-        end
-    end
 end
 
 
