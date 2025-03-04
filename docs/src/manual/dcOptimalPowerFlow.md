@@ -351,8 +351,7 @@ nothing # hide
 ## [Optimal Power Flow Solution](@id DCOptimalPowerFlowSolutionManual)
 To establish the DC optimal power flow problem, we utilize the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. After setting up the problem, we can use the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles:
 ```@example DCOptimalPowerFlow
-JuMP.set_silent(analysis.method.jump)
-solve!(system, analysis; verbose = false)
+solve!(system, analysis; verbose = 0)
 nothing # hide
 ```
 
