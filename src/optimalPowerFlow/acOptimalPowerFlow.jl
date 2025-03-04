@@ -1,6 +1,6 @@
 """
     acOptimalPowerFlow(system::PowerSystem, optimizer;
-        bridge, name, print, magnitude, angle, active, reactive)
+        bridge, name, verbose, magnitude, angle, active, reactive)
 
 The function sets up the optimization model for solving the AC optimal power flow problem.
 
@@ -21,7 +21,7 @@ provided in the [JuMP documentation](https://jump.dev/jl/stable/reference/models
 However, certain configurations may require different method calls, such as:
 - `bridge`: manage the bridging mechanism (default: `false`),
 - `name`: manage the creation of string names (default: `true`),
-- `print`: controls solver output display (default: `true`).
+- `verbose`: controls solver output display (default: `true`).
 
 Additionally, users can modify variable names used for printing and writing through the
 keywords `magnitude`, `angle`, `active`, and `reactive`. For instance, users can choose
@@ -48,7 +48,7 @@ function acOptimalPowerFlow(
     @nospecialize optimizerFactory;
     bridge::Bool = false,
     name::Bool = true,
-    print::Bool = true,
+    verbose::Bool = true,
     magnitude::String = "magnitude",
     angle::String = "angle",
     active::String = "active",
@@ -67,7 +67,7 @@ function acOptimalPowerFlow(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
-    if !print
+    if !verbose
         JuMP.set_silent(jump)
     end
 

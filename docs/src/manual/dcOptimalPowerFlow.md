@@ -355,7 +355,7 @@ JuMP.set_silent(analysis.method.jump)
 solve!(system, analysis)
 nothing # hide
 ```
-To suppress the solver display output, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function. Alternatively, output can be disabled by setting the `print = false` keyword within the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function.
+To suppress the solver display output, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function. Alternatively, output can be disabled by setting the `verbose = false` keyword within the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function.
 
 By executing this function, we will obtain the solution with the optimal values for the active power outputs of the generators and the bus voltage angles:
 ```@repl DCOptimalPowerFlow
@@ -497,7 +497,7 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, maxAct
 cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
 cost!(system; generator = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8])
 
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer; print = false)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer; verbose = false)
 solve!(system, analysis)
 nothing # hide
 ```

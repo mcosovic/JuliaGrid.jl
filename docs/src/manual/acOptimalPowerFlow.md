@@ -422,7 +422,7 @@ JuMP.set_silent(analysis.method.jump)
 solve!(system, analysis)
 nothing # hide
 ```
-To suppress the solver display output, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function. Alternatively, output can be disabled by setting the `print = false` keyword within the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function.
+To suppress the solver display output, we use the [`set_silent`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_silent) function. Alternatively, output can be disabled by setting the `verbose = false` keyword within the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function.
 
 By executing this function, we will obtain the solution with the optimal values for the active and reactive power outputs of the generators, as well as the bus voltage magnitudes and angles.
 ```@repl ACOptimalPowerFlow
@@ -565,7 +565,7 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, reacti
 cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
 cost!(system; generator = "Generator 2", active = 1, piecewise = [10 12.3; 14.7 16.8; 18 19])
 
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; print = false)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; verbose = false)
 solve!(system, analysis)
 nothing # hide
 ```

@@ -613,7 +613,7 @@ function pushIndirect!(jcb::SparseModel, fromIsland::Int64, toIsland::Int64)
 end
 
 """
-    pmuPlacement(system::PowerSystem, optimizer; bridge, name, print)
+    pmuPlacement(system::PowerSystem, optimizer; bridge, name, verbose)
 
 The function determines the optimal placement of PMUs through integer linear programming.
 It identifies the minimum set of PMUs required to ensure observability and a unique state
@@ -632,7 +632,7 @@ more detailed information, please refer to the
 The function accepts the following keywords:
 * `bridge`: controls the bridging mechanism (default: `false`),
 * `name`: handles the creation of string names (default: `false`),
-* `print`: controls solver output display (default: `true`).
+* `verbose`: controls solver output display (default: `true`).
 
 # Returns
 The function returns an instance of the `PlacementPMU` type, containing variables such as:
@@ -678,7 +678,7 @@ function pmuPlacement(
     (@nospecialize optimizerFactory);
     bridge::Bool = false,
     name::Bool = false,
-    print::Bool = true,
+    verbose::Bool = true,
 )
     bus = system.bus
     branch = system.branch
@@ -695,7 +695,7 @@ function pmuPlacement(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
 
-    if !print
+    if !verbose
         JuMP.set_silent(jump)
     end
 
@@ -740,7 +740,7 @@ end
         varianceMagnitudeFrom, varianceAngleFrom,
         varianceMagnitudeTo, varianceAngleTo,
         noise, correlated, polar,
-        bridge, name, print)
+        bridge, name, verbose)
 
 The function finds the optimal PMU placement by executing [pmuPlacement](@ref pmuPlacement).
 Then, based on the results from the `AC` type, it generates phasor measurements and
@@ -771,7 +771,7 @@ Settings for handling phasor measurements include:
 Settings for the optimization solver include:
 * `bridge`: controls the bridging mechanism (default: `false`),
 * `name`: handles the creation of string names (default: `false`),
-* `print`: controls solver output display (default: `true`).
+* `verbose`: controls solver output display (default: `true`).
 
 # Updates
 The function updates the `pmu` field of the `Measurement` composite type.
@@ -803,7 +803,7 @@ function pmuPlacement!(
     (@nospecialize optimizerFactory);
     bridge::Bool = false,
     name::Bool = false,
-    print::Bool = true,
+    verbose::Bool = true,
     varianceMagnitudeBus::FltIntMiss = missing,
     varianceAngleBus::FltIntMiss = missing,
     varianceMagnitudeFrom::FltIntMiss = missing,
@@ -814,7 +814,7 @@ function pmuPlacement!(
     correlated::Bool = template.pmu.correlated,
     polar::Bool = template.pmu.polar
 )
-    placement = pmuPlacement(system, optimizerFactory; bridge, name, print)
+    placement = pmuPlacement(system, optimizerFactory; bridge, name, verbose)
     errorVoltage(analysis.voltage.magnitude)
 
     for (bus, idx) in placement.bus
