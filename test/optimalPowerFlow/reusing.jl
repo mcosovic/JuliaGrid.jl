@@ -47,7 +47,7 @@
     cost!(system; generator = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
 
     acModel!(system)
-    analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; print = false)
+    analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; verbose = false)
 
     solve!(system, analysis)
     power!(system, analysis)
@@ -55,7 +55,7 @@
     # Reuse AC Optimal Power Flow Model
     resystem = powerSystem(path * "case14optimal.m")
     acModel!(resystem)
-    reusing = acOptimalPowerFlow(resystem, Ipopt.Optimizer; print = false)
+    reusing = acOptimalPowerFlow(resystem, Ipopt.Optimizer; verbose = false)
 
     updateBus!(
         resystem, reusing;
@@ -150,7 +150,7 @@
     cost!(system; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
     acModel!(system)
-    analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; print = false)
+    analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; verbose = false)
 
     solve!(system, analysis)
     power!(system, analysis)
@@ -236,14 +236,14 @@ end
     cost!(system; generator = 5, active = 2, polynomial = [854.0, 116.0])
 
     dcModel!(system)
-    analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; print = false)
+    analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; verbose = false)
     solve!(system, analysis)
     power!(system, analysis)
 
     # Reuse DC Optimal Power Flow Model
     resystem = powerSystem(path * "case14test.m")
     dcModel!(resystem)
-    reusing = dcOptimalPowerFlow(resystem, Ipopt.Optimizer; print = false)
+    reusing = dcOptimalPowerFlow(resystem, Ipopt.Optimizer; verbose = false)
 
     updateBus!(
         resystem, reusing;
@@ -311,7 +311,7 @@ end
     cost!(system; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
     dcModel!(system)
-    analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; print = false)
+    analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; verbose = false)
     solve!(system, analysis)
     power!(system, analysis)
 

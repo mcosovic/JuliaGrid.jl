@@ -3,7 +3,7 @@ system14 = powerSystem(path * "case14optimal.m")
     matpwr14 = h5read(path * "results.h5", "case14optimal/acOptimalPowerFlow")
 
     ########## IEEE 14-bus Test Case ##########
-    analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; print = false)
+    analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; verbose = false)
     solve!(system14, analysis)
     power!(system14, analysis)
     current!(system14, analysis)
@@ -119,7 +119,7 @@ system14 = powerSystem(path * "case14optimal.m")
     @testset "IEEE 14: Apparent Power Native Flow Constraints" begin
         system14.branch.flow.type .= 2
 
-        analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; print = false)
+        analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; verbose = false)
         solve!(system14, analysis)
 
         @test analysis.voltage.magnitude ≈ matpwr14["voltageMagnitude"] atol = 1e-6
@@ -133,7 +133,7 @@ system14 = powerSystem(path * "case14optimal.m")
         matpwr14 = h5read(path * "results.h5", "case14optimal/acOptimalPowerFlowActive")
         system14.branch.flow.type .= 1
 
-        analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; print = false)
+        analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; verbose = false)
         solve!(system14, analysis)
 
         @test analysis.voltage.magnitude ≈ matpwr14["voltageMagnitude"] atol = 1e-6
@@ -147,7 +147,7 @@ system14 = powerSystem(path * "case14optimal.m")
         matpwr14 = h5read(path * "results.h5", "case14optimal/acOptimalPowerFlowCurrent")
         system14.branch.flow.type .= 4
 
-        analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; print = false)
+        analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; verbose = false)
         solve!(system14, analysis)
         solve!(system14, analysis)
 
@@ -161,7 +161,7 @@ system14 = powerSystem(path * "case14optimal.m")
     @testset "IEEE 14: Current Magnitude Squared Flow Constraints" begin
         system14.branch.flow.type .= 5
 
-        analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; print = false)
+        analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; verbose = false)
         solve!(system14, analysis)
         solve!(system14, analysis)
 
@@ -181,7 +181,7 @@ system30 = powerSystem(path * "case30test.m")
 
     ########## IEEE 14-bus Test Case ##########
     dcModel!(system14)
-    analysis = dcOptimalPowerFlow(system14, Ipopt.Optimizer; print = false)
+    analysis = dcOptimalPowerFlow(system14, Ipopt.Optimizer; verbose = false)
     solve!(system14, analysis)
     power!(system14, analysis)
 
@@ -226,7 +226,7 @@ system30 = powerSystem(path * "case30test.m")
     end
 
     ########## IEEE 30-bus Test Case ##########
-    analysis = dcOptimalPowerFlow(system30, HiGHS.Optimizer; print = false)
+    analysis = dcOptimalPowerFlow(system30, HiGHS.Optimizer; verbose = false)
     solve!(system30, analysis)
     solve!(system30, analysis)
     power!(system30, analysis)
@@ -311,7 +311,7 @@ end
 
 @testset "Print Data in Per-Units" begin
     ########## Print AC Data ##########
-    analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; print = false)
+    analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; verbose = false)
     solve!(system14, analysis)
 
     @capture_out @testset "Bus Constraint AC Data" begin
@@ -336,7 +336,7 @@ end
     end
 
     ########## Print DC Data ##########
-    analysis = dcOptimalPowerFlow(system14, Ipopt.Optimizer; print = false)
+    analysis = dcOptimalPowerFlow(system14, Ipopt.Optimizer; verbose = false)
     solve!(system14, analysis)
 
     @capture_out @testset "Bus Constraint DC Data" begin
@@ -367,7 +367,7 @@ end
     @current(MA, deg)
 
     ########## Print AC Data ##########
-    analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; print = false)
+    analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer; verbose = false)
     solve!(system14, analysis)
 
     @capture_out @testset "Bus Constraint AC Data" begin
@@ -392,7 +392,7 @@ end
     end
 
     ########## Print DC Data ##########
-    analysis = dcOptimalPowerFlow(system14, Ipopt.Optimizer; print = false)
+    analysis = dcOptimalPowerFlow(system14, Ipopt.Optimizer; verbose = false)
     solve!(system14, analysis)
 
     @capture_out @testset "Bus Constraint DC Data" begin
