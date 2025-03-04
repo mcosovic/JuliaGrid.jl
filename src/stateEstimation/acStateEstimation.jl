@@ -1212,7 +1212,7 @@ function acStateEstimation!(
     printseMethod(analysis, verbose)
 
     iter = 0
-    for iteration = 0:maxIteration
+    for iteration = 1:maxIteration
         increment = solve!(system, analysis)
 
         printseIteration(analysis, iteration, increment, verbose)

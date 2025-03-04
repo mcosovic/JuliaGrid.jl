@@ -40,24 +40,6 @@ The `magnitude` and `angle` values define the initial point for the iterative AC
 
 ---
 
-##### AC State Estimation Wrapper Function
-Throughout the simulations below, AC state estimation is run multiple times. To avoid repeatedly calling multiple JuliaGrid built-in functions, we define a wrapper function that performs the state estimation, allowing us to call a single function each time. This wrapper function computes estimate of bus voltage magnitudes and angles. Once the algorithm converges, it then calculates the powers at buses and branches:
-```@example acStateEstimation
-function acStateEstimation!(system::PowerSystem, analysis::ACStateEstimation)
-    for iteration = 1:20
-        stopping = solve!(system, analysis)
-        if stopping < 1e-8
-            println("The algorithm converged in $iteration iterations.")
-            break
-        end
-    end
-    power!(system, analysis)
-end
-nothing # hide
-```
-
----
-
 ##### Display Data Settings
 Before running simulations, we configure the data display settings:
 ```@example acStateEstimation
@@ -105,15 +87,7 @@ Next, AC power flow analysis is performed to obtain bus voltages:
 acModel!(system)
 
 powerFlow = newtonRaphson(system)
-for iteration = 1:20
-    stopping = mismatch!(system, powerFlow)
-    if all(stopping .< 1e-8)
-        println("The algorithm converged in $(iteration - 1) iterations.")
-        break
-    end
-    solve!(system, powerFlow)
-end
-
+acPowerFlow!(system, powerFlow; verbose = 1)
 nothing # hide
 ```
 
@@ -199,15 +173,10 @@ nothing # hide
 ---
 
 ## Base Case Analysis
-After obtaining the measurements, we proceed with solving the AC state estimation by initializing the Gauss-Newton method to compute the WLS estimator:
+After collecting the measurements, we solve the AC state estimation by initializing the Gauss-Newton method and running the iterative algorithm to estimate bus voltages. The obtained results are then used to compute power values:
 ```@example acStateEstimation
 analysis = gaussNewton(system, device)
-nothing # hide
-```
-
-Next, we run the iterative algorithm to estimate bus voltages and use these results to compute power values:
-```@example acStateEstimation
-acStateEstimation!(system, analysis)
+acStateEstimation!(system, device, analysis; power = true, verbose = 2)
 nothing # hide
 ```
 
@@ -244,7 +213,7 @@ These updates demonstrate the flexibility of JuliaGrid in modifying measurements
 
 Next, AC state estimation is run again to compute the new estimate without recreating the Gauss-Newton model. Additionally, this step initializes the iterative algorithm with a warm start, as the initial voltage magnitudes and angles correspond to the solution from the base case analysis:
 ```@example acStateEstimation
-acStateEstimation!(system, analysis)
+acStateEstimation!(system, device, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -267,7 +236,7 @@ nothing # hide
 
 We then solve the AC state estimation again:
 ```@example acStateEstimation
-acStateEstimation!(system, analysis)
+acStateEstimation!(system, device, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -292,7 +261,7 @@ outlier.maxNormalizedResidual
 The bad data processing function automatically removes the detected outlier. Before repeating the AC state estimation, using a warm start is not advisable, as the previous state was obtained in the presence of bad data. Instead, it is useful to reset the initial point, for example, by using the values defined within the power system data:
 ```@example acStateEstimation
 setInitialPoint!(system, analysis)
-acStateEstimation!(system, analysis)
+acStateEstimation!(system, device, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 

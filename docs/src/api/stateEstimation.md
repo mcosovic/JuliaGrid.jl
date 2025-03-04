@@ -19,7 +19,7 @@ using JuliaGrid
 * [`gaussNewton`](@ref gaussNewton)
 * [`acLavStateEstimation`](@ref acLavStateEstimation)
 * [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}}))
-* [acStateEstimation!](@ref acStateEstimation!)
+* [`acStateEstimation!`](@ref acStateEstimation!)
 * [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation))
 
 ###### PMU State Estimation
