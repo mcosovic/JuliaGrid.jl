@@ -4,7 +4,6 @@ using JuliaGrid
 @power(MW, pu)
 @voltage(pu, deg)
 
-
 ##### Power System Model #####
 system = powerSystem()
 
@@ -24,7 +23,6 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 18.2)
 
 dcModel!(system)
 
-
 ##### Base Case Analysis #####
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
@@ -32,7 +30,6 @@ power!(system, analysis)
 
 printBusData(system, analysis)
 printBranchData(system, analysis)
-
 
 ##### Modifying Supplies and Demands #####
 updateBus!(system, analysis; label = "Bus 2", active = 25.5)
@@ -45,7 +42,6 @@ solve!(system, analysis)
 power!(system, analysis)
 
 printBranchData(system, analysis)
-
 
 ##### Modifying Network Topology #####
 updateBranch!(system, analysis; label = "Branch 3", status = 0)

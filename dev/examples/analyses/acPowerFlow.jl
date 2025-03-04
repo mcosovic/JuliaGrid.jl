@@ -1,24 +1,8 @@
 using JuliaGrid
 
-
-##### Wrapper Function #####
-function acPowerFlow!(system::PowerSystem, analysis::ACPowerFlow)
-    for iteration = 1:20
-        stopping = mismatch!(system, analysis)
-        if all(stopping .< 1e-8)
-            println("The algorithm converged in $(iteration - 1) iterations.")
-            break
-        end
-        solve!(system, analysis)
-    end
-    power!(system, analysis)
-end
-
-
 ##### System of Units #####
 @power(MW, MVAr)
 @voltage(pu, deg)
-
 
 ##### Power System Model #####
 system = powerSystem()
@@ -41,14 +25,12 @@ addGenerator!(system; bus = "Bus 2", active = 18.2, magnitude = 1.01)
 
 acModel!(system)
 
-
 ##### Display Data Settings #####
 show1 = Dict("Power Injection" => false)
 fmt1 = Dict("Power Generation" => "%.2f", "Power Demand" => "%.2f", "Shunt Power" => "%.2f")
 
 show2 = Dict("Shunt Power" => false, "Status" => false)
 fmt2 = Dict("From-Bus Power" => "%.2f", "To-Bus Power" => "%.2f", "Series Power" => "%.2f")
-
 
 ##### Base Case Analysis #####
 fnr = fastNewtonRaphsonXB(system)
@@ -57,7 +39,6 @@ acPowerFlow!(system, fnr)
 printBusData(system, fnr; show = show1, fmt = fmt1)
 printBranchData(system, fnr; show = show2, fmt = fmt2)
 
-
 ##### Modifying Supplies and Demands #####
 updateBus!(system, fnr; label = "Bus 2", active = 25.5, reactive = 15.0)
 updateBus!(system, fnr; label = "Bus 4", active = 42.0, reactive = 20.0)
@@ -65,16 +46,15 @@ updateBus!(system, fnr; label = "Bus 4", active = 42.0, reactive = 20.0)
 updateGenerator!(system, fnr; label = "Generator 1", active = 58.0, reactive = 20.0)
 updateGenerator!(system, fnr; label = "Generator 2", active = 23.1, reactive = 20.0)
 
-acPowerFlow!(system, fnr)
+acPowerFlow!(system, fnr; exit = true)
 
 printBranchData(system, fnr; show = show2, fmt = fmt2)
-
 
 ##### Modifying Network Topology #####
 updateBranch!(system; label = "Branch 3", status = 0)
 
 nr = newtonRaphson(system)
 setInitialPoint!(fnr, nr)
-acPowerFlow!(system, nr)
+acPowerFlow!(system, nr; exit = true)
 
 printBranchData(system, nr; show = show2, fmt = fmt2)

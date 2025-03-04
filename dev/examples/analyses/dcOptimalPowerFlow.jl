@@ -4,7 +4,6 @@ using JuliaGrid, Ipopt
 @power(MW, pu)
 @voltage(pu, deg)
 
-
 ##### Power System Model #####
 system = powerSystem()
 
@@ -30,10 +29,8 @@ cost!(system; generator = "Generator 3", active = 2, polynomial = [1.00; 20.0; 0
 
 dcModel!(system)
 
-
 ##### Display Data Settings #####
 fmt = Dict("From-Bus Power" => "%.2f", "To-Bus Power" => "%.2f", "Power Output" => "%.2f")
-
 
 ##### Base Case Analysis #####
 analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; angle = "θ", active = "Pg")
@@ -48,7 +45,6 @@ printGeneratorData(system, analysis; fmt)
 printGeneratorConstraint(system, analysis)
 printBranchData(system, analysis; fmt)
 
-
 ##### Modifying Demands #####
 updateBus!(system, analysis; label = "Bus 2", active = 25.2)
 updateBus!(system, analysis; label = "Bus 4", active = 43.3)
@@ -60,7 +56,6 @@ printGeneratorData(system, analysis; fmt)
 printBranchConstraint(system, analysis)
 printBranchData(system, analysis; fmt)
 
-
 ##### Modifying Generator Costs #####
 cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [2.0; 40.0; 0.0])
 cost!(system, analysis; generator = "Generator 3", active = 2, polynomial = [0.5; 10.0; 0.0])
@@ -71,7 +66,6 @@ power!(system, analysis)
 printGeneratorData(system, analysis; fmt)
 printBranchData(system, analysis; fmt)
 
-
 ##### Adding Branch Flow Constraints #####
 updateBranch!(system, analysis; label = "Branch 2", type = 1, maxFromBus = 15.0)
 updateBranch!(system, analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
@@ -81,7 +75,6 @@ power!(system, analysis)
 
 printGeneratorData(system, analysis; fmt)
 printBranchData(system, analysis; fmt)
-
 
 ##### Modifying Network Topology #####
 updateBranch!(system, analysis; label = "Branch 2", status = 0)
