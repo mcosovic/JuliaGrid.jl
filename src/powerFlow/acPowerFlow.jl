@@ -1190,15 +1190,16 @@ function acPowerFlow!(
         print = false
     end
 
-    width = maxWidth(analysis)
-    printPowerSystemData(system, width, print)
-    printMethodData(analysis, width, print)
+    widthps, maxwidthps = maxWidth(system)
+    widthalg, maxwidthalg, npq = maxWidth(system, analysis)
+    printpfSystem(system, widthps, maxwidthps, npq, print)
+    printpfMethod(analysis, widthalg, maxwidthalg, print)
 
     iter = 0
     for iteration = 0:maxIteration
         delP, delQ = mismatch!(system, analysis)
 
-        printIterationData(iteration, delP, delQ, print)
+        printpfIteration(iteration, delP, delQ, print)
         if delP < stopping && delQ < stopping
             iter = iteration
             converged = true
@@ -1209,11 +1210,11 @@ function acPowerFlow!(
     end
 
     if print
-        printInceremntData(system, analysis, print)
+        printpfIncrement(system, analysis, print)
     end
 
     if exit || print
-        printConvergence(analysis, iter, converged, print, exit)
+        printpfConvergence(analysis, iter, converged, print, exit)
     end
 
     if power
@@ -1224,71 +1225,118 @@ function acPowerFlow!(
     end
 end
 
-function maxWidth(analysis::ACPowerFlow{NewtonRaphson})
-    textwidth(string(nnz(analysis.method.jacobian))) + 2
+function maxWidth(system::PowerSystem)
+    textwidth(string(system.branch.number)) + 1,
+    textwidth("Number of generators:")
 end
 
-function maxWidth(analysis::ACPowerFlow{FastNewtonRaphson})
+function maxWidth(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
+    textwidth(string(nnz(analysis.method.jacobian))) + 1,
+    textwidth("Number of nonzeros in the Jacobian:"),
+    lastindex(analysis.method.increment) - system.bus.number + 1
+end
+
+function maxWidth(::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
     textwidth(
         string(max(
             nnz(analysis.method.active.jacobian), nnz(analysis.method.reactive.jacobian)
             )
         )
-    ) + 2
+    ) + 2,
+    textwidth("Number of nonzeros in the Jacobian:"),
+    lastindex(analysis.method.reactive.increment)
 end
 
-function maxWidth(analysis::ACPowerFlow{GaussSeidel})
-    textwidth(string(lastindex(analysis.method.voltage))) + 2
+function maxWidth(::PowerSystem, analysis::ACPowerFlow{GaussSeidel})
+    textwidth(string(lastindex(analysis.method.voltage))) + 1,
+    textwidth("Number of complex state variables:"),
+    lastindex(analysis.method.pq)
 end
 
-function printPowerSystemData(system::PowerSystem, width::Int64, printpf::Bool)
+function printpfSystem(system::PowerSystem, wd::Int64, mwd::Int64, npq::Int64, printpf::Bool)
     if printpf
+        layBrc = system.branch.layout
+        layGen = system.generator.layout
+        width = wd + mwd
+
         print("Number of buses:")
-        print(format(Format("%*i\n"), width + 19, system.bus.number))
+        print(format(Format("%*i\n"), width - 16, system.bus.number))
+
+        print("  Demand buses:")
+        print(format(Format("%*i\n"), width - 15, npq))
+
+        print("  Generator buses:")
+        print(format(Format("%*i\n"), width - 18, system.bus.number - 1 - npq))
 
         print("Number of branches:")
-        print(format(Format("%*i\n"), width + 16, system.branch.number))
-        print("Number of in-service branches:")
-        print(format(Format("%*i\n"), width + 5, system.branch.layout.inservice))
+        print(format(Format("%*i\n"), width - 19, system.branch.number))
+
+        print("  In-service:")
+        print(format(Format("%*i\n"), width - 13, layBrc.inservice))
+
+        print("  Out-of-service:")
+        print(format(Format("%*i\n"), width - 17, system.branch.number - layBrc.inservice))
 
         print("Number of generators:")
-        print(format(Format("%*i\n"), width + 14, system.generator.number))
-        print("Number of in-service generators:")
-        print(format(Format("%*i\n"), width + 3, system.generator.layout.inservice))
+        print(format(Format("%*i\n"), width - 21, system.generator.number))
+
+        print("  In-service:")
+        print(format(Format("%*i\n"), width - 13, layGen.inservice))
+
+        print("  Out-of-service:")
+        print(format(Format("%*i\n\n"), width - 17, system.generator.number - layGen.inservice))
     end
 end
 
-function printMethodData(analysis::ACPowerFlow{NewtonRaphson}, width::Int64, printpf::Bool)
+function printpfMethod(analysis::ACPowerFlow{NewtonRaphson}, wd::Int64, mwd::Int64, printpf::Bool)
     if printpf
         print("Number of state variables:")
-        print(format(Format("%*i\n"), width + 9, lastindex(analysis.method.increment)))
+        print(
+            format(Format("%*i\n"), wd + mwd - 26, lastindex(analysis.method.increment))
+        )
 
         print("Number of nonzeros in the Jacobian:")
-        print(format(Format("%*i\n\n"), width, nnz(analysis.method.jacobian)))
+        print(format(Format("%*i\n\n"), wd, nnz(analysis.method.jacobian)))
     end
 end
 
-function printMethodData(analysis::ACPowerFlow{FastNewtonRaphson}, width::Int64, printpf::Bool)
+function printpfMethod(analysis::ACPowerFlow{FastNewtonRaphson}, wd::Int64, mwd::Int64, printpf::Bool)
     if printpf
-        nnzJac = nnz(analysis.method.active.jacobian) + nnz(analysis.method.reactive.jacobian)
-        sv = lastindex(analysis.method.active.increment) + lastindex(analysis.method.reactive.increment)
+        method = analysis.method
+        nnzJac = nnz(method.active.jacobian) + nnz(method.reactive.jacobian)
+        sv = lastindex(method.active.increment) + lastindex(method.reactive.increment)
 
         print("Number of state variables:")
-        print(format(Format("%*i\n"), width + 9, sv))
+        print(format(Format("%*i\n"), wd + mwd - 26, sv))
 
         print("Number of nonzeros in the Jacobian:")
-        print(format(Format("%*i\n\n"), width, nnzJac))
+        print(format(Format("%*i\n"), wd, nnzJac))
+
+        print("  Active Power:")
+        print(format(Format("%*i\n"), wd + mwd - 15, nnz(method.active.jacobian)))
+
+        print("  Reactive Power:")
+        print(format(Format("%*i\n\n"), wd + mwd - 17, nnz(method.reactive.jacobian)))
     end
 end
 
-function printMethodData(analysis::ACPowerFlow{GaussSeidel}, width::Int64, printpf::Bool)
+function printpfMethod(analysis::ACPowerFlow{GaussSeidel}, wd::Int64, mwd::Int64, printpf::Bool)
     if printpf
-        print("Number of state variables:")
-        print(format(Format("%*i\n\n"), width + 9, lastindex(analysis.method.voltage)))
+        print("Number of complex state variables:")
+        print(
+            format(Format("%*i\n"), wd,
+            lastindex(analysis.method.pq) + lastindex(analysis.method.pv))
+        )
+
+        print("Number of complex equations:")
+        print(
+            format(Format("%*i\n\n"), wd + mwd - 28,
+            lastindex(analysis.method.pq) + 3 * lastindex(analysis.method.pv))
+        )
     end
 end
 
-function printIterationData(iter::Int64, delP::Float64, delQ::Float64, printpf::Bool)
+function printpfIteration(iter::Int64, delP::Float64, delQ::Float64, printpf::Bool)
     if printpf
         if iter % 10 == 0
             println("Iteration  Active Mismatch  Reactive Mismatch")
@@ -1299,7 +1347,7 @@ function printIterationData(iter::Int64, delP::Float64, delQ::Float64, printpf::
     end
 end
 
-function printInceremntData(
+function printpfIncrement(
     system::PowerSystem,
     analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{FastNewtonRaphson}},
     printpf::Bool
@@ -1307,19 +1355,19 @@ function printInceremntData(
     if printpf
         mag, ang = minmaxIncrement(system, analysis)
 
-        print("\nMinimum Magnitude Increment: ")
-        print(format(Format("%*.4e\n"), 12, mag[1]))
-        print("Minimum Angle Increment:     ")
-        print(format(Format("%*.4e\n"), 12, ang[1]))
+        print("\n" * " "^24 * "Minimum   Maximum")
 
-        print("Maximum Magnitude Increment: ")
-        print(format(Format("%*.4e\n"), 12, mag[2]))
-        print("Maximum Angle Increment:     ")
-        print(format(Format("%*.4e\n\n"), 12, ang[2]))
+        print("\nMagnitude Increment:")
+        print(format(Format("%*.2e"), 11, mag[1]))
+        print(format(Format("%*.2e\n"), 10, mag[2]))
+
+        print("Angle Increment:")
+        print(format(Format("%*.2e"), 15, ang[1]))
+        print(format(Format("%*.2e\n\n"), 10, ang[2]))
     end
 end
 
-function printInceremntData(
+function printpfIncrement(
     ::PowerSystem,
     ::ACPowerFlow{GaussSeidel},
     ::Bool,
@@ -1337,7 +1385,7 @@ function minmaxIncrement(::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson}
     extrema(analysis.method.reactive.increment)
 end
 
-function printConvergence(
+function printpfConvergence(
     analysis::ACPowerFlow,
     iter::Int64,
     converged::Bool,
@@ -1347,9 +1395,12 @@ function printConvergence(
     if printpf || exitpf
         method = printMethodName(analysis)
         if converged
-            println("EXIT: The solution was found using the " * method * " method in $iter iterations.")
+            println(
+                "EXIT: The solution was found using the " * method *
+                " method in $iter iterations."
+            )
         else
-            println("EXIT: The  " * method * " method failed to converge.")
+            println("EXIT: The " * method * " method failed to converge.")
         end
     end
 end
