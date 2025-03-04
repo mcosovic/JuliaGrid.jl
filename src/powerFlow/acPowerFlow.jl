@@ -1147,19 +1147,22 @@ end
 
 """
     acPowerFlow!(system::PowerSystem, analysis::ACPowerFlow;
-        maxIteration, stopping, power, current, verbose, exit)
+        maxIteration, stopping, power, current, verbose)
 
 The function serves as a wrapper for solving AC power flow. It calculates bus voltage
 magnitudes and angles, with the option to compute powers and currents.
 
 # Keywords
 Users can use the following keywords:
-* `maxIteration`: Specifies the maximum number of iteration (default: `20`).
+* `maxIteration`: Specifies the maximum number of iterations (default: `20`).
 * `stopping`: Defines the stopping criterion for the iterative algorithm (default: `1e-8`).
 * `power`: Enables power computation upon convergence or reaching the iteration limit (default: `true`).
 * `current`: Enables current computation upon convergence or reaching the iteration limit (default: `false`).
-* `verbose`: Controls solver output display (default: `true`).
-* `exit`: Prints only exit information about algorithm convergence (default: `false`).
+* `verbose`: Controls the solver output display:
+  * `verbose = 0`: silent mode,
+  * `verbose = 1`: prints only the exit message about convergence,
+  * `verbose = 2`: prints only iteration data,
+  * `verbose = 3`: prints detailed data (default).
 
 # Updates
 The calculated voltages are stored in the `voltage` field of the `ACPowerFlow` type, with
@@ -1181,18 +1184,14 @@ function acPowerFlow!(
     stopping::Float64 = 1e-8,
     power::Bool = true,
     current::Bool = false,
-    verbose::Bool = true,
+    verbose::Int64 = 3,
     exit::Bool = false,
 )
     converged = false
 
-    if exit
-        verbose = false
-    end
 
-    widthps, maxwidthps = maxWidth(system)
     widthalg, maxwidthalg, npq = maxWidth(system, analysis)
-    printpfSystem(system, widthps, maxwidthps, npq, verbose)
+    printpfSystem(system, npq, verbose)
     printpfMethod(analysis, widthalg, maxwidthalg, verbose)
 
     iter = 0
@@ -1209,13 +1208,8 @@ function acPowerFlow!(
         solve!(system, analysis)
     end
 
-    if verbose
-        printpfIncrement(system, analysis, verbose)
-    end
-
-    if exit || verbose
-        printpfConvergence(analysis, iter, converged, verbose, exit)
-    end
+    printpfIncrement(system, analysis, verbose)
+    printpfConvergence(analysis, iter, converged, verbose)
 
     if power
         power!(system, analysis)
@@ -1223,11 +1217,6 @@ function acPowerFlow!(
     if current
         current!(system, analysis)
     end
-end
-
-function maxWidth(system::PowerSystem)
-    textwidth(string(system.branch.number)) + 1,
-    textwidth("Number of generators:")
 end
 
 function maxWidth(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
@@ -1253,8 +1242,11 @@ function maxWidth(::PowerSystem, analysis::ACPowerFlow{GaussSeidel})
     lastindex(analysis.method.pq)
 end
 
-function printpfSystem(system::PowerSystem, wd::Int64, mwd::Int64, npq::Int64, verbose::Bool)
-    if verbose
+function printpfSystem(system::PowerSystem, npq::Int64, verbose::Int64)
+    if verbose == 3
+        wd = textwidth(string(system.branch.number)) + 1
+        mwd = textwidth("Number of generators:")
+
         layBrc = system.branch.layout
         layGen = system.generator.layout
         width = wd + mwd
@@ -1288,8 +1280,8 @@ function printpfSystem(system::PowerSystem, wd::Int64, mwd::Int64, npq::Int64, v
     end
 end
 
-function printpfMethod(analysis::ACPowerFlow{NewtonRaphson}, wd::Int64, mwd::Int64, verbose::Bool)
-    if verbose
+function printpfMethod(analysis::ACPowerFlow{NewtonRaphson}, wd::Int64, mwd::Int64, verbose::Int64)
+    if verbose == 2 || verbose == 3
         print("Number of state variables:")
         print(
             format(Format("%*i\n"), wd + mwd - 26, lastindex(analysis.method.increment))
@@ -1300,8 +1292,8 @@ function printpfMethod(analysis::ACPowerFlow{NewtonRaphson}, wd::Int64, mwd::Int
     end
 end
 
-function printpfMethod(analysis::ACPowerFlow{FastNewtonRaphson}, wd::Int64, mwd::Int64, verbose::Bool)
-    if verbose
+function printpfMethod(analysis::ACPowerFlow{FastNewtonRaphson}, wd::Int64, mwd::Int64, verbose::Int64)
+    if verbose == 2 || verbose == 3
         method = analysis.method
         nnzJac = nnz(method.active.jacobian) + nnz(method.reactive.jacobian)
         sv = lastindex(method.active.increment) + lastindex(method.reactive.increment)
@@ -1320,8 +1312,8 @@ function printpfMethod(analysis::ACPowerFlow{FastNewtonRaphson}, wd::Int64, mwd:
     end
 end
 
-function printpfMethod(analysis::ACPowerFlow{GaussSeidel}, wd::Int64, mwd::Int64, verbose::Bool)
-    if verbose
+function printpfMethod(analysis::ACPowerFlow{GaussSeidel}, wd::Int64, mwd::Int64, verbose::Int64)
+    if verbose == 2 || verbose == 3
         print("Number of complex state variables:")
         print(
             format(Format("%*i\n"), wd,
@@ -1336,8 +1328,8 @@ function printpfMethod(analysis::ACPowerFlow{GaussSeidel}, wd::Int64, mwd::Int64
     end
 end
 
-function printpfIteration(iter::Int64, delP::Float64, delQ::Float64, verbose::Bool)
-    if verbose
+function printpfIteration(iter::Int64, delP::Float64, delQ::Float64, verbose::Int64)
+    if verbose == 2 || verbose == 3
         if iter % 10 == 0
             println("Iteration  Active Mismatch  Reactive Mismatch")
         end
@@ -1350,9 +1342,9 @@ end
 function printpfIncrement(
     system::PowerSystem,
     analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{FastNewtonRaphson}},
-    verbose::Bool
+    verbose::Int64
 )
-    if verbose
+    if verbose == 2 || verbose == 3
         mag, ang = minmaxIncrement(system, analysis)
 
         print("\n" * " "^24 * "Minimum   Maximum")
@@ -1370,9 +1362,11 @@ end
 function printpfIncrement(
     ::PowerSystem,
     ::ACPowerFlow{GaussSeidel},
-    ::Bool,
+    verbose::Int64,
 )
-    print("\n")
+    if verbose == 2 || verbose == 3
+        print("\n")
+    end
 end
 
 function minmaxIncrement(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
@@ -1389,10 +1383,9 @@ function printpfConvergence(
     analysis::ACPowerFlow,
     iter::Int64,
     converged::Bool,
-    verbose::Bool,
-    exitpf::Bool,
+    verbose::Int64,
 )
-    if verbose || exitpf
+    if verbose != 0
         method = printMethodName(analysis)
         if converged
             println(

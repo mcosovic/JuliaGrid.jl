@@ -47,15 +47,14 @@
     cost!(system; generator = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
 
     acModel!(system)
-    analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; verbose = false)
-
-    solve!(system, analysis)
+    analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+    solve!(system, analysis; verbose = 0)
     power!(system, analysis)
 
     # Reuse AC Optimal Power Flow Model
     resystem = powerSystem(path * "case14optimal.m")
     acModel!(resystem)
-    reusing = acOptimalPowerFlow(resystem, Ipopt.Optimizer; verbose = false)
+    reusing = acOptimalPowerFlow(resystem, Ipopt.Optimizer)
 
     updateBus!(
         resystem, reusing;
@@ -112,7 +111,7 @@
         reusing; generator = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6]
     )
 
-    solve!(resystem, reusing)
+    solve!(resystem, reusing; verbose = 0)
     power!(resystem, reusing)
 
     @testset "First Pass" begin
@@ -150,9 +149,8 @@
     cost!(system; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
     acModel!(system)
-    analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; verbose = false)
-
-    solve!(system, analysis)
+    analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+    solve!(system, analysis; verbose = 0)
     power!(system, analysis)
 
     # Reuse AC Optimal Power Flow Model
@@ -236,14 +234,14 @@ end
     cost!(system; generator = 5, active = 2, polynomial = [854.0, 116.0])
 
     dcModel!(system)
-    analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; verbose = false)
-    solve!(system, analysis)
+    analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
+    solve!(system, analysis; verbose = 0)
     power!(system, analysis)
 
     # Reuse DC Optimal Power Flow Model
     resystem = powerSystem(path * "case14test.m")
     dcModel!(resystem)
-    reusing = dcOptimalPowerFlow(resystem, Ipopt.Optimizer; verbose = false)
+    reusing = dcOptimalPowerFlow(resystem, Ipopt.Optimizer)
 
     updateBus!(
         resystem, reusing;
@@ -279,7 +277,7 @@ end
     updateGenerator!(resystem, reusing; label = 9, status = 0)
     cost!(resystem, reusing; generator = 5, active = 2, polynomial = [854.0, 116.0])
 
-    solve!(resystem, reusing)
+    solve!(resystem, reusing; verbose = 0)
     power!(resystem, reusing)
 
     @testset "First Pass" begin
@@ -311,8 +309,8 @@ end
     cost!(system; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
 
     dcModel!(system)
-    analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; verbose = false)
-    solve!(system, analysis)
+    analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
+    solve!(system, analysis; verbose = 0)
     power!(system, analysis)
 
     # Reuse DC Optimal Power Flow Model

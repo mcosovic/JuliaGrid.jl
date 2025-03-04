@@ -29,7 +29,7 @@ show = Dict("Shunt Power" => false, "Status" => false, "Series Power" => false)
 
 
 ##### Optimal PMU Placement #####
-placement = pmuPlacement(system, HiGHS.Optimizer; verbose = false)
+placement = pmuPlacement(system, HiGHS.Optimizer; verbose = 0)
 
 
 ##### Measurement Model #####

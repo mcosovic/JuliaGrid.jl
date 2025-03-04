@@ -129,6 +129,13 @@
         end
     end
 
+    @testset "IEEE 14: Wrapper Function" begin
+        analysis = newtonRaphson(system14)
+        acPowerFlow!(system14, analysis; verbose = 0)
+        @test analysis.voltage.magnitude ≈ matpwr14["voltageMagnitude"]
+        @test analysis.voltage.angle ≈ matpwr14["voltageAngle"]
+    end
+
     ########## IEEE 30-bus Test Case ##########
     system30 = powerSystem(path * "case30test.m")
     matpwr30 = h5read(path * "results.h5", "case30test/newtonRaphson")
@@ -766,6 +773,11 @@ end
 
     power!(system14, analysis)
     current!(system14, analysis)
+
+    @capture_out @testset "Wrapper Function" begin
+        analysis = newtonRaphson(system14)
+        acPowerFlow!(system14, analysis; verbose = 3)
+    end
 
     @capture_out @testset "Print AC Bus Data" begin
         printBusData(system14, analysis)

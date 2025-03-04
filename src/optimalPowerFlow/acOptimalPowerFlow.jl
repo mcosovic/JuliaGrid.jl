@@ -1,6 +1,6 @@
 """
     acOptimalPowerFlow(system::PowerSystem, optimizer;
-        bridge, name, verbose, magnitude, angle, active, reactive)
+        bridge, name, magnitude, angle, active, reactive)
 
 The function sets up the optimization model for solving the AC optimal power flow problem.
 
@@ -19,9 +19,8 @@ the `ac` field of the `PowerSystem` type.
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
 provided in the [JuMP documentation](https://jump.dev/jl/stable/reference/models/).
 However, certain configurations may require different method calls, such as:
-- `bridge`: manage the bridging mechanism (default: `false`),
-- `name`: manage the creation of string names (default: `true`),
-- `verbose`: controls solver output display (default: `true`).
+- `bridge`: Manage the bridging mechanism (default: `false`).
+- `name`: Manage the creation of string names (default: `true`).
 
 Additionally, users can modify variable names used for printing and writing through the
 keywords `magnitude`, `angle`, `active`, and `reactive`. For instance, users can choose
@@ -48,7 +47,6 @@ function acOptimalPowerFlow(
     @nospecialize optimizerFactory;
     bridge::Bool = false,
     name::Bool = true,
-    verbose::Bool = true,
     magnitude::String = "magnitude",
     angle::String = "angle",
     active::String = "active",
@@ -67,9 +65,6 @@ function acOptimalPowerFlow(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
-    if !verbose
-        JuMP.set_silent(jump)
-    end
 
     active = @variable(jump, active[i = 1:gen.number], base_name = active)
     reactive = @variable(jump, reactive[i = 1:gen.number], base_name = reactive)
@@ -272,10 +267,17 @@ function acOptimalPowerFlow(
 end
 
 """
-    solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
+    solve!(system::PowerSystem, analysis::ACOptimalPowerFlow; verbose)
 
 The function solves the AC optimal power flow model, computing the active and reactive
 power outputs of the generators, as well as the bus voltage magnitudes and angles.
+
+# Keyword
+Users can set:
+* `verbose`: Controls the solver output display:
+  * `verbose = 0`: silent mode,
+  * `verbose = 1`: prints only the exit message about convergence,
+  * `verbose = 2`: prints detailed native solver output (default).
 
 # Updates
 The calculated active and reactive powers, as well as voltage magnitudes and angles, are
@@ -290,11 +292,13 @@ analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
+function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow; verbose::Int64 = 2)
     variable = analysis.method.variable
     constr = analysis.method.constraint
     dual = analysis.method.dual
     jump = analysis.method.jump
+
+    silentOptimal(jump, verbose)
 
     @inbounds for i = 1:system.bus.number
         set_start_value(variable.magnitude[i]::VariableRef, analysis.voltage.magnitude[i]::Float64)
@@ -350,6 +354,8 @@ function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
         dual!(jump, constr.piecewise.active, dual.piecewise.active)
         dual!(jump, constr.piecewise.reactive, dual.piecewise.reactive)
     end
+
+    printOptimal(jump, verbose)
 end
 
 function dual!(

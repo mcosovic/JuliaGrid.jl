@@ -395,7 +395,6 @@ function print(
     end
 end
 
-
 function print(
     io::IO,
     label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
@@ -453,6 +452,21 @@ function simplifyExpression(expr::String)
     return expr
 end
 
+function printOptimal(jump::JuMP.Model, verbose::Int64)
+    if verbose == 1
+        if is_solved_and_feasible(jump)
+            println("EXIT: The optimal solution was found.")
+        else
+            println("EXIT: The optimal solution was not found.")
+        end
+    end
+end
+
+function silentOptimal(jump::JuMP.Model, verbose::Int64)
+    if verbose == 0 || verbose == 1
+        JuMP.set_silent(jump)
+    end
+end
 
 ##### Error Messages #####
 function errorVoltage(voltage::Vector{Float64})

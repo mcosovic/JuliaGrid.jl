@@ -554,7 +554,7 @@ end
 
 """
     acLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
-        bridge, name, verbose)
+        bridge, name)
 
 The function sets up the LAV method to solve the nonlinear or AC state estimation
 model, where the vector of state variables is given in polar coordinates.
@@ -571,9 +571,8 @@ Users can employ the LAV method to find an estimator by choosing one of the avai
 
 # Keywords
 The function accepts the following keywords:
-* `bridge`: controls the bridging mechanism (default: `false`),
-* `name`: handles the creation of string names (default: `false`),
-* `verbose`: controls solver output display (default: `true`).
+* `bridge`: Controls the bridging mechanism (default: `false`).
+* `name`: Handles the creation of string names (default: `false`).
 
 # Updates
 If the AC model has not been created, the function will automatically trigger an update of
@@ -602,7 +601,6 @@ function acLavStateEstimation(
     @nospecialize optimizerFactory;
     bridge::Bool = false,
     name::Bool = false,
-    verbose::Bool = true,
 )
     ac = system.model.ac
     bus = system.bus
@@ -621,9 +619,6 @@ function acLavStateEstimation(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
-    if !verbose
-        JuMP.set_silent(jump)
-    end
 
     method = LAV(
         jump,
@@ -816,10 +811,17 @@ function acLavStateEstimation(
 end
 
 """
-    solve!(system::PowerSystem, analysis::ACStateEstimation)
+    solve!(system::PowerSystem, analysis::ACStateEstimation; verbose)
 
 By computing the bus voltage magnitudes and angles, the function solves the AC state
 estimation model.
+
+# Keyword
+Users can set:
+* `verbose`: Controls the LAV solver output display:
+  * `verbose = 0`: silent mode,
+  * `verbose = 1`: prints only the exit message about convergence,
+  * `verbose = 2`: prints detailed native solver output (default).
 
 # Updates
 The resulting bus voltage magnitudes and angles are stored in the `voltage` field of the
@@ -847,7 +849,7 @@ using Ipopt
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = acLavStateEstimation(system, device, Ipopt.Optimizer)
+analysis = acLavStateEstimation(system, device, Ipopt.Optimizer; verbose = 1)
 solve!(system, analysis)
 ```
 """
@@ -942,10 +944,12 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{NonlinearWLS{Or
     return maxAbsΔ
 end
 
-function solve!(system::PowerSystem, analysis::ACStateEstimation{LAV})
+function solve!(system::PowerSystem, analysis::ACStateEstimation{LAV}; verbose::Int64 = 2)
     bus = system.bus
     se = analysis.method
     volt = analysis.voltage
+
+    silentOptimal(se.jump, verbose)
 
     @inbounds for i = 1:bus.number
         set_start_value(se.statex[i]::VariableRef, bus.voltage.angle[i])
@@ -958,6 +962,8 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{LAV})
         volt.angle[i] = value(se.statex[i]::VariableRef) - value(se.statey[i]::VariableRef)
         volt.magnitude[i] = value(se.state.V[i])
     end
+
+    printOptimal(se.jump, verbose)
 end
 
 """

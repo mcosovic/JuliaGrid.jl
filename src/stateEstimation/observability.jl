@@ -630,9 +630,12 @@ more detailed information, please refer to the
 
 # Keywords
 The function accepts the following keywords:
-* `bridge`: controls the bridging mechanism (default: `false`),
-* `name`: handles the creation of string names (default: `false`),
-* `verbose`: controls solver output display (default: `true`).
+* `bridge`: Controls the bridging mechanism (default: `false`).
+* `name`: Handles the creation of string names (default: `false`).
+* `verbose`: Controls the solver output display:
+  * `verbose = 0`: silent mode,
+  * `verbose = 1`: prints only the exit message about convergence,
+  * `verbose = 2`: prints detailed native solver output (default).
 
 # Returns
 The function returns an instance of the `PlacementPMU` type, containing variables such as:
@@ -678,7 +681,7 @@ function pmuPlacement(
     (@nospecialize optimizerFactory);
     bridge::Bool = false,
     name::Bool = false,
-    verbose::Bool = true,
+    verbose::Int64 = 2,
 )
     bus = system.bus
     branch = system.branch
@@ -695,10 +698,7 @@ function pmuPlacement(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
 
-    if !verbose
-        JuMP.set_silent(jump)
-    end
-
+    silentOptimal(jump, verbose)
     set_string_names_on_creation(jump, name)
 
     placement = @variable(jump, 0 <= placement[i = 1:bus.number] <= 1, Int)
@@ -730,6 +730,8 @@ function pmuPlacement(
             end
         end
     end
+
+    printOptimal(jump, verbose)
 
     return placementPmu
 end
@@ -769,9 +771,12 @@ Settings for handling phasor measurements include:
   * `polar = true`: adopts the polar coordinate system,
   * `polar = false`: adopts the rectangular coordinate system.
 Settings for the optimization solver include:
-* `bridge`: controls the bridging mechanism (default: `false`),
-* `name`: handles the creation of string names (default: `false`),
-* `verbose`: controls solver output display (default: `true`).
+* `bridge`: Controls the bridging mechanism (default: `false`).
+* `name`: Handles the creation of string names (default: `false`).
+* `verbose`: Controls the solver output display:
+  * `verbose = 0`: silent mode,
+  * `verbose = 1`: prints only the exit message about convergence,
+  * `verbose = 2`: prints detailed native solver output (default).
 
 # Updates
 The function updates the `pmu` field of the `Measurement` composite type.
@@ -803,7 +808,7 @@ function pmuPlacement!(
     (@nospecialize optimizerFactory);
     bridge::Bool = false,
     name::Bool = false,
-    verbose::Bool = true,
+    verbose::Int64 = 2,
     varianceMagnitudeBus::FltIntMiss = missing,
     varianceAngleBus::FltIntMiss = missing,
     varianceMagnitudeFrom::FltIntMiss = missing,

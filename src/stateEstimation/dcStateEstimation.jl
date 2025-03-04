@@ -181,7 +181,7 @@ end
 
 """
     dcLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
-        bridge, name, verbose)
+        bridge, name)
 
 The function establishes the LAV model for DC state estimation, where the vector of state
 variables contains only bus voltage angles.
@@ -198,9 +198,8 @@ Users can employ the LAV method to find an estimator by choosing one of the avai
 
 # Keywords
 The function accepts the following keywords:
-* `bridge`: controls the bridging mechanism (default: `false`),
-* `name`: handles the creation of string names (default: `false`),
-* `verbose`: controls solver output display (default: `true`).
+* `bridge`: Controls the bridging mechanism (default: `false`).
+* `name`: Handles the creation of string names (default: `false`).
 
 # Updates
 If the DC model was not created, the function will automatically initiate an update of the
@@ -231,7 +230,6 @@ function dcLavStateEstimation(
     (@nospecialize optimizerFactory);
     bridge::Bool = false,
     name::Bool = false,
-    verbose::Bool = true,
 )
     bus = system.bus
     branch = system.branch
@@ -246,9 +244,6 @@ function dcLavStateEstimation(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
-    if !verbose
-        JuMP.set_silent(jump)
-    end
 
     se = LAV(
         jump,
@@ -321,9 +316,16 @@ function dcLavStateEstimation(
 end
 
 """
-    solve!(system::PowerSystem, analysis::DCStateEstimation)
+    solve!(system::PowerSystem, analysis::DCStateEstimation; verbose)
 
 By computing the bus voltage angles, the function solves the DC state estimation model.
+
+# Keyword
+Users can set:
+* `verbose`: Controls the LAV solver output display:
+  * `verbose = 0`: silent mode,
+  * `verbose = 1`: prints only the exit message about convergence,
+  * `verbose = 2`: prints detailed native solver output (default).
 
 # Updates
 The resulting bus voltage angles are stored in the `voltage` field of the `DCStateEstimation`
@@ -346,7 +348,7 @@ using Ipopt
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
+analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer; verbose = 1)
 solve!(system, analysis)
 ```
 """
@@ -416,9 +418,11 @@ function solve!(system::PowerSystem, analysis::DCStateEstimation{LinearWLS{Ortho
     addSlackCoeff(analysis, slackRange, elementsRemove, bus.layout.slack)
 end
 
-function solve!(system::PowerSystem, analysis::DCStateEstimation{LAV})
+function solve!(system::PowerSystem, analysis::DCStateEstimation{LAV}; verbose::Int64 = 2)
     se = analysis.method
     slackAngle = system.bus.voltage.angle[system.bus.layout.slack]
+
+    silentOptimal(se.jump, verbose)
 
     @inbounds for i = 1:system.bus.number
         set_start_value(se.statex[i]::VariableRef, analysis.voltage.angle[i] - slackAngle)
@@ -430,6 +434,8 @@ function solve!(system::PowerSystem, analysis::DCStateEstimation{LAV})
         analysis.voltage.angle[i] =
             value(se.statex[i]::VariableRef) - value(se.statey[i]::VariableRef) + slackAngle
     end
+
+    printOptimal(se.jump, verbose)
 end
 
 ##### Indices of the Coefficient Matrix #####

@@ -1,5 +1,5 @@
 """
-    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name, verbose, angle, active)
+    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name, angle, active)
 
 The function sets up the optimization model for solving the DC optimal power flow problem.
 
@@ -18,9 +18,8 @@ the `dc` field of the `PowerSystem` type.
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
 provided in the [JuMP documentation](https://jump.dev/jl/stable/reference/models/).
 However, certain configurations may require different method calls, such as:
-- `bridge`: manage the bridging mechanism (default: `false`),
-- `name`: manage the creation of string names (default: `true`),
-- `verbose`: controls solver output display (default: `true`).
+- `bridge`: Manage the bridging mechanism (default: `false`).
+- `name`: Manage the creation of string names (default: `true`).
 
 Additionally, users can modify variable names used for printing and writing through the
 keywords `angle` and `active`. For instance, users can choose `angle = "θ"` to display
@@ -46,7 +45,6 @@ function dcOptimalPowerFlow(
     @nospecialize optimizerFactory;
     bridge::Bool = false,
     name::Bool = true,
-    verbose::Bool = true,
     angle::String = "angle",
     active::String = "active",
 )
@@ -60,9 +58,6 @@ function dcOptimalPowerFlow(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
-    if !verbose
-        JuMP.set_silent(jump)
-    end
 
     active = @variable(jump, active[i = 1:gen.number], base_name = active)
     angle = @variable(jump, angle[i = 1:bus.number], base_name = angle)
@@ -164,10 +159,17 @@ function dcOptimalPowerFlow(
 end
 
 """
-    solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+    solve!(system::PowerSystem, analysis::DCOptimalPowerFlow; verbose)
 
 The function solves the DC optimal power flow model, computing the active power outputs of
 the generators, as well as the bus voltage angles.
+
+# Keyword
+Users can set:
+* `verbose`: Controls the solver output display:
+  * `verbose = 0`: silent mode,
+  * `verbose = 1`: prints only the exit message about convergence,
+  * `verbose = 2`: prints detailed native solver output (default).
 
 # Updates
 The calculated active powers, as well as voltage angles, are stored in the
@@ -182,10 +184,12 @@ analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
+function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow; verbose::Int64 = 2)
     variable = analysis.method.variable
     constr = analysis.method.constraint
     dual = analysis.method.dual
+
+    silentOptimal(analysis.method.jump, verbose)
 
     @inbounds for i = 1:system.bus.number
         set_start_value(variable.angle[i]::VariableRef, analysis.voltage.angle[i])
@@ -221,6 +225,8 @@ function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
         dual!(analysis.method.jump, constr.capability.active, dual.capability.active)
         dual!(analysis.method.jump, constr.piecewise.active, dual.piecewise.active)
     end
+
+    printOptimal(analysis.method.jump, verbose)
 end
 
 ##### Balance Constraints #####

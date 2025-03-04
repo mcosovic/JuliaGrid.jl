@@ -267,7 +267,7 @@ JuliaGrid includes a wrapper function, [`acPowerFlow!`](@ref acPowerFlow!), for 
 ```@example ACPowerFlowSolution
 setInitialPoint!(system, analysis) # hide
 analysis = newtonRaphson(system)
-acPowerFlow!(system, analysis)
+acPowerFlow!(system, analysis; verbose = 2)
 nothing # hide
 ```
 This execution also computes power values, but their computation can be controlled using keywords within the [`acPowerFlow!`](@ref acPowerFlow!) function.

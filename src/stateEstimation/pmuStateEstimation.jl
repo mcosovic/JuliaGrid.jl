@@ -204,7 +204,7 @@ end
 
 """
     pmuLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
-        bridge, name, verbose)
+        bridge, name)
 
 The function establishes the LAV model for state estimation with PMUs only. In this
 model, the vector of state variables contains bus voltages, given in rectangular
@@ -218,9 +218,8 @@ outliers.
 
 # Keywords
 The function accepts the following keywords:
-* `bridge`: controls the bridging mechanism (default: `false`),
-* `name`: handles the creation of string names (default: `false`),
-* `verbose`: controls solver output display (default: `true`).
+* `bridge`: Controls the bridging mechanism (default: `false`).
+* `name`: Handles the creation of string names (default: `false`).
 
 Users can employ the LAV method to find an estimator by choosing one of the available
 [optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
@@ -253,7 +252,6 @@ function pmuLavStateEstimation(
     @nospecialize optimizerFactory;
     bridge::Bool = false,
     name::Bool = false,
-    verbose::Bool = true,
 )
     bus = system.bus
     branch = system.branch
@@ -267,9 +265,6 @@ function pmuLavStateEstimation(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
-    if !verbose
-        JuMP.set_silent(jump)
-    end
 
     method = LAV(
         jump,
@@ -341,10 +336,17 @@ function pmuLavStateEstimation(
 end
 
 """
-    solve!(system::PowerSystem, analysis::PMUStateEstimation)
+    solve!(system::PowerSystem, analysis::PMUStateEstimation; verbose)
 
 By computing the bus voltage magnitudes and angles, the function solves the PMU state
 estimation model.
+
+# Keyword
+Users can set:
+* `verbose`: Controls the LAV solver output display:
+  * `verbose = 0`: silent mode,
+  * `verbose = 1`: prints only the exit message about convergence,
+  * `verbose = 2`: prints detailed native solver output (default).
 
 # Updates
 The resulting bus voltage magnitudes and angles are stored in the `voltage` field of the
@@ -429,9 +431,11 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Orth
     end
 end
 
-function solve!(system::PowerSystem, analysis::PMUStateEstimation{LAV})
+function solve!(system::PowerSystem, analysis::PMUStateEstimation{LAV}; verbose::Int64 = 2)
     se = analysis.method
     bus = system.bus
+
+    silentOptimal(se.jump, verbose)
 
     @inbounds for i = 1:system.bus.number
         set_start_value(
@@ -460,6 +464,8 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LAV})
         analysis.voltage.magnitude[i] = abs(voltage)
         analysis.voltage.angle[i] = angle(voltage)
     end
+
+    printOptimal(se.jump, verbose)
 end
 
 ##### Indices of the Coefficient Matrix #####
