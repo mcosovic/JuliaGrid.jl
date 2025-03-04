@@ -496,7 +496,7 @@ cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 
 cost!(system; generator = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8])
 
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
-solve!(system, analysis; verbose = false)
+solve!(system, analysis; verbose = 0)
 nothing # hide
 ```
 
