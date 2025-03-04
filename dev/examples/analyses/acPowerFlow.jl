@@ -34,7 +34,7 @@ fmt2 = Dict("From-Bus Power" => "%.2f", "To-Bus Power" => "%.2f", "Series Power"
 
 ##### Base Case Analysis #####
 fnr = fastNewtonRaphsonXB(system)
-acPowerFlow!(system, fnr)
+acPowerFlow!(system, fnr; verbose = 2)
 
 printBusData(system, fnr; show = show1, fmt = fmt1)
 printBranchData(system, fnr; show = show2, fmt = fmt2)
@@ -46,7 +46,7 @@ updateBus!(system, fnr; label = "Bus 4", active = 42.0, reactive = 20.0)
 updateGenerator!(system, fnr; label = "Generator 1", active = 58.0, reactive = 20.0)
 updateGenerator!(system, fnr; label = "Generator 2", active = 23.1, reactive = 20.0)
 
-acPowerFlow!(system, fnr; exit = true)
+acPowerFlow!(system, fnr; verbose = 1)
 
 printBranchData(system, fnr; show = show2, fmt = fmt2)
 
@@ -55,6 +55,6 @@ updateBranch!(system; label = "Branch 3", status = 0)
 
 nr = newtonRaphson(system)
 setInitialPoint!(fnr, nr)
-acPowerFlow!(system, nr; exit = true)
+acPowerFlow!(system, nr; verbose = 1)
 
 printBranchData(system, nr; show = show2, fmt = fmt2)
