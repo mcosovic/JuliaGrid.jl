@@ -1242,51 +1242,51 @@ end
 
 function printpfSystem(system::PowerSystem, npq::Int64, verbose::Int64)
     if verbose == 3
-        wd = textwidth(string(system.branch.number)) + 1
-        mwd = textwidth("Number of generators:")
-
         layBrc = system.branch.layout
         layGen = system.generator.layout
-        width = wd + mwd
 
-        print("Number of buses:")
-        print(format(Format("%*i\n"), width - 16, system.bus.number))
+        wdbus = textwidth(string(system.bus.number))
+        wdbrc = textwidth(string(system.branch.number))
+        wdgen = textwidth(string(system.generator.number))
 
-        print("  Demand buses:")
-        print(format(Format("%*i\n"), width - 15, npq))
+        print("Number of buses: ")
+        print(format(Format("%i"), system.bus.number))
 
-        print("  Generator buses:")
-        print(format(Format("%*i\n"), width - 18, system.bus.number - 1 - npq))
+        print("   Number of branches: ")
+        print(format(Format("%i"), system.branch.number))
 
-        print("Number of branches:")
-        print(format(Format("%*i\n"), width - 19, system.branch.number))
+        print("   Number of generators: ")
+        print(format(Format("%i\n"), system.generator.number))
 
-        print("  In-service:")
-        print(format(Format("%*i\n"), width - 13, layBrc.inservice))
+        print("  Demands:       ")
+        print(format(Format("%*i"), wdbus, npq))
 
-        print("  Out-of-service:")
-        print(format(Format("%*i\n"), width - 17, system.branch.number - layBrc.inservice))
+        print("     In-service:       ")
+        print(format(Format("%*i"), wdbrc, layBrc.inservice))
 
-        print("Number of generators:")
-        print(format(Format("%*i\n"), width - 21, system.generator.number))
+        print("     In-service:         ")
+        print(format(Format("%*i\n"), wdgen, layGen.inservice))
 
-        print("  In-service:")
-        print(format(Format("%*i\n"), width - 13, layGen.inservice))
+        print("  Generators:    ")
+        print(format(Format("%*i"), wdbus, system.bus.number - 1 - npq))
 
-        print("  Out-of-service:")
-        print(format(Format("%*i\n\n"), width - 17, system.generator.number - layGen.inservice))
+        print("     Out-of-service:   ")
+        print(format(Format("%*i"), wdbrc, system.branch.number - layBrc.inservice))
+
+        print("     Out-of-service:     ")
+        print(format(Format("%*i\n\n"), wdgen, system.generator.number - layGen.inservice))
     end
 end
 
 function printpfMethod(analysis::ACPowerFlow{NewtonRaphson}, wd::Int64, mwd::Int64, verbose::Int64)
     if verbose == 2 || verbose == 3
+        print("Number of nonzeros in the Jacobian:")
+        print(format(Format("%*i\n"), wd, nnz(analysis.method.jacobian)))
+
         print("Number of state variables:")
         print(
-            format(Format("%*i\n"), wd + mwd - 26, lastindex(analysis.method.increment))
+            format(Format("%*i\n\n"), wd + mwd - 26, lastindex(analysis.method.increment))
         )
-
-        print("Number of nonzeros in the Jacobian:")
-        print(format(Format("%*i\n\n"), wd, nnz(analysis.method.jacobian)))
     end
 end
 
@@ -1296,9 +1296,6 @@ function printpfMethod(analysis::ACPowerFlow{FastNewtonRaphson}, wd::Int64, mwd:
         nnzJac = nnz(method.active.jacobian) + nnz(method.reactive.jacobian)
         sv = lastindex(method.active.increment) + lastindex(method.reactive.increment)
 
-        print("Number of state variables:")
-        print(format(Format("%*i\n"), wd + mwd - 26, sv))
-
         print("Number of nonzeros in the Jacobian:")
         print(format(Format("%*i\n"), wd, nnzJac))
 
@@ -1306,7 +1303,10 @@ function printpfMethod(analysis::ACPowerFlow{FastNewtonRaphson}, wd::Int64, mwd:
         print(format(Format("%*i\n"), wd + mwd - 15, nnz(method.active.jacobian)))
 
         print("  Reactive Power:")
-        print(format(Format("%*i\n\n"), wd + mwd - 17, nnz(method.reactive.jacobian)))
+        print(format(Format("%*i\n"), wd + mwd - 17, nnz(method.reactive.jacobian)))
+
+        print("Number of state variables:")
+        print(format(Format("%*i\n\n"), wd + mwd - 26, sv))
     end
 end
 
@@ -1329,11 +1329,11 @@ end
 function printpfIteration(iter::Int64, delP::Float64, delQ::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if iter % 10 == 0
-            println("Iteration  Active Mismatch  Reactive Mismatch")
+            println("Iteration   Active Mismatch   Reactive Mismatch")
         end
         print(format(Format("%*i "), 9, iter))
-        print(format(Format("%*.4e"), 16, delP))
-        print(format(Format("%*.4e\n"), 19, delQ))
+        print(format(Format("%*.4e"), 17, delP))
+        print(format(Format("%*.4e\n"), 20, delQ))
     end
 end
 
@@ -1345,15 +1345,15 @@ function printpfIncrement(
     if verbose == 2 || verbose == 3
         mag, ang = minmaxIncrement(system, analysis)
 
-        print("\n" * " "^24 * "Minimum   Maximum")
+        print("\n" * " "^21 * "Minimum Value   Maximum Value")
 
         print("\nMagnitude Increment:")
-        print(format(Format("%*.2e"), 11, mag[1]))
-        print(format(Format("%*.2e\n"), 10, mag[2]))
+        print(format(Format("%*.4e"), 14, mag[1]))
+        print(format(Format("%*.4e\n"), 16, mag[2]))
 
         print("Angle Increment:")
-        print(format(Format("%*.2e"), 15, ang[1]))
-        print(format(Format("%*.2e\n\n"), 10, ang[2]))
+        print(format(Format("%*.4e"), 18, ang[1]))
+        print(format(Format("%*.4e\n\n"), 16, ang[2]))
     end
 end
 

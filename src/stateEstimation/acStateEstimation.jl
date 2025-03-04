@@ -1192,7 +1192,8 @@ with optional storage in the `power` and `current` fields.
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-acStateEstimation!(system, analysis; stopping = 1e-10, current = true)
+analysis = gaussNewton(system, device)
+acStateEstimation!(system, device, analysis; stopping = 1e-10, current = true)
 ```
 """
 function acStateEstimation!(
@@ -1236,95 +1237,63 @@ end
 
 function printseSystem(system::PowerSystem, device::Measurement, verbose::Int64)
     if verbose == 3
-        wd = textwidth(string(system.branch.number)) + 1
-        mwd = textwidth("Number of branches:")
-        width = wd + mwd
-
-        print("Number of buses:")
-        print(format(Format("%*i\n"), width - 16, system.bus.number))
-
-        print("Number of branches:")
-        print(format(Format("%*i\n\n"), width - 19, system.branch.number))
-
-        wd = max(
-            device.voltmeter.number, device.ammeter.number, device.wattmeter.number,
-            device.varmeter.number, device.pmu.number
+        wdcol1 = max(
+            textwidth(string(device.wattmeter.number)),
+            textwidth(string(device.ammeter.number)),
         )
+        wdcol2 = max(
+            textwidth(string(device.varmeter.number)),
+            textwidth(string(device.voltmeter.number)),
+        )
+        wdcol3 = textwidth(string(device.pmu.number))
 
-        wd = textwidth(string(wd)) + 1
+        print("Number of wattmeters: ")
+        print(format(Format("%i"), device.wattmeter.number))
 
-        if device.voltmeter.number != 0
-            mwd = textwidth("Number of voltmeters:")
-        elseif device.wattmeter.number != 0
-            mwd = textwidth("Number of wattmeters:")
-        elseif device.varmeter.number != 0
-            mwd = textwidth("Number of varmeters:")
-        elseif device.ammeter.number != 0
-            mwd = textwidth("Number of ammeters:")
-        elseif device.pmu.number != 0
-            mwd = textwidth("Number of PMUs:")
-        end
+        print("   Number of varmeters:  ")
+        print(format(Format("%i"), device.varmeter.number))
 
-        width = wd + mwd
+        print("   Number of PMUs: ")
+        print(format(Format("%i\n"), device.pmu.number))
 
-        if device.voltmeter.number != 0
-            print("Number of voltmeters:")
-            print(format(Format("%*i\n"), width - 21, device.voltmeter.number))
-        end
+        print("  Bus:                ")
+        print(format(Format("%*i"), wdcol1, count(device.wattmeter.layout.bus)))
 
-        if device.ammeter.number != 0
-            print("Number of ammeters:")
-            print(format(Format("%*i\n"), width - 19, device.ammeter.number))
+        print("     Bus:                ")
+        print(format(Format("%*i"), wdcol2, count(device.varmeter.layout.bus)))
 
-            print("  From-bus:")
-            print(format(Format("%*i\n"), width - 11, count(device.ammeter.layout.from)))
+        print("     Bus:          ")
+        print(format(Format("%*i\n"), wdcol3, count(device.pmu.layout.bus)))
 
-            print("  To-bus:")
-            print(format(Format("%*i\n"), width - 9, count(device.ammeter.layout.to)))
-        end
+        print("  From-bus:           ")
+        print(format(Format("%*i"), wdcol1, count(device.wattmeter.layout.from)))
 
-        if device.wattmeter.number != 0
-            print("Number of wattmeters:")
-            print(format(Format("%*i\n"), width - 21, device.wattmeter.number))
+        print("     From-bus:           ")
+        print(format(Format("%*i"), wdcol2, count(device.varmeter.layout.from)))
 
-            print("  Bus:")
-            print(format(Format("%*i\n"), width - 6, count(device.wattmeter.layout.bus)))
+        print("     From-bus:     ")
+        print(format(Format("%*i\n"), wdcol3, count(device.pmu.layout.from)))
 
-            print("  From-bus:")
-            print(format(Format("%*i\n"), width - 11, count(device.wattmeter.layout.from)))
+        print("  To-bus:             ")
+        print(format(Format("%*i"), wdcol1, count(device.wattmeter.layout.to)))
 
-            print("  To-bus:")
-            print(format(Format("%*i\n"), width - 9, count(device.wattmeter.layout.to)))
-        end
+        print("     To-bus:             ")
+        print(format(Format("%*i"), wdcol2, count(device.varmeter.layout.to)))
 
-        if device.varmeter.number != 0
-            print("Number of varmeters:")
-            print(format(Format("%*i\n"), width - 20, device.varmeter.number))
+        print("     To-bus:       ")
+        print(format(Format("%*i\n\n"), wdcol3, count(device.pmu.layout.to)))
 
-            print("  Bus:")
-            print(format(Format("%*i\n"), width - 6, count(device.varmeter.layout.bus)))
+        print("Number of ammeters:   ")
+        print(format(Format("%i"), device.ammeter.number))
 
-            print("  From-bus:")
-            print(format(Format("%*i\n"), width - 11, count(device.varmeter.layout.from)))
+        print("   Number of voltmeters: ")
+        print(format(Format("%i\n"), device.voltmeter.number))
 
-            print("  To-bus:")
-            print(format(Format("%*i\n"), width - 9, count(device.varmeter.layout.to)))
-        end
+        print("  From-bus:           ")
+        print(format(Format("%*i\n"), wdcol1, count(device.ammeter.layout.from)))
 
-        if device.pmu.number != 0
-            print("Number of PMUs:")
-            print(format(Format("%*i\n"), width - 15, device.pmu.number))
-
-            print("  Bus:")
-            print(format(Format("%*i\n"), width - 6, count(device.pmu.layout.bus)))
-
-            print("  From-bus:")
-            print(format(Format("%*i\n"), width - 11, count(device.pmu.layout.from)))
-
-            print("  To-bus:")
-            print(format(Format("%*i\n"), width - 9, count(device.pmu.layout.to)))
-        end
-        print("\n")
+        print("  To-bus:             ")
+        print(format(Format("%*i\n\n"), wdcol1, count(device.ammeter.layout.to)))
     end
 end
 
@@ -1332,29 +1301,34 @@ function printseMethod(analysis::ACStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         wd = textwidth(string(nnz(analysis.method.jacobian))) + 1
         mwd = textwidth("Number of nonzeros in the Jacobian:")
-
-        print("Number of state variables:")
-        print(
-            format(Format("%*i\n"), wd + mwd - 26, lastindex(analysis.method.increment) - 1)
-        )
-
-        print("Number of measurements:")
-        print(format(Format("%*i\n"), wd + mwd - 23, lastindex(analysis.method.mean)))
+        tot = wd + mwd
 
         print("Number of nonzeros in the Jacobian:")
-        print(format(Format("%*i\n\n"), wd, nnz(analysis.method.jacobian)))
+        print(format(Format("%*i\n"), wd, nnz(analysis.method.jacobian)))
+
+        print("Number of measurement functions:")
+        print(format(Format("%*i\n"), tot - 32, lastindex(analysis.method.mean)))
+
+        print("Number of state variables:")
+        print(format(Format("%*i\n"), tot - 26, lastindex(analysis.method.increment) - 1))
+
+        print("Number of buses:")
+        print(format(Format("%*i\n"), tot - 16, system.bus.number))
+
+        print("Number of branches:")
+        print(format(Format("%*i\n\n"), tot - 19, system.branch.number))
     end
 end
 
 function printseIteration(analysis::ACStateEstimation, iter::Int64, stopping::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if iter % 10 == 1
-            println("Iteration  Maximum Increment  Objective Value")
+            println("Iteration   Maximum Increment   Objective Value")
         end
         print(format(Format("%*i "), 9, iter))
-        print(format(Format("%*.4e"), 18, stopping))
+        print(format(Format("%*.4e"), 19, stopping))
 
-        print(format(Format("%*.8e\n"), 17, analysis.method.objective))
+        print(format(Format("%*.8e\n"), 18, analysis.method.objective))
     end
 end
 
@@ -1376,15 +1350,15 @@ function printseIncrement(
 
         mag = extrema(analysis.method.increment[(system.bus.number + 1):end])
 
-        print("\n" * " "^24 * "Minimum   Maximum")
+        print("\n" * " "^21 * "Minimum Value   Maximum Value")
 
         print("\nMagnitude Increment:")
-        print(format(Format("%*.2e"), 11, mag[1]))
-        print(format(Format("%*.2e\n"), 10, mag[2]))
+        print(format(Format("%*.4e"), 14, mag[1]))
+        print(format(Format("%*.4e\n"), 16, mag[2]))
 
         print("Angle Increment:")
-        print(format(Format("%*.2e"), 15, angmin))
-        print(format(Format("%*.2e\n\n"), 10, angmax))
+        print(format(Format("%*.4e"), 18, angmin))
+        print(format(Format("%*.4e\n\n"), 16, angmax))
     end
 end
 
