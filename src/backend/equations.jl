@@ -624,3 +624,15 @@ function baseVoltageEnd(
         return baseVolt.value[layout.to[idxBranch]] * baseVolt.prefix
     end
 end
+
+##### WLS AC State Estimation Objective Value #####
+function seobjective(analysis::ACStateEstimation, idx::Int64)
+    se = analysis.method
+    se.objective += se.residual[idx]^2 * se.precision[idx, idx]
+end
+
+function seobjective(analysis::ACStateEstimation, idx1::Int64, idx2::Int64)
+    se = analysis.method
+    se.objective += se.residual[idx1]^2 * se.precision[idx1, idx1] +
+        2 * se.residual[idx1] * se.residual[idx2] * se.precision[idx1, idx2]
+end

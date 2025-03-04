@@ -635,6 +635,12 @@ system30 = powerSystem(path * "case30test.m")
         compstruct(analysisOrt.voltage, analysis.voltage; atol = 1e-10)
     end
 
+    @testset "IEEE 30: Wrapper Function" begin
+        analysisse = gaussNewton(system30, device)
+        acStateEstimation!(system30, device, analysisse)
+        compstruct(analysisse.voltage, analysis.voltage; atol = 1e-10)
+    end
+
     @testset "IEEE 30: Covariance Matrix" begin
         system = powerSystem()
         device = measurement()

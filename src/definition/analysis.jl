@@ -259,6 +259,7 @@ mutable struct NonlinearWLS{T <: Union{Normal, Orthogonal}}
     residual::Vector{Float64}
     increment::Vector{Float64}
     factorization::Factorization{Float64}
+    objective::Float64
     type::Vector{Int8}
     index::Vector{Int64}
     range::Vector{Int64}

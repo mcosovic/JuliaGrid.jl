@@ -1156,7 +1156,7 @@ magnitudes and angles, with the option to compute powers and currents.
 Users can use the following keywords:
 * `maxIteration`: Specifies the maximum number of iterations (default: `20`).
 * `stopping`: Defines the stopping criterion for the iterative algorithm (default: `1e-8`).
-* `power`: Enables power computation upon convergence or reaching the iteration limit (default: `true`).
+* `power`: Enables power computation upon convergence or reaching the iteration limit (default: `false`).
 * `current`: Enables current computation upon convergence or reaching the iteration limit (default: `false`).
 * `verbose`: Controls the solver output display:
   * `verbose = 0`: silent mode,
@@ -1174,7 +1174,7 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-acPowerFlow!(system, analysis; stopping = 1e-10, current = true)
+acPowerFlow!(system, analysis; stopping = 1e-10, power = true)
 ```
 """
 function acPowerFlow!(
@@ -1182,13 +1182,11 @@ function acPowerFlow!(
     analysis::ACPowerFlow;
     maxIteration::Int64 = 20,
     stopping::Float64 = 1e-8,
-    power::Bool = true,
+    power::Bool = false,
     current::Bool = false,
-    verbose::Int64 = 3,
-    exit::Bool = false,
+    verbose::Int64 = 3
 )
     converged = false
-
 
     widthalg, maxwidthalg, npq = maxWidth(system, analysis)
     printpfSystem(system, npq, verbose)

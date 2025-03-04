@@ -68,6 +68,7 @@ function gaussNewton(
             rsd,
             fill(0.0, 2 * system.bus.number),
             factorized[factorization],
+            0.0,
             type,
             index,
             range,
@@ -99,6 +100,7 @@ function gaussNewton(system::PowerSystem, device::Measurement, ::Type{<:Orthogon
             rsd,
             fill(0.0, 2 * system.bus.number),
             factorized[QR],
+            0.0,
             type,
             index,
             range,
@@ -288,6 +290,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
     voltage = analysis.voltage
     jcb = se.jacobian
 
+    se.objective = 0.0
     @inbounds for col = 1:bus.number
         cok = col + bus.number
 
@@ -298,7 +301,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                 continue
             end
 
-            if se.type[row] == 4 # Pᵢ
+            if se.type[row] == 4 # Pi
                 if col == se.index[row]
                     I = [0.0; 0.0]
                     for q in ac.nodalMatrix.colptr[col]:(ac.nodalMatrix.colptr[col + 1] - 1)
@@ -309,6 +312,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         PiQiSum(voltage, Gij, cosθij, Bij, sinθij, I, j, +, 2)
                     end
                     se.residual[row] = se.mean[row] - Pi(voltage, I[2], col)
+                    seobjective(analysis, row)
 
                     Gii, Bii = reim(ac.nodalMatrix[col, col])
                     jcb[row, col] = Piθi(voltage, Bii, -I[1], col)
@@ -320,7 +324,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                     jcb[row, cok] = PiVj(voltage, Gij, Bij, sinθij, cosθij, idx)
                 end
 
-            elseif se.type[row] == 7 # Qᵢ
+            elseif se.type[row] == 7 # Qi
                 if col == se.index[row]
                     I = [0.0; 0.0]
                     for q in ac.nodalMatrix.colptr[col]:(ac.nodalMatrix.colptr[col + 1] - 1)
@@ -331,6 +335,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         PiQiSum(voltage, Gij, sinθij, Bij, cosθij, I, j, -, 2)
                     end
                     se.residual[row] = se.mean[row] - Pi(voltage, I[2], col)
+                    seobjective(analysis, row)
 
                     Gii, Bii = reim(ac.nodalMatrix[col, col])
                     jcb[row, col] = Qiθi(voltage, Gii, I[1], col)
@@ -342,24 +347,27 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                     jcb[row, cok] = QiVj(voltage, Gij, Bij, sinθij, cosθij, idx)
                 end
 
-            elseif se.type[row] == 14 # ℜ(Vᵢ)
+            elseif se.type[row] == 14 # Re(Vi)
                 se.residual[row] = se.mean[row] - ReVi(voltage, idx)
+                seobjective(analysis, row)
 
                 jcb[row, col] = ReViθi(voltage, idx)
                 jcb[row, cok] = ReViVi(voltage, idx)
 
-            elseif se.type[row] == 15 # ℑ(Vᵢ)
+            elseif se.type[row] == 15 # Im(Vi)
                 se.residual[row] = se.mean[row] - ImVi(voltage, idx)
+                seobjective(analysis, row, row - 1)
 
                 jcb[row, col] = ImViθi(voltage, idx)
                 jcb[row, cok] = ImViVi(voltage, idx)
             else
-                if se.type[row] == 5 # Pᵢⱼ
+                if se.type[row] == 5 # Pij
                     model = PijCoefficient(branch, ac, idx)
                     state = ViVjθijState(system, voltage, idx)
 
                     if col == branch.layout.from[idx]
                         se.residual[row] = se.mean[row] - Pij(model, state)
+                        seobjective(analysis, row)
 
                         jcb[row, col] = Pijθi(model, state)
                         jcb[row, cok] = PijVi(model, state)
@@ -368,12 +376,13 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         jcb[row, cok] = PijVj(model, state)
                     end
 
-                elseif se.type[row] == 6 # Pⱼᵢ
+                elseif se.type[row] == 6 # Pji
                     model = PjiCoefficient(branch, ac, idx)
                     state = ViVjθijState(system, voltage, idx)
 
                     if col == branch.layout.from[idx]
                         se.residual[row] = se.mean[row] - Pji(model, state)
+                        seobjective(analysis, row)
 
                         jcb[row, col] = Pjiθi(model, state)
                         jcb[row, cok] = PjiVi(model, state)
@@ -382,12 +391,13 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         jcb[row, cok] = PjiVj(model, state)
                     end
 
-                elseif se.type[row] == 8 # Qᵢⱼ
+                elseif se.type[row] == 8 # Qij
                     model = QijCoefficient(branch, ac, idx)
                     state = ViVjθijState(system, voltage, idx)
 
                     if col == branch.layout.from[idx]
                         se.residual[row] = se.mean[row] - Qij(model, state)
+                        seobjective(analysis, row)
 
                         jcb[row, col] = Qijθi(model, state)
                         jcb[row, cok] = QijVi(model, state)
@@ -396,12 +406,13 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         jcb[row, cok] = QijVj(model, state)
                     end
 
-                elseif se.type[row] == 9 # Qⱼᵢ
+                elseif se.type[row] == 9 # Qji
                     model = QjiCoefficient(branch, ac, idx)
                     state = ViVjθijState(system, voltage, idx)
 
                     if col == branch.layout.from[idx]
                         se.residual[row] = se.mean[row] - Qji(model, state)
+                        seobjective(analysis, row)
 
                         jcb[row, col] = Qjiθi(model, state)
                         jcb[row, cok] = QjiVi(model, state)
@@ -410,13 +421,14 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         jcb[row, cok] = QjiVj(model, state)
                     end
 
-                elseif se.type[row] == 2 # Iᵢⱼ
+                elseif se.type[row] == 2 # Iij
                     model = IijCoefficient(branch, ac, idx)
                     state = ViVjθijState(system, voltage, idx)
                     Iinv = Iijinv(model, state)
 
                     if col == branch.layout.from[idx]
                         se.residual[row] = se.mean[row] - (1 / Iinv)
+                        seobjective(analysis, row)
 
                         jcb[row, col] = Iijθi(model, state, Iinv)
                         jcb[row, cok] = IijVi(model, state, Iinv)
@@ -425,13 +437,14 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         jcb[row, cok] = IijVj(model, state, Iinv)
                     end
 
-                elseif se.type[row] == 3 # Iⱼᵢ
+                elseif se.type[row] == 3 # Iji
                     model = IjiCoefficient(branch, ac, idx)
                     state = ViVjθijState(system, voltage, idx)
                     Iinv = Ijiinv(model, state)
 
                     if col == branch.layout.from[idx]
                         se.residual[row] = se.mean[row] - (1 / Iinv)
+                        seobjective(analysis, row)
 
                         jcb[row, col] = Ijiθi(model, state, Iinv)
                         jcb[row, cok] = IjiVi(model, state, Iinv)
@@ -440,7 +453,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         jcb[row, cok] = IjiVj(model, state, Iinv)
                     end
 
-                elseif se.type[row] == 12 # ψᵢⱼ
+                elseif se.type[row] == 12 # ψij
                     model = ψijCoefficient(branch, ac, idx)
                     state = ViVjθiθjState(system, voltage, idx)
                     Iinv2, Iij = ψij(model, state)
@@ -450,6 +463,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
 
                     if col == branch.layout.from[idx]
                         se.residual[row] = se.mean[row] - angle(Iij)
+                        seobjective(analysis, row)
 
                         jcb[row, col] = ψijθi(model, state, Iinv2)
                         jcb[row, cok] = ψijVi(model, state, Iinv2)
@@ -458,7 +472,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         jcb[row, cok] = ψijVj(model, state, Iinv2)
                     end
 
-                elseif se.type[row] == 13 # ψⱼᵢ
+                elseif se.type[row] == 13 # ψji
                     model = ψjiCoefficient(branch, ac, idx)
                     state = VjViθjθiState(system, voltage, idx)
                     Iinv2, Iji = ψji(model, state)
@@ -468,6 +482,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
 
                     if col == branch.layout.from[idx]
                         se.residual[row] = se.mean[row] - angle(Iji)
+                        seobjective(analysis, row)
 
                         jcb[row, col] = ψjiθi(model, state, Iinv2)
                         jcb[row, cok] = ψjiVi(model, state, Iinv2)
@@ -476,12 +491,13 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         jcb[row, cok] = ψjiVj(model, state, Iinv2)
                     end
 
-                elseif se.type[row] == 16 # ℜ(Iᵢⱼ)
+                elseif se.type[row] == 16 # Re(Iij)
                     model = ψijCoefficient(branch, ac, idx)
                     state = ViVjθiθjState(system, voltage, idx)
 
                     if col == branch.layout.from[idx]
                         se.residual[row] = se.mean[row] - ReIij(model, state)
+                        seobjective(analysis, row)
 
                         jcb[row, col] = ReIijθi(model, state)
                         jcb[row, cok] = ReIijVi(model, state)
@@ -490,12 +506,13 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         jcb[row, cok] = ReIijVj(model, state)
                     end
 
-                elseif se.type[row] == 18 # ℑ(Iᵢⱼ)
+                elseif se.type[row] == 18 # Im(Iij)
                     model = ψijCoefficient(branch, ac, idx)
                     state = ViVjθiθjState(system, voltage, idx)
 
                     if col == branch.layout.from[idx]
                         se.residual[row] = se.mean[row] - ImIij(model, state)
+                        seobjective(analysis, row, row - 1)
 
                         jcb[row, col] = ImIijθi(model, state)
                         jcb[row, cok] = ImIijVi(model, state)
@@ -504,12 +521,13 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         jcb[row, cok] = ImIijVj(model, state)
                     end
 
-                elseif se.type[row] == 17 # ℜ(Iⱼᵢ)
+                elseif se.type[row] == 17 # Re(Iji)
                     model = ψjiCoefficient(branch, ac, idx)
                     state = VjViθjθiState(system, voltage, idx)
 
                     if col == branch.layout.from[idx]
                         se.residual[row] = se.mean[row] - ReIji(model, state)
+                        seobjective(analysis, row)
 
                         jcb[row, col] = ReIjiθi(model, state)
                         jcb[row, cok] = ReIjiVi(model, state)
@@ -518,12 +536,13 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                         jcb[row, cok] = ReIjiVj(model, state)
                     end
 
-                elseif se.type[row] == 19 # ℑ(Iⱼᵢ)
+                elseif se.type[row] == 19 # Im(Iji)
                     model = ψjiCoefficient(branch, ac, idx)
                     state = VjViθjθiState(system, voltage, idx)
 
                     if col == branch.layout.from[idx]
                         se.residual[row] = se.mean[row] - ImIji(model, state)
+                        seobjective(analysis, row, row - 1)
 
                         jcb[row, col] = ImIjiθi(model, state)
                         jcb[row, cok] = ImIjiVi(model, state)
@@ -538,16 +557,19 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
     end
 
     @inbounds for row = se.range[1]:(se.range[2] - 1)
-        if se.type[row] == 1
+        if se.type[row] == 1 # Vi
             se.residual[row] = se.mean[row] - voltage.magnitude[se.index[row]]
+            seobjective(analysis, row)
         end
     end
 
     @inbounds for row = se.range[5]:(se.range[6] - 1)
-        if se.type[row] == 10
+        if se.type[row] == 10 # Vi
             se.residual[row] = se.mean[row] - voltage.magnitude[se.index[row]]
-        elseif se.type[row] == 11
+            seobjective(analysis, row)
+        elseif se.type[row] == 11 # Ti
             se.residual[row] = se.mean[row] - voltage.angle[se.index[row]]
+            seobjective(analysis, row)
         end
     end
 end
@@ -1141,3 +1163,245 @@ function nthIndices!(
 
     return jcb, type, idx
 end
+
+"""
+    acStateEstimation!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation;
+        maxIteration, stopping, power, current, verbose)
+
+The function serves as a wrapper for solving AC state estimation using Gauss-Newton method.
+It calculates bus voltage magnitudes and angles, with the option to compute powers and currents.
+
+# Keywords
+Users can use the following keywords:
+* `maxIteration`: Specifies the maximum number of iterations (default: `20`).
+* `stopping`: Defines the stopping criterion for the iterative algorithm (default: `1e-8`).
+* `power`: Enables power computation upon convergence or reaching the iteration limit (default: `false`).
+* `current`: Enables current computation upon convergence or reaching the iteration limit (default: `false`).
+* `verbose`: Controls the solver output display:
+  * `verbose = 0`: silent mode,
+  * `verbose = 1`: prints only the exit message about convergence,
+  * `verbose = 2`: prints only iteration data,
+  * `verbose = 3`: prints detailed data (default).
+
+# Updates
+The calculated voltages are stored in the `voltage` field of the `ACStateEstimation` type,
+with optional storage in the `power` and `current` fields.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+acStateEstimation!(system, analysis; stopping = 1e-10, current = true)
+```
+"""
+function acStateEstimation!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::ACStateEstimation{NonlinearWLS{T}};
+    maxIteration::Int64 = 20,
+    stopping::Float64 = 1e-8,
+    power::Bool = false,
+    current::Bool = false,
+    verbose::Int64 = 3
+)  where T <: Union{Normal, Orthogonal}
+
+    converged = false
+
+    printseSystem(system, device, verbose)
+    printseMethod(analysis, verbose)
+
+    iter = 0
+    for iteration = 0:maxIteration
+        increment = solve!(system, analysis)
+
+        printseIteration(analysis, iteration, increment, verbose)
+        if increment < stopping
+            iter = iteration
+            converged = true
+            break
+        end
+    end
+
+    printseIncrement(system, analysis, verbose)
+    printseConvergence(iter, converged, verbose)
+
+    if power
+        power!(system, analysis)
+    end
+    if current
+        current!(system, analysis)
+    end
+end
+
+function printseSystem(system::PowerSystem, device::Measurement, verbose::Int64)
+    if verbose == 3
+        wd = textwidth(string(system.branch.number)) + 1
+        mwd = textwidth("Number of branches:")
+        width = wd + mwd
+
+        print("Number of buses:")
+        print(format(Format("%*i\n"), width - 16, system.bus.number))
+
+        print("Number of branches:")
+        print(format(Format("%*i\n\n"), width - 19, system.branch.number))
+
+        wd = max(
+            device.voltmeter.number, device.ammeter.number, device.wattmeter.number,
+            device.varmeter.number, device.pmu.number
+        )
+
+        wd = textwidth(string(wd)) + 1
+
+        if device.voltmeter.number != 0
+            mwd = textwidth("Number of voltmeters:")
+        elseif device.wattmeter.number != 0
+            mwd = textwidth("Number of wattmeters:")
+        elseif device.varmeter.number != 0
+            mwd = textwidth("Number of varmeters:")
+        elseif device.ammeter.number != 0
+            mwd = textwidth("Number of ammeters:")
+        elseif device.pmu.number != 0
+            mwd = textwidth("Number of PMUs:")
+        end
+
+        width = wd + mwd
+
+        if device.voltmeter.number != 0
+            print("Number of voltmeters:")
+            print(format(Format("%*i\n"), width - 21, device.voltmeter.number))
+        end
+
+        if device.ammeter.number != 0
+            print("Number of ammeters:")
+            print(format(Format("%*i\n"), width - 19, device.ammeter.number))
+
+            print("  From-bus:")
+            print(format(Format("%*i\n"), width - 11, count(device.ammeter.layout.from)))
+
+            print("  To-bus:")
+            print(format(Format("%*i\n"), width - 9, count(device.ammeter.layout.to)))
+        end
+
+        if device.wattmeter.number != 0
+            print("Number of wattmeters:")
+            print(format(Format("%*i\n"), width - 21, device.wattmeter.number))
+
+            print("  Bus:")
+            print(format(Format("%*i\n"), width - 6, count(device.wattmeter.layout.bus)))
+
+            print("  From-bus:")
+            print(format(Format("%*i\n"), width - 11, count(device.wattmeter.layout.from)))
+
+            print("  To-bus:")
+            print(format(Format("%*i\n"), width - 9, count(device.wattmeter.layout.to)))
+        end
+
+        if device.varmeter.number != 0
+            print("Number of varmeters:")
+            print(format(Format("%*i\n"), width - 20, device.varmeter.number))
+
+            print("  Bus:")
+            print(format(Format("%*i\n"), width - 6, count(device.varmeter.layout.bus)))
+
+            print("  From-bus:")
+            print(format(Format("%*i\n"), width - 11, count(device.varmeter.layout.from)))
+
+            print("  To-bus:")
+            print(format(Format("%*i\n"), width - 9, count(device.varmeter.layout.to)))
+        end
+
+        if device.pmu.number != 0
+            print("Number of PMUs:")
+            print(format(Format("%*i\n"), width - 15, device.pmu.number))
+
+            print("  Bus:")
+            print(format(Format("%*i\n"), width - 6, count(device.pmu.layout.bus)))
+
+            print("  From-bus:")
+            print(format(Format("%*i\n"), width - 11, count(device.pmu.layout.from)))
+
+            print("  To-bus:")
+            print(format(Format("%*i\n"), width - 9, count(device.pmu.layout.to)))
+        end
+        print("\n")
+    end
+end
+
+function printseMethod(analysis::ACStateEstimation, verbose::Int64)
+    if verbose == 2 || verbose == 3
+        wd = textwidth(string(nnz(analysis.method.jacobian))) + 1
+        mwd = textwidth("Number of nonzeros in the Jacobian:")
+
+        print("Number of state variables:")
+        print(
+            format(Format("%*i\n"), wd + mwd - 26, lastindex(analysis.method.increment) - 1)
+        )
+
+        print("Number of measurements:")
+        print(format(Format("%*i\n"), wd + mwd - 23, lastindex(analysis.method.mean)))
+
+        print("Number of nonzeros in the Jacobian:")
+        print(format(Format("%*i\n\n"), wd, nnz(analysis.method.jacobian)))
+    end
+end
+
+function printseIteration(analysis::ACStateEstimation, iter::Int64, stopping::Float64, verbose::Int64)
+    if verbose == 2 || verbose == 3
+        if iter % 10 == 0
+            println("Iteration  Maximum Increment  Objective Value")
+        end
+        print(format(Format("%*i "), 9, iter))
+        print(format(Format("%*.4e"), 18, stopping))
+
+        print(format(Format("%*.8e\n"), 17, analysis.method.objective))
+    end
+end
+
+function printseIncrement(
+    system::PowerSystem,
+    analysis,
+    verbose::Int64
+)
+    if verbose == 2 || verbose == 3
+        slack = copy(analysis.method.increment[system.bus.layout.slack])
+
+        analysis.method.increment[system.bus.layout.slack] = -Inf
+        angmax = maximum(analysis.method.increment[1:system.bus.number])
+
+        analysis.method.increment[system.bus.layout.slack] = Inf
+        angmin = minimum(analysis.method.increment[1:system.bus.number])
+
+        analysis.method.increment[system.bus.layout.slack] = slack
+
+        mag = extrema(analysis.method.increment[(system.bus.number + 1):end])
+
+        print("\n" * " "^24 * "Minimum   Maximum")
+
+        print("\nMagnitude Increment:")
+        print(format(Format("%*.2e"), 11, mag[1]))
+        print(format(Format("%*.2e\n"), 10, mag[2]))
+
+        print("Angle Increment:")
+        print(format(Format("%*.2e"), 15, angmin))
+        print(format(Format("%*.2e\n\n"), 10, angmax))
+    end
+end
+
+function printseConvergence(
+    iter::Int64,
+    converged::Bool,
+    verbose::Int64,
+)
+    if verbose != 0
+        if converged
+            println(
+                "EXIT: The solution was found using the Gauss-Newton" *
+                " method in $iter iterations."
+            )
+        else
+            println("EXIT: The Gauss-Newton method failed to converge.")
+        end
+    end
+end
+
