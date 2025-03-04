@@ -1348,7 +1348,7 @@ end
 
 function printseIteration(analysis::ACStateEstimation, iter::Int64, stopping::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
-        if iter % 10 == 0
+        if iter % 10 == 1
             println("Iteration  Maximum Increment  Objective Value")
         end
         print(format(Format("%*i "), 9, iter))
