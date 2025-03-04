@@ -1209,8 +1209,8 @@ function acStateEstimation!(
 
     converged = false
 
-    printseSystem(system, device, verbose)
-    printseMethod(analysis, verbose)
+    printseSystem(device, verbose)
+    printseMethod(system, analysis, verbose)
 
     iter = 0
     for iteration = 1:maxIteration
@@ -1235,7 +1235,7 @@ function acStateEstimation!(
     end
 end
 
-function printseSystem(system::PowerSystem, device::Measurement, verbose::Int64)
+function printseSystem(device::Measurement, verbose::Int64)
     if verbose == 3
         wdcol1 = max(
             textwidth(string(device.wattmeter.number)),
@@ -1297,7 +1297,7 @@ function printseSystem(system::PowerSystem, device::Measurement, verbose::Int64)
     end
 end
 
-function printseMethod(analysis::ACStateEstimation, verbose::Int64)
+function printseMethod(system::PowerSystem, analysis::ACStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         wd = textwidth(string(nnz(analysis.method.jacobian))) + 1
         mwd = textwidth("Number of nonzeros in the Jacobian:")
