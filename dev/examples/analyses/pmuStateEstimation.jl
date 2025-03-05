@@ -1,6 +1,5 @@
 using JuliaGrid, HiGHS
 
-
 ##### Power System Model #####
 system = powerSystem()
 
@@ -23,14 +22,11 @@ addBranch!(system; label = "Branch 8", from = "Bus 5", to = "Bus 2", reactance =
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1")
 
-
 ##### Display Data Settings #####
 show = Dict("Shunt Power" => false, "Status" => false, "Series Power" => false)
 
-
 ##### Optimal PMU Placement #####
-placement = pmuPlacement(system, HiGHS.Optimizer; verbose = 0)
-
+placement = pmuPlacement(system, HiGHS.Optimizer; verbose = 1)
 
 ##### Measurement Model #####
 device = measurement()
@@ -65,7 +61,6 @@ end
 
 printPmuData(system, device; width = Dict("Label" => 15))
 
-
 ##### Base Case Analysis #####
 analysis = pmuStateEstimation(system, device)
 solve!(system, analysis)
@@ -76,7 +71,6 @@ printBusData(system, analysis; show)
 printBusData(system, powerFlow; show)
 printBranchData(system, analysis; show)
 
-
 ##### Modifying Measurement Data #####
 updatePmu!(system, device, analysis; label = "From Branch 8", magnitude = 1.1)
 updatePmu!(system, device, analysis; label = "From Branch 2", angle = 0.2, noise = true)
@@ -85,7 +79,6 @@ solve!(system, analysis)
 power!(system, analysis)
 
 printBusData(system, analysis; show)
-
 
 ##### Modifying Measurement Set #####
 updatePmu!(system, device; label = "From Branch 2", status = 0)

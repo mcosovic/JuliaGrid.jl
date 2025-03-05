@@ -1,9 +1,7 @@
 using JuliaGrid, Ipopt
 
-
 ##### System of Units #####
 @voltage(pu, deg)
-
 
 ##### Power System Model #####
 system = powerSystem()
@@ -32,12 +30,11 @@ cost!(system; generator = "Generator 2", active = 2, polynomial = [1500.0; 700.0
 
 dcModel!(system)
 
-
 ##### Measurement Model #####
 device = measurement()
 
 powerFlow = dcOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, powerFlow)
+solve!(system, powerFlow; verbose = 1)
 power!(system, powerFlow)
 
 printBusData(system, powerFlow)
@@ -53,7 +50,6 @@ addWattmeter!(system, device; from = "Branch 4", active = powerFlow.power.from.a
 
 printWattmeterData(system, device)
 
-
 ##### Base Case Analysis #####
 analysis = dcStateEstimation(system, device)
 solve!(system, analysis)
@@ -61,7 +57,6 @@ power!(system, analysis)
 
 printBusData(system, analysis)
 printWattmeterData(system, device, analysis)
-
 
 ##### Modifying Measurement Data #####
 updateWattmeter!(system, device, analysis; label = "Wattmeter 7", active = 1.1)
@@ -75,7 +70,6 @@ analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
 solve!(system, analysis)
 power!(system, analysis)
 printBusData(system, analysis)
-
 
 ##### Modifying Measurement Set #####
 updateWattmeter!(system, device, analysis; label = "Wattmeter 1", status = 0)

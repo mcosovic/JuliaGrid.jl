@@ -20,7 +20,6 @@ addBranch!(system; label = "Branch 6", from = "Bus 4", to = "Bus 6")
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1")
 
-
 ##### Measurement Model #####
 device = measurement()
 
@@ -36,11 +35,9 @@ addVarmeter!(system, device; label = "Meter 3", bus = "Bus 4", reactive = 0.6)
 addWattmeter!(system, device; label = "Meter 4", to = "Branch 6", active = 0.2)
 addVarmeter!(system, device; label = "Meter 4", to = "Branch 6", reactive = 0.3)
 
-
 ##### Identification of Observable Islands #####
 islands = islandTopologicalFlow(system, device)
 islands = islandTopological(system, device)
-
 
 ##### Observability Restoration #####
 pseudo = measurement()
@@ -59,7 +56,6 @@ printVarmeterData(system, device)
 islands = islandTopological(system, device)
 
 addVoltmeter!(system, device; label = "Pseudo 3", bus = "Bus 1", magnitude = 1.0)
-
 
 ##### Optimal PMU Placement #####
 placement = pmuPlacement(system, HiGHS.Optimizer)
