@@ -46,14 +46,7 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 4", active = 0.412, reac
 
 acModel!(system)
 powerFlow = newtonRaphson(system)
-for iteration = 1:20
-    stopping = mismatch!(system, powerFlow)
-    if all(stopping .< 1e-8)
-        println("The algorithm converged in $(iteration - 1) iterations.")
-        break
-    end
-    solve!(system, powerFlow)
-end
+acPowerFlow!(system, powerFlow; verbose = 1)
 
 @pmu(label = "!")
 for (bus, idx) in placement.bus
