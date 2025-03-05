@@ -11,7 +11,7 @@ Let us now construct the power system:
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
-@labels(Integer)
+@config(label = Integer)
 @power(MW, MVAr)
 @voltage(pu, deg)
 

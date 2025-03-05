@@ -6,7 +6,7 @@ using JuMP, HiGHS
 @default(template) # hide
 @default(unit) # hide
 
-@labels(Integer)
+@config(label = Integer)
 
 system = powerSystem()
 

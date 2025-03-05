@@ -8,7 +8,7 @@ To initiate the process, let us construct the `PowerSystem` type:
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
-@labels(Integer)
+@config(label = Integer)
 
 system = powerSystem()
 

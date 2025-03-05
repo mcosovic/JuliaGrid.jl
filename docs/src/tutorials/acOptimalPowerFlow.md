@@ -6,7 +6,7 @@ using JuMP, Ipopt
 @default(unit) # hide
 @default(template) # hide
 
-@labels(Integer)
+@config(label = Integer)
 
 system = powerSystem()
 
