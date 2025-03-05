@@ -323,9 +323,11 @@ By computing the bus voltage angles, the function solves the DC state estimation
 # Keyword
 Users can set:
 * `verbose`: Controls the LAV solver output display:
-  * `verbose = 0`: silent mode,
+  * `verbose = 0`: silent mode (default),
   * `verbose = 1`: prints only the exit message about convergence,
-  * `verbose = 2`: prints detailed native solver output (default).
+  * `verbose = 2`: prints detailed native solver output.
+
+The default verbose setting can be modified using the [`@config`](@ref @config) macro.
 
 # Updates
 The resulting bus voltage angles are stored in the `voltage` field of the `DCStateEstimation`
@@ -418,7 +420,11 @@ function solve!(system::PowerSystem, analysis::DCStateEstimation{LinearWLS{Ortho
     addSlackCoeff(analysis, slackRange, elementsRemove, bus.layout.slack)
 end
 
-function solve!(system::PowerSystem, analysis::DCStateEstimation{LAV}; verbose::Int64 = 2)
+function solve!(
+    system::PowerSystem,
+    analysis::DCStateEstimation{LAV};
+    verbose::Int64 = template.config.verbose
+)
     se = analysis.method
     slackAngle = system.bus.voltage.angle[system.bus.layout.slack]
 

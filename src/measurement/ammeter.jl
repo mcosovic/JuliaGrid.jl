@@ -177,7 +177,6 @@ function addAmmeter!(
     statusFrom::FltIntMiss = missing,
     statusTo::FltIntMiss = missing,
     noise::Bool = template.ammeter.noise,
-    outofservice::Bool = true
 )
     errorCurrent(analysis.current.from.magnitude)
 
@@ -201,7 +200,7 @@ function addAmmeter!(
             ammNumber = system.branch.layout.inservice
         end
 
-        amp.label = OrderedDict{template.device, Int64}()
+        amp.label = OrderedDict{template.config.device, Int64}()
         sizehint!(amp.label, ammNumber)
 
         amp.layout.index = fill(0, ammNumber)

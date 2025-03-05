@@ -414,10 +414,10 @@ nothing # hide
 ## [Optimal Power Flow Solution](@id ACOptimalPowerFlowSolutionManual)
 To establish the AC optimal power flow problem, we utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, we can use the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles:
 ```julia ACOptimalPowerFlow
-solve!(system, analysis; verbose = 0)
+solve!(system, analysis)
 ```
 ```@setup ACOptimalPowerFlow
-solve!(system, analysis; verbose = 0)
+solve!(system, analysis)
 nothing # hide
 ```
 
@@ -563,7 +563,7 @@ cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 
 cost!(system; generator = "Generator 2", active = 1, piecewise = [10 12.3; 14.7 16.8; 18 19])
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis; verbose = 0)
+solve!(system, analysis)
 nothing # hide
 ```
 

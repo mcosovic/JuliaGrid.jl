@@ -167,9 +167,11 @@ the generators, as well as the bus voltage angles.
 # Keyword
 Users can set:
 * `verbose`: Controls the solver output display:
-  * `verbose = 0`: silent mode,
+  * `verbose = 0`: silent mode (default),
   * `verbose = 1`: prints only the exit message about convergence,
-  * `verbose = 2`: prints detailed native solver output (default).
+  * `verbose = 2`: prints detailed native solver output.
+
+The default verbose setting can be modified using the [`@config`](@ref @config) macro.
 
 # Updates
 The calculated active powers, as well as voltage angles, are stored in the
@@ -184,7 +186,11 @@ analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 solve!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, analysis::DCOptimalPowerFlow; verbose::Int64 = 2)
+function solve!(
+    system::PowerSystem,
+    analysis::DCOptimalPowerFlow;
+    verbose::Int64 = template.config.verbose
+)
     variable = analysis.method.variable
     constr = analysis.method.constraint
     dual = analysis.method.dual

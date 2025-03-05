@@ -388,7 +388,7 @@ end
 
 @testset "Build Random Measurement Set" begin
     @default(template)
-    @labels(Integer)
+    @config(label = Integer)
 
     ########## Generate Measurements from AC Power Flow ##########
     system = powerSystem(path * "case14test.m")

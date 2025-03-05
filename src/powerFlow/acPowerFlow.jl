@@ -1159,10 +1159,12 @@ Users can use the following keywords:
 * `power`: Enables power computation upon convergence or reaching the iteration limit (default: `false`).
 * `current`: Enables current computation upon convergence or reaching the iteration limit (default: `false`).
 * `verbose`: Controls the solver output display:
-  * `verbose = 0`: silent mode,
+  * `verbose = 0`: silent mode (default),
   * `verbose = 1`: prints only the exit message about convergence,
   * `verbose = 2`: prints only iteration data,
-  * `verbose = 3`: prints detailed data (default).
+  * `verbose = 3`: prints detailed data.
+
+The default verbose setting can be modified using the [`@config`](@ref @config) macro.
 
 # Updates
 The calculated voltages are stored in the `voltage` field of the `ACPowerFlow` type, with
@@ -1184,7 +1186,7 @@ function acPowerFlow!(
     stopping::Float64 = 1e-8,
     power::Bool = false,
     current::Bool = false,
-    verbose::Int64 = 3
+    verbose::Int64 = template.config.verbose
 )
     converged = false
 
@@ -1219,7 +1221,7 @@ end
 
 function maxWidth(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
     textwidth(string(nnz(analysis.method.jacobian))) + 1,
-    textwidth("Number of nonzeros in the Jacobian:"),
+    textwidth("Number of entries in the Jacobian:"),
     lastindex(analysis.method.increment) - system.bus.number + 1
 end
 
@@ -1230,7 +1232,7 @@ function maxWidth(::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
             )
         )
     ) + 2,
-    textwidth("Number of nonzeros in the Jacobian:"),
+    textwidth("Number of entries in the Jacobian:"),
     lastindex(analysis.method.reactive.increment)
 end
 
@@ -1280,7 +1282,7 @@ end
 
 function printpfMethod(analysis::ACPowerFlow{NewtonRaphson}, wd::Int64, mwd::Int64, verbose::Int64)
     if verbose == 2 || verbose == 3
-        print("Number of nonzeros in the Jacobian:")
+        print("Number of entries in the Jacobian:")
         print(format(Format("%*i\n"), wd, nnz(analysis.method.jacobian)))
 
         print("Number of state variables:")
@@ -1296,7 +1298,7 @@ function printpfMethod(analysis::ACPowerFlow{FastNewtonRaphson}, wd::Int64, mwd:
         nnzJac = nnz(method.active.jacobian) + nnz(method.reactive.jacobian)
         sv = lastindex(method.active.increment) + lastindex(method.reactive.increment)
 
-        print("Number of nonzeros in the Jacobian:")
+        print("Number of entries in the Jacobian:")
         print(format(Format("%*i\n"), wd, nnzJac))
 
         print("  Active Power:")

@@ -451,7 +451,7 @@ function addPowermeter!(
             deviceNumber += system.branch.layout.inservice
         end
 
-        device.label = OrderedDict{template.device, Int64}()
+        device.label = OrderedDict{template.config.device, Int64}()
         sizehint!(device.label, deviceNumber)
         device.number = 0
 

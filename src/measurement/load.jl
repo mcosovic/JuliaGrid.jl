@@ -64,31 +64,31 @@ device = measurement()
 function measurement()
     Measurement(
         Voltmeter(
-            OrderedDict{template.device, Int64}(),
+            OrderedDict{template.config.device, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             VoltmeterLayout(Int64[], 0),
             0
         ),
         Ammeter(
-            OrderedDict{template.device, Int64}(),
+            OrderedDict{template.config.device, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             AmmeterLayout(Int64[], Int64[], Bool[], 0),
             0
         ),
         Wattmeter(
-            OrderedDict{template.device, Int64}(),
+            OrderedDict{template.config.device, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             PowermeterLayout(Int64[], Bool[], Bool[], Bool[], 0),
             0
         ),
         Varmeter(
-            OrderedDict{template.device, Int64}(),
+            OrderedDict{template.config.device, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             PowermeterLayout(Int64[], Bool[], Bool[], Bool[], 0),
             0
         ),
         PMU(
-            OrderedDict{template.device, Int64}(),
+            OrderedDict{template.config.device, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             GaussMeter(Float64[], Float64[], Int8[]),
             PmuLayout(Int64[], Bool[], Bool[], Bool[], Bool[], Bool[], 0),
@@ -102,9 +102,9 @@ function checkLabelMeasurement(hdf5::File, template::Template)
     for device in hdf5
         labelType = eltype(device["label"])
         if labelType === Cstring
-            template.device = String
+            template.config.device = String
         else
-            template.device = Int64
+            template.config.device = Int64
         end
         break
     end

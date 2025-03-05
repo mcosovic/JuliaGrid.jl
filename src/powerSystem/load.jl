@@ -73,7 +73,7 @@ system = powerSystem()
 function powerSystem()
     PowerSystem(
         Bus(
-            OrderedDict{template.system, Int64}(),
+            OrderedDict{template.config.system, Int64}(),
             BusDemand(Float64[], Float64[]),
             BusSupply(Float64[], Float64[], Dict{Int64, Vector{Int64}}()),
             BusShunt(Float64[], Float64[]),
@@ -82,7 +82,7 @@ function powerSystem()
             0
         ),
         Branch(
-            OrderedDict{template.system, Int64}(),
+            OrderedDict{template.config.system, Int64}(),
             BranchParameter(
                 Float64[], Float64[], Float64[], Float64[], Float64[], Float64[]
             ),
@@ -92,7 +92,7 @@ function powerSystem()
             0
         ),
         Generator(
-            OrderedDict{template.system, Int64}(),
+            OrderedDict{template.config.system, Int64}(),
             GeneratorOutput(Float64[], Float64[]),
             GeneratorCapability(
                 Float64[], Float64[], Float64[], Float64[], Float64[],
@@ -132,9 +132,9 @@ end
 function checkLabel(hdf5::File, template::Template)
     labelType = eltype(hdf5["bus/label"])
     if labelType === Cstring
-        template.system = String
+        template.config.system = String
     else
-        template.system = Int64
+        template.config.system = Int64
     end
 end
 
@@ -344,7 +344,7 @@ function loadBus(system::PowerSystem, busLine::Vector{String})
     deg2rad = pi / 180
 
     bus.number = length(busLine)
-    bus.label = OrderedDict{template.system, Int64}()
+    bus.label = OrderedDict{template.config.system, Int64}()
     sizehint!(bus.label, bus.number)
 
     bus.demand.active = fill(0.0, bus.number)
@@ -424,7 +424,7 @@ function loadBranch(system::PowerSystem, branchLine::Vector{String})
     deg2rad = pi / 180
 
     branch.number = length(branchLine)
-    branch.label = OrderedDict{template.system, Int64}()
+    branch.label = OrderedDict{template.config.system, Int64}()
     sizehint!(branch.label, branch.number)
 
     branch.parameter.conductance = fill(0.0, branch.number)
@@ -499,7 +499,7 @@ function loadGenerator(system::PowerSystem, genLine::Vector{String}, costLine::V
     basePowerInv = 1 / system.base.power.value
 
     gen.number = length(genLine)
-    gen.label = OrderedDict{template.system, Int64}()
+    gen.label = OrderedDict{template.config.system, Int64}()
     sizehint!(gen.label, gen.number)
 
     gen.output.active = fill(0.0, gen.number)

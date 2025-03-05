@@ -66,7 +66,7 @@ JuliaGrid allows users to determine the minimum number of PMUs needed for observ
 using HiGHS
 
 @pmu(label = "PMU ? (!)")
-placement = pmuPlacement!(system, device, analysis, HiGHS.Optimizer; verbose = 0)
+placement = pmuPlacement!(system, device, analysis, HiGHS.Optimizer)
 nothing # hide
 ```
 Note that users can also generate phasor measurements using results from AC optimal power flow.

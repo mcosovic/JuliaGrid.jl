@@ -240,25 +240,50 @@ macro parameter(impedance::Symbol, admittance::Symbol)
 end
 
 """
-    @labels(type)
+    @config(label, verbose)
 
-JuliaGrid keeps all labels in ordered dictionaries as Strings. Users have the option to
-use Integers instead, which can be a more efficient way to store labels, particularly for
-large-scale systems.
+The macro defines general configuration settings for JuliaGrid.
 
-# Example
+By default, JuliaGrid stores all labels as strings in ordered dictionaries. However, users
+can choose to store labels as integers, which can be a more efficient option for large-scale
+systems.
+
+Additionally, users can set a default value for the verbose parameter, which controls the
+level of printed information for algorithms used in JuliaGrid.
+
+# Examples
+Set labels as integers and disable printed output:
 ```jldoctest
-@labels(Integer)
+@labels(label = Integer, verbose = 0)
+```
+
+Set labels as strings and enable basic printed messages:
+```jldoctest
+@labels(label = String, verbose = 1)
 ```
 """
-macro labels(type::Symbol)
-    if type == :Integer || type == :Int64
-        template.system = Int64
-        template.device = Int64
-    end
-    if type == :String
-        template.system = String
-        template.device = String
+macro config(kwargs...)
+    quote
+        for kwarg in $(esc(kwargs))
+            parameter::Symbol = kwarg.args[1]
+
+            if hasfield(ConfigTemplate, parameter)
+                if parameter == :label
+                    type = kwarg.args[2]
+                    if type == :Integer || type == :Int64
+                        datatype = Int64
+                    else
+                        datatype = String
+                    end
+                    setfield!(template.config, :label, datatype)
+                    setfield!(template.config, :system, datatype)
+                    setfield!(template.config, :device, datatype)
+                end
+                if parameter == :verbose
+                    setfield!(template.config, :verbose, Int64(eval(kwarg.args[2])))
+                end
+            end
+        end
     end
 end
 
@@ -304,20 +329,19 @@ end
 The macro is designed to reset various settings to their default values.
 
 The `mode` argument can take on the following values:
-* `unit`: Sets all units to their default settings.
-* `power`: Sets active, reactive, and apparent power to per-units.
-* `voltage`: Sets voltage magnitude to per-unit and voltage angle to radian.
-* `parameter`: Sets impedance and admittance to per-units.
-* `template`: Sets bus, branch, generator, voltmeter, ammeter, wattmeter, varmeter,
-  and pmu templates to default settings.
-* `bus`: Resets the bus template to its default settings.
-* `branch`: Resets the branch template to its default settings.
-* `generator`: Resets the generator template to its default settings.
-* `voltmeter`: Resets the voltmeter template to its default settings.
-* `ammeter`: Resets the ammeter template to its default settings.
-* `wattmeter`: Resets the wattmeter template to its default settings.
-* `varmeter`: Resets the varmeter template to its default settings.
-* `pmu`: Resets the pmu template to its default settings.
+* `unit`: Restores all units to their default settings.
+* `power`: Converts active, reactive, and apparent power to per-unit values.
+* `voltage`: Expresses voltage magnitude in per-unit and voltage angle in radians.
+* `parameter`: Converts impedance and admittance to per-unit values.
+* `bus`: Resets the bus template to its default configuration.
+* `branch`: Resets the branch template to its default configuration.
+* `generator`: Resets the generator template to its default configuration.
+* `voltmeter`: Resets the voltmeter template to its default configuration.
+* `ammeter`: Resets the ammeter template to its default configuration.
+* `wattmeter`: Resets the wattmeter template to its default configuration.
+* `varmeter`: Resets the varmeter template to its default configuration.
+* `pmu`: Resets the PMU template to its default configuration.
+* `template`: Restores all templates and configurations to their default settings.
 
 # Example
 ```jldoctest
@@ -543,8 +567,10 @@ macro default(mode::Symbol)
         end
 
         if mode == :template
-            template.system = String
-            template.device = String
+            template.config.label = String
+            template.config.system = String
+            template.config.device = String
+            template.config.verbose = 0
         end
     end
 end

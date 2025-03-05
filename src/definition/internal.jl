@@ -196,6 +196,13 @@ Base.@kwdef mutable struct PmuTemplate
     noise::Bool = false
 end
 
+Base.@kwdef mutable struct ConfigTemplate
+    label::DataType = String
+    system::DataType = String
+    device::DataType = String
+    verbose::Int64 = 0
+end
+
 mutable struct Template
     bus::BusTemplate
     branch::BranchTemplate
@@ -205,8 +212,7 @@ mutable struct Template
     wattmeter::WattmeterTemplate
     varmeter::VarmeterTemplate
     pmu::PmuTemplate
-    system::DataType
-    device::DataType
+    config::ConfigTemplate
 end
 
 template = Template(
@@ -218,8 +224,7 @@ template = Template(
     WattmeterTemplate(),
     VarmeterTemplate(),
     PmuTemplate(),
-    String,
-    String
+    ConfigTemplate()
 )
 
 ##### List of Prefixes #####

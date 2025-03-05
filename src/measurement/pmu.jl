@@ -299,7 +299,7 @@ function addPmu!(
             pmuNumber += system.branch.layout.inservice
         end
 
-        pmu.label = OrderedDict{template.device, Int64}()
+        pmu.label = OrderedDict{template.config.device, Int64}()
         sizehint!(pmu.label, pmuNumber)
 
         pmu.layout.index = fill(0, pmuNumber)

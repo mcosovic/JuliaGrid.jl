@@ -633,9 +633,11 @@ The function accepts the following keywords:
 * `bridge`: Controls the bridging mechanism (default: `false`).
 * `name`: Handles the creation of string names (default: `false`).
 * `verbose`: Controls the solver output display:
-  * `verbose = 0`: silent mode,
+  * `verbose = 0`: silent mode (default),
   * `verbose = 1`: prints only the exit message about convergence,
   * `verbose = 2`: prints detailed native solver output (default).
+
+The default verbose setting can be modified using the [`@config`](@ref @config) macro.
 
 # Returns
 The function returns an instance of the `PlacementPMU` type, containing variables such as:
@@ -681,16 +683,16 @@ function pmuPlacement(
     (@nospecialize optimizerFactory);
     bridge::Bool = false,
     name::Bool = false,
-    verbose::Int64 = 2,
+    verbose::Int64 = template.config.verbose,
 )
     bus = system.bus
     branch = system.branch
     ac = system.model.ac
 
     placementPmu = PlacementPMU(
-        OrderedDict{template.system, Int64}(),
-        OrderedDict{template.system, Int64}(),
-        OrderedDict{template.system, Int64}()
+        OrderedDict{template.config.system, Int64}(),
+        OrderedDict{template.config.system, Int64}(),
+        OrderedDict{template.config.system, Int64}()
     )
 
     model!(system, ac)
@@ -774,9 +776,9 @@ Settings for the optimization solver include:
 * `bridge`: Controls the bridging mechanism (default: `false`).
 * `name`: Handles the creation of string names (default: `false`).
 * `verbose`: Controls the solver output display:
-  * `verbose = 0`: silent mode,
+  * `verbose = 0`: silent mode (default),
   * `verbose = 1`: prints only the exit message about convergence,
-  * `verbose = 2`: prints detailed native solver output (default).
+  * `verbose = 2`: prints detailed native solver output.
 
 # Updates
 The function updates the `pmu` field of the `Measurement` composite type.
@@ -808,7 +810,7 @@ function pmuPlacement!(
     (@nospecialize optimizerFactory);
     bridge::Bool = false,
     name::Bool = false,
-    verbose::Int64 = 2,
+    verbose::Int64 = template.config.verbose,
     varianceMagnitudeBus::FltIntMiss = missing,
     varianceAngleBus::FltIntMiss = missing,
     varianceMagnitudeFrom::FltIntMiss = missing,

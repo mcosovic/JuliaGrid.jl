@@ -56,7 +56,7 @@ nothing # hide
 ## Optimal PMU Placement
 Next, PMUs need to be assigned to the power system shown in Figure 1. The placement is determined using an optimal PMU placement strategy that ensures observability with the minimal number of PMUs:
 ```@example pmuStateEstimation
-placement = pmuPlacement(system, HiGHS.Optimizer; verbose = 0)
+placement = pmuPlacement(system, HiGHS.Optimizer)
 nothing # hide
 ```
 
@@ -126,14 +126,7 @@ Next, AC power flow analysis is performed to obtain bus voltages:
 acModel!(system)
 
 powerFlow = newtonRaphson(system)
-for iteration = 1:20
-    stopping = mismatch!(system, powerFlow)
-    if all(stopping .< 1e-8)
-        println("The algorithm converged in $(iteration - 1) iterations.")
-        break
-    end
-    solve!(system, powerFlow)
-end
+acPowerFlow!(system, powerFlow; verbose = 1)
 nothing # hide
 ```
 

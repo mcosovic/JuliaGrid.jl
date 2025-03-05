@@ -344,9 +344,11 @@ estimation model.
 # Keyword
 Users can set:
 * `verbose`: Controls the LAV solver output display:
-  * `verbose = 0`: silent mode,
+  * `verbose = 0`: silent mode (default),
   * `verbose = 1`: prints only the exit message about convergence,
-  * `verbose = 2`: prints detailed native solver output (default).
+  * `verbose = 2`: prints detailed native solver output.
+
+The default verbose setting can be modified using the [`@config`](@ref @config) macro.
 
 # Updates
 The resulting bus voltage magnitudes and angles are stored in the `voltage` field of the
@@ -431,7 +433,11 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Orth
     end
 end
 
-function solve!(system::PowerSystem, analysis::PMUStateEstimation{LAV}; verbose::Int64 = 2)
+function solve!(
+    system::PowerSystem,
+    analysis::PMUStateEstimation{LAV};
+    verbose::Int64 = template.config.verbose
+)
     se = analysis.method
     bus = system.bus
 

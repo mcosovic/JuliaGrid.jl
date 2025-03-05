@@ -131,7 +131,7 @@
 
     @testset "IEEE 14: Wrapper Function" begin
         analysis = newtonRaphson(system14)
-        acPowerFlow!(system14, analysis; verbose = 0)
+        acPowerFlow!(system14, analysis)
         @test analysis.voltage.magnitude ≈ matpwr14["voltageMagnitude"]
         @test analysis.voltage.angle ≈ matpwr14["voltageAngle"]
     end
@@ -369,7 +369,7 @@ end
 end
 
 @testset "Fast Newton-Raphson XB Method" begin
-    @labels(Integer)
+    @config(label = Integer)
 
     ########## IEEE 14-bus Test Case ##########
     system14 = powerSystem(path * "case14test.m")

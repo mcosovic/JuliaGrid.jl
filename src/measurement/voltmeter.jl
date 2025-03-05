@@ -148,7 +148,7 @@ function addVoltmeter!(
 
     if status != -1
         volt.layout.index = collect(1:system.bus.number)
-        volt.label = OrderedDict{template.device, Int64}()
+        volt.label = OrderedDict{template.config.device, Int64}()
         sizehint!(volt.label, volt.number)
 
         volt.magnitude.mean = similar(analysis.voltage.magnitude)

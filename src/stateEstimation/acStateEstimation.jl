@@ -841,9 +841,11 @@ estimation model.
 # Keyword
 Users can set:
 * `verbose`: Controls the LAV solver output display:
-  * `verbose = 0`: silent mode,
+  * `verbose = 0`: silent mode (default),
   * `verbose = 1`: prints only the exit message about convergence,
-  * `verbose = 2`: prints detailed native solver output (default).
+  * `verbose = 2`: prints detailed native solver output.
+
+The default verbose setting can be modified using the [`@config`](@ref @config) macro.
 
 # Updates
 The resulting bus voltage magnitudes and angles are stored in the `voltage` field of the
@@ -966,7 +968,11 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{NonlinearWLS{Or
     return maxAbsΔ
 end
 
-function solve!(system::PowerSystem, analysis::ACStateEstimation{LAV}; verbose::Int64 = 2)
+function solve!(
+    system::PowerSystem,
+    analysis::ACStateEstimation{LAV};
+    verbose::Int64 = template.config.verbose
+)
     bus = system.bus
     se = analysis.method
     volt = analysis.voltage
@@ -1178,10 +1184,12 @@ Users can use the following keywords:
 * `power`: Enables power computation upon convergence or reaching the iteration limit (default: `false`).
 * `current`: Enables current computation upon convergence or reaching the iteration limit (default: `false`).
 * `verbose`: Controls the solver output display:
-  * `verbose = 0`: silent mode,
+  * `verbose = 0`: silent mode (default),
   * `verbose = 1`: prints only the exit message about convergence,
   * `verbose = 2`: prints only iteration data,
   * `verbose = 3`: prints detailed data (default).
+
+The default verbose setting can be modified using the [`@config`](@ref @config) macro.
 
 # Updates
 The calculated voltages are stored in the `voltage` field of the `ACStateEstimation` type,
@@ -1204,7 +1212,7 @@ function acStateEstimation!(
     stopping::Float64 = 1e-8,
     power::Bool = false,
     current::Bool = false,
-    verbose::Int64 = 3
+    verbose::Int64 = template.config.verbose
 )  where T <: Union{Normal, Orthogonal}
 
     converged = false
@@ -1300,10 +1308,10 @@ end
 function printseMethod(system::PowerSystem, analysis::ACStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         wd = textwidth(string(nnz(analysis.method.jacobian))) + 1
-        mwd = textwidth("Number of nonzeros in the Jacobian:")
+        mwd = textwidth("Number of entries in the Jacobian:")
         tot = wd + mwd
 
-        print("Number of nonzeros in the Jacobian:")
+        print("Number of entries in the Jacobian:")
         print(format(Format("%*i\n"), wd, nnz(analysis.method.jacobian)))
 
         print("Number of measurement functions:")

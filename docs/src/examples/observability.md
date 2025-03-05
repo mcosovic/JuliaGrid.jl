@@ -184,7 +184,7 @@ The goal of the PMU placement algorithm is to determine the minimal number of PM
 placement = pmuPlacement(system, HiGHS.Optimizer)
 ```
 ```@setup 6bus
-placement = pmuPlacement(system, HiGHS.Optimizer; verbose = 0)
+placement = pmuPlacement(system, HiGHS.Optimizer)
 nothing # hide
 ```
 

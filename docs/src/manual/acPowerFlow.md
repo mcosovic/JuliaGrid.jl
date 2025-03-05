@@ -5,11 +5,13 @@ To perform the AC power flow analysis, we will first need the `PowerSystem` type
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB),
 * [`gaussSeidel`](@ref gaussSeidel).
 
-These functions will set up the AC power flow framework. To obtain bus voltages and solve the power flow problem, we can use the following functions:
+To obtain bus voltages and solve the power flow problem, users can implement an iterative process using the following functions:
 * [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})),
 * [`solve!`](@ref solve!(::PowerSystem, ACPowerFlow{NewtonRaphson})).
+Alternatively, instead of designing their own iteration process, users can use the wrapper function:
+* [`acPowerFlow!`](@ref acPowerFlow!).
 
-Additionally, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
+Next, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
 * [`reactiveLimit!`](@ref reactiveLimit!),
 * [`adjustAngle!`](@ref adjustAngle!).
 
@@ -271,6 +273,9 @@ acPowerFlow!(system, analysis)
 nothing # hide
 ```
 
+!!! note "Info"
+    Users can choose any of the approaches presented in this section to solve AC power flow based on their needs.
+
 ---
 
 ##### Combining Methods
@@ -289,13 +294,7 @@ Next, we can initialize the Newton-Raphson method with the voltages obtained fro
 analysis = newtonRaphson(system)
 
 setInitialPoint!(gs, analysis)
-for iteration = 1:100
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis; verbose = 1)
 ```
 
 !!! note "Info"
@@ -363,10 +362,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, act
 
 acModel!(system)
 analysis = newtonRaphson(system) # <- Build ACPowerFlow for the defined power system
-for iteration = 1:100
-    mismatch!(system, analysis)
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis)
 
 updateBus!(system; label = "Bus 2", active = 0.2)
 
@@ -377,10 +373,7 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 1", active = 0.2)
 updateGenerator!(system; label = "Generator 1", active = 0.3)
 
 analysis = newtonRaphson(system) # <- Build ACPowerFlow for the updated power system
-for iteration = 1:100
-    mismatch!(system, analysis)
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis)
 nothing # hide
 ```
 
@@ -412,10 +405,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, act
 
 acModel!(system)
 analysis = newtonRaphson(system) # <- Build ACPowerFlow for the defined power system
-for iteration = 1:100
-    mismatch!(system, analysis)
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis)
 
 updateBus!(system, analysis; label = "Bus 2", active = 0.2)
 
@@ -426,10 +416,7 @@ addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 1", active = 0
 updateGenerator!(system, analysis; label = "Generator 1", active = 0.3)
 
 # <- No need for re-build; we have already updated the existing ACPowerFlow instance
-for iteration = 1:100
-    mismatch!(system, analysis)
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis)
 nothing # hide
 ```
 
@@ -442,22 +429,16 @@ nothing # hide
 An intriguing scenario unfolds when employing the fast Newton-Raphson method. Continuing from the previous example, let us now initialize the fast Newton-Raphson method and proceed with iterations as outlined below:
 ```@example ACPowerFlowSolution
 analysis = fastNewtonRaphsonBX(system)
-for iteration = 1:100
-    mismatch!(system, analysis)
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
 Now, let us make changes to the power system and proceed directly to the iteration step:
 ```@example ACPowerFlowSolution
-updateBus!(system, analysis; label = "Bus 2", reactive = 0.02)
+updateBus!(system, analysis; label = "Bus 2", reactive = 0.04)
 updateGenerator!(system, analysis; label = "Generator 1", reactive = 0.1)
 
-for iteration = 1:100
-    mismatch!(system, analysis)
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -507,10 +488,7 @@ In this scenario, the user must execute the [`newtonRaphson`](@ref newtonRaphson
 updateBus!(system; label = "Bus 2", type = 2)
 
 analysis = fastNewtonRaphsonBX(system)
-for iteration = 1:100
-    mismatch!(system, analysis)
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis)
 ```
 
 !!! note "Info"
@@ -540,13 +518,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.0, reactive = 0.2)
 
 analysis = newtonRaphson(system)
-for iteration = 1:100
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -692,13 +664,7 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 3", reactive = 0.8)
 addGenerator!(system; label = "Generator 3", bus = "Bus 4", reactive = 0.9)
 
 analysis = newtonRaphson(system)
-for iteration = 1:100
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis)
 
 violate = reactiveLimit!(system, analysis)
 nothing # hide
@@ -729,13 +695,7 @@ print(system.bus.label, system.bus.layout.type)
 After modifying the `PowerSystem` type as described earlier, we can run the simulation again with the following code:
 ```@example GeneratorReactivePowerLimits
 analysis = newtonRaphson(system)
-for iteration = 1:100
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis)
 nothing # hide
 ```
 
@@ -773,13 +733,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", maxReactive = 0.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 4", reactive = 0.3)
 
 analysis = newtonRaphson(system)
-for iteration = 1:100
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis)
 nothing # hide
 ```
 
@@ -791,13 +745,7 @@ violate = reactiveLimit!(system, analysis)
 Here, the generator connected to the slack bus is violating the minimum reactive power limit, which indicates the need to convert the slack bus. It is important to note that the new slack bus can be created only from the generator bus (`type = 2`). We will now perform another AC power flow analysis on the modified system using the following:
 ```@example NewSlackBus
 analysis = newtonRaphson(system)
-for iteration = 1:100
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis)
 ```
 
 After examining the bus voltages, we will focus on the angles:

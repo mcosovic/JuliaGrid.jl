@@ -106,7 +106,7 @@ end
 
 @testset "Build and Update Power System in SI Units" begin
     @default(template)
-    @labels(Integer)
+    @config(label = Integer)
     load = powerSystem(path * "build.m")
     @base(load, MVA, kV)
 

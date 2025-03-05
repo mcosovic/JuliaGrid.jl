@@ -1,19 +1,5 @@
 using JuliaGrid
 
-
-##### Wrapper Function #####
-function acStateEstimation!(system::PowerSystem, analysis::ACStateEstimation)
-    for iteration = 1:200
-        stopping = solve!(system, analysis)
-        if stopping < 1e-8
-            println("The algorithm converged in $iteration iterations.")
-            break
-        end
-    end
-    power!(system, analysis)
-end
-
-
 ##### Power System Model #####
 system = powerSystem()
 
@@ -28,10 +14,8 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", resistance 
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1")
 
-
 ##### Display Data Settings #####
 show = Dict("Shunt Power" => false, "Status" => false)
-
 
 ##### Measurement Model #####
 device = measurement()
@@ -43,14 +27,7 @@ updateGenerator!(system; label = "Generator 1", active = 3.3, reactive = 2.1)
 
 acModel!(system)
 powerFlow = newtonRaphson(system)
-for iteration = 1:20
-    stopping = mismatch!(system, powerFlow)
-    if all(stopping .< 1e-8)
-        println("The algorithm converged in $(iteration - 1) iterations.")
-        break
-    end
-    solve!(system, powerFlow)
-end
+acPowerFlow!(system, powerFlow; verbose = 1)
 
 printBusData(system, powerFlow)
 
@@ -84,15 +61,13 @@ addAmmeter!(system, device; label = "Meter 5", to = "Branch 1", magnitude = 2.37
 
 printAmmeterData(system, device)
 
-
 ##### Base Case Analysis #####
 analysis = gaussNewton(system, device)
-acStateEstimation!(system, analysis)
+acStateEstimation!(system, device, analysis)
 
 printBusData(system, analysis; show)
 printBranchData(system, analysis; show)
 printWattmeterData(system, device, analysis)
-
 
 ##### Modifying Measurement Data #####
 updateVoltmeter!(system, device, analysis; label = "Meter 1", magnitude = 1.0, noise = false)
@@ -101,7 +76,6 @@ updateVarmeter!(system, device, analysis; label = "Meter 3", variance = 1e-1)
 
 acStateEstimation!(system, analysis)
 printBusData(system, analysis; show)
-
 
 ##### Modifying Measurement Set #####
 updateAmmeter!(system, device, analysis; label = "Meter 4", status = 1)

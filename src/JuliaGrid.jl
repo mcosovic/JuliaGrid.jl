@@ -20,7 +20,7 @@ include("backend/utility.jl")
 include("backend/internal.jl")
 include("backend/equations.jl")
 include("backend/expressions.jl")
-export @base, @power, @voltage, @current, @parameter, @default, @labels
+export @base, @power, @voltage, @current, @parameter, @config, @default
 
 ######### Print ##########
 include("print/utility.jl")
