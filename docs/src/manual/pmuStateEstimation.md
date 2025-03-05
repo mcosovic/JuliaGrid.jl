@@ -3,7 +3,7 @@ To perform linear state estimation solely based on PMU data, the initial require
 * [`pmuStateEstimation`](@ref pmuStateEstimation),
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation).
 
-For resolving the PMU state estimation problem and obtaining bus voltage magnitudes and angles, utilize the following function:
+For solving the PMU state estimation problem and obtaining bus voltage magnitudes and angles, utilize the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})).
 
 After executing the function [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})), where the user employs the WLS method, the user has the ability to check if the measurement set contains outliers throughout bad data analysis and remove those measurements using:
@@ -45,10 +45,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 2.1)
 
 analysis = newtonRaphson(system)
-for iteration = 1:10
-    mismatch!(system, analysis)
-    solve!(system, analysis)
-end
+acPowerFlow!(system, analysis)
 nothing # hide
 ```
 
@@ -238,7 +235,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    We suggest that readers refer to the tutorial on [Bad Data Processing](@ref PMUSEBadDataTutorials) for insights into the implementation.
+    Readers can refer to the [Bad Data Processing](@ref PMUSEBadDataTutorials) tutorial for implementation insights.
 
 ---
 
@@ -251,7 +248,6 @@ using Ipopt
 using JuMP  # hide
 
 analysis = pmuLavStateEstimation(system, device, Ipopt.Optimizer)
-JuMP.set_silent(analysis.method.jump) # hide
 nothing # hide
 ```
 
@@ -270,7 +266,7 @@ Users have the flexibility to customize these values according to their requirem
 ##### Solution
 To solve the formulated LAV state estimation model, simply execute the following function:
 ```@example PMUOptimalPlacement
-solve!(system, analysis)
+solve!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -281,7 +277,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    We suggest that readers refer to the tutorial on [Least Absolute Value Estimation](@ref PMUSELAVTutorials) for insights into the implementation.
+    Readers can refer to the [Least Absolute Value Estimation](@ref PMUSELAVTutorials) tutorial for implementation insights.
 
 ---
 

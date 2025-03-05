@@ -173,7 +173,7 @@ nothing # hide
 ---
 
 ## Base Case Analysis
-After collecting the measurements, we solve the AC state estimation by initializing the Gauss-Newton method and running the iterative algorithm to estimate bus voltages. The obtained results are then used to compute power values:
+After collecting the measurements, we solve the AC state estimation by initializing the Gauss-Newton method and running the iterative algorithm to estimate bus voltages. The obtained results are then used to compute powers:
 ```@example acStateEstimation
 analysis = gaussNewton(system, device)
 acStateEstimation!(system, device, analysis; power = true, verbose = 2)

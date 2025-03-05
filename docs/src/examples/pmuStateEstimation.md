@@ -56,7 +56,7 @@ nothing # hide
 ## Optimal PMU Placement
 Next, PMUs need to be assigned to the power system shown in Figure 1. The placement is determined using an optimal PMU placement strategy that ensures observability with the minimal number of PMUs:
 ```@example pmuStateEstimation
-placement = pmuPlacement(system, HiGHS.Optimizer)
+placement = pmuPlacement(system, HiGHS.Optimizer; verbose = 1)
 nothing # hide
 ```
 

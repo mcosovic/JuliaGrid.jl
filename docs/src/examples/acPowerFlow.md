@@ -92,7 +92,7 @@ fnr = fastNewtonRaphsonXB(system)
 nothing # hide
 ```
 
-Then, we use the AC power flow wrapper function to iteratively compute bus voltages as well as active and reactive powers:
+Then, we use the AC power flow wrapper to iteratively compute bus voltages as well as active and reactive powers:
 ```@example 4bus
 acPowerFlow!(system, fnr; power = true, verbose = 2)
 nothing # hide

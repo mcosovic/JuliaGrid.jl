@@ -1174,15 +1174,16 @@ end
     acStateEstimation!(system::PowerSystem, device::Measurement, analysis::ACStateEstimation;
         maxIteration, stopping, power, current, verbose)
 
-The function serves as a wrapper for solving AC state estimation using Gauss-Newton method.
-It calculates bus voltage magnitudes and angles, with the option to compute powers and currents.
+The function acts as a wrapper for solving AC state estimation, providing either the WLS
+or LAV estimator. It computes bus voltage magnitudes and angles, with the option to
+calculate powers and currents.
 
 # Keywords
 Users can use the following keywords:
-* `maxIteration`: Specifies the maximum number of iterations (default: `20`).
-* `stopping`: Defines the stopping criterion for the iterative algorithm (default: `1e-8`).
-* `power`: Enables power computation upon convergence or reaching the iteration limit (default: `false`).
-* `current`: Enables current computation upon convergence or reaching the iteration limit (default: `false`).
+* `maxIteration`: Specifies the maximum number of Gauss-Newton iterations (default: `20`).
+* `stopping`: Defines the stopping criterion for the Gauss-Newton algorithm (default: `1e-8`).
+* `power`: Enables the computation of powers (default: `false`).
+* `current`: Enables the computation of currents (default: `false`).
 * `verbose`: Controls the solver output display:
   * `verbose = 0`: silent mode (default),
   * `verbose = 1`: prints only the exit message about convergence,
@@ -1234,6 +1235,28 @@ function acStateEstimation!(
 
     printseIncrement(system, analysis, verbose)
     printseConvergence(iter, converged, verbose)
+
+    if power
+        power!(system, analysis)
+    end
+    if current
+        current!(system, analysis)
+    end
+end
+
+function acStateEstimation!(
+    system::PowerSystem,
+    device::Measurement,
+    analysis::ACStateEstimation{LAV};
+    maxIteration::Int64 = 20,
+    stopping::Float64 = 1e-8,
+    power::Bool = false,
+    current::Bool = false,
+    verbose::Int64 = template.config.verbose
+)
+
+    printseSystem(device, verbose)
+    solve!(system, analysis; verbose)
 
     if power
         power!(system, analysis)

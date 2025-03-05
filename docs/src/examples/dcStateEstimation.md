@@ -72,17 +72,10 @@ nothing # hide
 
 ##### DC Optimal Power Flow
 To obtain bus voltage angless, we solve the DC optimal power flow. Using these values, we compute the active power associated with buses and branches:
-```julia dcStateEstimation
+```@example dcStateEstimation
 powerFlow = dcOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, powerFlow)
+solve!(system, powerFlow; verbose = 1)
 power!(system, powerFlow)
-```
-```@setup dcStateEstimation
-powerFlow = dcOptimalPowerFlow(system, Ipopt.Optimizer)
-JuMP.set_silent(powerFlow.method.jump)  # hide
-solve!(system, powerFlow)
-power!(system, powerFlow)
-nothing # hide
 ```
 
 ---
@@ -174,7 +167,7 @@ updateWattmeter!(system, device, analysis; label = "Wattmeter 7", active = 1.1)
 updateWattmeter!(system, device, analysis; label = "Wattmeter 8", active = 1.6)
 nothing # hide
 ```
-By changing these measurement values, two outliers are introduced into the dataset, which affects the estimated values.
+By changing these measurement values, two outliers are introduced into the dataset, which affects the estimates.
 
 Next, the DC state estimation is solved again to compute the updated estimate:
 ```@example dcStateEstimation

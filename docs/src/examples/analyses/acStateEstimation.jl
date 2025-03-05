@@ -63,7 +63,7 @@ printAmmeterData(system, device)
 
 ##### Base Case Analysis #####
 analysis = gaussNewton(system, device)
-acStateEstimation!(system, device, analysis)
+acStateEstimation!(system, device, analysis; power = true, verbose = 2)
 
 printBusData(system, analysis; show)
 printBranchData(system, analysis; show)
@@ -74,18 +74,18 @@ updateVoltmeter!(system, device, analysis; label = "Meter 1", magnitude = 1.0, n
 updateWattmeter!(system, device, analysis; label = "Meter 2", active = -1.1, variance = 1e-6)
 updateVarmeter!(system, device, analysis; label = "Meter 3", variance = 1e-1)
 
-acStateEstimation!(system, analysis)
+acStateEstimation!(system, device, analysis; power = true, verbose = 1)
 printBusData(system, analysis; show)
 
 ##### Modifying Measurement Set #####
 updateAmmeter!(system, device, analysis; label = "Meter 4", status = 1)
 updateAmmeter!(system, device, analysis; label = "Meter 5", status = 1)
 
-acStateEstimation!(system, analysis)
+acStateEstimation!(system, device, analysis; power = true, verbose = 1)
 printBusData(system, analysis; show)
 
 outlier = residualTest!(system, device, analysis; threshold = 4.0)
 
 setInitialPoint!(system, analysis)
-acStateEstimation!(system, analysis)
+acStateEstimation!(system, device, analysis; power = true, verbose = 1)
 printBusData(system, analysis; show)

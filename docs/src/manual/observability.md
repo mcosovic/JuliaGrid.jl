@@ -174,7 +174,7 @@ Upon defining the `PowerSystem` type, JuliaGrid provides the possibility to dete
 ```@example PMUOptimalPlacement
 using GLPK
 
-placement = pmuPlacement(system, GLPK.Optimizer)
+placement = pmuPlacement(system, GLPK.Optimizer; verbose = 1)
 nothing # hide
 ```
 

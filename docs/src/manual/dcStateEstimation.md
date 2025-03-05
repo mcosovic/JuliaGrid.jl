@@ -160,7 +160,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    We suggest that readers refer to the tutorial on [Bad Data Processing](@ref DCSEBadDataTutorials) for insights into the implementation.
+    Readers can refer to the [Bad Data Processing](@ref DCSEBadDataTutorials) tutorial for implementation insights.
 
 ---
 
@@ -173,7 +173,6 @@ using Ipopt
 using JuMP  # hide
 
 analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
-JuMP.set_silent(analysis.method.jump) # hide
 nothing # hide
 ```
 
@@ -191,7 +190,7 @@ Users have the flexibility to customize these values according to their requirem
 ##### Solution
 To solve the formulated LAV state estimation model, simply execute the following function:
 ```@example WLSDCStateEstimationSolution
-solve!(system, analysis)
+solve!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -202,7 +201,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    We suggest that readers refer to the tutorial on [Least Absolute Value Estimation](@ref DCSELAVTutorials) for insights into the implementation.
+    Readers can refer to the [Least Absolute Value Estimation](@ref DCSELAVTutorials) tutorial for implementation insights.
 
 ---
 

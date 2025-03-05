@@ -385,14 +385,7 @@ Users have the flexibility to adjust these values according to their specificati
 In this perspective, users have the capability to conduct the AC power flow analysis and leverage the resulting solution to configure initial primal values. Here is an illustration of how this can be achieved:
 ```@example ACOptimalPowerFlow
 flow = newtonRaphson(system)
-for iteration = 1:100
-    stopping = mismatch!(system, flow)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, flow)
-end
-power!(system, flow)
+acPowerFlow!(system, flow; power = true)
 ```
 
 After obtaining the solution, we can use the active and reactive power outputs of the generators, along with bus voltage magnitudes and angles, to set the initial values:
@@ -413,11 +406,8 @@ nothing # hide
 
 ## [Optimal Power Flow Solution](@id ACOptimalPowerFlowSolutionManual)
 To establish the AC optimal power flow problem, we utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, we can use the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles:
-```julia ACOptimalPowerFlow
-solve!(system, analysis)
-```
-```@setup ACOptimalPowerFlow
-solve!(system, analysis)
+```@example ACOptimalPowerFlow
+solve!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -563,7 +553,7 @@ cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 
 cost!(system; generator = "Generator 2", active = 1, piecewise = [10 12.3; 14.7 16.8; 18 19])
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
+solve!(system, analysis; verbose = 1)
 nothing # hide
 ```
 

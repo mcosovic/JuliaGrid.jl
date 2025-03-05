@@ -17,10 +17,8 @@ using JuliaGrid
 * [`@current`](@ref @current)
 * [`@parameter`](@ref @parameter)
 
-###### General Configurations
+###### Configuration Settings
 * [`@config`](@ref @config)
-
-###### Default Settings
 * [`@default`](@ref @default)
 
 ###### Print Power System Data
@@ -64,15 +62,9 @@ using JuliaGrid
 
 ---
 
-## General Configurations
+## Configuration Settings
 ```@docs
 @config
-```
-
----
-
-## Default Settings
-```@docs
 @default
 ```
 
