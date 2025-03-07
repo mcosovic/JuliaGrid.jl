@@ -1146,29 +1146,25 @@ function changeSlackBus!(system::PowerSystem)
 end
 
 """
-    acPowerFlow!(system::PowerSystem, analysis::ACPowerFlow;
-        maxIteration, stopping, power, current, verbose)
+    powerFlow!(system::PowerSystem, analysis::ACPowerFlow;
+        iteration, tolerance, power, current, verbose)
 
-The function serves as a wrapper for solving AC power flow. It calculates bus voltage
-magnitudes and angles, with the option to compute powers and currents.
+The function serves as a wrapper for solving AC power flow and includes the functions:
+* [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})),
+* [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})),
+* [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
+* [`current!`](@ref current!(::PowerSystem, ::AC)).
+
+It computes bus voltage magnitudes and angles using an iterative algorithm with the option
+to compute powers and currents.
 
 # Keywords
 Users can use the following keywords:
-* `maxIteration`: Specifies the maximum number of iterations (default: `20`).
-* `stopping`: Defines the stopping criterion for the iterative algorithm (default: `1e-8`).
+* `iteration`: Specifies the maximum number of iterations (default: `20`).
+* `tolerance`: Defines the step size tolerance for the iteration stopping criterion (default: `1e-8`).
 * `power`: Enables power computation upon convergence or reaching the iteration limit (default: `false`).
 * `current`: Enables current computation upon convergence or reaching the iteration limit (default: `false`).
-* `verbose`: Controls the solver output display:
-  * `verbose = 0`: silent mode (default),
-  * `verbose = 1`: prints only the exit message about convergence,
-  * `verbose = 2`: prints only iteration data,
-  * `verbose = 3`: prints detailed data.
-
-The default verbose setting can be modified using the [`@config`](@ref @config) macro.
-
-# Updates
-The calculated voltages are stored in the `voltage` field of the `ACPowerFlow` type, with
-optional storage in the `power` and `current` fields.
+* `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
 # Example
 ```jldoctest
@@ -1176,31 +1172,31 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-acPowerFlow!(system, analysis; stopping = 1e-10, power = true)
+powerFlow!(system, analysis; iteration = 30, tolerance = 1e-10, power = true, verbose = 3)
 ```
 """
-function acPowerFlow!(
+function powerFlow!(
     system::PowerSystem,
     analysis::ACPowerFlow;
-    maxIteration::Int64 = 20,
-    stopping::Float64 = 1e-8,
+    iteration::Int64 = 20,
+    tolerance::Float64 = 1e-8,
     power::Bool = false,
     current::Bool = false,
     verbose::Int64 = template.config.verbose
 )
     converged = false
 
-    widthalg, maxwidthalg, npq = maxWidth(system, analysis)
-    printpfSystem(system, npq, verbose)
-    printpfMethod(analysis, widthalg, maxwidthalg, verbose)
+    verbose3acpf(system, npq(system, analysis), verbose)
+    verbose2acpf(analysis, tolerance, iteration, verbose)
 
-    iter = 0
-    for iteration = 0:maxIteration
+    saveIter = 0
+    for iter = 0:iteration
         delP, delQ = mismatch!(system, analysis)
 
-        printpfIteration(iteration, delP, delQ, verbose)
-        if delP < stopping && delQ < stopping
-            iter = iteration
+        verbose2acpf(iter, delP, delQ, verbose)
+        saveIter = iter
+
+        if delP < tolerance && delQ < tolerance
             converged = true
             break
         end
@@ -1208,8 +1204,8 @@ function acPowerFlow!(
         solve!(system, analysis)
     end
 
-    printpfIncrement(system, analysis, verbose)
-    printpfConvergence(analysis, iter, converged, verbose)
+    verbose2acpf(system, analysis, verbose)
+    verbose1acpf(analysis, saveIter, iteration, converged, verbose)
 
     if power
         power!(system, analysis)
@@ -1219,30 +1215,7 @@ function acPowerFlow!(
     end
 end
 
-function maxWidth(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
-    textwidth(string(nnz(analysis.method.jacobian))) + 1,
-    textwidth("Number of entries in the Jacobian:"),
-    lastindex(analysis.method.increment) - system.bus.number + 1
-end
-
-function maxWidth(::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
-    textwidth(
-        string(max(
-            nnz(analysis.method.active.jacobian), nnz(analysis.method.reactive.jacobian)
-            )
-        )
-    ) + 2,
-    textwidth("Number of entries in the Jacobian:"),
-    lastindex(analysis.method.reactive.increment)
-end
-
-function maxWidth(::PowerSystem, analysis::ACPowerFlow{GaussSeidel})
-    textwidth(string(lastindex(analysis.method.voltage))) + 1,
-    textwidth("Number of complex state variables:"),
-    lastindex(analysis.method.pq)
-end
-
-function printpfSystem(system::PowerSystem, npq::Int64, verbose::Int64)
+function verbose3acpf(system::PowerSystem, npq::Int64, verbose::Int64)
     if verbose == 3
         layBrc = system.branch.layout
         layGen = system.generator.layout
@@ -1280,55 +1253,100 @@ function printpfSystem(system::PowerSystem, npq::Int64, verbose::Int64)
     end
 end
 
-function printpfMethod(analysis::ACPowerFlow{NewtonRaphson}, wd::Int64, mwd::Int64, verbose::Int64)
+function npq(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
+    lastindex(analysis.method.increment) - system.bus.number + 1
+end
+
+function npq(::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
+    lastindex(analysis.method.reactive.increment)
+end
+
+function npq(::PowerSystem, analysis::ACPowerFlow{GaussSeidel})
+    lastindex(analysis.method.pq)
+end
+
+function printAlgorithmSettings(tolerance::Float64, iteration::Int64)
+    maxms = "Maximum number of iterations:"
+    tol = string(tolerance)
+    wd1 = max(textwidth(tol), textwidth(string(iteration))) + 1
+    wd2 = textwidth(maxms)
+
+    print(maxms)
+    print(format(Format("%*.i\n"), wd1, iteration))
+
+    print("Step size tolerance:")
+    print(format(Format("%*s\n\n"), wd1 + wd2 - 20, tol))
+end
+
+function verbose2acpf(analysis::ACPowerFlow{NewtonRaphson}, tol::Float64, iter::Int64, verbose::Int64)
     if verbose == 2 || verbose == 3
-        print("Number of entries in the Jacobian:")
-        print(format(Format("%*i\n"), wd, nnz(analysis.method.jacobian)))
+        entri = nnz(analysis.method.jacobian)
+        state = lastindex(analysis.method.increment)
+        maxms = "Number of entries in the Jacobian matrix:"
+
+        wd1 = textwidth(string(entri)) + 1
+        wd2 = textwidth(maxms)
+
+        print(maxms)
+        print(format(Format("%*i\n"), wd1, entri))
 
         print("Number of state variables:")
-        print(
-            format(Format("%*i\n\n"), wd + mwd - 26, lastindex(analysis.method.increment))
-        )
+        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, state))
+
+        printAlgorithmSettings(tol, iter)
     end
 end
 
-function printpfMethod(analysis::ACPowerFlow{FastNewtonRaphson}, wd::Int64, mwd::Int64, verbose::Int64)
+function verbose2acpf(analysis::ACPowerFlow{FastNewtonRaphson}, tol::Float64, iter::Int64, verbose::Int64)
     if verbose == 2 || verbose == 3
         method = analysis.method
-        nnzJac = nnz(method.active.jacobian) + nnz(method.reactive.jacobian)
-        sv = lastindex(method.active.increment) + lastindex(method.reactive.increment)
 
-        print("Number of entries in the Jacobian:")
-        print(format(Format("%*i\n"), wd, nnzJac))
+        activ = nnz(method.active.jacobian)
+        react = nnz(method.reactive.jacobian)
+        entri = activ + react
+        state = lastindex(method.active.increment) + lastindex(method.reactive.increment)
+        maxms = "Number of entries in the Jacobian matrices:"
+
+        wd1 = textwidth(string(entri)) + 1
+        wd2 = textwidth(maxms)
+
+        print(maxms)
+        print(format(Format("%*i\n"), wd1, entri))
 
         print("  Active Power:")
-        print(format(Format("%*i\n"), wd + mwd - 15, nnz(method.active.jacobian)))
+        print(format(Format("%*i\n"), wd1 + wd2 - 15, activ))
 
         print("  Reactive Power:")
-        print(format(Format("%*i\n"), wd + mwd - 17, nnz(method.reactive.jacobian)))
+        print(format(Format("%*i\n"), wd1 + wd2 - 17, react))
 
         print("Number of state variables:")
-        print(format(Format("%*i\n\n"), wd + mwd - 26, sv))
+        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, state))
+
+        printAlgorithmSettings(tol, iter)
     end
 end
 
-function printpfMethod(analysis::ACPowerFlow{GaussSeidel}, wd::Int64, mwd::Int64, verbose::Int64)
+function verbose2acpf(analysis::ACPowerFlow{GaussSeidel}, tol::Float64, iter::Int64, verbose::Int64)
     if verbose == 2 || verbose == 3
+        stapq = lastindex(analysis.method.pq)
+        stapv = lastindex(analysis.method.pv)
+        state = stapq + stapv
+        maxms = "Number of complex state variables:"
+
+        wd1 = textwidth(string(state)) + 1
+        wd2 = textwidth(maxms)
+
         print("Number of complex state variables:")
-        print(
-            format(Format("%*i\n"), wd,
-            lastindex(analysis.method.pq) + lastindex(analysis.method.pv))
-        )
+        print(format(Format("%*i\n"), wd1, state))
 
         print("Number of complex equations:")
-        print(
-            format(Format("%*i\n\n"), wd + mwd - 28,
-            lastindex(analysis.method.pq) + 3 * lastindex(analysis.method.pv))
-        )
+        print(format(Format("%*i\n\n"), wd1 + wd2 - 28, stapq + 3 * stapv))
+
+        printAlgorithmSettings(tol, iter)
     end
 end
 
-function printpfIteration(iter::Int64, delP::Float64, delQ::Float64, verbose::Int64)
+function verbose2acpf(iter::Int64, delP::Float64, delQ::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if iter % 10 == 0
             println("Iteration   Active Mismatch   Reactive Mismatch")
@@ -1339,11 +1357,12 @@ function printpfIteration(iter::Int64, delP::Float64, delQ::Float64, verbose::In
     end
 end
 
-function printpfIncrement(
+function verbose2acpf(
     system::PowerSystem,
-    analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{FastNewtonRaphson}},
+    analysis::ACPowerFlow{T},
     verbose::Int64
-)
+) where T <: Union{NewtonRaphson, FastNewtonRaphson}
+
     if verbose == 2 || verbose == 3
         mag, ang = minmaxIncrement(system, analysis)
 
@@ -1359,7 +1378,7 @@ function printpfIncrement(
     end
 end
 
-function printpfIncrement(
+function verbose2acpf(
     ::PowerSystem,
     ::ACPowerFlow{GaussSeidel},
     verbose::Int64,
@@ -1379,9 +1398,10 @@ function minmaxIncrement(::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson}
     extrema(analysis.method.reactive.increment)
 end
 
-function printpfConvergence(
+function verbose1acpf(
     analysis::ACPowerFlow,
     iter::Int64,
+    maxiter::Int64,
     converged::Bool,
     verbose::Int64,
 )
@@ -1393,7 +1413,11 @@ function printpfConvergence(
                 " method in $iter iterations."
             )
         else
-            println("EXIT: The " * method * " method failed to converge.")
+            if iter == maxiter
+                println("EXIT: The maximum number of iterations exceeded.")
+            else
+                println("EXIT: The " * method * " method failed to converge.")
+            end
         end
     end
 end

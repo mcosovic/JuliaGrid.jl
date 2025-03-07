@@ -51,7 +51,7 @@ export addGenerator!, updateGenerator!, cost!, @generator
 include("powerFlow/acPowerFlow.jl")
 include("powerFlow/dcPowerFlow.jl")
 export newtonRaphson, fastNewtonRaphsonBX, fastNewtonRaphsonXB, gaussSeidel
-export mismatch!, solve!, acPowerFlow!
+export mismatch!, solve!, powerFlow!
 export reactiveLimit!, adjustAngle!, setInitialPoint!
 export dcPowerFlow
 
@@ -86,7 +86,7 @@ include("stateEstimation/pmuStateEstimation.jl")
 include("stateEstimation/dcStateEstimation.jl")
 include("stateEstimation/badData.jl")
 include("stateEstimation/observability.jl")
-export gaussNewton, acLavStateEstimation, acStateEstimation!
+export gaussNewton, acLavStateEstimation, stateEstimation!
 export pmuStateEstimation, pmuLavStateEstimation
 export dcStateEstimation, dcLavStateEstimation, residualTest!
 export islandTopologicalFlow, islandTopological, restorationGram!, pmuPlacement, pmuPlacement!

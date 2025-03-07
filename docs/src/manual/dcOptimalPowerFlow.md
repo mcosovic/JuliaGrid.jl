@@ -4,15 +4,20 @@ Similar to [AC Optimal Power Flow](@ref ACOptimalPowerFlowManual), JuliaGrid uti
 To perform the DC optimal power flow, we first need to have the `PowerSystem` type that has been created with the DC model. After that, create the `DCOptimalPowerFlow` type to establish the DC optimal power flow framework using the function:
 * [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow).
 
+---
+
 To solve the DC optimal power flow problem and acquire generator active power outputs and bus voltage angles, use of the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)).
 
----
-
-After obtaining the solution for DC optimal power flow, JuliaGrid offers a post-processing analysis function to compute powers associated with buses and branches:
+After obtaining the solution for DC optimal power flow, JuliaGrid offers a function to compute powers associated with buses and branches:
 * [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
 
 Additionally, we have specialized functions for computing specific [powers](@ref DCPowerAnalysisAPI) for buses and branches.
+
+---
+
+Alternatively, instead of using functions responsible for solving optimal power flow and computing powers, users can utilize the wrapper function:
+* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::DCOptimalPowerFlow)).
 
 ---
 

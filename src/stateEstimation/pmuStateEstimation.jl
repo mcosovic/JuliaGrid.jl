@@ -204,7 +204,7 @@ end
 
 """
     pmuLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
-        bridge, name)
+        iteration, tolerance, bridge, name, verbose)
 
 The function establishes the LAV model for state estimation with PMUs only. In this
 model, the vector of state variables contains bus voltages, given in rectangular
@@ -218,8 +218,11 @@ outliers.
 
 # Keywords
 The function accepts the following keywords:
+* `iteration`: Specifies the maximum number of iterations.
+* `tolerance`: Specifies the allowed deviation from the optimal solution.
 * `bridge`: Controls the bridging mechanism (default: `false`).
 * `name`: Handles the creation of string names (default: `false`).
+* `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
 Users can employ the LAV method to find an estimator by choosing one of the available
 [optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
@@ -250,8 +253,11 @@ function pmuLavStateEstimation(
     system::PowerSystem,
     device::Measurement,
     @nospecialize optimizerFactory;
+    iteration::IntMiss = missing,
+    tolerance::FltIntMiss = missing,
     bridge::Bool = false,
     name::Bool = false,
+    verbose::Int64 = template.config.verbose
 )
     bus = system.bus
     branch = system.branch
@@ -266,6 +272,14 @@ function pmuLavStateEstimation(
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
 
+    if !ismissing(iteration)
+        set_attribute(jump, "max_iter", iteration)
+    end
+    if !ismissing(tolerance)
+        set_attribute(jump, "tol", tolerance)
+    end
+    jump.ext[:verbose] = verbose
+
     method = LAV(
         jump,
         nothing,
@@ -274,6 +288,7 @@ function pmuLavStateEstimation(
         @variable(jump, 0 <= residualx[i = 1:total]),
         @variable(jump, 0 <= residualy[i = 1:total]),
         Dict{Int64, ConstraintRef}(),
+        fill(1, 1),
         pmu.number
     )
     objective = @expression(method.jump, AffExpr())
@@ -336,19 +351,10 @@ function pmuLavStateEstimation(
 end
 
 """
-    solve!(system::PowerSystem, analysis::PMUStateEstimation; verbose)
+    solve!(system::PowerSystem, analysis::PMUStateEstimation)
 
 By computing the bus voltage magnitudes and angles, the function solves the PMU state
 estimation model.
-
-# Keyword
-Users can set:
-* `verbose`: Controls the LAV solver output display:
-  * `verbose = 0`: silent mode (default),
-  * `verbose = 1`: prints only the exit message about convergence,
-  * `verbose = 2`: prints detailed native solver output.
-
-The default verbose setting can be modified using the [`@config`](@ref @config) macro.
 
 # Updates
 The resulting bus voltage magnitudes and angles are stored in the `voltage` field of the
@@ -371,7 +377,7 @@ using Ipopt
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
-analysis = pmuLavStateEstimation(system, device, Ipopt.Optimizer)
+analysis = pmuLavStateEstimation(system, device, Ipopt.Optimizer; verbose = 1)
 solve!(system, analysis)
 ```
 """
@@ -435,11 +441,11 @@ end
 
 function solve!(
     system::PowerSystem,
-    analysis::PMUStateEstimation{LAV};
-    verbose::Int64 = template.config.verbose
+    analysis::PMUStateEstimation{LAV}
 )
     se = analysis.method
     bus = system.bus
+    verbose = se.jump.ext[:verbose]
 
     silentOptimal(se.jump, verbose)
 
@@ -483,4 +489,115 @@ function pmuIndices(cff::SparseModel, co1::Int64, col2::Int64)
     cff.col[cff.cnt + 1] = col2
 
     cff.cnt += 2
+end
+
+"""
+    stateEstimation!(system::PowerSystem, analysis::PMUStateEstimation;
+        iteration, tolerance, power, verbose)
+
+The function serves as a wrapper for solving PMU state estimation and includes the functions:
+* [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})),
+* [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
+* [`current!`](@ref current!(::PowerSystem, ::AC)).
+
+It computes bus voltage magnitudes and angles using the WLS or LAV model with the option
+to compute powers and currents.
+
+# Keywords
+Users can use the following keywords:
+* `iteration`: Specifies the maximum number of iterations for the LAV model.
+* `tolerance`: Specifies the allowed deviation from the optimal solution for the LAV model.
+* `power`: Enables the computation of powers (default: `false`).
+* `current`: Enables the computation of currents (default: `false`).
+* `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
+
+If `iteration` and `tolerance` are not specified for the LAV model, the optimization solver
+settings are used.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = pmuStateEstimation(system, device)
+stateEstimation!(system, analysis; power = true, verbose = 3)
+```
+"""
+function stateEstimation!(
+    system::PowerSystem,
+    analysis::PMUStateEstimation{LinearWLS{T}};
+    iteration::Int64 = 40,
+    tolerance::Float64 = 1e-8,
+    power::Bool = false,
+    current::Bool = false,
+    verbose::Int64 = template.config.verbose
+)  where T <: Union{Normal, Orthogonal}
+
+    verbose3pmuse(system, analysis, verbose)
+    solve!(system, analysis)
+
+    verbose1pmuse(verbose)
+    if power
+        power!(system, analysis)
+    end
+    if current
+        current!(system, analysis)
+    end
+end
+
+function stateEstimation!(
+    system::PowerSystem,
+    analysis::PMUStateEstimation{LAV};
+    iteration::Int64 = 40,
+    tolerance::Float64 = 1e-8,
+    power::Bool = false,
+    current::Bool = false,
+    verbose::Int64 = template.config.verbose
+)
+    if !ismissing(iteration)
+        set_attribute(analysis.method.jump, "max_iter", iteration)
+    end
+    if !ismissing(tolerance)
+        set_attribute(analysis.method.jump, "tol", tolerance)
+    end
+    analysis.method.jump.ext[:verbose] = verbose
+
+    solve!(system, analysis)
+
+    if power
+        power!(system, analysis)
+    end
+    if current
+        current!(system, analysis)
+    end
+end
+
+function verbose3pmuse(
+    system::PowerSystem,
+    analysis::PMUStateEstimation{LinearWLS{T}},
+    verbose::Int64
+) where T <: Union{Normal, Orthogonal}
+
+    if verbose == 2 || verbose == 3
+        entries = nnz(analysis.method.coefficient)
+        maxmess = "Number of entries in the coefficient matrix:"
+
+        wd1 = textwidth(string(entries)) + 1
+        wd2 = textwidth(maxmess)
+
+        print(maxmess)
+        print(format(Format("%*i\n"), wd1, entries))
+
+        print("Number of measurement functions:")
+        print(format(Format("%*i\n"), wd1 + wd2 - 32, lastindex(analysis.method.mean)))
+
+        print("Number of state variables:")
+        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, 2 * system.bus.number))
+    end
+end
+
+function verbose1pmuse(verbose::Int64)
+    if verbose != 0
+        println("EXIT: The solution of the PMU state estimation was found.")
+    end
 end

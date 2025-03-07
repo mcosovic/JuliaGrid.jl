@@ -169,6 +169,17 @@ system14 = powerSystem(path * "case14optimal.m")
         @test analysis.power.generator.active ≈ matpwr14["generatorActive"] atol = 1e-6
         @test analysis.power.generator.reactive ≈ matpwr14["generatorReactive"] atol = 1e-6
     end
+
+    @capture_out @testset "IEEE 14: Wrapper Function" begin
+        analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
+        powerFlow!(system14, analysis; verbose = 3, iteration = 20)
+
+        @test analysis.voltage.magnitude ≈ matpwr14["voltageMagnitude"] atol = 1e-6
+        @test analysis.voltage.angle ≈ matpwr14["voltageAngle"] atol = 1e-6
+
+        @test analysis.power.generator.active ≈ matpwr14["generatorActive"] atol = 1e-6
+        @test analysis.power.generator.reactive ≈ matpwr14["generatorReactive"] atol = 1e-6
+    end
 end
 
 system14 = powerSystem(path * "case14test.m")
@@ -215,7 +226,13 @@ system30 = powerSystem(path * "case30test.m")
         end
     end
 
-    # Test  Generator Active Powers
+    @capture_out @testset "IEEE 14: Wrapper Function" begin
+        analysis = dcOptimalPowerFlow(system14, Ipopt.Optimizer)
+        powerFlow!(system14, analysis; verbose = 3, tolerance = 1e-8)
+
+        @test analysis.voltage.angle ≈ matpwr14["voltage"] atol = 1e-6
+    end
+
     @testset "IEEE 14: Specific Generator Active Powers" begin
         for (key, value) in system14.generator.label
             generator = generatorPower(system14, analysis; label = key)

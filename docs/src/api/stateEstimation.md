@@ -19,18 +19,21 @@ using JuliaGrid
 * [`gaussNewton`](@ref gaussNewton)
 * [`acLavStateEstimation`](@ref acLavStateEstimation)
 * [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}}))
-* [`acStateEstimation!`](@ref acStateEstimation!)
+* [`stateEstimation!`](@ref stateEstimation!)
 * [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation))
+* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{T}}) where T <: Union{Normal, Orthogonal})
 
 ###### PMU State Estimation
 * [`pmuStateEstimation`](@ref pmuStateEstimation)
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation)
 * [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}}))
+* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::PMUStateEstimation{LinearWLS{T}}) where T <: Union{Normal, Orthogonal})
 
 ###### DC State Estimation
 * [`dcStateEstimation`](@ref dcStateEstimation)
 * [`dcLavStateEstimation`](@ref dcLavStateEstimation)
 * [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}}))
+* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::DCStateEstimation{LinearWLS{T}}) where T <: Union{Normal, Orthogonal})
 
 ###### Bad Data Analysis
 * [`residualTest!`](@ref residualTest!)
@@ -53,7 +56,7 @@ pmuPlacement!
 gaussNewton
 acLavStateEstimation
 solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})
-acStateEstimation!
+stateEstimation!
 setInitialPoint!(::PowerSystem, ::ACStateEstimation)
 ```
 

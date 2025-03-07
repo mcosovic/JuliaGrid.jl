@@ -129,9 +129,10 @@
         end
     end
 
-    @testset "IEEE 14: Wrapper Function" begin
+    @capture_out @testset "IEEE 14: Wrapper Function" begin
         analysis = newtonRaphson(system14)
-        acPowerFlow!(system14, analysis)
+        powerFlow!(system14, analysis; tolerance = 1e-10, iteration = 50, verbose = 3)
+
         @test analysis.voltage.magnitude ≈ matpwr14["voltageMagnitude"]
         @test analysis.voltage.angle ≈ matpwr14["voltageAngle"]
     end
@@ -366,6 +367,14 @@ end
         @test analysis.voltage.magnitude ≈ matpwr30["voltageMagnitude"]
         @test analysis.voltage.angle ≈ matpwr30["voltageAngle"]
     end
+
+    @capture_out @testset "IEEE 30: Wrapper Function" begin
+        analysis = fastNewtonRaphsonBX(system30)
+        powerFlow!(system30, analysis; verbose = 3, power = true, current = true)
+
+        @test analysis.voltage.magnitude ≈ matpwr30["voltageMagnitude"]
+        @test analysis.voltage.angle ≈ matpwr30["voltageAngle"]
+    end
 end
 
 @testset "Fast Newton-Raphson XB Method" begin
@@ -457,6 +466,14 @@ end
 
     @testset "IEEE 30: Iteration Number and Voltages" begin
         @test iteration == matpwr30["iteration"][1]
+        @test analysis.voltage.magnitude ≈ matpwr30["voltageMagnitude"]
+        @test analysis.voltage.angle ≈ matpwr30["voltageAngle"]
+    end
+
+    @capture_out @testset "IEEE 30: Wrapper Function" begin
+        analysis = gaussSeidel(system30)
+        powerFlow!(system30, analysis; verbose = 3, iteration = 1000)
+
         @test analysis.voltage.magnitude ≈ matpwr30["voltageMagnitude"]
         @test analysis.voltage.angle ≈ matpwr30["voltageAngle"]
     end
@@ -668,6 +685,14 @@ end
             @test generator ≈ matpwr30["generator"][value] atol = 1e-14
         end
     end
+
+    @capture_out @testset "IEEE 30: Wrapper Function" begin
+        dcpf = dcPowerFlow(system30)
+        powerFlow!(system30, dcpf; power = true, verbose = 3)
+
+        compstruct(dcpf.voltage, analysis.voltage; atol = 1e-12)
+        compstruct(dcpf.power, analysis.power; atol = 1e-12)
+    end
 end
 
 @testset "Print Data in Per-Units" begin
@@ -773,11 +798,6 @@ end
 
     power!(system14, analysis)
     current!(system14, analysis)
-
-    @capture_out @testset "Wrapper Function" begin
-        analysis = newtonRaphson(system14)
-        acPowerFlow!(system14, analysis; verbose = 3)
-    end
 
     @capture_out @testset "Print AC Bus Data" begin
         printBusData(system14, analysis)

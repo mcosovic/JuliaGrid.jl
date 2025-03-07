@@ -283,6 +283,7 @@ mutable struct LAV
     residualx::Vector{VariableRef}
     residualy::Vector{VariableRef}
     residual::Dict{Int64, ConstraintRef}
+    range::Vector{Int64}
     number::Int64
 end
 

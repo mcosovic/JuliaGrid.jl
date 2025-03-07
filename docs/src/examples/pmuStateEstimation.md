@@ -126,7 +126,7 @@ Next, AC power flow analysis is performed to obtain bus voltages:
 acModel!(system)
 
 powerFlow = newtonRaphson(system)
-acPowerFlow!(system, powerFlow; verbose = 1)
+powerFlow!(system, powerFlow; verbose = 1)
 nothing # hide
 ```
 

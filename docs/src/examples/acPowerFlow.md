@@ -94,7 +94,7 @@ nothing # hide
 
 Then, we use the AC power flow wrapper to iteratively compute bus voltages as well as active and reactive powers:
 ```@example 4bus
-acPowerFlow!(system, fnr; power = true, verbose = 2)
+powerFlow!(system, fnr; power = true, verbose = 2)
 nothing # hide
 ```
 
@@ -144,7 +144,7 @@ nothing # hide
 
 Next, we run the AC power flow again to compute the new state of the power system, without having to recreate the fast Newton-Raphson model. Additionally, this step will start the fast Newton-Raphson method with a warm start, as the initial voltage magnitudes and angles will correspond to the solution from the base case analysis:
 ```@example 4bus
-acPowerFlow!(system, fnr; power = true, verbose = 1)
+powerFlow!(system, fnr; power = true, verbose = 1)
 nothing # hide
 ```
 Since no power system changes were introduced that affect the Jacobian matrices, JuliaGrid reuses the Jacobian matrix factorizations from the base case analysis, significantly reducing computational complexity.
@@ -195,7 +195,7 @@ nothing # hide
 
 Now, we can solve the AC power flow for this scenario:
 ```@example 4bus
-acPowerFlow!(system, nr; power = true, verbose = 1)
+powerFlow!(system, nr; power = true, verbose = 1)
 nothing # hide
 ```
 

@@ -4,16 +4,21 @@ JuliaGrid utilizes the [JuMP](https://jump.dev/JuMP.jl/stable/) package to const
 To perform the AC optimal power flow, we first need to have the `PowerSystem` type that has been created with the AC model. After that, create the `ACOptimalPowerFlow` type to establish the AC optimal power flow framework using the function:
 * [`acOptimalPowerFlow`](@ref acOptimalPowerFlow).
 
+---
+
 To solve the AC optimal power flow problem and obtain generator active and reactive power outputs, as well as bus voltage magnitudes and angles, use the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)).
 
----
-
-After obtaining the AC optimal power flow solution, JuliaGrid offers post-processing analysis functions to calculate powers and currents associated with buses and branches:
+After obtaining the AC optimal power flow solution, JuliaGrid offers functions to calculate powers and currents associated with buses and branches:
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::ACPowerFlow)).
 
 Additionally, specialized functions are available for calculating specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses and branches.
+
+---
+
+Alternatively, instead of using functions responsible for solving optimal power flow and computing powers and currents, users can utilize the wrapper function:
+* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACOptimalPowerFlow)).
 
 ---
 
@@ -385,7 +390,7 @@ Users have the flexibility to adjust these values according to their specificati
 In this perspective, users have the capability to conduct the AC power flow analysis and leverage the resulting solution to configure initial primal values. Here is an illustration of how this can be achieved:
 ```@example ACOptimalPowerFlow
 flow = newtonRaphson(system)
-acPowerFlow!(system, flow; power = true)
+powerFlow!(system, flow; power = true)
 ```
 
 After obtaining the solution, we can use the active and reactive power outputs of the generators, along with bus voltage magnitudes and angles, to set the initial values:

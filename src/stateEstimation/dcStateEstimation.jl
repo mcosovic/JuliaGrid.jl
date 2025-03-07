@@ -181,7 +181,7 @@ end
 
 """
     dcLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
-        bridge, name)
+        iteration, tolerance, bridge, name, verbose)
 
 The function establishes the LAV model for DC state estimation, where the vector of state
 variables contains only bus voltage angles.
@@ -198,8 +198,11 @@ Users can employ the LAV method to find an estimator by choosing one of the avai
 
 # Keywords
 The function accepts the following keywords:
+* `iteration`: Specifies the maximum number of iterations.
+* `tolerance`: Specifies the allowed deviation from the optimal solution.
 * `bridge`: Controls the bridging mechanism (default: `false`).
 * `name`: Handles the creation of string names (default: `false`).
+* `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
 # Updates
 If the DC model was not created, the function will automatically initiate an update of the
@@ -228,8 +231,11 @@ function dcLavStateEstimation(
     system::PowerSystem,
     device::Measurement,
     (@nospecialize optimizerFactory);
+    iteration::IntMiss = missing,
+    tolerance::FltIntMiss = missing,
     bridge::Bool = false,
     name::Bool = false,
+    verbose::Int64 = template.config.verbose
 )
     bus = system.bus
     branch = system.branch
@@ -245,6 +251,14 @@ function dcLavStateEstimation(
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
 
+    if !ismissing(iteration)
+        set_attribute(jump, "max_iter", iteration)
+    end
+    if !ismissing(tolerance)
+        set_attribute(jump, "tol", tolerance)
+    end
+    jump.ext[:verbose] = verbose
+
     se = LAV(
         jump,
         nothing,
@@ -253,6 +267,7 @@ function dcLavStateEstimation(
         @variable(jump, 0 <= residualx[i = 1:total]),
         @variable(jump, 0 <= residualy[i = 1:total]),
         Dict{Int64, ConstraintRef}(),
+        fill(1, 3),
         total
     )
     objective = @expression(se.jump, AffExpr())
@@ -282,6 +297,7 @@ function dcLavStateEstimation(
             fix(se.residualy[i], 0.0; force = true)
         end
     end
+    se.range[2] = wattmeter.number + 1
 
     @inbounds for (i, k) in enumerate(wattmeter.number + 1:total)
         if pmu.layout.bus[i]
@@ -297,6 +313,7 @@ function dcLavStateEstimation(
             end
         end
     end
+    se.range[2] = total + 1
 
     @objective(se.jump, Min, objective)
 
@@ -316,18 +333,9 @@ function dcLavStateEstimation(
 end
 
 """
-    solve!(system::PowerSystem, analysis::DCStateEstimation; verbose)
+    solve!(system::PowerSystem, analysis::DCStateEstimation)
 
 By computing the bus voltage angles, the function solves the DC state estimation model.
-
-# Keyword
-Users can set:
-* `verbose`: Controls the LAV solver output display:
-  * `verbose = 0`: silent mode (default),
-  * `verbose = 1`: prints only the exit message about convergence,
-  * `verbose = 2`: prints detailed native solver output.
-
-The default verbose setting can be modified using the [`@config`](@ref @config) macro.
 
 # Updates
 The resulting bus voltage angles are stored in the `voltage` field of the `DCStateEstimation`
@@ -423,9 +431,9 @@ end
 function solve!(
     system::PowerSystem,
     analysis::DCStateEstimation{LAV};
-    verbose::Int64 = template.config.verbose
 )
     se = analysis.method
+    verbose = se.jump.ext[:verbose]
     slackAngle = system.bus.voltage.angle[system.bus.layout.slack]
 
     silentOptimal(se.jump, verbose)
@@ -476,5 +484,105 @@ function addSlackCoeff(
 
     @inbounds for (k, i) in enumerate(slackRange)
         se.coefficient[se.coefficient.rowval[i], slack] = elementsRemove[k]
+    end
+end
+
+"""
+    stateEstimation!(system::PowerSystem, analysis::DCStateEstimation;
+        iteration, tolerance, power, verbose)
+
+The function serves as a wrapper for solving DC state estimation and includes the functions:
+* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})),
+* [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
+
+It computes bus voltage angles using the WLS or LAV model with the option to compute powers.
+
+# Keywords
+Users can use the following keywords:
+* `iteration`: Specifies the maximum number of iterations for the LAV model.
+* `tolerance`: Specifies the allowed deviation from the optimal solution for the LAV model.
+* `power`: Enables the computation of powers (default: `false`).
+* `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
+
+If `iteration` and `tolerance` are not specified for the LAV model, the optimization solver
+settings are used.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = dcStateEstimation(system, device)
+stateEstimation!(system, analysis; power = true, verbose = 3)
+```
+"""
+function stateEstimation!(
+    system::PowerSystem,
+    analysis::DCStateEstimation{LinearWLS{T}};
+    iteration::IntMiss = missing,
+    tolerance::FltIntMiss = missing,
+    power::Bool = false,
+    verbose::Int64 = template.config.verbose
+)  where T <: Union{Normal, Orthogonal}
+
+    verbose3dcse(system, analysis, verbose)
+    solve!(system, analysis)
+
+    verbose1dcse(verbose)
+    if power
+        power!(system, analysis)
+    end
+end
+
+function stateEstimation!(
+    system::PowerSystem,
+    analysis::DCStateEstimation{LAV};
+    iteration::IntMiss = missing,
+    tolerance::FltIntMiss = missing,
+    power::Bool = false,
+    verbose::Int64 = template.config.verbose
+)
+    if !ismissing(iteration)
+        set_attribute(analysis.method.jump, "max_iter", iteration)
+    end
+    if !ismissing(tolerance)
+        set_attribute(analysis.method.jump, "tol", tolerance)
+    end
+    analysis.method.jump.ext[:verbose] = verbose
+
+    solve!(system, analysis)
+
+    if power
+        power!(system, analysis)
+    end
+end
+
+function verbose3dcse(
+    system::PowerSystem,
+    analysis::DCStateEstimation{LinearWLS{T}},
+    verbose::Int64
+) where T <: Union{Normal, Orthogonal}
+
+    if verbose == 2 || verbose == 3
+        entries = nnz(analysis.method.coefficient)
+        maxmess = "Number of entries in the coefficient matrix:"
+
+        wd1 = textwidth(string(entries)) + 1
+        wd2 = textwidth(maxmess)
+
+        print(maxmess)
+        print(format(Format("%*i\n"), wd1, entries))
+
+        print("Number of measurement functions:")
+        print(format(Format("%*i\n"), wd1 + wd2 - 32, lastindex(analysis.method.mean)))
+
+        print("Number of state variables:")
+        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, system.bus.number - 1))
+    end
+end
+
+function verbose1dcse(verbose::Int64)
+    if verbose != 0
+        println("EXIT: The solution of the DC state estimation was found.")
     end
 end

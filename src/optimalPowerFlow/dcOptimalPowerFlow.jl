@@ -1,5 +1,6 @@
 """
-    dcOptimalPowerFlow(system::PowerSystem, optimizer; bridge, name, angle, active)
+    dcOptimalPowerFlow(system::PowerSystem, optimizer;
+        iteration, tolerance, bridge, name, angle, active, verbose)
 
 The function sets up the optimization model for solving the DC optimal power flow problem.
 
@@ -18,8 +19,11 @@ the `dc` field of the `PowerSystem` type.
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
 provided in the [JuMP documentation](https://jump.dev/jl/stable/reference/models/).
 However, certain configurations may require different method calls, such as:
-- `bridge`: Manage the bridging mechanism (default: `false`).
-- `name`: Manage the creation of string names (default: `true`).
+* `iteration`: Specifies the maximum number of iterations.
+* `tolerance`: Specifies the allowed deviation from the optimal solution.
+* `bridge`: Manage the bridging mechanism (default: `false`).
+* `name`: Manage the creation of string names (default: `true`).
+* `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
 Additionally, users can modify variable names used for printing and writing through the
 keywords `angle` and `active`. For instance, users can choose `angle = "θ"` to display
@@ -43,10 +47,13 @@ analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 function dcOptimalPowerFlow(
     system::PowerSystem,
     @nospecialize optimizerFactory;
+    iteration::IntMiss = missing,
+    tolerance::FltIntMiss = missing,
     bridge::Bool = false,
     name::Bool = true,
     angle::String = "angle",
     active::String = "active",
+    verbose::Int64 = template.config.verbose
 )
     bus = system.bus
     gen = system.generator
@@ -58,6 +65,17 @@ function dcOptimalPowerFlow(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
+
+    if !ismissing(iteration)
+        set_attribute(jump, "max_iter", iteration)
+    end
+    if !ismissing(tolerance)
+        set_attribute(jump, "tol", tolerance)
+    end
+    if verbose == 2
+        verbose = 3
+    end
+    jump.ext[:verbose] = verbose
 
     active = @variable(jump, active[i = 1:gen.number], base_name = active)
     angle = @variable(jump, angle[i = 1:bus.number], base_name = angle)
@@ -159,19 +177,10 @@ function dcOptimalPowerFlow(
 end
 
 """
-    solve!(system::PowerSystem, analysis::DCOptimalPowerFlow; verbose)
+    solve!(system::PowerSystem, analysis::DCOptimalPowerFlow)
 
 The function solves the DC optimal power flow model, computing the active power outputs of
 the generators, as well as the bus voltage angles.
-
-# Keyword
-Users can set:
-* `verbose`: Controls the solver output display:
-  * `verbose = 0`: silent mode (default),
-  * `verbose = 1`: prints only the exit message about convergence,
-  * `verbose = 2`: prints detailed native solver output.
-
-The default verbose setting can be modified using the [`@config`](@ref @config) macro.
 
 # Updates
 The calculated active powers, as well as voltage angles, are stored in the
@@ -189,11 +198,11 @@ solve!(system, analysis)
 function solve!(
     system::PowerSystem,
     analysis::DCOptimalPowerFlow;
-    verbose::Int64 = template.config.verbose
 )
     variable = analysis.method.variable
     constr = analysis.method.constraint
     dual = analysis.method.dual
+    verbose = analysis.method.jump.ext[:verbose]
 
     silentOptimal(analysis.method.jump, verbose)
 
@@ -484,5 +493,58 @@ function setInitialPoint!(source::AC, target::DCOptimalPowerFlow)
         for (key, value) in source.method.dual.piecewise.active
             target.method.dual.piecewise.active[key] = value
         end
+    end
+end
+
+"""
+    powerFlow!(system::PowerSystem, analysis::DCOptimalPowerFlow;
+        iteration, tolerance, power, verbose)
+
+The function serves as a wrapper for solving DC optimal power flow and includes the functions:
+* [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)),
+* [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
+
+It computes the active power outputs of the generators, as well as the bus voltage angles,
+with an option to compute the powers related to buses and branches.
+
+# Keyword
+Users can use the following keywords:
+* `iteration`: Specifies the maximum number of iterations.
+* `tolerance`: Specifies the allowed deviation from the optimal solution.
+* `power`: Enables the computation of powers (default: `false`).
+* `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+powerFlow!(system, analysis; power = true, verbose = 1)
+```
+"""
+function powerFlow!(
+    system::PowerSystem,
+    analysis::DCOptimalPowerFlow;
+    iteration::IntMiss = missing,
+    tolerance::FltIntMiss = missing,
+    power::Bool = false,
+    verbose::Int64 = template.config.verbose
+)
+    if !ismissing(iteration)
+        set_attribute(analysis.method.jump, "max_iter", iteration)
+    end
+    if !ismissing(tolerance)
+        set_attribute(analysis.method.jump, "tol", tolerance)
+    end
+    if verbose == 2
+        verbose = 3
+    end
+    analysis.method.jump.ext[:verbose] = verbose
+
+    solve!(system, analysis)
+
+    if power
+        power!(system, analysis)
     end
 end

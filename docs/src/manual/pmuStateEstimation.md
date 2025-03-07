@@ -3,22 +3,29 @@ To perform linear state estimation solely based on PMU data, the initial require
 * [`pmuStateEstimation`](@ref pmuStateEstimation),
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation).
 
+---
+
 For solving the PMU state estimation problem and obtaining bus voltage magnitudes and angles, utilize the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})).
-
-After executing the function [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})), where the user employs the WLS method, the user has the ability to check if the measurement set contains outliers throughout bad data analysis and remove those measurements using:
-* [`residualTest!`](@ref residualTest!).
-
-Moreover, before the creating `PMUStateEstimation` type, users can initiate an optimal PMU placement algorithm to determine the minimal set of PMUs required for an observable system:
-* [`pmuPlacement`](@ref pmuPlacement).
-
----
 
 After obtaining the PMU state estimation solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses and branches:
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
 Additionally, specialized functions are available for calculating specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses or branches.
+
+---
+
+Alternatively, instead of using functions responsible for solving state estimation and computing powers and currents, users can utilize the wrapper function:
+* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::PMUStateEstimation{LinearWLS{T}}) where T <: Union{Normal, Orthogonal}).
+
+---
+
+After executing the function [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})), where the user employs the WLS method, the user has the ability to check if the measurement set contains outliers throughout bad data analysis and remove those measurements using:
+* [`residualTest!`](@ref residualTest!).
+
+Moreover, before the creating `PMUStateEstimation` type, users can initiate an optimal PMU placement algorithm to determine the minimal set of PMUs required for an observable system:
+* [`pmuPlacement`](@ref pmuPlacement).
 
 ---
 
@@ -45,7 +52,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 2.1)
 
 analysis = newtonRaphson(system)
-acPowerFlow!(system, analysis)
+powerFlow!(system, analysis)
 nothing # hide
 ```
 

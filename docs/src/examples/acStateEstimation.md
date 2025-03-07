@@ -87,7 +87,7 @@ Next, AC power flow analysis is performed to obtain bus voltages:
 acModel!(system)
 
 powerFlow = newtonRaphson(system)
-acPowerFlow!(system, powerFlow; verbose = 1)
+powerFlow!(system, powerFlow; verbose = 1)
 nothing # hide
 ```
 
@@ -176,7 +176,7 @@ nothing # hide
 After collecting the measurements, we solve the AC state estimation by initializing the Gauss-Newton method and running the iterative algorithm to estimate bus voltages. The obtained results are then used to compute powers:
 ```@example acStateEstimation
 analysis = gaussNewton(system, device)
-acStateEstimation!(system, device, analysis; power = true, verbose = 2)
+stateEstimation!(system, device, analysis; power = true, verbose = 2)
 nothing # hide
 ```
 
@@ -213,7 +213,7 @@ These updates demonstrate the flexibility of JuliaGrid in modifying measurements
 
 Next, AC state estimation is run again to compute the new estimate without recreating the Gauss-Newton model. Additionally, this step initializes the iterative algorithm with a warm start, as the initial voltage magnitudes and angles correspond to the solution from the base case analysis:
 ```@example acStateEstimation
-acStateEstimation!(system, device, analysis; power = true, verbose = 1)
+stateEstimation!(system, device, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -236,7 +236,7 @@ nothing # hide
 
 We then solve the AC state estimation again:
 ```@example acStateEstimation
-acStateEstimation!(system, device, analysis; power = true, verbose = 1)
+stateEstimation!(system, device, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -261,7 +261,7 @@ outlier.maxNormalizedResidual
 The bad data processing function automatically removes the detected outlier. Before repeating the AC state estimation, using a warm start is not advisable, as the previous state was obtained in the presence of bad data. Instead, it is useful to reset the initial point, for example, by using the values defined within the power system data:
 ```@example acStateEstimation
 setInitialPoint!(system, analysis)
-acStateEstimation!(system, device, analysis; power = true, verbose = 1)
+stateEstimation!(system, device, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 

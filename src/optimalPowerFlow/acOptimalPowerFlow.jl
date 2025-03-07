@@ -1,6 +1,6 @@
 """
     acOptimalPowerFlow(system::PowerSystem, optimizer;
-        bridge, name, magnitude, angle, active, reactive)
+        iteration, tolerance, bridge, name, magnitude, angle, active, reactive, verbose)
 
 The function sets up the optimization model for solving the AC optimal power flow problem.
 
@@ -19,8 +19,11 @@ the `ac` field of the `PowerSystem` type.
 JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
 provided in the [JuMP documentation](https://jump.dev/jl/stable/reference/models/).
 However, certain configurations may require different method calls, such as:
-- `bridge`: Manage the bridging mechanism (default: `false`).
-- `name`: Manage the creation of string names (default: `true`).
+* `iteration`: Specifies the maximum number of iterations.
+* `tolerance`: Specifies the allowed deviation from the optimal solution.
+* `bridge`: Manage the bridging mechanism (default: `false`).
+* `name`: Manage the creation of string names (default: `true`).
+* `verbose`: Controls the output display, ranging from silent mode (`0`) to detailed output (`3`).
 
 Additionally, users can modify variable names used for printing and writing through the
 keywords `magnitude`, `angle`, `active`, and `reactive`. For instance, users can choose
@@ -45,12 +48,15 @@ analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 function acOptimalPowerFlow(
     system::PowerSystem,
     @nospecialize optimizerFactory;
+    iteration::IntMiss = missing,
+    tolerance::FltIntMiss = missing,
     bridge::Bool = false,
     name::Bool = true,
     magnitude::String = "magnitude",
     angle::String = "angle",
     active::String = "active",
-    reactive::String = "reactive"
+    reactive::String = "reactive",
+    verbose::Int64 = template.config.verbose
 )
     branch = system.branch
     bus = system.bus
@@ -65,6 +71,17 @@ function acOptimalPowerFlow(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
+
+    if !ismissing(iteration)
+        set_attribute(jump, "max_iter", iteration)
+    end
+    if !ismissing(tolerance)
+        set_attribute(jump, "tol", tolerance)
+    end
+    if verbose == 2
+        verbose = 3
+    end
+    jump.ext[:verbose] = verbose
 
     active = @variable(jump, active[i = 1:gen.number], base_name = active)
     reactive = @variable(jump, reactive[i = 1:gen.number], base_name = reactive)
@@ -267,19 +284,10 @@ function acOptimalPowerFlow(
 end
 
 """
-    solve!(system::PowerSystem, analysis::ACOptimalPowerFlow; verbose)
+    solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
 
 The function solves the AC optimal power flow model, computing the active and reactive
 power outputs of the generators, as well as the bus voltage magnitudes and angles.
-
-# Keyword
-Users can set:
-* `verbose`: Controls the solver output display:
-  * `verbose = 0`: silent mode (default),
-  * `verbose = 1`: prints only the exit message about convergence,
-  * `verbose = 2`: prints detailed native solver output.
-
-The default verbose setting can be modified using the [`@config`](@ref @config) macro.
 
 # Updates
 The calculated active and reactive powers, as well as voltage magnitudes and angles, are
@@ -290,15 +298,16 @@ stored in the `power.generator` and `voltage` fields of the `ACOptimalPowerFlow`
 system = powerSystem("case14.h5")
 acModel!(system)
 
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; verbose = 1)
 solve!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow; verbose::Int64 = 0)
+function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     variable = analysis.method.variable
     constr = analysis.method.constraint
     dual = analysis.method.dual
     jump = analysis.method.jump
+    verbose = analysis.method.jump.ext[:verbose]
 
     silentOptimal(jump, verbose)
 
@@ -980,5 +989,65 @@ function setInitialPoint!(source::DC, target::ACOptimalPowerFlow)
         for (key, value) in source.method.dual.piecewise.active
             target.method.dual.piecewise.active[key] = value
         end
+    end
+end
+
+"""
+    powerFlow!(system::PowerSystem, analysis::ACOptimalPowerFlow;
+        iteration, tolerance, power, current, verbose)
+
+The function serves as a wrapper for solving DC optimal power flow and includes the functions:
+* [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)),
+* [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
+* [`current!`](@ref current!(::PowerSystem, ::AC)).
+
+It computes the active and reactive power outputs of the generators, as well as the bus
+voltage magnitudes and angles, with an option to compute the powers and currents related to
+buses and branches.
+
+# Keyword
+Users can use the following keywords:
+* `iteration`: Specifies the maximum number of iterations.
+* `tolerance`: Specifies the allowed deviation from the optimal solution.
+* `power`: Enables the computation of powers (default: `false`).
+* `current`: Enables the computation of currents (default: `false`).
+* `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+powerFlow!(system, analysis; power = true, verbose = 1)
+```
+"""
+function powerFlow!(
+    system::PowerSystem,
+    analysis::ACOptimalPowerFlow;
+    iteration::IntMiss = missing,
+    tolerance::FltIntMiss = missing,
+    power::Bool = false,
+    current::Bool = false,
+    verbose::Int64 = template.config.verbose
+)
+    if !ismissing(iteration)
+        set_attribute(analysis.method.jump, "max_iter", iteration)
+    end
+    if !ismissing(tolerance)
+        set_attribute(analysis.method.jump, "tol", tolerance)
+    end
+    if verbose == 2
+        verbose = 3
+    end
+    analysis.method.jump.ext[:verbose] = verbose
+
+    solve!(system, analysis)
+
+    if power
+        power!(system, analysis)
+    end
+    if current
+        current!(system, analysis)
     end
 end

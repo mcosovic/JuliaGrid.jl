@@ -457,7 +457,12 @@ function printOptimal(jump::JuMP.Model, verbose::Int64)
         if is_solved_and_feasible(jump)
             println("EXIT: The optimal solution was found.")
         else
-            println("EXIT: The optimal solution was not found.")
+            status = termination_status(jump)
+            if status == MOI.ITERATION_LIMIT
+                println("EXIT: The maximum number of iterations exceeded.")
+            else
+                println("EXIT: The optimal solution was not found.")
+            end
         end
     end
 end

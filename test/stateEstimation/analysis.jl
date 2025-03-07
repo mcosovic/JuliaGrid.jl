@@ -635,10 +635,18 @@ system30 = powerSystem(path * "case30test.m")
         compstruct(analysisOrt.voltage, analysis.voltage; atol = 1e-10)
     end
 
-    @testset "IEEE 30: Wrapper Function" begin
+    @capture_out @testset "IEEE 30: Wrapper WLS Function" begin
         analysisse = gaussNewton(system30, device)
-        acStateEstimation!(system30, device, analysisse)
+        stateEstimation!(system30, analysisse; verbose = 3, tolerance = 1e-10, power = true)
+
         compstruct(analysisse.voltage, analysis.voltage; atol = 1e-10)
+    end
+
+    @capture_out @testset "IEEE 30: Wrapper LAV Function" begin
+        analysisse = acLavStateEstimation(system30, device, Ipopt.Optimizer)
+        stateEstimation!(system30, analysisse; verbose = 3, tolerance = 1e-8, current = true)
+
+        compstruct(analysisse.voltage, analysis.voltage; atol = 1e-8)
     end
 
     @testset "IEEE 30: Covariance Matrix" begin
@@ -826,8 +834,8 @@ system30 = powerSystem(path * "case30test.m")
     end
     current!(system30, analysis)
 
+    device = measurement()
     @testset "IEEE 30: PMU Measurements" begin
-        device = measurement()
         for (key, idx) in system30.bus.label
             addPmu!(
                 system30, device; bus = key, magnitude = analysis.voltage.magnitude[idx],
@@ -853,6 +861,20 @@ system30 = powerSystem(path * "case30test.m")
             )
         end
         pmuStateEstimationTest(system30, device, analysis)
+    end
+
+    @capture_out @testset "IEEE 30: Wrapper WLS Function" begin
+        analysisse = pmuStateEstimation(system30, device)
+        stateEstimation!(system30, analysisse; verbose = 3, current = true, power = true)
+
+        compstruct(analysisse.voltage, analysis.voltage; atol = 1e-4)
+    end
+
+    @capture_out @testset "IEEE 30: Wrapper LAV Function" begin
+        analysisse = pmuLavStateEstimation(system30, device, Ipopt.Optimizer)
+        stateEstimation!(system30, analysisse; verbose = 3, current = true, power = true)
+
+        compstruct(analysisse.voltage, analysis.voltage; atol = 1e-4)
     end
 end
 
@@ -983,6 +1005,20 @@ system30 = powerSystem(path * "case30test.m")
         analysisOrt = dcStateEstimation(system30, device, Orthogonal)
         solve!(system30, analysisOrt)
         @test analysisOrt.voltage.angle ≈ analysis.voltage.angle
+    end
+
+    @capture_out @testset "IEEE 30: Wrapper WLS Function" begin
+        analysisse = dcStateEstimation(system30, device)
+        stateEstimation!(system30, analysisse; verbose = 3, power = true)
+
+        compstruct(analysisse.voltage, analysis.voltage; atol = 1e-10)
+    end
+
+    @capture_out @testset "IEEE 30: Wrapper LAV Function" begin
+        analysisse = dcLavStateEstimation(system30, device, Ipopt.Optimizer)
+        stateEstimation!(system30, analysisse; verbose = 3, power = true)
+
+        compstruct(analysisse.voltage, analysis.voltage; atol = 1e-8)
     end
 end
 

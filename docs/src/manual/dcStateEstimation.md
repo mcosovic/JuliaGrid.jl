@@ -3,18 +3,25 @@ To perform the DC state estimation, we first need to have the `PowerSystem` type
 * [`dcStateEstimation`](@ref dcStateEstimation),
 * [`dcLavStateEstimation`](@ref dcLavStateEstimation).
 
+---
+
 For resolving the DC state estimation problem and obtaining bus voltage angles, utilize the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})).
-
-After executing the function [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})), where the user employs the WLS method, the user has the ability to check if the measurement set contains outliers throughout bad data analysis and remove those measurements using:
-* [`residualTest!`](@ref residualTest!).
-
----
 
 After obtaining the solution for DC state estimation, JuliaGrid offers a post-processing analysis function to compute active powers associated with buses and branches:
 * [`power!`](@ref power!(::PowerSystem, ::DCStateEstimation)).
 
 Additionally, specialized functions are available for calculating specific types of [powers](@ref DCPowerAnalysisAPI) for individual buses or branches.
+
+---
+
+Alternatively, instead of using functions responsible for solving state estimation and computing powers, users can utilize the wrapper function:
+* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::DCStateEstimation{LinearWLS{T}}) where T <: Union{Normal, Orthogonal}).
+
+---
+
+After executing the function [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})), where the user employs the WLS method, the user has the ability to check if the measurement set contains outliers throughout bad data analysis and remove those measurements using:
+* [`residualTest!`](@ref residualTest!).
 
 ---
 

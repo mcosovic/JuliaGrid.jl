@@ -254,12 +254,12 @@ level of printed information for algorithms used in JuliaGrid.
 # Examples
 Set labels as integers and disable printed output:
 ```jldoctest
-@labels(label = Integer, verbose = 0)
+@config(label = Integer, verbose = 0)
 ```
 
 Set labels as strings and enable basic printed messages:
 ```jldoctest
-@labels(label = String, verbose = 1)
+@config(label = String, verbose = 1)
 ```
 """
 macro config(kwargs...)

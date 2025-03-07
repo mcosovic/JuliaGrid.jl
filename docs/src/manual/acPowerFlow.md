@@ -5,23 +5,28 @@ To perform the AC power flow analysis, we will first need the `PowerSystem` type
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB),
 * [`gaussSeidel`](@ref gaussSeidel).
 
+---
+
 To obtain bus voltages and solve the power flow problem, users can implement an iterative process using the following functions:
 * [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})),
 * [`solve!`](@ref solve!(::PowerSystem, ACPowerFlow{NewtonRaphson})).
-Alternatively, instead of designing their own iteration process, users can use the wrapper function:
-* [`acPowerFlow!`](@ref acPowerFlow!).
 
-Next, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
-* [`reactiveLimit!`](@ref reactiveLimit!),
-* [`adjustAngle!`](@ref adjustAngle!).
-
----
-
-After obtaining the AC power flow solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses, branches, or generators:
+After obtaining the AC power flow solution, JuliaGrid offers functions for calculating powers and currents associated with buses, branches, or generators:
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
 Additionally, specialized functions are available for calculating specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators.
+
+---
+
+Alternatively, instead of designing their own iteration process and performing power and current computation, users can use the wrapper function:
+* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACPowerFlow)).
+
+---
+
+Finally, the package provides two functions for reactive power limit validation of generators and adjusting the voltage angles to match an arbitrary bus angle:
+* [`reactiveLimit!`](@ref reactiveLimit!),
+* [`adjustAngle!`](@ref adjustAngle!).
 
 ---
 
@@ -265,11 +270,11 @@ The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) f
 ---
 
 ##### Wrapper Function
-JuliaGrid includes a wrapper function, [`acPowerFlow!`](@ref acPowerFlow!), for solving AC power flow. If users aim to compute the AC power flow with a minimal number of function calls, the process would be:
+JuliaGrid includes a wrapper function, [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACPowerFlow)), for solving AC power flow. If users aim to compute the AC power flow with a minimal number of function calls, the process would be:
 ```@example ACPowerFlowSolution
 setInitialPoint!(system, analysis) # hide
 analysis = newtonRaphson(system)
-acPowerFlow!(system, analysis; verbose = 3)
+powerFlow!(system, analysis; verbose = 3)
 nothing # hide
 ```
 
@@ -294,7 +299,7 @@ Next, we can initialize the Newton-Raphson method with the voltages obtained fro
 analysis = newtonRaphson(system)
 
 setInitialPoint!(gs, analysis)
-acPowerFlow!(system, analysis; verbose = 1)
+powerFlow!(system, analysis; verbose = 1)
 ```
 
 !!! note "Info"
@@ -362,7 +367,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, act
 
 acModel!(system)
 analysis = newtonRaphson(system) # <- Build ACPowerFlow for the defined power system
-acPowerFlow!(system, analysis)
+powerFlow!(system, analysis)
 
 updateBus!(system; label = "Bus 2", active = 0.2)
 
@@ -373,7 +378,7 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 1", active = 0.2)
 updateGenerator!(system; label = "Generator 1", active = 0.3)
 
 analysis = newtonRaphson(system) # <- Build ACPowerFlow for the updated power system
-acPowerFlow!(system, analysis)
+powerFlow!(system, analysis)
 nothing # hide
 ```
 
@@ -405,7 +410,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, act
 
 acModel!(system)
 analysis = newtonRaphson(system) # <- Build ACPowerFlow for the defined power system
-acPowerFlow!(system, analysis)
+powerFlow!(system, analysis)
 
 updateBus!(system, analysis; label = "Bus 2", active = 0.2)
 
@@ -416,7 +421,7 @@ addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 1", active = 0
 updateGenerator!(system, analysis; label = "Generator 1", active = 0.3)
 
 # <- No need for re-build; we have already updated the existing ACPowerFlow instance
-acPowerFlow!(system, analysis)
+powerFlow!(system, analysis)
 nothing # hide
 ```
 
@@ -429,7 +434,7 @@ nothing # hide
 An intriguing scenario unfolds when employing the fast Newton-Raphson method. Continuing from the previous example, let us now initialize the fast Newton-Raphson method and proceed with iterations as outlined below:
 ```@example ACPowerFlowSolution
 analysis = fastNewtonRaphsonBX(system)
-acPowerFlow!(system, analysis; verbose = 1)
+powerFlow!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -438,7 +443,7 @@ Now, let us make changes to the power system and proceed directly to the iterati
 updateBus!(system, analysis; label = "Bus 2", reactive = 0.04)
 updateGenerator!(system, analysis; label = "Generator 1", reactive = 0.1)
 
-acPowerFlow!(system, analysis; verbose = 1)
+powerFlow!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -488,7 +493,7 @@ In this scenario, the user must execute the [`newtonRaphson`](@ref newtonRaphson
 updateBus!(system; label = "Bus 2", type = 2)
 
 analysis = fastNewtonRaphsonBX(system)
-acPowerFlow!(system, analysis)
+powerFlow!(system, analysis)
 ```
 
 !!! note "Info"
@@ -518,7 +523,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.0, reactive = 0.2)
 
 analysis = newtonRaphson(system)
-acPowerFlow!(system, analysis; verbose = 1)
+powerFlow!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -664,7 +669,7 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 3", reactive = 0.8)
 addGenerator!(system; label = "Generator 3", bus = "Bus 4", reactive = 0.9)
 
 analysis = newtonRaphson(system)
-acPowerFlow!(system, analysis)
+powerFlow!(system, analysis)
 
 violate = reactiveLimit!(system, analysis)
 nothing # hide
@@ -695,7 +700,7 @@ print(system.bus.label, system.bus.layout.type)
 After modifying the `PowerSystem` type as described earlier, we can run the simulation again with the following code:
 ```@example GeneratorReactivePowerLimits
 analysis = newtonRaphson(system)
-acPowerFlow!(system, analysis)
+powerFlow!(system, analysis)
 nothing # hide
 ```
 
@@ -733,7 +738,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", maxReactive = 0.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 4", reactive = 0.3)
 
 analysis = newtonRaphson(system)
-acPowerFlow!(system, analysis)
+powerFlow!(system, analysis)
 nothing # hide
 ```
 
@@ -745,7 +750,7 @@ violate = reactiveLimit!(system, analysis)
 Here, the generator connected to the slack bus is violating the minimum reactive power limit, which indicates the need to convert the slack bus. It is important to note that the new slack bus can be created only from the generator bus (`type = 2`). We will now perform another AC power flow analysis on the modified system using the following:
 ```@example NewSlackBus
 analysis = newtonRaphson(system)
-acPowerFlow!(system, analysis)
+powerFlow!(system, analysis)
 ```
 
 After examining the bus voltages, we will focus on the angles:
