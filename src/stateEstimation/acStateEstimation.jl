@@ -1195,8 +1195,8 @@ to compute powers and currents.
 
 # Keywords
 Users can use the following keywords:
-* `iteration`: Specifies the maximum number of iterations (default for WLS: `40`).
-* `tolerance`: Defines the tolerance for the iteration stopping criterion (default for WLS: `1e-8`).
+* `iteration`: Specifies the maximum number of iterations (default for WLS model: `40`).
+* `tolerance`: Defines the tolerance for the iteration stopping criterion (default for WLS model: `1e-8`).
 * `power`: Enables the computation of powers (default: `false`).
 * `current`: Enables the computation of currents (default: `false`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).

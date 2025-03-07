@@ -996,7 +996,7 @@ end
     powerFlow!(system::PowerSystem, analysis::ACOptimalPowerFlow;
         iteration, tolerance, power, current, verbose)
 
-The function serves as a wrapper for solving DC optimal power flow and includes the functions:
+The function serves as a wrapper for solving AC optimal power flow and includes the functions:
 * [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)),
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).

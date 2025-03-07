@@ -56,8 +56,8 @@ pmuPlacement!
 gaussNewton
 acLavStateEstimation
 solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})
-stateEstimation!
 setInitialPoint!(::PowerSystem, ::ACStateEstimation)
+stateEstimation!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{T}}) where T <: Union{Normal, Orthogonal}
 ```
 
 ---
@@ -67,6 +67,7 @@ setInitialPoint!(::PowerSystem, ::ACStateEstimation)
 pmuStateEstimation
 pmuLavStateEstimation
 solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})
+stateEstimation!(::PowerSystem, ::PMUStateEstimation{LinearWLS{T}}) where T <: Union{Normal, Orthogonal}
 ```
 
 ---
@@ -76,6 +77,7 @@ solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})
 dcStateEstimation
 dcLavStateEstimation
 solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})
+stateEstimation!(::PowerSystem, ::DCStateEstimation{LinearWLS{T}}) where T <: Union{Normal, Orthogonal}
 ```
 
 ---
