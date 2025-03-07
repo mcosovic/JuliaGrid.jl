@@ -33,8 +33,8 @@ dcModel!(system)
 ##### Measurement Model #####
 device = measurement()
 
-powerFlow = dcOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, powerFlow; verbose = 1)
+powerFlow = dcOptimalPowerFlow(system, Ipopt.Optimizer; verbose = 1)
+solve!(system, powerFlow)
 power!(system, powerFlow)
 
 printBusData(system, powerFlow)

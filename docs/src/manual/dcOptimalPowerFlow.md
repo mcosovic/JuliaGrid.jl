@@ -53,7 +53,7 @@ nothing # hide
 
 Next, the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function is utilized to formulate the DC optimal power flow problem:
 ```@example DCOptimalPowerFlow
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer; verbose = 1)
 nothing # hide
 ```
 
@@ -356,7 +356,7 @@ nothing # hide
 ## [Optimal Power Flow Solution](@id DCOptimalPowerFlowSolutionManual)
 To establish the DC optimal power flow problem, we utilize the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function. After setting up the problem, we can use the [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)) function to compute the optimal values for the active power outputs of the generators and the bus voltage angles:
 ```@example DCOptimalPowerFlow
-solve!(system, analysis; verbose = 1)
+solve!(system, analysis)
 nothing # hide
 ```
 
@@ -387,7 +387,7 @@ analysis.method.dual.balance.active[1]
 ##### Print Results in the REPL
 Users can utilize the functions [`printBusData`](@ref printBusData) and [`printGeneratorData`](@ref printGeneratorData) to display results. Additionally, the functions listed in the [Print Constraint Data](@ref PrintConstraintDataAPI) section allow users to print constraint data related to buses, branches, or generators in the desired units. For example:
 ```@example DCOptimalPowerFlow
-@power(MW, MVAr, pu)
+@power(MW, MVAr)
 printBusConstraint(system, analysis)
 nothing # hide
 ```
@@ -500,8 +500,8 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, maxAct
 cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
 cost!(system; generator = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8])
 
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
-solve!(system, analysis; verbose = 1)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer; verbose = 1)
+solve!(system, analysis)
 nothing # hide
 ```
 
@@ -525,8 +525,8 @@ print(system.branch.label, analysis.power.from.active)
 ##### Print Results in the REPL
 Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, to create a bus data with the desired units, users can use the following function:
 ```@example DCOptimalPowerFlowPower
-@voltage(pu, deg, V)
-@power(MW, MVAr, pu)
+@voltage(pu, deg)
+@power(MW, MVAr)
 printBusData(system, analysis)
 @default(unit) # hide
 nothing # hide

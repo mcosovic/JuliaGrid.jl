@@ -306,7 +306,7 @@ To obtain an LAV estimator, users need to employ one of the [solvers](https://ju
 using Ipopt
 using JuMP  # hide
 
-analysis = acLavStateEstimation(system, device, Ipopt.Optimizer)
+analysis = acLavStateEstimation(system, device, Ipopt.Optimizer; verbose = 1)
 nothing # hide
 ```
 
@@ -325,7 +325,7 @@ Users have the flexibility to customize these values according to their requirem
 ##### Solution
 To solve the formulated LAV state estimation model, simply execute the following function:
 ```@example ACSEWLS
-solve!(system, analysis; verbose = 1)
+solve!(system, analysis)
 nothing # hide
 ```
 

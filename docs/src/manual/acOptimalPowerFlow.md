@@ -55,7 +55,7 @@ nothing # hide
 
 Next, the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function is utilized to formulate the AC optimal power flow problem:
 ```@example ACOptimalPowerFlow
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; verbose = 1)
 nothing # hide
 ```
 
@@ -412,7 +412,7 @@ nothing # hide
 ## [Optimal Power Flow Solution](@id ACOptimalPowerFlowSolutionManual)
 To establish the AC optimal power flow problem, we utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, we can use the [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles:
 ```@example ACOptimalPowerFlow
-solve!(system, analysis; verbose = 1)
+solve!(system, analysis)
 nothing # hide
 ```
 
@@ -444,7 +444,7 @@ analysis.method.dual.balance.active[1]
 ##### Print Results in the REPL
 Users can utilize the functions [`printBusData`](@ref printBusData) and [`printGeneratorData`](@ref printGeneratorData) to display results. Additionally, the functions listed in the [Print Constraint Data](@ref PrintConstraintDataAPI) section allow users to print constraint data related to buses, branches, or generators in the desired units. For example:
 ```@example ACOptimalPowerFlow
-@power(MW, MVAr, pu)
+@power(MW, MVAr)
 show = Dict("Active Power Balance" => false)
 printBusConstraint(system, analysis; show)
 nothing # hide
@@ -557,8 +557,8 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, reacti
 cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
 cost!(system; generator = "Generator 2", active = 1, piecewise = [10 12.3; 14.7 16.8; 18 19])
 
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis; verbose = 1)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; verbose = 1)
+solve!(system, analysis)
 nothing # hide
 ```
 
@@ -583,8 +583,8 @@ print(system.branch.label, analysis.current.from.magnitude)
 ##### Print Results in the REPL
 Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, to create a bus data with the desired units, users can use the following function:
 ```@example ACOptimalPowerFlowPower
-@voltage(pu, deg, V)
-@power(MW, MVAr, pu)
+@voltage(pu, deg)
+@power(MW, MVAr)
 show = Dict("Power Generation" => false, "Current Injection" => false)
 printBusData(system, analysis; show)
 @default(unit) # hide

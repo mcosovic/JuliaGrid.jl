@@ -73,8 +73,8 @@ nothing # hide
 ##### DC Optimal Power Flow
 To obtain bus voltage angless, we solve the DC optimal power flow. Using these values, we compute the active power associated with buses and branches:
 ```@example dcStateEstimation
-powerFlow = dcOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, powerFlow; verbose = 1)
+powerFlow = dcOptimalPowerFlow(system, Ipopt.Optimizer; verbose = 1)
+solve!(system, powerFlow)
 power!(system, powerFlow)
 ```
 
