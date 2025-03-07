@@ -144,7 +144,7 @@ JuliaGrid includes a wrapper function [`stateEstimation!`](@ref stateEstimation!
 ```@example ACSEWLS
 setInitialPoint!(system, analysis) # hide
 analysis = gaussNewton(system, device)
-stateEstimation!(system, device, analysis; verbose = 3)
+stateEstimation!(system, analysis; verbose = 3)
 nothing # hide
 ```
 
