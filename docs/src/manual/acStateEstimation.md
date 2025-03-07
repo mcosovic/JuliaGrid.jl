@@ -211,7 +211,7 @@ nothing # hide
 Subsequently, by specifying the `Orthogonal` argument in the [`gaussNewton`](@ref gaussNewton) function, JuliaGrid implements a more robust approach to obtain the WLS estimator, which proves particularly beneficial when substantial differences exist among measurement variances:
 ```@example ACSEWLS
 analysis = gaussNewton(system, device, Orthogonal)
-stateEstimation!(system, device, analysis; verbose = 1)
+stateEstimation!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -257,7 +257,7 @@ After acquiring the WLS solution using the Gauss-Newton method, users can conduc
 addWattmeter!(system, device; from = "Branch 2", active = 31.1)
 
 analysis = gaussNewton(system, device)
-stateEstimation!(system, device, analysis; verbose = 1)
+stateEstimation!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -284,7 +284,7 @@ Hence, upon detecting bad data, the `detect` variable will hold `true`. The `max
 After removing bad data, a new estimate can be computed without considering this specific measurement. The user has the option to either restart the [`gaussNewton`](@ref gaussNewton) function or proceed directly to the iteration loop. However, if the latter option is chosen, using voltages obtained with outlier presence as the initial point could significantly impede algorithm convergence. To avoid this undesirable outcome, the user should first establish a new initial point and commence the iteration procedure. For instance:
 ```@example ACSEWLS
 setInitialPoint!(system, analysis)
-stateEstimation!(system, device, analysis; verbose = 1)
+stateEstimation!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -378,7 +378,7 @@ addVarmeter!(system, device; bus = "Bus 2", reactive = -0.1)
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.8552, angle = -0.1693)
 
 analysis = gaussNewton(system, device) # <- Build ACStateEstimation for the defined model
-stateEstimation!(system, device, analysis)
+stateEstimation!(system, analysis)
 
 addWattmeter!(system, device; from = "Branch 3", active = 0.0291)
 updateWattmeter!(system, device; label = "Wattmeter 2 (Bus 2)", variance = 1e-4)
@@ -389,7 +389,7 @@ updateVarmeter!(system, device; label = "Varmeter 2 (Bus 2)", reactive = -0.11)
 updatePmu!(system, device; label = "PMU 1 (Bus 2)", polar = false)
 
 analysis = gaussNewton(system, device) # <- Build ACStateEstimation for the updated model
-stateEstimation!(system, device, analysis)
+stateEstimation!(system, analysis)
 nothing # hide
 ```
 
@@ -443,7 +443,7 @@ addVarmeter!(system, device; to = "Branch 3", reactive = -0.037, variance = 1e-5
 addPmu!(system, device; bus = "Bus 2", magnitude = 0.8552, angle = -0.1693)
 
 analysis = gaussNewton(system, device) # <- Build ACStateEstimation for the defined model
-stateEstimation!(system, device, analysis)
+stateEstimation!(system, analysis)
 
 updateWattmeter!(system, device, analysis; label = "Wattmeter 3 (From Branch 3)", status = 1)
 updateWattmeter!(system, device, analysis; label = "Wattmeter 2 (Bus 2)", variance = 1e-4)
@@ -454,7 +454,7 @@ updateVarmeter!(system, device, analysis; label = "Varmeter 2 (Bus 2)", reactive
 updatePmu!(system, device, analysis; label = "PMU 1 (Bus 2)", polar = false)
 
 # <- No need for re-build; we have already updated the existing ACStateEstimation instance
-stateEstimation!(system, device, analysis)
+stateEstimation!(system, analysis)
 nothing # hide
 ```
 
@@ -493,7 +493,7 @@ addVarmeter!(system, device; bus = "Bus 2", reactive = -0.01, variance = 1e-2)
 addVarmeter!(system, device; to = "Branch 3", reactive = -0.044, variance = 1e-3)
 
 analysis = gaussNewton(system, device)
-stateEstimation!(system, device, analysis; verbose = 1)
+stateEstimation!(system, analysis; verbose = 1)
 ```
 
 We can now utilize the provided functions to compute powers and currents:
