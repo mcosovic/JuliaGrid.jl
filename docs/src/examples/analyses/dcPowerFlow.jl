@@ -25,8 +25,7 @@ dcModel!(system)
 
 ##### Base Case Analysis #####
 analysis = dcPowerFlow(system)
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis; power = true, verbose = 1)
 
 printBusData(system, analysis)
 printBranchData(system, analysis)
@@ -38,15 +37,13 @@ updateBus!(system, analysis; label = "Bus 4", active = 42.0)
 updateGenerator!(system, analysis; label = "Generator 1", active = 58.0)
 updateGenerator!(system, analysis; label = "Generator 2", active = 23.0)
 
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis; power = true, verbose = 1)
 
 printBranchData(system, analysis)
 
 ##### Modifying Network Topology #####
 updateBranch!(system, analysis; label = "Branch 3", status = 0)
 
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis; power = true, verbose = 1)
 
 printBranchData(system, analysis)

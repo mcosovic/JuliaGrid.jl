@@ -36,8 +36,7 @@ fmt = Dict("From-Bus Power" => "%.2f", "To-Bus Power" => "%.2f", "Power Output" 
 analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; angle = "θ", active = "Pg")
 print(analysis.method.jump)
 
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis, power = true, verbose = 1)
 
 printBusData(system, analysis)
 printBranchConstraint(system, analysis; label = "Branch 1", header = true, footer = true)
@@ -49,8 +48,7 @@ printBranchData(system, analysis; fmt)
 updateBus!(system, analysis; label = "Bus 2", active = 25.2)
 updateBus!(system, analysis; label = "Bus 4", active = 43.3)
 
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis, power = true, verbose = 1)
 
 printGeneratorData(system, analysis; fmt)
 printBranchConstraint(system, analysis)
@@ -60,8 +58,7 @@ printBranchData(system, analysis; fmt)
 cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [2.0; 40.0; 0.0])
 cost!(system, analysis; generator = "Generator 3", active = 2, polynomial = [0.5; 10.0; 0.0])
 
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis, power = true, verbose = 1)
 
 printGeneratorData(system, analysis; fmt)
 printBranchData(system, analysis; fmt)
@@ -70,8 +67,7 @@ printBranchData(system, analysis; fmt)
 updateBranch!(system, analysis; label = "Branch 2", type = 1, maxFromBus = 15.0)
 updateBranch!(system, analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
 
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis, power = true, verbose = 1)
 
 printGeneratorData(system, analysis; fmt)
 printBranchData(system, analysis; fmt)
@@ -79,8 +75,7 @@ printBranchData(system, analysis; fmt)
 ##### Modifying Network Topology #####
 updateBranch!(system, analysis; label = "Branch 2", status = 0)
 
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis, power = true, verbose = 1)
 
 printGeneratorData(system, analysis; fmt)
 printBranchData(system, analysis; fmt)

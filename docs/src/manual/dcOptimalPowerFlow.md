@@ -6,18 +6,16 @@ To perform the DC optimal power flow, we first need to have the `PowerSystem` ty
 
 ---
 
-To solve the DC optimal power flow problem and acquire generator active power outputs and bus voltage angles, use of the following function:
+To solve the DC optimal power flow problem and acquire generator active power outputs and bus voltage angles, users can use of the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow)).
 
-After obtaining the solution for DC optimal power flow, JuliaGrid offers a function to compute powers associated with buses and branches:
+After solving the DC optimal power flow, JuliaGrid provides function for computing powers:
 * [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
 
-Additionally, we have specialized functions for computing specific [powers](@ref DCPowerAnalysisAPI) for buses and branches.
-
----
-
-Alternatively, instead of using functions responsible for solving optimal power flow and computing powers, users can utilize the wrapper function:
+Alternatively, instead of using functions responsible for solving optimal power flow and computing powers, users can use the wrapper function:
 * [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::DCOptimalPowerFlow)).
+
+Users can also access specialized functions for computing specific types of [powers](@ref DCPowerAnalysisAPI) for individual buses, branches, or generators within the power system.
 
 ---
 
@@ -53,7 +51,7 @@ nothing # hide
 
 Next, the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function is utilized to formulate the DC optimal power flow problem:
 ```@example DCOptimalPowerFlow
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer; verbose = 1)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
 nothing # hide
 ```
 

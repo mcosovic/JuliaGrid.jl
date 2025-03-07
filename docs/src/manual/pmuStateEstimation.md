@@ -5,23 +5,21 @@ To perform linear state estimation solely based on PMU data, the initial require
 
 ---
 
-For solving the PMU state estimation problem and obtaining bus voltage magnitudes and angles, utilize the following function:
+To obtain bus voltages and solve the PMU state estimation problem, users can use the wrapper function:
 * [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})).
 
-After obtaining the PMU state estimation solution, JuliaGrid offers post-processing analysis functions for calculating powers and currents associated with buses and branches:
+After solving the PMU state estimation, JuliaGrid provides functions for computing powers and currents:
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
-Additionally, specialized functions are available for calculating specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses or branches.
-
----
-
-Alternatively, instead of using functions responsible for solving state estimation and computing powers and currents, users can utilize the wrapper function:
+Alternatively, instead of using functions responsible for solving state estimation and computing powers and currents, users can use the wrapper function:
 * [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::PMUStateEstimation{LinearWLS{T}}) where T <: Union{Normal, Orthogonal}).
 
+Users can also access specialized functions for computing specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators within the power system.
+
 ---
 
-After executing the function [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})), where the user employs the WLS method, the user has the ability to check if the measurement set contains outliers throughout bad data analysis and remove those measurements using:
+After obtaining the bus voltages, when the user employs the WLS model, they can check if the measurement set contains outliers through bad data analysis and remove those measurements using:
 * [`residualTest!`](@ref residualTest!).
 
 Moreover, before the creating `PMUStateEstimation` type, users can initiate an optimal PMU placement algorithm to determine the minimal set of PMUs required for an observable system:

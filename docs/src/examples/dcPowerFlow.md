@@ -107,7 +107,7 @@ nothing # hide
 
 Next, we solve the DC power flow again to compute the new state of the power system without recreating the DC power flow model:
 ```@example 4bus
-powerFlow!(system, analysis; power = true)
+powerFlow!(system, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 Since no modifications were made that affect the nodal admittance matrix, JuliaGrid reuses its factorization from the base case analysis, significantly reducing computational complexity.
@@ -137,7 +137,7 @@ nothing # hide
 
 We then solve the DC power flow for this scenario:
 ```@example 4bus
-powerFlow!(system, analysis; power = true)
+powerFlow!(system, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 

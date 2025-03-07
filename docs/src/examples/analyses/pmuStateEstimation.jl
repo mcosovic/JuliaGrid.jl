@@ -63,8 +63,7 @@ printPmuData(system, device; width = Dict("Label" => 15))
 
 ##### Base Case Analysis #####
 analysis = pmuStateEstimation(system, device)
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 
 power!(system, powerFlow)
 printBusData(system, analysis; show)
@@ -75,8 +74,7 @@ printBranchData(system, analysis; show)
 updatePmu!(system, device, analysis; label = "From Branch 8", magnitude = 1.1)
 updatePmu!(system, device, analysis; label = "From Branch 2", angle = 0.2, noise = true)
 
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 
 printBusData(system, analysis; show)
 
@@ -88,7 +86,6 @@ addPmu!(system, device; to = "Branch 2", magnitude = 0.2282, angle = -2.9587)
 addPmu!(system, device; to = "Branch 8", magnitude = 0.0414, angle = -0.2424)
 
 analysis = pmuStateEstimation(system, device)
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 
 printBusData(system, analysis; show)

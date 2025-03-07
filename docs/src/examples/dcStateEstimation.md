@@ -73,9 +73,8 @@ nothing # hide
 ##### DC Optimal Power Flow
 To obtain bus voltage angless, we solve the DC optimal power flow. Using these values, we compute the active power associated with buses and branches:
 ```@example dcStateEstimation
-powerFlow = dcOptimalPowerFlow(system, Ipopt.Optimizer; verbose = 1)
-solve!(system, powerFlow)
-power!(system, powerFlow)
+powerFlow = dcOptimalPowerFlow(system, Ipopt.Optimizer)
+powerFlow!(system, powerFlow; power = true, verbose = 1)
 ```
 
 ---
@@ -141,8 +140,7 @@ nothing # hide
 
 Next, the model is solved to determine the WLS estimator for bus voltage angles, and the results are used to compute power values:
 ```@example dcStateEstimation
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -171,8 +169,7 @@ By changing these measurement values, two outliers are introduced into the datas
 
 Next, the DC state estimation is solved again to compute the updated estimate:
 ```@example dcStateEstimation
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -186,9 +183,7 @@ With the modified measurement values for `Wattmeter 7` and `Wattmeter 8`, the es
 Now, instead of using the WLS estimator, we compute the LAV estimator:
 ```@example dcStateEstimation
 analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
-JuMP.set_silent(analysis.method.jump)  # hide
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -211,8 +206,7 @@ nothing # hide
 
 Recompute the LAV estimator and active power values:
 ```@example dcStateEstimation
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 

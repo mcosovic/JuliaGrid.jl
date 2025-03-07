@@ -101,17 +101,9 @@ nothing # hide
 
 ## Base Case Analysis
 First, we create the AC optimal power flow model and select the `Ipopt` solver. Next, we solve the model to determine bus voltage magnitudes and angles, along with the active and reactive power outputs of the generators. Afterward, we compute the remaining power values for buses and branches:
-```julia 4bus
+```@example 4bus
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
-power!(system, analysis)
-```
-```@setup 4bus
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-JuMP.set_silent(analysis.method.jump)  # hide
-solve!(system, analysis)
-power!(system, analysis)
-nothing # hide
+powerFlow!(system, analysis, power = true, verbose = 1)
 ```
 
 Once the AC optimal power flow is solved, we can review the bus-related results, including the optimal values of bus voltage magnitudes and angles:
@@ -164,8 +156,7 @@ nothing # hide
 
 Next, we solve the AC optimal power flow again to compute the new solution without recreating the model. This step enables a warm start, as the initial primal and dual values correspond to those obtained in the base case:
 ```@example 4bus
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis, power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -210,8 +201,7 @@ nothing # hide
 
 Next, we solve the updated problem and calculate the resulting powers:
 ```@example 4bus
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis, power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -254,8 +244,7 @@ updateBranch!(system, analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
 
 Next, we recalculate the AC optimal power flow:
 ```@example 4bus
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis, power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -302,8 +291,7 @@ updateBranch!(system, analysis; label = "Branch 2", status = 0)
 
 We then recalculate the AC optimal power flow:
 ```@example 4bus
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis, power = true, verbose = 1)
 nothing # hide
 ```
 

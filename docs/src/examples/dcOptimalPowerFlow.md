@@ -96,15 +96,8 @@ print(analysis.method.jump)
 ```
 
 Solving the DC optimal power flow model provides the bus voltage angles and generator active power outputs. Then, active powers across buses and branches are computed:
-```julia 4bus
-solve!(system, analysis)
-power!(system, analysis)
-```
-```@setup 4bus
-JuMP.set_silent(analysis.method.jump)  # hide
-solve!(system, analysis)
-power!(system, analysis)
-nothing # hide
+```@example 4bus
+powerFlow!(system, analysis, power = true, verbose = 1)
 ```
 
 After obtaining the solution, bus-related results, including the optimal bus voltage angles, are examined:
@@ -153,8 +146,7 @@ nothing # hide
 
 Next, we solve the DC optimal power flow again to compute the new solution without recreating the model. This step enables a warm start, as the initial primal and dual values correspond to those obtained in the base case:
 ```@example 4bus
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis, power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -192,8 +184,7 @@ nothing # hide
 
 Next, we solve the updated problem and calculate the resulting powers:
 ```@example 4bus
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis, power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -227,8 +218,7 @@ updateBranch!(system, analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
 
 Next, we recalculate the DC optimal power flow:
 ```@example 4bus
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis, power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -261,8 +251,7 @@ updateBranch!(system, analysis; label = "Branch 2", status = 0)
 
 We then recalculate the DC optimal power flow:
 ```@example 4bus
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis, power = true, verbose = 1)
 nothing # hide
 ```
 

@@ -181,8 +181,7 @@ nothing # hide
 
 Next, the model is solved to obtain the WLS estimator for bus voltages, and the results are used to compute powers:
 ```@example pmuStateEstimation
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -219,8 +218,7 @@ These updates demonstrate the flexibility of JuliaGrid in modifying measurements
 
 Next, the PMU state estimation is solved again to compute the new estimate:
 ```@example pmuStateEstimation
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
@@ -248,8 +246,7 @@ Since new measurements are being added, `analysis` is not passed to these functi
 Next, the PMU state estimation model is created and solved:
 ```@example pmuStateEstimation
 analysis = pmuStateEstimation(system, device)
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 nothing # hide
 ```
 

@@ -5,19 +5,17 @@ To perform nonlinear or AC state estimation, the initial requirement is to have 
 
 ---
 
-To compute bus voltages and solve the state estimation problem, users can either implement an iterative process for the WLS model or simply call the following function for the LAV model:
+To obtain bus voltages and solve the state estimation problem, users can either implement an iterative process for the WLS model or simply execute the following function for the LAV model:
 * [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})).
 
-After obtaining the AC state estimation solution, JuliaGrid offers functions for calculating powers and currents associated with buses and branches:
+After solving the AC state estimation, JuliaGrid provides functions for computing powers and currents:
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
-Additionally, specialized functions are available for calculating specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses or branches.
-
----
-
-Alternatively, instead of designing their own iteration process for the Gauss-Newton method or using the function responsible for solving the LAV model and separate functions for computing powers and currents, users can utilize the wrapper function:
+Alternatively, instead of designing their own iteration process for the Gauss-Newton method or using the function responsible for solving the LAV model, and computing powers and currents, users can use the wrapper function:
 * [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{T}}) where T <: Union{Normal, Orthogonal}).
+
+Users can also access specialized functions for computing specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators within the power system.
 
 ---
 

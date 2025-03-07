@@ -7,20 +7,18 @@ To perform the AC power flow analysis, we will first need the `PowerSystem` type
 
 ---
 
-To obtain bus voltages and solve the power flow problem, users can implement an iterative process using the following functions:
+To obtain bus voltages and solve the power flow problem, users can implement an iterative process using functions:
 * [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})),
 * [`solve!`](@ref solve!(::PowerSystem, ACPowerFlow{NewtonRaphson})).
 
-After obtaining the AC power flow solution, JuliaGrid offers functions for calculating powers and currents associated with buses, branches, or generators:
+After solving the AC power flow, JuliaGrid provides functions for computing powers and currents:
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
-Additionally, specialized functions are available for calculating specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators.
-
----
-
-Alternatively, instead of designing their own iteration process and performing power and current computation, users can use the wrapper function:
+Alternatively, instead of designing their own iteration process and computing powers and currents, users can use the wrapper function:
 * [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACPowerFlow)).
+
+Users can also access specialized functions for computing specific types of [powers](@ref ACPowerAnalysisAPI) and [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators within the power system.
 
 ---
 

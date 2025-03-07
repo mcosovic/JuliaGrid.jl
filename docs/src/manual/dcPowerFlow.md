@@ -4,18 +4,16 @@ To perform the DC power flow, we first need to have the `PowerSystem` type that 
 
 ---
 
-To solve the DC power flow problem and acquire bus voltage angles, make use of the following function:
+To solve the DC power flow problem and acquire bus voltage angles, users can use the following function:
 * [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)).
 
-After obtaining the solution for DC power flow, JuliaGrid offers a function to compute active powers associated with buses, branches, and generators:
+Once the DC power flow solution is obtained, JuliaGrid provides a function for computing powers:
 * [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
 
-Additionally, specialized functions are available for calculating specific types of [powers](@ref DCPowerAnalysisAPI) for individual buses, branches, or generators.
-
----
-
-Alternatively, instead of using functions responsible for solving power flow and computing powers, users can utilize the wrapper function:
+Alternatively, instead of using functions responsible for solving power flow and computing powers, users can use the wrapper function:
 * [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::DCPowerFlow)).
+
+Users can also access specialized functions for computing specific types of [powers](@ref DCPowerAnalysisAPI) for individual buses, branches, or generators within the power system.
 
 ---
 
