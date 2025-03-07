@@ -1217,39 +1217,90 @@ end
 
 function verbose3acpf(system::PowerSystem, npq::Int64, verbose::Int64)
     if verbose == 3
-        layBrc = system.branch.layout
-        layGen = system.generator.layout
+        bus = system.bus
+        brc = system.branch
+        gen = system.generator
 
-        wdbus = textwidth(string(system.bus.number))
-        wdbrc = textwidth(string(system.branch.number))
-        wdgen = textwidth(string(system.generator.number))
+        shunt = fill(0.0, 3)
+        @inbounds for i = 1:system.bus.number
+            if bus.shunt.susceptance[i] != 0.0 || bus.shunt.conductance[i] != 0.0
+                shunt[1] += 1
+                if bus.shunt.susceptance[i] > 0.0
+                    shunt[2] += 1
+                elseif bus.shunt.susceptance[i] < 0.0
+                    shunt[3] += 1
+                end
+            end
+        end
 
-        print("Number of buses: ")
-        print(format(Format("%i"), system.bus.number))
+        tran = fill(0.0, 3)
+        @inbounds for i = 1:brc.number
+            if brc.parameter.turnsRatio[i] != 1.0 || brc.parameter.shiftAngle[i] != 0.0
+                tran[1] += 1
+                if brc.layout.status[i] == 1
+                    tran[2] += 1
+                end
+            end
+        end
+        tran[3] = tran[1] - tran[2]
 
-        print("   Number of branches: ")
-        print(format(Format("%i"), system.branch.number))
+        col1 = max(textwidth(string(bus.number)), textwidth(string(brc.number)))
+        col2 = max(textwidth(string(shunt[1])), textwidth(string(brc.number - tran[1])))
+        col3 = max(textwidth(string(gen.number)), textwidth(string(tran[1])))
 
-        print("   Number of generators: ")
-        print(format(Format("%i\n"), system.generator.number))
+        print("Number of buses:    ")
+        print(format(Format("%*i"), col1, bus.number))
 
-        print("  Demands:       ")
-        print(format(Format("%*i"), wdbus, npq))
+        print("   Number of shunts: ")
+        print(format(Format("%*i"), col2, shunt[1]))
 
-        print("     In-service:       ")
-        print(format(Format("%*i"), wdbrc, layBrc.inservice))
+        print("   Number of generators:   ")
+        print(format(Format("%*i\n"), col3, gen.number))
 
-        print("     In-service:         ")
-        print(format(Format("%*i\n"), wdgen, layGen.inservice))
+        print("  Demands:          ")
+        print(format(Format("%*i"), col1, npq))
 
-        print("  Generators:    ")
-        print(format(Format("%*i"), wdbus, system.bus.number - 1 - npq))
+        print("     Capacitive:     ")
+        print(format(Format("%*i"), col2, shunt[2]))
 
-        print("     Out-of-service:   ")
-        print(format(Format("%*i"), wdbrc, system.branch.number - layBrc.inservice))
+        print("     In-service:           ")
+        print(format(Format("%*i\n"), col3, gen.layout.inservice))
 
-        print("     Out-of-service:     ")
-        print(format(Format("%*i\n\n"), wdgen, system.generator.number - layGen.inservice))
+        print("  Generators:       ")
+        print(format(Format("%*i"), col1, bus.number - 1 - npq))
+
+        print("     Inductive:      ")
+        print(format(Format("%*i"), col2, shunt[3]))
+
+        print("     Out-of-service:       ")
+        print(format(Format("%*i\n\n"), col3, gen.number - gen.layout.inservice))
+
+        print("Number of branches: ")
+        print(format(Format("%*i"), col1, brc.number))
+
+        print("   Number of Lines:  ")
+        print(format(Format("%*i"), col2, brc.number - tran[1]))
+
+        print("   Number of transformers: ")
+        print(format(Format("%*i\n"), col3, tran[1]))
+
+        print("  In-service:       ")
+        print(format(Format("%*i"), col1, brc.layout.inservice))
+
+        print("     In-service:     ")
+        print(format(Format("%*i"), col2, brc.layout.inservice - tran[2]))
+
+        print("     In-service:           ")
+        print(format(Format("%*i\n"), col3, tran[2]))
+
+        print("  Out-of-service:   ")
+        print(format(Format("%*i"), col1, brc.number - brc.layout.inservice))
+
+        print("     Out-of-service: ")
+        print(format(Format("%*i"), col2, brc.number - brc.layout.inservice - tran[3]))
+
+        print("     Out-of-service:       ")
+        print(format(Format("%*i\n\n"), col3, tran[3]))
     end
 end
 
@@ -1263,19 +1314,6 @@ end
 
 function npq(::PowerSystem, analysis::ACPowerFlow{GaussSeidel})
     lastindex(analysis.method.pq)
-end
-
-function printAlgorithmSettings(tolerance::Float64, iteration::Int64)
-    maxms = "Maximum number of iterations:"
-    tol = string(tolerance)
-    wd1 = max(textwidth(tol), textwidth(string(iteration))) + 1
-    wd2 = textwidth(maxms)
-
-    print(maxms)
-    print(format(Format("%*.i\n"), wd1, iteration))
-
-    print("Step size tolerance:")
-    print(format(Format("%*s\n\n"), wd1 + wd2 - 20, tol))
 end
 
 function verbose2acpf(analysis::ACPowerFlow{NewtonRaphson}, tol::Float64, iter::Int64, verbose::Int64)
@@ -1292,8 +1330,6 @@ function verbose2acpf(analysis::ACPowerFlow{NewtonRaphson}, tol::Float64, iter::
 
         print("Number of state variables:")
         print(format(Format("%*i\n\n"), wd1 + wd2 - 26, state))
-
-        printAlgorithmSettings(tol, iter)
     end
 end
 
@@ -1321,8 +1357,6 @@ function verbose2acpf(analysis::ACPowerFlow{FastNewtonRaphson}, tol::Float64, it
 
         print("Number of state variables:")
         print(format(Format("%*i\n\n"), wd1 + wd2 - 26, state))
-
-        printAlgorithmSettings(tol, iter)
     end
 end
 
@@ -1341,8 +1375,6 @@ function verbose2acpf(analysis::ACPowerFlow{GaussSeidel}, tol::Float64, iter::In
 
         print("Number of complex equations:")
         print(format(Format("%*i\n\n"), wd1 + wd2 - 28, stapq + 3 * stapv))
-
-        printAlgorithmSettings(tol, iter)
     end
 end
 

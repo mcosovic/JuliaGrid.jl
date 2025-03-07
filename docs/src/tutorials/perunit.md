@@ -199,8 +199,8 @@ nothing # hide
 ##### Results
 Now, we can examine some results in SI units:
 ```@example power
-@voltage(kV, deg, V)
-@power(MW, MVAr, MVA)
+@voltage(kV, deg)
+@power(MW, MVAr)
 
 show = Dict("Power Generation" => false, "Shunt Power" => false)
 printBusData(system, analysis; show)
@@ -217,7 +217,7 @@ using JuliaGrid # hide
 @default(template) # hide
 
 @voltage(kV, deg, kV)
-@power(MW, MVAr, MVA)
+@power(MW, MVAr)
 @parameter(Ω, S)
 
 system = powerSystem()
@@ -311,7 +311,7 @@ nothing # hide
 Now, we will examine the results in per-units:
 ```@example power
 @voltage(pu, rad, V)
-@power(pu, pu, pu)
+@power(pu, pu)
 
 show = Dict("Power Generation" => false, "Shunt Power" => false)
 printBusData(system, analysis; show)

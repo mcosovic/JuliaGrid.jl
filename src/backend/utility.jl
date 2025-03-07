@@ -460,6 +460,12 @@ function printOptimal(jump::JuMP.Model, verbose::Int64)
             status = termination_status(jump)
             if status == MOI.ITERATION_LIMIT
                 println("EXIT: The maximum number of iterations exceeded.")
+            elseif status == MOI.ALMOST_LOCALLY_SOLVED
+                println("EXIT: Solved To Acceptable Level.")
+            elseif status == MOI.LOCALLY_INFEASIBLE
+                println("EXIT: Converged to a point of local infeasibility. Problem may be infeasible.")
+            elseif status == MOI.NUMERICAL_ERROR
+                println("EXIT: Restoration Failed!")
             else
                 println("EXIT: The optimal solution was not found.")
             end
