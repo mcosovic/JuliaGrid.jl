@@ -26,6 +26,7 @@ updateBus!(system; label = "Bus 3", type = 1, active = 2.3, reactive = 0.2)
 updateGenerator!(system; label = "Generator 1", active = 3.3, reactive = 2.1)
 
 acModel!(system)
+
 powerFlow = newtonRaphson(system)
 powerFlow!(system, powerFlow; verbose = 1)
 
@@ -78,7 +79,7 @@ stateEstimation!(system, analysis; power = true, verbose = 1)
 printBusData(system, analysis; show)
 
 ##### Modifying Measurement Set #####
-updateAmmeter!(system, analysis; label = "Meter 4", status = 1)
+updateAmmeter!(system, device, analysis; label = "Meter 4", status = 1)
 updateAmmeter!(system, device, analysis; label = "Meter 5", status = 1)
 
 stateEstimation!(system, analysis; power = true, verbose = 1)

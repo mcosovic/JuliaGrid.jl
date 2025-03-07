@@ -33,9 +33,8 @@ dcModel!(system)
 ##### Measurement Model #####
 device = measurement()
 
-powerFlow = dcOptimalPowerFlow(system, Ipopt.Optimizer; verbose = 1)
-solve!(system, powerFlow)
-power!(system, powerFlow)
+powerFlow = dcOptimalPowerFlow(system, Ipopt.Optimizer)
+powerFlow!(system, powerFlow; power = true, verbose = 1)
 
 printBusData(system, powerFlow)
 @wattmeter(label = "Wattmeter ?")
@@ -52,8 +51,7 @@ printWattmeterData(system, device)
 
 ##### Base Case Analysis #####
 analysis = dcStateEstimation(system, device)
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 
 printBusData(system, analysis)
 printWattmeterData(system, device, analysis)
@@ -62,19 +60,16 @@ printWattmeterData(system, device, analysis)
 updateWattmeter!(system, device, analysis; label = "Wattmeter 7", active = 1.1)
 updateWattmeter!(system, device, analysis; label = "Wattmeter 8", active = 1.6)
 
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 printBusData(system, analysis)
 
 analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 printBusData(system, analysis)
 
 ##### Modifying Measurement Set #####
 updateWattmeter!(system, device, analysis; label = "Wattmeter 1", status = 0)
 updateWattmeter!(system, device, analysis; label = "Wattmeter 5", status = 0)
 
-solve!(system, analysis)
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true, verbose = 1)
 printBusData(system, analysis)
