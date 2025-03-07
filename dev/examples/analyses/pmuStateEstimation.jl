@@ -42,7 +42,7 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 4", active = 0.412, reac
 
 acModel!(system)
 powerFlow = newtonRaphson(system)
-acPowerFlow!(system, powerFlow; verbose = 1)
+powerFlow!(system, powerFlow; verbose = 1)
 
 @pmu(label = "!")
 for (bus, idx) in placement.bus
