@@ -700,7 +700,7 @@ function pmuPlacement(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
 
-    silentOptimal(jump, verbose)
+    silentJump(jump, verbose)
     set_string_names_on_creation(jump, name)
 
     placement = @variable(jump, 0 <= placement[i = 1:bus.number] <= 1, Int)
