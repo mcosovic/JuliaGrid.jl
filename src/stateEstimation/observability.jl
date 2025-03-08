@@ -733,7 +733,7 @@ function pmuPlacement(
         end
     end
 
-    printOptimal(jump, verbose)
+    printExit(jump, verbose)
 
     return placementPmu
 end
