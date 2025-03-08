@@ -129,7 +129,7 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
 end
 
 """
-    powerFlow!(system::PowerSystem, analysis::DCPowerFlow; power, verbose)
+    powerFlow!(system::PowerSystem, analysis::DCPowerFlow, [io::IO]; power, verbose)
 
 The function serves as a wrapper for solving DC power flow and includes the functions:
 * [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)),
@@ -142,6 +142,8 @@ Users can use the following keywords:
 * `power`: Enables the computation of powers (default: `false`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
+To redirect the output display, users can pass the `IO` object as the last argument.
+
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -153,44 +155,19 @@ powerFlow!(system, analysis; power = true, verbose = 1)
 """
 function powerFlow!(
     system::PowerSystem,
-    analysis::DCPowerFlow;
+    analysis::DCPowerFlow,
+    io::IO = stdout;
     power::Bool = false,
     verbose::Int64 = template.config.verbose
 )
-    verbose3dcpf(system, verbose)
-    verbose2dcpf(system, verbose)
+    printTop(system, analysis, verbose, io)
+    printMiddle(system, analysis, verbose, io)
 
     solve!(system, analysis)
+
+    printExit(analysis, verbose, io)
+
     if power
         power!(system, analysis)
-    end
-
-    verbose1dcpf(verbose)
-end
-
-function verbose3dcpf(system::PowerSystem, verbose::Int64)
-    npq = count(x -> x == 1, system.bus.layout.type)
-    verbose3acpf(system, npq, verbose)
-end
-
-function verbose2dcpf(system::PowerSystem, verbose::Int64)
-    if verbose == 2 || verbose == 3
-        entries = nnz(system.model.dc.nodalMatrix)
-        maxmess = "Number of entries in the nodal matrix:"
-
-        wd1 = textwidth(string(entries)) + 1
-        wd2 = textwidth(maxmess)
-
-        print(maxmess)
-        print(format(Format("%*i\n"), wd1, entries))
-
-        print("Number of state variables:")
-        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, system.bus.number - 1))
-    end
-end
-
-function verbose1dcpf(verbose::Int64)
-    if verbose != 0
-        println("EXIT: The solution of the DC power flow was found.")
     end
 end

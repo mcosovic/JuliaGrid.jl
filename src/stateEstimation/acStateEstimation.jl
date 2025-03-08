@@ -988,7 +988,7 @@ function solve!(
     volt = analysis.voltage
     verbose = se.jump.ext[:verbose]
 
-    silentOptimal(se.jump, verbose)
+    silentJump(se.jump, verbose)
 
     @inbounds for i = 1:bus.number
         set_start_value(se.statex[i]::VariableRef, bus.voltage.angle[i])
@@ -1002,7 +1002,7 @@ function solve!(
         volt.magnitude[i] = value(se.state.V[i])
     end
 
-    printOptimal(se.jump, verbose)
+    printExit(se.jump, verbose)
 end
 
 """
@@ -1182,7 +1182,7 @@ function nthIndices!(
 end
 
 """
-    stateEstimation!(system::PowerSystem, analysis::ACStateEstimation;
+    stateEstimation!(system::PowerSystem, analysis::ACStateEstimation, [io::IO];
         iteration, tolerance, power, current, verbose)
 
 The function serves as a wrapper for solving AC state estimation and includes the functions:
@@ -1206,6 +1206,8 @@ whereas for the LAV model, it defines the allowed deviation from the optimal sol
 If `iteration` and `tolerance` are not specified for the LAV model, the optimization solver
 settings are used.
 
+To redirect the output display, users can pass the `IO` object as the last argument.
+
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -1217,7 +1219,8 @@ stateEstimation!(system, analysis; stopping = 1e-10, current = true, verbose = 3
 """
 function stateEstimation!(
     system::PowerSystem,
-    analysis::ACStateEstimation{NonlinearWLS{T}};
+    analysis::ACStateEstimation{NonlinearWLS{T}},
+    io::IO = stdout;
     iteration::Int64 = 40,
     tolerance::Float64 = 1e-8,
     power::Bool = false,
@@ -1227,14 +1230,14 @@ function stateEstimation!(
 
     converged = false
 
-    verbose3acse(analysis, verbose)
-    verbose2Aacse(system, analysis, verbose)
+    printTop(analysis, verbose, io)
+    printMiddle(system, analysis, verbose, io)
 
     saveIter = 0
     for iter = 1:iteration
         increment = solve!(system, analysis)
 
-        verbose2Bacse(analysis, iter, increment, verbose)
+        printSolver(analysis, iter, increment, verbose, io)
         if increment < tolerance
             saveIter = iter
             converged = true
@@ -1242,8 +1245,8 @@ function stateEstimation!(
         end
     end
 
-    verbose2Cacse(system, analysis, verbose)
-    verbose1acse(saveIter, converged, verbose)
+    printSolver(system, analysis, verbose, io)
+    printExit(analysis, saveIter, iteration, converged, verbose, io)
 
     if power
         power!(system, analysis)
@@ -1260,17 +1263,13 @@ function stateEstimation!(
     tolerance::FltIntMiss = missing,
     power::Bool = false,
     current::Bool = false,
-    verbose::Int64 = template.config.verbose
+    verbose::IntMiss = missing
 )
-    if !ismissing(iteration)
-        set_attribute(analysis.method.jump, "max_iter", iteration)
-    end
-    if !ismissing(tolerance)
-        set_attribute(analysis.method.jump, "tol", tolerance)
-    end
-    analysis.method.jump.ext[:verbose] = verbose
+    verbose = setJumpVerbose(analysis.method.jump, template, verbose)
+    setAttribute(analysis.method.jump, iteration, tolerance, verbose)
 
-    verbose3acse(analysis, verbose)
+    printTop(analysis, verbose)
+
     solve!(system, analysis)
 
     if power
@@ -1280,197 +1279,3 @@ function stateEstimation!(
         current!(system, analysis)
     end
 end
-
-function verbose3acse(
-    analysis::ACStateEstimation{NonlinearWLS{T}},
-    verbose::Int64
-) where T <: Union{Normal, Orthogonal}
-
-    if verbose == 3
-        range = analysis.method.range
-        type = analysis.method.type
-
-        vol = count(x -> x == 0, type[range[1]:range[2] - 1])
-        amp = count(x -> x == 0, type[range[2]:range[3] - 1])
-        wat = count(x -> x == 0, type[range[3]:range[4] - 1])
-        var = count(x -> x == 0, type[range[4]:range[5] - 1])
-        pmu = Int64(count(x -> x == 0, type[range[5]:range[6] - 1]) / 2)
-
-        verbose3acse(range, vol, amp, wat, var, pmu, verbose)
-    end
-end
-
-function verbose3acse(analysis::ACStateEstimation{LAV}, verbose::Int64)
-    if verbose == 3
-        range = analysis.method.range
-        type = is_fixed.(analysis.method.residualx)
-
-        vol = count(x -> x == 1, type[range[1]:range[2] - 1])
-        amp = count(x -> x == 1, type[range[2]:range[3] - 1])
-        wat = count(x -> x == 1, type[range[3]:range[4] - 1])
-        var = count(x -> x == 1, type[range[4]:range[5] - 1])
-        pmu = Int64(count(x -> x == 1, type[range[5]:range[6] - 1]) / 2)
-
-        verbose3acse(range, vol, amp, wat, var, pmu, verbose)
-    end
-end
-
-function verbose3acse(
-    range::Vector{Int64},
-    volo::Int64,
-    ampo::Int64,
-    wato::Int64,
-    varo::Int64,
-    pmuo::Int64,
-    verbose::Int64
-)
-    if verbose == 3
-        vol = range[2] - range[1]
-        amp = range[3] - range[2]
-        wat = range[4] - range[3]
-        var = range[5] - range[4]
-        pmu = Int64((range[6] - range[5]) / 2)
-        dev = vol + amp + wat + var + pmu
-
-        col1 = max(textwidth(string(wat)), textwidth(string(amp)))
-        col2 = max(textwidth(string(var)),textwidth(string(pmu)))
-        col3 = textwidth(string(dev))
-
-        print("Number of wattmeters: ")
-        print(format(Format("%*i"), col1, wat))
-
-        print("   Number of varmeters: ")
-        print(format(Format("%*i"), col2, var))
-
-        print("   Number of voltmeters: ")
-        print(format(Format("%*i\n"), col3, vol))
-
-        print("  In-service:         ")
-        print(format(Format("%*i"), col1, wat - wato))
-
-        print("     In-service:        ")
-        print(format(Format("%*i"), col2, var - varo))
-
-        print("     In-service:         ")
-        print(format(Format("%*i\n"), col3, vol - volo))
-
-        print("  Out-of-service:     ")
-        print(format(Format("%*i"), col1, wato))
-
-        print("     Out-of-service:    ")
-        print(format(Format("%*i"), col2, varo))
-
-        print("     Out-of-service:     ")
-        print(format(Format("%*i\n\n"), col3, volo))
-
-        print("Number of ammeters:   ")
-        print(format(Format("%*i"), col1, amp))
-
-        print("   Number of PMUs:      ")
-        print(format(Format("%*i"), col2, pmu))
-
-        print("   Number of devices:    ")
-        print(format(Format("%*i\n"), col3, dev))
-
-        print("  In-service:         ")
-        print(format(Format("%*i"), col1, amp - ampo))
-
-        print("     In-service:        ")
-        print(format(Format("%*i"), col2, pmu - pmuo))
-
-        print("     In-service:         ")
-        print(format(Format("%*i\n"), col3, dev - volo - ampo - wato - varo - pmuo))
-
-        print("  Out-of-service:     ")
-        print(format(Format("%*i"), col1, ampo))
-
-        print("     Out-of-service:    ")
-        print(format(Format("%*i"), col2, pmuo))
-
-        print("     Out-of-service:     ")
-        print(format(Format("%*i\n\n"), col3, volo + ampo + wato + varo + pmuo))
-    end
-end
-
-function verbose2Aacse(system::PowerSystem, analysis::ACStateEstimation, verbose::Int64)
-    if verbose == 2 || verbose == 3
-        wd = textwidth(string(nnz(analysis.method.jacobian))) + 1
-        mwd = textwidth("Number of entries in the Jacobian matrix:")
-        tot = wd + mwd
-
-        print("Number of entries in the Jacobian matrix:")
-        print(format(Format("%*i\n"), wd, nnz(analysis.method.jacobian)))
-
-        print("Number of measurement functions:")
-        print(format(Format("%*i\n"), tot - 32, lastindex(analysis.method.mean)))
-
-        print("Number of state variables:")
-        print(format(Format("%*i\n"), tot - 26, lastindex(analysis.method.increment) - 1))
-
-        print("Number of buses:")
-        print(format(Format("%*i\n"), tot - 16, system.bus.number))
-
-        print("Number of branches:")
-        print(format(Format("%*i\n\n"), tot - 19, system.branch.number))
-    end
-end
-
-function verbose2Bacse(analysis::ACStateEstimation, iter::Int64, stopping::Float64, verbose::Int64)
-    if verbose == 2 || verbose == 3
-        if iter % 10 == 1
-            println("Iteration   Maximum Increment   Objective Value")
-        end
-        print(format(Format("%*i "), 9, iter))
-        print(format(Format("%*.4e"), 19, stopping))
-
-        print(format(Format("%*.8e\n"), 18, analysis.method.objective))
-    end
-end
-
-function verbose2Cacse(
-    system::PowerSystem,
-    analysis,
-    verbose::Int64
-)
-    if verbose == 2 || verbose == 3
-        slack = copy(analysis.method.increment[system.bus.layout.slack])
-
-        analysis.method.increment[system.bus.layout.slack] = -Inf
-        angmax = maximum(analysis.method.increment[1:system.bus.number])
-
-        analysis.method.increment[system.bus.layout.slack] = Inf
-        angmin = minimum(analysis.method.increment[1:system.bus.number])
-
-        analysis.method.increment[system.bus.layout.slack] = slack
-
-        mag = extrema(analysis.method.increment[(system.bus.number + 1):end])
-
-        print("\n" * " "^21 * "Minimum Value   Maximum Value")
-
-        print("\nMagnitude Increment:")
-        print(format(Format("%*.4e"), 14, mag[1]))
-        print(format(Format("%*.4e\n"), 16, mag[2]))
-
-        print("Angle Increment:")
-        print(format(Format("%*.4e"), 18, angmin))
-        print(format(Format("%*.4e\n\n"), 16, angmax))
-    end
-end
-
-function verbose1acse(
-    iter::Int64,
-    converged::Bool,
-    verbose::Int64,
-)
-    if verbose != 0
-        if converged
-            println(
-                "EXIT: The solution was found using the Gauss-Newton" *
-                " method in $iter iterations."
-            )
-        else
-            println("EXIT: The Gauss-Newton method failed to converge.")
-        end
-    end
-end
-

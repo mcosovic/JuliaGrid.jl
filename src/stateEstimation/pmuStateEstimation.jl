@@ -447,7 +447,7 @@ function solve!(
     bus = system.bus
     verbose = se.jump.ext[:verbose]
 
-    silentOptimal(se.jump, verbose)
+    silentJump(se.jump, verbose)
 
     @inbounds for i = 1:system.bus.number
         set_start_value(
@@ -477,7 +477,7 @@ function solve!(
         analysis.voltage.angle[i] = angle(voltage)
     end
 
-    printOptimal(se.jump, verbose)
+    printExit(se.jump, verbose)
 end
 
 ##### Indices of the Coefficient Matrix #####
@@ -492,7 +492,7 @@ function pmuIndices(cff::SparseModel, co1::Int64, col2::Int64)
 end
 
 """
-    stateEstimation!(system::PowerSystem, analysis::PMUStateEstimation;
+    stateEstimation!(system::PowerSystem, analysis::PMUStateEstimation, [io::IO];
         iteration, tolerance, power, verbose)
 
 The function serves as a wrapper for solving PMU state estimation and includes the functions:
@@ -511,8 +511,9 @@ Users can use the following keywords:
 * `current`: Enables the computation of currents (default: `false`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
-If `iteration` and `tolerance` are not specified for the LAV model, the optimization solver
-settings are used.
+If `iteration` and `tolerance` are not specified, the optimization solver settings are used.
+
+To redirect the output display, users can pass the `IO` object as the last argument.
 
 # Example
 ```jldoctest
@@ -525,7 +526,8 @@ stateEstimation!(system, analysis; power = true, verbose = 3)
 """
 function stateEstimation!(
     system::PowerSystem,
-    analysis::PMUStateEstimation{LinearWLS{T}};
+    analysis::PMUStateEstimation{LinearWLS{T}},
+    io::IO = stdout;
     iteration::Int64 = 40,
     tolerance::Float64 = 1e-8,
     power::Bool = false,
@@ -533,10 +535,12 @@ function stateEstimation!(
     verbose::Int64 = template.config.verbose
 )  where T <: Union{Normal, Orthogonal}
 
-    verbose3pmuse(system, analysis, verbose)
+    printMiddle(system, analysis, verbose, io)
+
     solve!(system, analysis)
 
-    verbose1pmuse(verbose)
+    printExit(analysis, verbose, io)
+
     if power
         power!(system, analysis)
     end
@@ -552,15 +556,10 @@ function stateEstimation!(
     tolerance::Float64 = 1e-8,
     power::Bool = false,
     current::Bool = false,
-    verbose::Int64 = template.config.verbose
+    verbose::IntMiss = missing
 )
-    if !ismissing(iteration)
-        set_attribute(analysis.method.jump, "max_iter", iteration)
-    end
-    if !ismissing(tolerance)
-        set_attribute(analysis.method.jump, "tol", tolerance)
-    end
-    analysis.method.jump.ext[:verbose] = verbose
+    verbose = setJumpVerbose(analysis.method.jump, template, verbose)
+    setAttribute(analysis.method.jump, iteration, tolerance, verbose)
 
     solve!(system, analysis)
 
@@ -569,35 +568,5 @@ function stateEstimation!(
     end
     if current
         current!(system, analysis)
-    end
-end
-
-function verbose3pmuse(
-    system::PowerSystem,
-    analysis::PMUStateEstimation{LinearWLS{T}},
-    verbose::Int64
-) where T <: Union{Normal, Orthogonal}
-
-    if verbose == 2 || verbose == 3
-        entries = nnz(analysis.method.coefficient)
-        maxmess = "Number of entries in the coefficient matrix:"
-
-        wd1 = textwidth(string(entries)) + 1
-        wd2 = textwidth(maxmess)
-
-        print(maxmess)
-        print(format(Format("%*i\n"), wd1, entries))
-
-        print("Number of measurement functions:")
-        print(format(Format("%*i\n"), wd1 + wd2 - 32, lastindex(analysis.method.mean)))
-
-        print("Number of state variables:")
-        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, 2 * system.bus.number))
-    end
-end
-
-function verbose1pmuse(verbose::Int64)
-    if verbose != 0
-        println("EXIT: The solution of the PMU state estimation was found.")
     end
 end

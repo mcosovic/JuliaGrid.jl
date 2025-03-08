@@ -436,7 +436,7 @@ function solve!(
     verbose = se.jump.ext[:verbose]
     slackAngle = system.bus.voltage.angle[system.bus.layout.slack]
 
-    silentOptimal(se.jump, verbose)
+    silentJump(se.jump, verbose)
 
     @inbounds for i = 1:system.bus.number
         set_start_value(se.statex[i]::VariableRef, analysis.voltage.angle[i] - slackAngle)
@@ -449,7 +449,7 @@ function solve!(
             value(se.statex[i]::VariableRef) - value(se.statey[i]::VariableRef) + slackAngle
     end
 
-    printOptimal(se.jump, verbose)
+    printExit(se.jump, verbose)
 end
 
 ##### Indices of the Coefficient Matrix #####
@@ -488,7 +488,7 @@ function addSlackCoeff(
 end
 
 """
-    stateEstimation!(system::PowerSystem, analysis::DCStateEstimation;
+    stateEstimation!(system::PowerSystem, analysis::DCStateEstimation, [io::IO];
         iteration, tolerance, power, verbose)
 
 The function serves as a wrapper for solving DC state estimation and includes the functions:
@@ -504,8 +504,9 @@ Users can use the following keywords:
 * `power`: Enables the computation of powers (default: `false`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
-If `iteration` and `tolerance` are not specified for the LAV model, the optimization solver
-settings are used.
+If `iteration` and `tolerance` are not specified, the optimization solver settings are used.
+
+To redirect the output display, users can pass the `IO` object as the last argument.
 
 # Example
 ```jldoctest
@@ -518,17 +519,20 @@ stateEstimation!(system, analysis; power = true, verbose = 3)
 """
 function stateEstimation!(
     system::PowerSystem,
-    analysis::DCStateEstimation{LinearWLS{T}};
+    analysis::DCStateEstimation{LinearWLS{T}},
+    io::IO = stdout;
     iteration::IntMiss = missing,
     tolerance::FltIntMiss = missing,
     power::Bool = false,
     verbose::Int64 = template.config.verbose
 )  where T <: Union{Normal, Orthogonal}
 
-    verbose3dcse(system, analysis, verbose)
+    printMiddle(system, analysis, verbose, io)
+
     solve!(system, analysis)
 
-    verbose1dcse(verbose)
+    printExit(analysis, verbose, io)
+
     if power
         power!(system, analysis)
     end
@@ -540,49 +544,14 @@ function stateEstimation!(
     iteration::IntMiss = missing,
     tolerance::FltIntMiss = missing,
     power::Bool = false,
-    verbose::Int64 = template.config.verbose
+    verbose::IntMiss = missing
 )
-    if !ismissing(iteration)
-        set_attribute(analysis.method.jump, "max_iter", iteration)
-    end
-    if !ismissing(tolerance)
-        set_attribute(analysis.method.jump, "tol", tolerance)
-    end
-    analysis.method.jump.ext[:verbose] = verbose
+    verbose = setJumpVerbose(analysis.method.jump, template, verbose)
+    setAttribute(analysis.method.jump, iteration, tolerance, verbose)
 
     solve!(system, analysis)
 
     if power
         power!(system, analysis)
-    end
-end
-
-function verbose3dcse(
-    system::PowerSystem,
-    analysis::DCStateEstimation{LinearWLS{T}},
-    verbose::Int64
-) where T <: Union{Normal, Orthogonal}
-
-    if verbose == 2 || verbose == 3
-        entries = nnz(analysis.method.coefficient)
-        maxmess = "Number of entries in the coefficient matrix:"
-
-        wd1 = textwidth(string(entries)) + 1
-        wd2 = textwidth(maxmess)
-
-        print(maxmess)
-        print(format(Format("%*i\n"), wd1, entries))
-
-        print("Number of measurement functions:")
-        print(format(Format("%*i\n"), wd1 + wd2 - 32, lastindex(analysis.method.mean)))
-
-        print("Number of state variables:")
-        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, system.bus.number - 1))
-    end
-end
-
-function verbose1dcse(verbose::Int64)
-    if verbose != 0
-        println("EXIT: The solution of the DC state estimation was found.")
     end
 end

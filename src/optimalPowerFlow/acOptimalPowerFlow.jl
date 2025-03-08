@@ -71,17 +71,7 @@ function acOptimalPowerFlow(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
-
-    if !ismissing(iteration)
-        set_attribute(jump, "max_iter", iteration)
-    end
-    if !ismissing(tolerance)
-        set_attribute(jump, "tol", tolerance)
-    end
-    if verbose == 2
-        verbose = 3
-    end
-    jump.ext[:verbose] = verbose
+    setAttribute(jump, iteration, tolerance, verbose)
 
     active = @variable(jump, active[i = 1:gen.number], base_name = active)
     reactive = @variable(jump, reactive[i = 1:gen.number], base_name = reactive)
@@ -309,7 +299,7 @@ function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     jump = analysis.method.jump
     verbose = analysis.method.jump.ext[:verbose]
 
-    silentOptimal(jump, verbose)
+    silentJump(jump, verbose)
 
     @inbounds for i = 1:system.bus.number
         set_start_value(variable.magnitude[i]::VariableRef, analysis.voltage.magnitude[i]::Float64)
@@ -366,7 +356,7 @@ function solve!(system::PowerSystem, analysis::ACOptimalPowerFlow)
         dual!(jump, constr.piecewise.reactive, dual.piecewise.reactive)
     end
 
-    printOptimal(jump, verbose)
+    printExit(analysis.method.jump, verbose)
 end
 
 function dual!(
@@ -1029,18 +1019,10 @@ function powerFlow!(
     tolerance::FltIntMiss = missing,
     power::Bool = false,
     current::Bool = false,
-    verbose::Int64 = template.config.verbose
+    verbose::IntMiss = missing
 )
-    if !ismissing(iteration)
-        set_attribute(analysis.method.jump, "max_iter", iteration)
-    end
-    if !ismissing(tolerance)
-        set_attribute(analysis.method.jump, "tol", tolerance)
-    end
-    if verbose == 2
-        verbose = 3
-    end
-    analysis.method.jump.ext[:verbose] = verbose
+    verbose = setJumpVerbose(analysis.method.jump, template, verbose)
+    setAttribute(analysis.method.jump, iteration, tolerance, verbose)
 
     solve!(system, analysis)
 

@@ -1146,7 +1146,7 @@ function changeSlackBus!(system::PowerSystem)
 end
 
 """
-    powerFlow!(system::PowerSystem, analysis::ACPowerFlow;
+    powerFlow!(system::PowerSystem, analysis::ACPowerFlow, [io::IO];
         iteration, tolerance, power, current, verbose)
 
 The function serves as a wrapper for solving AC power flow and includes the functions:
@@ -1166,6 +1166,8 @@ Users can use the following keywords:
 * `current`: Enables current computation upon convergence or reaching the iteration limit (default: `false`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
+To redirect the output display, users can pass the `IO` object as the last argument.
+
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -1177,7 +1179,8 @@ powerFlow!(system, analysis; iteration = 30, tolerance = 1e-10, power = true, ve
 """
 function powerFlow!(
     system::PowerSystem,
-    analysis::ACPowerFlow;
+    analysis::ACPowerFlow,
+    io::IO = stdout;
     iteration::Int64 = 20,
     tolerance::Float64 = 1e-8,
     power::Bool = false,
@@ -1186,14 +1189,14 @@ function powerFlow!(
 )
     converged = false
 
-    verbose3acpf(system, npq(system, analysis), verbose)
-    verbose2acpf(analysis, tolerance, iteration, verbose)
+    printTop(system, analysis, verbose, io)
+    printMiddle(analysis, verbose, io)
 
     saveIter = 0
     for iter = 0:iteration
         delP, delQ = mismatch!(system, analysis)
 
-        verbose2acpf(iter, delP, delQ, verbose)
+        printSolver(iter, delP, delQ, verbose, io)
         saveIter = iter
 
         if delP < tolerance && delQ < tolerance
@@ -1203,9 +1206,9 @@ function powerFlow!(
 
         solve!(system, analysis)
     end
+    printSolver(system, analysis, verbose, io)
 
-    verbose2acpf(system, analysis, verbose)
-    verbose1acpf(analysis, saveIter, iteration, converged, verbose)
+    printExit(analysis, saveIter, iteration, converged, verbose, io)
 
     if power
         power!(system, analysis)
@@ -1213,255 +1216,4 @@ function powerFlow!(
     if current
         current!(system, analysis)
     end
-end
-
-function verbose3acpf(system::PowerSystem, npq::Int64, verbose::Int64)
-    if verbose == 3
-        bus = system.bus
-        brc = system.branch
-        gen = system.generator
-
-        shunt = fill(0.0, 3)
-        @inbounds for i = 1:system.bus.number
-            if bus.shunt.susceptance[i] != 0.0 || bus.shunt.conductance[i] != 0.0
-                shunt[1] += 1
-                if bus.shunt.susceptance[i] > 0.0
-                    shunt[2] += 1
-                elseif bus.shunt.susceptance[i] < 0.0
-                    shunt[3] += 1
-                end
-            end
-        end
-
-        tran = fill(0.0, 3)
-        @inbounds for i = 1:brc.number
-            if brc.parameter.turnsRatio[i] != 1.0 || brc.parameter.shiftAngle[i] != 0.0
-                tran[1] += 1
-                if brc.layout.status[i] == 1
-                    tran[2] += 1
-                end
-            end
-        end
-        tran[3] = tran[1] - tran[2]
-
-        col1 = max(textwidth(string(bus.number)), textwidth(string(brc.number)))
-        col2 = max(textwidth(string(shunt[1])), textwidth(string(brc.number - tran[1])))
-        col3 = max(textwidth(string(gen.number)), textwidth(string(tran[1])))
-
-        print("Number of buses:    ")
-        print(format(Format("%*i"), col1, bus.number))
-
-        print("   Number of shunts: ")
-        print(format(Format("%*i"), col2, shunt[1]))
-
-        print("   Number of generators:   ")
-        print(format(Format("%*i\n"), col3, gen.number))
-
-        print("  Demands:          ")
-        print(format(Format("%*i"), col1, npq))
-
-        print("     Capacitive:     ")
-        print(format(Format("%*i"), col2, shunt[2]))
-
-        print("     In-service:           ")
-        print(format(Format("%*i\n"), col3, gen.layout.inservice))
-
-        print("  Generators:       ")
-        print(format(Format("%*i"), col1, bus.number - 1 - npq))
-
-        print("     Inductive:      ")
-        print(format(Format("%*i"), col2, shunt[3]))
-
-        print("     Out-of-service:       ")
-        print(format(Format("%*i\n\n"), col3, gen.number - gen.layout.inservice))
-
-        print("Number of branches: ")
-        print(format(Format("%*i"), col1, brc.number))
-
-        print("   Number of Lines:  ")
-        print(format(Format("%*i"), col2, brc.number - tran[1]))
-
-        print("   Number of transformers: ")
-        print(format(Format("%*i\n"), col3, tran[1]))
-
-        print("  In-service:       ")
-        print(format(Format("%*i"), col1, brc.layout.inservice))
-
-        print("     In-service:     ")
-        print(format(Format("%*i"), col2, brc.layout.inservice - tran[2]))
-
-        print("     In-service:           ")
-        print(format(Format("%*i\n"), col3, tran[2]))
-
-        print("  Out-of-service:   ")
-        print(format(Format("%*i"), col1, brc.number - brc.layout.inservice))
-
-        print("     Out-of-service: ")
-        print(format(Format("%*i"), col2, brc.number - brc.layout.inservice - tran[3]))
-
-        print("     Out-of-service:       ")
-        print(format(Format("%*i\n\n"), col3, tran[3]))
-    end
-end
-
-function npq(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
-    lastindex(analysis.method.increment) - system.bus.number + 1
-end
-
-function npq(::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
-    lastindex(analysis.method.reactive.increment)
-end
-
-function npq(::PowerSystem, analysis::ACPowerFlow{GaussSeidel})
-    lastindex(analysis.method.pq)
-end
-
-function verbose2acpf(analysis::ACPowerFlow{NewtonRaphson}, tol::Float64, iter::Int64, verbose::Int64)
-    if verbose == 2 || verbose == 3
-        entri = nnz(analysis.method.jacobian)
-        state = lastindex(analysis.method.increment)
-        maxms = "Number of entries in the Jacobian matrix:"
-
-        wd1 = textwidth(string(entri)) + 1
-        wd2 = textwidth(maxms)
-
-        print(maxms)
-        print(format(Format("%*i\n"), wd1, entri))
-
-        print("Number of state variables:")
-        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, state))
-    end
-end
-
-function verbose2acpf(analysis::ACPowerFlow{FastNewtonRaphson}, tol::Float64, iter::Int64, verbose::Int64)
-    if verbose == 2 || verbose == 3
-        method = analysis.method
-
-        activ = nnz(method.active.jacobian)
-        react = nnz(method.reactive.jacobian)
-        entri = activ + react
-        state = lastindex(method.active.increment) + lastindex(method.reactive.increment)
-        maxms = "Number of entries in the Jacobian matrices:"
-
-        wd1 = textwidth(string(entri)) + 1
-        wd2 = textwidth(maxms)
-
-        print(maxms)
-        print(format(Format("%*i\n"), wd1, entri))
-
-        print("  Active Power:")
-        print(format(Format("%*i\n"), wd1 + wd2 - 15, activ))
-
-        print("  Reactive Power:")
-        print(format(Format("%*i\n"), wd1 + wd2 - 17, react))
-
-        print("Number of state variables:")
-        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, state))
-    end
-end
-
-function verbose2acpf(analysis::ACPowerFlow{GaussSeidel}, tol::Float64, iter::Int64, verbose::Int64)
-    if verbose == 2 || verbose == 3
-        stapq = lastindex(analysis.method.pq)
-        stapv = lastindex(analysis.method.pv)
-        state = stapq + stapv
-        maxms = "Number of complex state variables:"
-
-        wd1 = textwidth(string(state)) + 1
-        wd2 = textwidth(maxms)
-
-        print("Number of complex state variables:")
-        print(format(Format("%*i\n"), wd1, state))
-
-        print("Number of complex equations:")
-        print(format(Format("%*i\n\n"), wd1 + wd2 - 28, stapq + 3 * stapv))
-    end
-end
-
-function verbose2acpf(iter::Int64, delP::Float64, delQ::Float64, verbose::Int64)
-    if verbose == 2 || verbose == 3
-        if iter % 10 == 0
-            println("Iteration   Active Mismatch   Reactive Mismatch")
-        end
-        print(format(Format("%*i "), 9, iter))
-        print(format(Format("%*.4e"), 17, delP))
-        print(format(Format("%*.4e\n"), 20, delQ))
-    end
-end
-
-function verbose2acpf(
-    system::PowerSystem,
-    analysis::ACPowerFlow{T},
-    verbose::Int64
-) where T <: Union{NewtonRaphson, FastNewtonRaphson}
-
-    if verbose == 2 || verbose == 3
-        mag, ang = minmaxIncrement(system, analysis)
-
-        print("\n" * " "^21 * "Minimum Value   Maximum Value")
-
-        print("\nMagnitude Increment:")
-        print(format(Format("%*.4e"), 14, mag[1]))
-        print(format(Format("%*.4e\n"), 16, mag[2]))
-
-        print("Angle Increment:")
-        print(format(Format("%*.4e"), 18, ang[1]))
-        print(format(Format("%*.4e\n\n"), 16, ang[2]))
-    end
-end
-
-function verbose2acpf(
-    ::PowerSystem,
-    ::ACPowerFlow{GaussSeidel},
-    verbose::Int64,
-)
-    if verbose == 2 || verbose == 3
-        print("\n")
-    end
-end
-
-function minmaxIncrement(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
-    extrema(analysis.method.increment[1:(system.bus.number - 1)]),
-    extrema(analysis.method.increment[system.bus.number:end])
-end
-
-function minmaxIncrement(::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
-    extrema(analysis.method.active.increment),
-    extrema(analysis.method.reactive.increment)
-end
-
-function verbose1acpf(
-    analysis::ACPowerFlow,
-    iter::Int64,
-    maxiter::Int64,
-    converged::Bool,
-    verbose::Int64,
-)
-    if verbose != 0
-        method = printMethodName(analysis)
-        if converged
-            println(
-                "EXIT: The solution was found using the " * method *
-                " method in $iter iterations."
-            )
-        else
-            if iter == maxiter
-                println("EXIT: The maximum number of iterations exceeded.")
-            else
-                println("EXIT: The " * method * " method failed to converge.")
-            end
-        end
-    end
-end
-
-function printMethodName(::ACPowerFlow{NewtonRaphson})
-    "Newton-Raphson"
-end
-
-function printMethodName(::ACPowerFlow{FastNewtonRaphson})
-    "fast Newton-Raphson"
-end
-
-function printMethodName(::ACPowerFlow{GaussSeidel})
-    "Gauss-Seidel"
 end

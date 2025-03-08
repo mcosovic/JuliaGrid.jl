@@ -27,6 +27,7 @@ include("print/utility.jl")
 include("print/powerSystem.jl")
 include("print/constraint.jl")
 include("print/measurement.jl")
+include("print/solver.jl")
 export printBusData, printBranchData, printGeneratorData
 export printBusSummary, printBranchSummary, printGeneratorSummary
 export printBusConstraint, printBranchConstraint, printGeneratorConstraint

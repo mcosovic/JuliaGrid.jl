@@ -452,31 +452,35 @@ function simplifyExpression(expr::String)
     return expr
 end
 
-function printOptimal(jump::JuMP.Model, verbose::Int64)
-    if verbose == 1
-        if is_solved_and_feasible(jump)
-            println("EXIT: The optimal solution was found.")
-        else
-            status = termination_status(jump)
-            if status == MOI.ITERATION_LIMIT
-                println("EXIT: The maximum number of iterations exceeded.")
-            elseif status == MOI.ALMOST_LOCALLY_SOLVED
-                println("EXIT: Solved To Acceptable Level.")
-            elseif status == MOI.LOCALLY_INFEASIBLE
-                println("EXIT: Converged to a point of local infeasibility. Problem may be infeasible.")
-            elseif status == MOI.NUMERICAL_ERROR
-                println("EXIT: Restoration Failed!")
-            else
-                println("EXIT: The optimal solution was not found.")
-            end
-        end
-    end
-end
-
-function silentOptimal(jump::JuMP.Model, verbose::Int64)
+##### JuMP Settings #####
+function silentJump(jump::JuMP.Model, verbose::Int64)
     if verbose == 0 || verbose == 1
         JuMP.set_silent(jump)
     end
+end
+
+function setAttribute(jump::JuMP.Model, iter::IntMiss, tol::FltIntMiss, verbose::Int64)
+    if !ismissing(iter)
+        set_attribute(jump, "max_iter", iter)
+    end
+    if !ismissing(tol)
+        set_attribute(jump, "tol", tol)
+    end
+    if verbose == 2
+        verbose = 3
+    end
+    jump.ext[:verbose] = verbose
+end
+
+function setJumpVerbose(jump::JuMP.Model, template::Template, verbose::IntMiss)
+    if ismissing(verbose) && haskey(jump.ext, :verbose)
+        verbose = jump.ext[:verbose]
+    end
+    if ismissing(verbose)
+        verbose = template.config.verbose
+    end
+
+    return verbose
 end
 
 ##### Error Messages #####
