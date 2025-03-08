@@ -23,9 +23,12 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 18.2)
 
 dcModel!(system)
 
+##### Display Data Settings #####
+@config(verbose = 1)
+
 ##### Base Case Analysis #####
 analysis = dcPowerFlow(system)
-powerFlow!(system, analysis; power = true, verbose = 1)
+powerFlow!(system, analysis; power = true)
 
 printBusData(system, analysis)
 printBranchData(system, analysis)
@@ -37,13 +40,13 @@ updateBus!(system, analysis; label = "Bus 4", active = 42.0)
 updateGenerator!(system, analysis; label = "Generator 1", active = 58.0)
 updateGenerator!(system, analysis; label = "Generator 2", active = 23.0)
 
-powerFlow!(system, analysis; power = true, verbose = 1)
+powerFlow!(system, analysis; power = true)
 
 printBranchData(system, analysis)
 
 ##### Modifying Network Topology #####
 updateBranch!(system, analysis; label = "Branch 3", status = 0)
 
-powerFlow!(system, analysis; power = true, verbose = 1)
+powerFlow!(system, analysis; power = true)
 
 printBranchData(system, analysis)
