@@ -488,7 +488,7 @@ function addSlackCoeff(
 end
 
 """
-    stateEstimation!(system::PowerSystem, analysis::DCStateEstimation, [io::IO];
+    stateEstimation!(system::PowerSystem, analysis::DCStateEstimation;
         iteration, tolerance, power, verbose)
 
 The function serves as a wrapper for solving DC state estimation and includes the functions:
@@ -506,8 +506,6 @@ Users can use the following keywords:
 
 If `iteration` and `tolerance` are not specified, the optimization solver settings are used.
 
-To redirect the output display, users can pass the `IO` object as the last argument.
-
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -519,19 +517,18 @@ stateEstimation!(system, analysis; power = true, verbose = 3)
 """
 function stateEstimation!(
     system::PowerSystem,
-    analysis::DCStateEstimation{LinearWLS{T}},
-    io::IO = stdout;
+    analysis::DCStateEstimation{LinearWLS{T}};
     iteration::IntMiss = missing,
     tolerance::FltIntMiss = missing,
     power::Bool = false,
     verbose::Int64 = template.config.verbose
 )  where T <: Union{Normal, Orthogonal}
 
-    printMiddle(system, analysis, verbose, io)
+    printMiddle(system, analysis, verbose)
 
     solve!(system, analysis)
 
-    printExit(analysis, verbose, io)
+    printExit(analysis, verbose)
 
     if power
         power!(system, analysis)

@@ -129,7 +129,7 @@ function solve!(system::PowerSystem, analysis::DCPowerFlow)
 end
 
 """
-    powerFlow!(system::PowerSystem, analysis::DCPowerFlow, [io::IO]; power, verbose)
+    powerFlow!(system::PowerSystem, analysis::DCPowerFlow; power, verbose)
 
 The function serves as a wrapper for solving DC power flow and includes the functions:
 * [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow)),
@@ -142,8 +142,6 @@ Users can use the following keywords:
 * `power`: Enables the computation of powers (default: `false`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
-To redirect the output display, users can pass the `IO` object as the last argument.
-
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -155,17 +153,16 @@ powerFlow!(system, analysis; power = true, verbose = 1)
 """
 function powerFlow!(
     system::PowerSystem,
-    analysis::DCPowerFlow,
-    io::IO = stdout;
+    analysis::DCPowerFlow;
     power::Bool = false,
     verbose::Int64 = template.config.verbose
 )
-    printTop(system, analysis, verbose, io)
-    printMiddle(system, analysis, verbose, io)
+    printTop(system, analysis, verbose)
+    printMiddle(system, analysis, verbose)
 
     solve!(system, analysis)
 
-    printExit(analysis, verbose, io)
+    printExit(analysis, verbose)
 
     if power
         power!(system, analysis)

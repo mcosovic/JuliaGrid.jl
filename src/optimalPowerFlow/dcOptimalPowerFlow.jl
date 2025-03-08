@@ -515,8 +515,7 @@ powerFlow!(system, analysis; power = true, verbose = 1)
 """
 function powerFlow!(
     system::PowerSystem,
-    analysis::DCOptimalPowerFlow,
-    io::IO = stdout;
+    analysis::DCOptimalPowerFlow;
     iteration::IntMiss = missing,
     tolerance::FltIntMiss = missing,
     power::Bool = false,

@@ -18,12 +18,12 @@ using JuliaGrid
 * [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::ACPowerFlow))
 * [`reactiveLimit!`](@ref reactiveLimit!)
 * [`adjustAngle!`](@ref adjustAngle!)
-* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACPowerFlow, ::IO))
+* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACPowerFlow))
 
 ###### DC Power Flow
 * [`dcPowerFlow`](@ref dcPowerFlow)
 * [`solve!`](@ref solve!(::PowerSystem, ::DCPowerFlow))
-* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::DCPowerFlow, ::IO))
+* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::DCPowerFlow))
 
 ---
 
@@ -38,7 +38,7 @@ solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})
 setInitialPoint!(::PowerSystem, ::ACPowerFlow)
 reactiveLimit!
 adjustAngle!
-powerFlow!(::PowerSystem, ::ACPowerFlow, ::IO)
+powerFlow!(::PowerSystem, ::ACPowerFlow)
 ```
 
 ---
@@ -47,5 +47,5 @@ powerFlow!(::PowerSystem, ::ACPowerFlow, ::IO)
 ```@docs
 dcPowerFlow
 solve!(::PowerSystem, ::DCPowerFlow)
-powerFlow!(::PowerSystem, ::DCPowerFlow, ::IO)
+powerFlow!(::PowerSystem, ::DCPowerFlow)
 ```

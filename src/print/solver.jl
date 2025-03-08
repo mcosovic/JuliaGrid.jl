@@ -3,7 +3,6 @@ function printTop(
     system::PowerSystem,
     analysis::Union{ACPowerFlow, DCPowerFlow},
     verbose::Int64,
-    io::IO
 )
     if verbose == 3
         bus = system.bus
@@ -39,59 +38,59 @@ function printTop(
         col2 = max(textwidth(string(shunt[1])), textwidth(string(brc.number - tran[1])))
         col3 = max(textwidth(string(gen.number)), textwidth(string(tran[1])))
 
-        print(io, "Number of buses:    ")
-        print(io, format(Format("%*i"), col1, bus.number))
+        print("Number of buses:    ")
+        print(format(Format("%*i"), col1, bus.number))
 
-        print(io, "   Number of shunts: ")
-        print(io, format(Format("%*i"), col2, shunt[1]))
+        print("   Number of shunts: ")
+        print(format(Format("%*i"), col2, shunt[1]))
 
-        print(io, "   Number of generators:   ")
-        print(io, format(Format("%*i\n"), col3, gen.number))
+        print("   Number of generators:   ")
+        print(format(Format("%*i\n"), col3, gen.number))
 
-        print(io, "  Demand:           ")
-        print(io, format(Format("%*i"), col1, pq))
+        print("  Demand:           ")
+        print(format(Format("%*i"), col1, pq))
 
-        print(io, "     Capacitor:      ")
-        print(io, format(Format("%*i"), col2, shunt[2]))
+        print("     Capacitor:      ")
+        print(format(Format("%*i"), col2, shunt[2]))
 
-        print(io, "     In-service:           ")
-        print(io, format(Format("%*i\n"), col3, gen.layout.inservice))
+        print("     In-service:           ")
+        print(format(Format("%*i\n"), col3, gen.layout.inservice))
 
-        print(io, "  Generator:        ")
-        print(io, format(Format("%*i"), col1, bus.number - 1 - pq))
+        print("  Generator:        ")
+        print(format(Format("%*i"), col1, bus.number - 1 - pq))
 
-        print(io, "     Reactor:        ")
-        print(io, format(Format("%*i"), col2, shunt[3]))
+        print("     Reactor:        ")
+        print(format(Format("%*i"), col2, shunt[3]))
 
-        print(io, "     Out-of-service:       ")
-        print(io, format(Format("%*i\n\n"), col3, gen.number - gen.layout.inservice))
+        print("     Out-of-service:       ")
+        print(format(Format("%*i\n\n"), col3, gen.number - gen.layout.inservice))
 
-        print(io, "Number of branches: ")
-        print(io, format(Format("%*i"), col1, brc.number))
+        print("Number of branches: ")
+        print(format(Format("%*i"), col1, brc.number))
 
-        print(io, "   Number of lines:  ")
-        print(io, format(Format("%*i"), col2, brc.number - tran[1]))
+        print("   Number of lines:  ")
+        print(format(Format("%*i"), col2, brc.number - tran[1]))
 
-        print(io, "   Number of transformers: ")
-        print(io, format(Format("%*i\n"), col3, tran[1]))
+        print("   Number of transformers: ")
+        print(format(Format("%*i\n"), col3, tran[1]))
 
-        print(io, "  In-service:       ")
-        print(io, format(Format("%*i"), col1, brc.layout.inservice))
+        print("  In-service:       ")
+        print(format(Format("%*i"), col1, brc.layout.inservice))
 
-        print(io, "     In-service:     ")
-        print(io, format(Format("%*i"), col2, brc.layout.inservice - tran[2]))
+        print("     In-service:     ")
+        print(format(Format("%*i"), col2, brc.layout.inservice - tran[2]))
 
-        print(io, "     In-service:           ")
-        print(io, format(Format("%*i\n"), col3, tran[2]))
+        print("     In-service:           ")
+        print(format(Format("%*i\n"), col3, tran[2]))
 
-        print(io, "  Out-of-service:   ")
-        print(io, format(Format("%*i"), col1, brc.number - brc.layout.inservice))
+        print("  Out-of-service:   ")
+        print(format(Format("%*i"), col1, brc.number - brc.layout.inservice))
 
-        print(io, "     Out-of-service: ")
-        print(io, format(Format("%*i"), col2, brc.number - brc.layout.inservice - tran[3]))
+        print("     Out-of-service: ")
+        print(format(Format("%*i"), col2, brc.number - brc.layout.inservice - tran[3]))
 
-        print(io, "     Out-of-service:       ")
-        print(io, format(Format("%*i\n\n"), col3, tran[3]))
+        print("     Out-of-service:       ")
+        print(format(Format("%*i\n\n"), col3, tran[3]))
     end
 end
 
@@ -114,8 +113,7 @@ end
 ##### Measurement Statistics #####
 function printTop(
     analysis::ACStateEstimation{NonlinearWLS{T}},
-    verbose::Int64,
-    io::IO
+    verbose::Int64
 ) where T <: Union{Normal, Orthogonal}
 
     if verbose == 3
@@ -128,7 +126,7 @@ function printTop(
         var = count(x -> x == 0, type[range[4]:range[5] - 1])
         pmu = Int64(count(x -> x == 0, type[range[5]:range[6] - 1]) / 2)
 
-        printTopData(range, vol, amp, wat, var, pmu, verbose, io)
+        printTopData(range, vol, amp, wat, var, pmu, verbose)
     end
 end
 
@@ -154,8 +152,7 @@ function printTopData(
     wato::Int64,
     varo::Int64,
     pmuo::Int64,
-    verbose::Int64,
-    io::IO
+    verbose::Int64
 )
     if verbose == 3
         vol = range[2] - range[1]
@@ -169,64 +166,64 @@ function printTopData(
         col2 = max(textwidth(string(var)),textwidth(string(pmu)))
         col3 = textwidth(string(dev))
 
-        print(io, "Number of wattmeters: ")
-        print(io, format(Format("%*i"), col1, wat))
+        print("Number of wattmeters: ")
+        print(format(Format("%*i"), col1, wat))
 
-        print(io, "   Number of varmeters: ")
-        print(io, format(Format("%*i"), col2, var))
+        print("   Number of varmeters: ")
+        print(format(Format("%*i"), col2, var))
 
-        print(io, "   Number of voltmeters: ")
-        print(io, format(Format("%*i\n"), col3, vol))
+        print("   Number of voltmeters: ")
+        print(format(Format("%*i\n"), col3, vol))
 
-        print(io, "  In-service:         ")
-        print(io, format(Format("%*i"), col1, wat - wato))
+        print("  In-service:         ")
+        print(format(Format("%*i"), col1, wat - wato))
 
-        print(io, "     In-service:        ")
-        print(io, format(Format("%*i"), col2, var - varo))
+        print("     In-service:        ")
+        print(format(Format("%*i"), col2, var - varo))
 
-        print(io, "     In-service:         ")
-        print(io, format(Format("%*i\n"), col3, vol - volo))
+        print("     In-service:         ")
+        print(format(Format("%*i\n"), col3, vol - volo))
 
-        print(io, "  Out-of-service:     ")
-        print(io, format(Format("%*i"), col1, wato))
+        print("  Out-of-service:     ")
+        print(format(Format("%*i"), col1, wato))
 
-        print(io, "     Out-of-service:    ")
-        print(io, format(Format("%*i"), col2, varo))
+        print("     Out-of-service:    ")
+        print(format(Format("%*i"), col2, varo))
 
-        print(io, "     Out-of-service:     ")
-        print(io, format(Format("%*i\n\n"), col3, volo))
+        print("     Out-of-service:     ")
+        print(format(Format("%*i\n\n"), col3, volo))
 
-        print(io, "Number of ammeters:   ")
-        print(io, format(Format("%*i"), col1, amp))
+        print("Number of ammeters:   ")
+        print(format(Format("%*i"), col1, amp))
 
-        print(io, "   Number of PMUs:      ")
-        print(io, format(Format("%*i"), col2, pmu))
+        print("   Number of PMUs:      ")
+        print(format(Format("%*i"), col2, pmu))
 
-        print(io, "   Number of devices:    ")
-        print(io, format(Format("%*i\n"), col3, dev))
+        print("   Number of devices:    ")
+        print(format(Format("%*i\n"), col3, dev))
 
-        print(io, "  In-service:         ")
-        print(io, format(Format("%*i"), col1, amp - ampo))
+        print("  In-service:         ")
+        print(format(Format("%*i"), col1, amp - ampo))
 
-        print(io, "     In-service:        ")
-        print(io, format(Format("%*i"), col2, pmu - pmuo))
+        print("     In-service:        ")
+        print(format(Format("%*i"), col2, pmu - pmuo))
 
-        print(io, "     In-service:         ")
-        print(io, format(Format("%*i\n"), col3, dev - volo - ampo - wato - varo - pmuo))
+        print("     In-service:         ")
+        print(format(Format("%*i\n"), col3, dev - volo - ampo - wato - varo - pmuo))
 
-        print(io, "  Out-of-service:     ")
-        print(io, format(Format("%*i"), col1, ampo))
+        print("  Out-of-service:     ")
+        print(format(Format("%*i"), col1, ampo))
 
-        print(io, "     Out-of-service:    ")
-        print(io, format(Format("%*i"), col2, pmuo))
+        print("     Out-of-service:    ")
+        print(format(Format("%*i"), col2, pmuo))
 
-        print(io, "     Out-of-service:     ")
-        print(io, format(Format("%*i\n\n"), col3, volo + ampo + wato + varo + pmuo))
+        print("     Out-of-service:     ")
+        print(format(Format("%*i\n\n"), col3, volo + ampo + wato + varo + pmuo))
     end
 end
 
 ##### Model Statistics #####
-function printMiddle(analysis::ACPowerFlow{NewtonRaphson}, verbose::Int64, io::IO)
+function printMiddle(analysis::ACPowerFlow{NewtonRaphson}, verbose::Int64)
     if verbose == 2 || verbose == 3
         entri = nnz(analysis.method.jacobian)
         state = lastindex(analysis.method.increment)
@@ -235,15 +232,15 @@ function printMiddle(analysis::ACPowerFlow{NewtonRaphson}, verbose::Int64, io::I
         wd1 = textwidth(string(entri)) + 1
         wd2 = textwidth(maxms)
 
-        print(io, maxms)
-        print(io, format(Format("%*i\n"), wd1, entri))
+        print(maxms)
+        print(format(Format("%*i\n"), wd1, entri))
 
-        print(io, "Number of state variables:")
-        print(io, format(Format("%*i\n\n"), wd1 + wd2 - 26, state))
+        print("Number of state variables:")
+        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, state))
     end
 end
 
-function printMiddle(analysis::ACPowerFlow{FastNewtonRaphson}, verbose::Int64, io::IO)
+function printMiddle(analysis::ACPowerFlow{FastNewtonRaphson}, verbose::Int64)
     if verbose == 2 || verbose == 3
         method = analysis.method
 
@@ -256,21 +253,21 @@ function printMiddle(analysis::ACPowerFlow{FastNewtonRaphson}, verbose::Int64, i
         wd1 = textwidth(string(entri)) + 1
         wd2 = textwidth(maxms)
 
-        print(io, maxms)
-        print(io, format(Format("%*i\n"), wd1, entri))
+        print(maxms)
+        print(format(Format("%*i\n"), wd1, entri))
 
-        print(io, "  Active Power:")
-        print(io, format(Format("%*i\n"), wd1 + wd2 - 15, activ))
+        print("  Active Power:")
+        print(format(Format("%*i\n"), wd1 + wd2 - 15, activ))
 
-        print(io, "  Reactive Power:")
-        print(io, format(Format("%*i\n"), wd1 + wd2 - 17, react))
+        print("  Reactive Power:")
+        print(format(Format("%*i\n"), wd1 + wd2 - 17, react))
 
-        print(io, "Number of state variables:")
-        print(io, format(Format("%*i\n\n"), wd1 + wd2 - 26, state))
+        print("Number of state variables:")
+        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, state))
     end
 end
 
-function printMiddle(analysis::ACPowerFlow{GaussSeidel}, verbose::Int64, io::IO)
+function printMiddle(analysis::ACPowerFlow{GaussSeidel}, verbose::Int64)
     if verbose == 2 || verbose == 3
         stapq = lastindex(analysis.method.pq)
         stapv = lastindex(analysis.method.pv)
@@ -280,15 +277,15 @@ function printMiddle(analysis::ACPowerFlow{GaussSeidel}, verbose::Int64, io::IO)
         wd1 = textwidth(string(state)) + 1
         wd2 = textwidth(maxms)
 
-        print(io, "Number of complex state variables:")
-        print(io, format(Format("%*i\n"), wd1, state))
+        print("Number of complex state variables:")
+        print(format(Format("%*i\n"), wd1, state))
 
-        print(io, "Number of complex equations:")
-        print(io, format(Format("%*i\n\n"), wd1 + wd2 - 28, stapq + 3 * stapv))
+        print("Number of complex equations:")
+        print(format(Format("%*i\n\n"), wd1 + wd2 - 28, stapq + 3 * stapv))
     end
 end
 
-function printMiddle(system::PowerSystem, ::DCPowerFlow, verbose::Int64, io::IO)
+function printMiddle(system::PowerSystem, ::DCPowerFlow, verbose::Int64)
     if verbose == 2 || verbose == 3
         entries = nnz(system.model.dc.nodalMatrix)
         maxmess = "Number of entries in the nodal matrix:"
@@ -296,38 +293,38 @@ function printMiddle(system::PowerSystem, ::DCPowerFlow, verbose::Int64, io::IO)
         wd1 = textwidth(string(entries)) + 1
         wd2 = textwidth(maxmess)
 
-        print(io, maxmess)
-        print(io, format(Format("%*i\n"), wd1, entries))
+        print(maxmess)
+        print(format(Format("%*i\n"), wd1, entries))
 
-        print(io, "Number of state variables:")
-        print(io, format(Format("%*i\n\n"), wd1 + wd2 - 26, system.bus.number - 1))
+        print("Number of state variables:")
+        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, system.bus.number - 1))
     end
 end
 
-function printMiddle(system::PowerSystem, analysis::ACStateEstimation, verbose::Int64, io::IO)
+function printMiddle(system::PowerSystem, analysis::ACStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         wd = textwidth(string(nnz(analysis.method.jacobian))) + 1
         mwd = textwidth("Number of entries in the Jacobian matrix:")
         tot = wd + mwd
 
-        print(io, "Number of entries in the Jacobian matrix:")
-        print(io, format(Format("%*i\n"), wd, nnz(analysis.method.jacobian)))
+        print("Number of entries in the Jacobian matrix:")
+        print(format(Format("%*i\n"), wd, nnz(analysis.method.jacobian)))
 
-        print(io, "Number of measurement functions:")
-        print(io, format(Format("%*i\n"), tot - 32, lastindex(analysis.method.mean)))
+        print("Number of measurement functions:")
+        print(format(Format("%*i\n"), tot - 32, lastindex(analysis.method.mean)))
 
-        print(io, "Number of state variables:")
-        print(io, format(Format("%*i\n"), tot - 26, lastindex(analysis.method.increment) - 1))
+        print("Number of state variables:")
+        print(format(Format("%*i\n"), tot - 26, lastindex(analysis.method.increment) - 1))
 
-        print(io, "Number of buses:")
-        print(io, format(Format("%*i\n"), tot - 16, system.bus.number))
+        print("Number of buses:")
+        print(format(Format("%*i\n"), tot - 16, system.bus.number))
 
-        print(io, "Number of branches:")
-        print(io, format(Format("%*i\n\n"), tot - 19, system.branch.number))
+        print("Number of branches:")
+        print(format(Format("%*i\n\n"), tot - 19, system.branch.number))
     end
 end
 
-function printMiddle(system::PowerSystem, analysis::DCStateEstimation, verbose::Int64, io::IO)
+function printMiddle(system::PowerSystem, analysis::DCStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         entries = nnz(analysis.method.coefficient)
         maxmess = "Number of entries in the coefficient matrix:"
@@ -335,18 +332,18 @@ function printMiddle(system::PowerSystem, analysis::DCStateEstimation, verbose::
         wd1 = textwidth(string(entries)) + 1
         wd2 = textwidth(maxmess)
 
-        print(io, maxmess)
-        print(io, format(Format("%*i\n"), wd1, entries))
+        print(maxmess)
+        print(format(Format("%*i\n"), wd1, entries))
 
-        print(io, "Number of measurement functions:")
-        print(io, format(Format("%*i\n"), wd1 + wd2 - 32, lastindex(analysis.method.mean)))
+        print("Number of measurement functions:")
+        print(format(Format("%*i\n"), wd1 + wd2 - 32, lastindex(analysis.method.mean)))
 
-        print(io, "Number of state variables:")
-        print(io, format(Format("%*i\n\n"), wd1 + wd2 - 26, system.bus.number - 1))
+        print("Number of state variables:")
+        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, system.bus.number - 1))
     end
 end
 
-function printMiddle(system::PowerSystem, analysis::PMUStateEstimation, verbose::Int64, io::IO)
+function printMiddle(system::PowerSystem, analysis::PMUStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         entries = nnz(analysis.method.coefficient)
         maxmess = "Number of entries in the coefficient matrix:"
@@ -354,26 +351,26 @@ function printMiddle(system::PowerSystem, analysis::PMUStateEstimation, verbose:
         wd1 = textwidth(string(entries)) + 1
         wd2 = textwidth(maxmess)
 
-        print(io, maxmess)
-        print(io, format(Format("%*i\n"), wd1, entries))
+        print(maxmess)
+        print(format(Format("%*i\n"), wd1, entries))
 
-        print(io, "Number of measurement functions:")
-        print(io, format(Format("%*i\n"), wd1 + wd2 - 32, lastindex(analysis.method.mean)))
+        print("Number of measurement functions:")
+        print(format(Format("%*i\n"), wd1 + wd2 - 32, lastindex(analysis.method.mean)))
 
-        print(io, "Number of state variables:")
-        print(io, format(Format("%*i\n\n"), wd1 + wd2 - 26, 2 * system.bus.number))
+        print("Number of state variables:")
+        print(format(Format("%*i\n\n"), wd1 + wd2 - 26, 2 * system.bus.number))
     end
 end
 
 ##### Solver Data #####
-function printSolver(iter::Int64, delP::Float64, delQ::Float64, verbose::Int64, io::IO)
+function printSolver(iter::Int64, delP::Float64, delQ::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if iter % 10 == 0
-            println(io, "Iteration   Active Mismatch   Reactive Mismatch")
+            println("Iteration   Active Mismatch   Reactive Mismatch")
         end
-        print(io, format(Format("%*i "), 9, iter))
-        print(io, format(Format("%*.4e"), 17, delP))
-        print(io, format(Format("%*.4e\n"), 20, delQ))
+        print(format(Format("%*i "), 9, iter))
+        print(format(Format("%*.4e"), 17, delP))
+        print(format(Format("%*.4e\n"), 20, delQ))
     end
 end
 
@@ -381,32 +378,26 @@ function printSolver(
     system::PowerSystem,
     analysis::ACPowerFlow{T},
     verbose::Int64,
-    io::IO
 ) where T <: Union{NewtonRaphson, FastNewtonRaphson}
 
     if verbose == 2 || verbose == 3
         mag, ang = minmaxIncrement(system, analysis)
 
-        print(io, "\n" * " "^21 * "Minimum Value   Maximum Value")
+        print("\n" * " "^21 * "Minimum Value   Maximum Value")
 
-        print(io, "\nMagnitude Increment:")
-        print(io, format(Format("%*.4e"), 14, mag[1]))
-        print(io, format(Format("%*.4e\n"), 16, mag[2]))
+        print("\nMagnitude Increment:")
+        print(format(Format("%*.4e"), 14, mag[1]))
+        print(format(Format("%*.4e\n"), 16, mag[2]))
 
-        print(io, "Angle Increment:")
-        print(io, format(Format("%*.4e"), 18, ang[1]))
-        print(io, format(Format("%*.4e\n\n"), 16, ang[2]))
+        print("Angle Increment:")
+        print(format(Format("%*.4e"), 18, ang[1]))
+        print(format(Format("%*.4e\n\n"), 16, ang[2]))
     end
 end
 
-function printSolver(
-    ::PowerSystem,
-    ::ACPowerFlow{GaussSeidel},
-    verbose::Int64,
-    io::IO
-)
+function printSolver(::PowerSystem, ::ACPowerFlow{GaussSeidel}, verbose::Int64)
     if verbose == 2 || verbose == 3
-        print(io, "\n")
+        print("\n")
     end
 end
 
@@ -420,24 +411,19 @@ function minmaxIncrement(::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson}
     extrema(analysis.method.reactive.increment)
 end
 
-function printSolver(analysis::ACStateEstimation, iter::Int64, inc::Float64, verbose::Int64, io::IO)
+function printSolver(analysis::ACStateEstimation, iter::Int64, inc::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if iter % 10 == 1
-            println(io, "Iteration   Maximum Increment   Objective Value")
+            println("Iteration   Maximum Increment   Objective Value")
         end
 
-        print(io, format(Format("%*i "), 9, iter))
-        print(io, format(Format("%*.4e"), 19, inc))
-        print(io, format(Format("%*.8e\n"), 18, analysis.method.objective))
+        print(format(Format("%*i "), 9, iter))
+        print(format(Format("%*.4e"), 19, inc))
+        print(format(Format("%*.8e\n"), 18, analysis.method.objective))
     end
 end
 
-function printSolver(
-    system::PowerSystem,
-    analysis::ACStateEstimation,
-    verbose::Int64,
-    io::IO
-)
+function printSolver(system::PowerSystem, analysis::ACStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         slack = copy(analysis.method.increment[system.bus.layout.slack])
 
@@ -451,15 +437,15 @@ function printSolver(
 
         mag = extrema(analysis.method.increment[(system.bus.number + 1):end])
 
-        print(io, "\n" * " "^21 * "Minimum Value   Maximum Value")
+        print("\n" * " "^21 * "Minimum Value   Maximum Value")
 
-        print(io, "\nMagnitude Increment:")
-        print(io, format(Format("%*.4e"), 14, mag[1]))
-        print(io, format(Format("%*.4e\n"), 16, mag[2]))
+        print("\nMagnitude Increment:")
+        print(format(Format("%*.4e"), 14, mag[1]))
+        print(format(Format("%*.4e\n"), 16, mag[2]))
 
-        print(io, "Angle Increment:")
-        print(io, format(Format("%*.4e"), 18, angmin))
-        print(io, format(Format("%*.4e\n\n"), 16, angmax))
+        print("Angle Increment:")
+        print(format(Format("%*.4e"), 18, angmin))
+        print(format(Format("%*.4e\n\n"), 16, angmax))
     end
 end
 
@@ -470,20 +456,19 @@ function printExit(
     maxiter::Int64,
     converged::Bool,
     verbose::Int64,
-    io::IO
 )
     if verbose != 0
         method = printMethodName(analysis)
         if converged
-            println(io,
+            println(
                 "EXIT: The solution was found using the " * method *
                 " method in $iter iterations."
             )
         else
             if iter == maxiter
-                println(io, "EXIT: The " * method * " method exceeded the maximum number of iterations.")
+                println("EXIT: The " * method * " method exceeded the maximum number of iterations.")
             else
-                println(io, "EXIT: The " * method * " method failed to converge.")
+                println("EXIT: The " * method * " method failed to converge.")
             end
         end
     end
@@ -510,21 +495,21 @@ function printExit(jump::JuMP.Model, verbose::Int64)
     end
 end
 
-function printExit(::DCPowerFlow, verbose::Int64, io::IO)
+function printExit(::DCPowerFlow, verbose::Int64)
     if verbose != 0
-        println(io, "EXIT: The solution of the DC power flow was found.")
+        println("EXIT: The solution of the DC power flow was found.")
     end
 end
 
-function printExit(::DCStateEstimation, verbose::Int64, io::IO)
+function printExit(::DCStateEstimation, verbose::Int64)
     if verbose != 0
-        println(io, "EXIT: The solution of the DC state estimation was found.")
+        println("EXIT: The solution of the DC state estimation was found.")
     end
 end
 
-function printExit(::PMUStateEstimation, verbose::Int64, io::IO)
+function printExit(::PMUStateEstimation, verbose::Int64)
     if verbose != 0
-        println(io, "EXIT: The solution of the PMU state estimation was found.")
+        println("EXIT: The solution of the PMU state estimation was found.")
     end
 end
 

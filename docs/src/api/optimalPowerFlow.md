@@ -12,13 +12,13 @@ using JuliaGrid, Ipopt, HiGHS
 * [`acOptimalPowerFlow`](@ref acOptimalPowerFlow)
 * [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow))
 * [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::ACOptimalPowerFlow))
-* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACOptimalPowerFlow, ::IO))
+* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACOptimalPowerFlow))
 
 ###### DC Optimal Power Flow
 * [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow)
 * [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow))
 * [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::DCOptimalPowerFlow))
-* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::DCOptimalPowerFlow, ::IO))
+* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::DCOptimalPowerFlow))
 
 ---
 
@@ -27,7 +27,7 @@ using JuliaGrid, Ipopt, HiGHS
 acOptimalPowerFlow
 solve!(::PowerSystem, ::ACOptimalPowerFlow)
 setInitialPoint!(::PowerSystem, ::ACOptimalPowerFlow)
-powerFlow!(::PowerSystem, ::ACOptimalPowerFlow, ::IO)
+powerFlow!(::PowerSystem, ::ACOptimalPowerFlow)
 ```
 
 ---
@@ -37,5 +37,5 @@ powerFlow!(::PowerSystem, ::ACOptimalPowerFlow, ::IO)
 dcOptimalPowerFlow
 solve!(::PowerSystem, ::DCOptimalPowerFlow)
 setInitialPoint!(::PowerSystem, ::DCOptimalPowerFlow)
-powerFlow!(::PowerSystem, ::DCOptimalPowerFlow, ::IO)
+powerFlow!(::PowerSystem, ::DCOptimalPowerFlow)
 ```

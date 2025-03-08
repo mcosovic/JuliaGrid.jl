@@ -492,7 +492,7 @@ function pmuIndices(cff::SparseModel, co1::Int64, col2::Int64)
 end
 
 """
-    stateEstimation!(system::PowerSystem, analysis::PMUStateEstimation, [io::IO];
+    stateEstimation!(system::PowerSystem, analysis::PMUStateEstimation;
         iteration, tolerance, power, verbose)
 
 The function serves as a wrapper for solving PMU state estimation and includes the functions:
@@ -513,8 +513,6 @@ Users can use the following keywords:
 
 If `iteration` and `tolerance` are not specified, the optimization solver settings are used.
 
-To redirect the output display, users can pass the `IO` object as the last argument.
-
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -526,8 +524,7 @@ stateEstimation!(system, analysis; power = true, verbose = 3)
 """
 function stateEstimation!(
     system::PowerSystem,
-    analysis::PMUStateEstimation{LinearWLS{T}},
-    io::IO = stdout;
+    analysis::PMUStateEstimation{LinearWLS{T}};
     iteration::Int64 = 40,
     tolerance::Float64 = 1e-8,
     power::Bool = false,
@@ -535,11 +532,11 @@ function stateEstimation!(
     verbose::Int64 = template.config.verbose
 )  where T <: Union{Normal, Orthogonal}
 
-    printMiddle(system, analysis, verbose, io)
+    printMiddle(system, analysis, verbose)
 
     solve!(system, analysis)
 
-    printExit(analysis, verbose, io)
+    printExit(analysis, verbose)
 
     if power
         power!(system, analysis)

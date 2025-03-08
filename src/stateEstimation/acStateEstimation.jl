@@ -1182,7 +1182,7 @@ function nthIndices!(
 end
 
 """
-    stateEstimation!(system::PowerSystem, analysis::ACStateEstimation, [io::IO];
+    stateEstimation!(system::PowerSystem, analysis::ACStateEstimation;
         iteration, tolerance, power, current, verbose)
 
 The function serves as a wrapper for solving AC state estimation and includes the functions:
@@ -1206,8 +1206,6 @@ whereas for the LAV model, it defines the allowed deviation from the optimal sol
 If `iteration` and `tolerance` are not specified for the LAV model, the optimization solver
 settings are used.
 
-To redirect the output display, users can pass the `IO` object as the last argument.
-
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -1219,8 +1217,7 @@ stateEstimation!(system, analysis; stopping = 1e-10, current = true, verbose = 3
 """
 function stateEstimation!(
     system::PowerSystem,
-    analysis::ACStateEstimation{NonlinearWLS{T}},
-    io::IO = stdout;
+    analysis::ACStateEstimation{NonlinearWLS{T}};
     iteration::Int64 = 40,
     tolerance::Float64 = 1e-8,
     power::Bool = false,
@@ -1230,14 +1227,14 @@ function stateEstimation!(
 
     converged = false
 
-    printTop(analysis, verbose, io)
-    printMiddle(system, analysis, verbose, io)
+    printTop(analysis, verbose)
+    printMiddle(system, analysis, verbose)
 
     saveIter = 0
     for iter = 1:iteration
         increment = solve!(system, analysis)
 
-        printSolver(analysis, iter, increment, verbose, io)
+        printSolver(analysis, iter, increment, verbose)
         if increment < tolerance
             saveIter = iter
             converged = true
@@ -1245,8 +1242,8 @@ function stateEstimation!(
         end
     end
 
-    printSolver(system, analysis, verbose, io)
-    printExit(analysis, saveIter, iteration, converged, verbose, io)
+    printSolver(system, analysis, verbose)
+    printExit(analysis, saveIter, iteration, converged, verbose)
 
     if power
         power!(system, analysis)

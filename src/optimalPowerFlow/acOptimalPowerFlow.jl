@@ -1014,8 +1014,7 @@ powerFlow!(system, analysis; power = true, verbose = 1)
 """
 function powerFlow!(
     system::PowerSystem,
-    analysis::ACOptimalPowerFlow,
-    io::IO = stdout;
+    analysis::ACOptimalPowerFlow;
     iteration::IntMiss = missing,
     tolerance::FltIntMiss = missing,
     power::Bool = false,

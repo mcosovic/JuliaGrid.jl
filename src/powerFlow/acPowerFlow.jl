@@ -1146,7 +1146,7 @@ function changeSlackBus!(system::PowerSystem)
 end
 
 """
-    powerFlow!(system::PowerSystem, analysis::ACPowerFlow, [io::IO];
+    powerFlow!(system::PowerSystem, analysis::ACPowerFlow;
         iteration, tolerance, power, current, verbose)
 
 The function serves as a wrapper for solving AC power flow and includes the functions:
@@ -1166,8 +1166,6 @@ Users can use the following keywords:
 * `current`: Enables current computation upon convergence or reaching the iteration limit (default: `false`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
-To redirect the output display, users can pass the `IO` object as the last argument.
-
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
@@ -1179,8 +1177,7 @@ powerFlow!(system, analysis; iteration = 30, tolerance = 1e-10, power = true, ve
 """
 function powerFlow!(
     system::PowerSystem,
-    analysis::ACPowerFlow,
-    io::IO = stdout;
+    analysis::ACPowerFlow;
     iteration::Int64 = 20,
     tolerance::Float64 = 1e-8,
     power::Bool = false,
@@ -1189,14 +1186,14 @@ function powerFlow!(
 )
     converged = false
 
-    printTop(system, analysis, verbose, io)
-    printMiddle(analysis, verbose, io)
+    printTop(system, analysis, verbose)
+    printMiddle(analysis, verbose)
 
     saveIter = 0
     for iter = 0:iteration
         delP, delQ = mismatch!(system, analysis)
 
-        printSolver(iter, delP, delQ, verbose, io)
+        printSolver(iter, delP, delQ, verbose)
         saveIter = iter
 
         if delP < tolerance && delQ < tolerance
@@ -1206,9 +1203,9 @@ function powerFlow!(
 
         solve!(system, analysis)
     end
-    printSolver(system, analysis, verbose, io)
+    printSolver(system, analysis, verbose)
 
-    printExit(analysis, saveIter, iteration, converged, verbose, io)
+    printExit(analysis, saveIter, iteration, converged, verbose)
 
     if power
         power!(system, analysis)

@@ -12,7 +12,7 @@ After solving the DC state estimation, JuliaGrid provides function for computing
 * [`power!`](@ref power!(::PowerSystem, ::DCStateEstimation)).
 
 Alternatively, instead of using functions responsible for solving state estimation and computing powers, users can use the wrapper function:
-* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::DCStateEstimation{LinearWLS{T}}, ::IO) where T <: Union{Normal, Orthogonal}).
+* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::DCStateEstimation{LinearWLS{T}}) where T <: Union{Normal, Orthogonal}).
 
 Users can also access specialized functions for computing specific types of [powers](@ref DCPowerAnalysisAPI) for individual buses, branches, or generators within the power system.
 
