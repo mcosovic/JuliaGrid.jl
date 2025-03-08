@@ -26,6 +26,8 @@ addGenerator!(system; bus = "Bus 2", active = 18.2, magnitude = 1.01)
 acModel!(system)
 
 ##### Display Data Settings #####
+@config(verbose = 1)
+
 show1 = Dict("Power Injection" => false)
 fmt1 = Dict("Power Generation" => "%.2f", "Power Demand" => "%.2f", "Shunt Power" => "%.2f")
 
@@ -46,7 +48,7 @@ updateBus!(system, fnr; label = "Bus 4", active = 42.0, reactive = 20.0)
 updateGenerator!(system, fnr; label = "Generator 1", active = 58.0, reactive = 20.0)
 updateGenerator!(system, fnr; label = "Generator 2", active = 23.1, reactive = 20.0)
 
-powerFlow!(system, fnr; power = true, verbose = 1)
+powerFlow!(system, fnr; power = true)
 
 printBranchData(system, fnr; show = show2, fmt = fmt2)
 
@@ -55,6 +57,6 @@ updateBranch!(system; label = "Branch 3", status = 0)
 
 nr = newtonRaphson(system)
 setInitialPoint!(fnr, nr)
-powerFlow!(system, nr; power = true, verbose = 1)
+powerFlow!(system, nr; power = true)
 
 printBranchData(system, nr; show = show2, fmt = fmt2)

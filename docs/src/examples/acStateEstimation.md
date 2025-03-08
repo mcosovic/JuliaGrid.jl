@@ -41,7 +41,13 @@ The `magnitude` and `angle` values define the initial point for the iterative AC
 ---
 
 ##### Display Data Settings
-Before running simulations, we configure the data display settings:
+Before running simulations, we set the `verbose` keyword from its default silent mode (`0`) to basic output (`1`):
+```@example acStateEstimation
+@config(verbose = 1)
+nothing # hide
+```
+
+However, if we need more detailed solver output, the `verbose` setting can be adjusted within the functions responsible for solving specific analyses. Next, we configure the data display settings:
 ```@example acStateEstimation
 show = Dict("Shunt Power" => false, "Status" => false)
 nothing # hide
@@ -87,7 +93,7 @@ Next, AC power flow analysis is performed to obtain bus voltages:
 acModel!(system)
 
 powerFlow = newtonRaphson(system)
-powerFlow!(system, powerFlow; verbose = 1)
+powerFlow!(system, powerFlow)
 nothing # hide
 ```
 
@@ -213,7 +219,7 @@ These updates demonstrate the flexibility of JuliaGrid in modifying measurements
 
 Next, AC state estimation is run again to compute the new estimate without recreating the Gauss-Newton model. Additionally, this step initializes the iterative algorithm with a warm start, as the initial voltage magnitudes and angles correspond to the solution from the base case analysis:
 ```@example acStateEstimation
-stateEstimation!(system, analysis; power = true, verbose = 1)
+stateEstimation!(system, analysis; power = true)
 nothing # hide
 ```
 
@@ -236,7 +242,7 @@ nothing # hide
 
 We then solve the AC state estimation again:
 ```@example acStateEstimation
-stateEstimation!(system, analysis; power = true, verbose = 1)
+stateEstimation!(system, analysis; power = true)
 nothing # hide
 ```
 
@@ -261,7 +267,7 @@ outlier.maxNormalizedResidual
 The bad data processing function automatically removes the detected outlier. Before repeating the AC state estimation, using a warm start is not advisable, as the previous state was obtained in the presence of bad data. Instead, it is useful to reset the initial point, for example, by using the values defined within the power system data:
 ```@example acStateEstimation
 setInitialPoint!(system, analysis)
-stateEstimation!(system, analysis; power = true, verbose = 1)
+stateEstimation!(system, analysis; power = true)
 nothing # hide
 ```
 

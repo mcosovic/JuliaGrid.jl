@@ -62,11 +62,20 @@ nothing # hide
 
 ---
 
+##### Display Data Settings
+To follow the successful solving of the DC power flow, we set `verbose` to basic output (`1`):
+```@example 4bus
+@config(verbose = 1)
+nothing # hide
+```
+
+---
+
 ## Base Case Analysis
 At the start, we create a DC power flow model, then compute bus voltage angles and active powers:
 ```@example 4bus
 analysis = dcPowerFlow(system)
-powerFlow!(system, analysis; power = true, verbose = 1)
+powerFlow!(system, analysis; power = true)
 nothing # hide
 ```
 
@@ -107,7 +116,7 @@ nothing # hide
 
 Next, we solve the DC power flow again to compute the new state of the power system without recreating the DC power flow model:
 ```@example 4bus
-powerFlow!(system, analysis; power = true, verbose = 1)
+powerFlow!(system, analysis; power = true)
 nothing # hide
 ```
 Since no modifications were made that affect the nodal admittance matrix, JuliaGrid reuses its factorization from the base case analysis, significantly reducing computational complexity.
@@ -137,7 +146,7 @@ nothing # hide
 
 We then solve the DC power flow for this scenario:
 ```@example 4bus
-powerFlow!(system, analysis; power = true, verbose = 1)
+powerFlow!(system, analysis; power = true)
 nothing # hide
 ```
 

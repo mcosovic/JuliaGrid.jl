@@ -15,6 +15,8 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", resistance 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1")
 
 ##### Display Data Settings #####
+@config(verbose = 1)
+
 show = Dict("Shunt Power" => false, "Status" => false)
 
 ##### Measurement Model #####
@@ -28,7 +30,7 @@ updateGenerator!(system; label = "Generator 1", active = 3.3, reactive = 2.1)
 acModel!(system)
 
 powerFlow = newtonRaphson(system)
-powerFlow!(system, powerFlow; verbose = 1)
+powerFlow!(system, powerFlow)
 
 printBusData(system, powerFlow)
 
@@ -75,18 +77,18 @@ updateVoltmeter!(system, device, analysis; label = "Meter 1", magnitude = 1.0, n
 updateWattmeter!(system, device, analysis; label = "Meter 2", active = -1.1, variance = 1e-6)
 updateVarmeter!(system, device, analysis; label = "Meter 3", variance = 1e-1)
 
-stateEstimation!(system, analysis; power = true, verbose = 1)
+stateEstimation!(system, analysis; power = true)
 printBusData(system, analysis; show)
 
 ##### Modifying Measurement Set #####
 updateAmmeter!(system, device, analysis; label = "Meter 4", status = 1)
 updateAmmeter!(system, device, analysis; label = "Meter 5", status = 1)
 
-stateEstimation!(system, analysis; power = true, verbose = 1)
+stateEstimation!(system, analysis; power = true)
 printBusData(system, analysis; show)
 
 outlier = residualTest!(system, device, analysis; threshold = 4.0)
 
 setInitialPoint!(system, analysis)
-stateEstimation!(system, analysis; power = true, verbose = 1)
+stateEstimation!(system, analysis; power = true)
 printBusData(system, analysis; show)

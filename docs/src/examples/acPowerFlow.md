@@ -67,7 +67,13 @@ nothing # hide
 ---
 
 ##### Display Data Settings
-Before running simulations, we configure the data display settings, including the selection of displayed data elements and the numeric format for relevant power flow values.
+Before running simulations, we set the `verbose` keyword from its default silent mode (`0`) to basic output (`1`):
+```@example 4bus
+@config(verbose = 1)
+nothing # hide
+```
+
+However, if we need more detailed solver output, the `verbose` setting can be adjusted within the function responsible for performing the power flow. Next, we configure the data display settings, including the selection of displayed data elements and the numeric format for relevant power flow values.
 
 For bus-related data, we set:
 ```@example 4bus
@@ -144,7 +150,7 @@ nothing # hide
 
 Next, we run the AC power flow again to compute the new state of the power system, without having to recreate the fast Newton-Raphson model. Additionally, this step will start the fast Newton-Raphson method with a warm start, as the initial voltage magnitudes and angles will correspond to the solution from the base case analysis:
 ```@example 4bus
-powerFlow!(system, fnr; power = true, verbose = 1)
+powerFlow!(system, fnr; power = true)
 nothing # hide
 ```
 Since no power system changes were introduced that affect the Jacobian matrices, JuliaGrid reuses the Jacobian matrix factorizations from the base case analysis, significantly reducing computational complexity.
@@ -195,7 +201,7 @@ nothing # hide
 
 Now, we can solve the AC power flow for this scenario:
 ```@example 4bus
-powerFlow!(system, nr; power = true, verbose = 1)
+powerFlow!(system, nr; power = true)
 nothing # hide
 ```
 

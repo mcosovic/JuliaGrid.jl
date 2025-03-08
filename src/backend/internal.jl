@@ -248,18 +248,22 @@ By default, JuliaGrid stores all labels as strings in ordered dictionaries. Howe
 can choose to store labels as integers, which can be a more efficient option for large-scale
 systems.
 
-Additionally, users can set a default value for the verbose parameter, which controls the
-level of printed information for algorithms used in JuliaGrid.
+Users can also adjust the level of printed information for the algorithms used in JuliaGrid.
+The `verbose` setting is multilevel and can take the following values:
+  * `verbose = 0`: Silent mode (default).
+  * `verbose = 1`: Prints exit messages.
+  * `verbose = 2`: Prints algorithm solver progress data.
+  * `verbose = 3`: Prints detailed data.
 
 # Examples
-Set labels as integers and disable printed output:
+Set labels as integers and print only basic data:
 ```jldoctest
-@config(label = Integer, verbose = 0)
+@config(label = Integer, verbose = 1)
 ```
 
-Set labels as strings and enable basic printed messages:
+Set labels as strings and enable detailed data printing:
 ```jldoctest
-@config(label = String, verbose = 1)
+@config(label = String, verbose = 3)
 ```
 """
 macro config(kwargs...)
@@ -288,6 +292,7 @@ macro config(kwargs...)
 end
 
 ##### Parse Suffix (Unit) #####
+
 function parseSuffix(input::String, unitList, type::String)
     suffix = ""
     @inbounds for i in unitList
