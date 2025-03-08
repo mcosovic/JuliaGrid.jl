@@ -141,7 +141,7 @@ function printTop(analysis::ACStateEstimation{LAV}, verbose::Int64)
         var = count(x -> x == 1, type[range[4]:range[5] - 1])
         pmu = Int64(count(x -> x == 1, type[range[5]:range[6] - 1]) / 2)
 
-        printTopData(range, vol, amp, wat, var, pmu, verbose, stdout)
+        printTopData(range, vol, amp, wat, var, pmu, verbose)
     end
 end
 
