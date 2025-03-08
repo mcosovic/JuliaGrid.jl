@@ -11,7 +11,7 @@ Once the DC power flow solution is obtained, JuliaGrid provides a function for c
 * [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
 
 Alternatively, instead of using functions responsible for solving power flow and computing powers, users can use the wrapper function:
-* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::DCPowerFlow)).
+* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::DCPowerFlow, ::IO)).
 
 Users can also access specialized functions for computing specific types of [powers](@ref DCPowerAnalysisAPI) for individual buses, branches, or generators within the power system.
 

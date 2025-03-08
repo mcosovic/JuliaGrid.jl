@@ -16,7 +16,7 @@ After solving the AC power flow, JuliaGrid provides functions for computing powe
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
 Alternatively, instead of designing their own iteration process and computing powers and currents, users can use the wrapper function:
-* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACPowerFlow)).
+* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACPowerFlow, ::IO)).
 
 Users can also access specialized functions for computing specific types of [powers](@ref ACPowerAnalysisAPI) and [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators within the power system.
 
@@ -268,7 +268,7 @@ The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) f
 ---
 
 ##### Wrapper Function
-JuliaGrid includes a wrapper function, [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACPowerFlow)), for solving AC power flow. If users aim to compute the AC power flow with a minimal number of function calls, the process would be:
+JuliaGrid includes a wrapper function [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACPowerFlow, ::IO)), for solving AC power flow. If users aim to compute the AC power flow with a minimal number of function calls, the process would be:
 ```@example ACPowerFlowSolution
 setInitialPoint!(system, analysis) # hide
 analysis = newtonRaphson(system)
