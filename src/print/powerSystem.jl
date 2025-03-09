@@ -986,7 +986,7 @@ printGeneratorData(system, analysis; fmt, show, title = false)
 ```
 
 Print data for specific generators:
-``jldoctest
+```jldoctest
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)

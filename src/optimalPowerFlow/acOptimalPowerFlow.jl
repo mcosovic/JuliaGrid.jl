@@ -864,6 +864,7 @@ powerFlow = newtonRaphson(system)
 powerFlow!(system, powerFlow)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+
 setInitialPoint!(powerFlow, analysis)
 solve!(system, analysis)
 ```
