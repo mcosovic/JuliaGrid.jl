@@ -5,8 +5,8 @@ The function generates vectors and matrices based on the power system topology a
 parameters associated with AC analyses.
 
 # Updates
-The function updates the `model.ac` field within the `PowerSystem` composite type,
-populating the following variables:
+The function updates the `model.ac` field within the `PowerSystem` type, populating the
+variables:
 - `nodalMatrix`: The nodal matrix.
 - `nodalMatrixTranspose`: The transpose of the nodal matrix.
 - `nodalFromFrom`: The Y-parameters of the two-port branches.
@@ -110,8 +110,8 @@ The function generates vectors and matrices based on the power system topology a
 parameters associated with DC analyses.
 
 # Updates
-The function updates the `model.dc` field within the `PowerSystem` composite type,
-populating the following variables:
+The function updates the `model.dc` field within the `PowerSystem` type, populating the
+variables:
 - `nodalMatrix`: The nodal matrix.
 - `admittance`: The branch admittances.
 - `shiftPower`: The active powers related to phase-shifting transformers.

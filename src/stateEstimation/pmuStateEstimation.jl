@@ -6,8 +6,8 @@ model, the vector of state variables contains bus voltages, given in rectangular
 coordinates.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` composite types to establish
-the WLS state estimation model.
+This function requires the `PowerSystem` and `Measurement` types to establish the WLS state
+estimation model.
 
 Moreover, the presence of the `method` parameter is not mandatory. To address the WLS
 state estimation method, users can opt to utilize factorization techniques to decompose
@@ -17,15 +17,15 @@ involving ill-conditioned data, particularly when substantial variations in vari
 present.
 
 If the user does not provide the `method`, the default method for solving the estimation
-model will be LU factorization.
+model will be `LU` factorization.
 
 # Updates
 If the AC model has not been created, the function will automatically trigger an update of
 the `ac` field within the `PowerSystem` composite type.
 
 # Returns
-The function returns an instance of the `PMUStateEstimation` abstract type, which includes
-the following fields:
+The function returns an instance of the `PMUStateEstimation` type, which includes the
+following fields:
 - `voltage`: The variable allocated to store the bus voltage magnitudes and angles.
 - `power`: The variable allocated to store the active and reactive powers.
 - `method`: The system model vectors and matrices.
@@ -211,10 +211,9 @@ model, the vector of state variables contains bus voltages, given in rectangular
 coordinates.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` composite types to establish
-the LAV state estimation model. The LAV method offers increased robustness compared
-to WLS, ensuring unbiasedness even in the presence of various measurement errors and
-outliers.
+This function requires the `PowerSystem` and `Measurement` types to establish the LAV state
+estimation model. The LAV method offers increased robustness compared to WLS, ensuring
+unbiasedness even in the presence of various measurement errors and outliers.
 
 # Keywords
 The function accepts the following keywords:
@@ -226,15 +225,15 @@ The function accepts the following keywords:
 
 Users can employ the LAV method to find an estimator by choosing one of the available
 [optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
-`Ipopt.Optimizer` suffices for most scenarios.
+`Ipopt` suffices for most scenarios.
 
 # Updates
 If the AC model has not been created, the function will automatically trigger an update of
 the `ac` field within the `PowerSystem` composite type.
 
 # Returns
-The function returns an instance of the `PMUStateEstimation` abstract type, which includes
-the following fields:
+The function returns an instance of the `PMUStateEstimation` type, which includes the
+following fields:
 - `voltage`: The variable allocated to store the bus voltage magnitudes and angles.
 - `power`: The variable allocated to store the active and reactive powers.
 - `method`: The optimization model.
@@ -513,7 +512,8 @@ Users can use the following keywords:
 
 If `iteration` and `tolerance` are not specified, the optimization solver settings are used.
 
-# Example
+# Examples
+Use the wrapper function to obtain the WLS estimator:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
@@ -521,6 +521,16 @@ device = measurement("measurement14.h5")
 analysis = pmuStateEstimation(system, device)
 stateEstimation!(system, analysis; power = true, verbose = 3)
 ```
+
+Use the wrapper function to obtain the LAV estimator:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = pmuLavStateEstimation(system, device, Ipopt.Optimizer)
+stateEstimation!(system, analysis; iteration = 30, tolerance = 1e-6, verbose = 3)
+```
+
 """
 function stateEstimation!(
     system::PowerSystem,

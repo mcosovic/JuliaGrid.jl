@@ -6,8 +6,7 @@ estimation model, where the vector of state variables is given in polar coordina
 Gauss-Newton method throughout iterations provided WLS estimator.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` composite types to establish
-the nonlinear WLS state estimation framework.
+This function requires the `PowerSystem` and `Measurement` types to establish the WLS state estimation framework.
 
 Moreover, the presence of the `method` parameter is not mandatory. To address the WLS
 state estimation method, users can opt to utilize factorization techniques to decompose
@@ -17,11 +16,11 @@ involving ill-conditioned data, particularly when substantial variations in vari
 present.
 
 If the user does not provide the `method`, the default method for solving the estimation
-model will be LU factorization.
+model will be `LU` factorization.
 
 # Updates
 If the AC model has not been created, the function will automatically trigger an update of
-the `ac` field within the `PowerSystem` composite type.
+the `ac` field within the `PowerSystem` type.
 
 # Returns
 The function returns an instance of the `ACStateEstimation` type, which includes the
@@ -582,14 +581,13 @@ The function sets up the LAV method to solve the nonlinear or AC state estimatio
 model, where the vector of state variables is given in polar coordinates.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` composite types to establish
-the LAV state estimation model. The LAV method offers increased robustness compared
-to WLS, ensuring unbiasedness even in the presence of various measurement errors and
-outliers.
+This function requires the `PowerSystem` and `Measurement` types to establish the LAV state
+estimation model. The LAV method offers increased robustness compared to WLS, ensuring
+unbiasedness even in the presence of various measurement errors and outliers.
 
 Users can employ the LAV method to find an estimator by choosing one of the available
 [optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
-`Ipopt.Optimizer` suffices for most scenarios.
+`Ipopt` suffices for most scenarios.
 
 # Keywords
 The function accepts the following keywords:
@@ -1019,7 +1017,8 @@ as needed.
 If `source` comes from a DC analysis, only the bus voltage angles are assigned in the
 `target` argument, while the bus voltage magnitudes remain unchanged.
 
-# Example
+# Examples
+Reset the initial point of the AC state estimation:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
@@ -1041,6 +1040,20 @@ for iteration = 1:20
         break
     end
 end
+```
+
+Use wrapper functions and reset the initial point of the AC state estimation:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = gaussNewton(system, device)
+stateEstimation!(system, analysis)
+
+residualTest!(system, device, analysis; threshold = 1.0)
+
+setInitialPoint!(system, analysis)
+stateEstimation!(system, analysis)
 ```
 """
 function setInitialPoint!(system::PowerSystem, analysis::ACStateEstimation)
@@ -1206,13 +1219,23 @@ whereas for the LAV model, it defines the allowed deviation from the optimal sol
 If `iteration` and `tolerance` are not specified for the LAV model, the optimization solver
 settings are used.
 
-# Example
+# Examples
+Use the wrapper function to obtain the WLS estimator:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
 analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; stopping = 1e-10, current = true, verbose = 3)
+stateEstimation!(system, analysis; tolerance = 1e-10, current = true, verbose = 3)
+```
+
+Use the wrapper function to obtain the LAV estimator:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = acLavStateEstimation(system, device, Ipopt.Optimizer)
+stateEstimation!(system, analysis; iteration = 30, power = true, verbose = 1)
 ```
 """
 function stateEstimation!(

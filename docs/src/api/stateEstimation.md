@@ -3,7 +3,7 @@ For further information on this topic, please see the [AC State Estimation](@ref
 
 To load state estimation API functionalities into the current scope, utilize the following command:
 ```@example LoadApi
-using JuliaGrid
+using JuliaGrid, Ipopt, HiGHS
 ```
 
 ---

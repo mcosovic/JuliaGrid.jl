@@ -62,7 +62,7 @@ makedocs(
             "Optimal Power Flow" => "api/optimalPowerFlow.md",
             "Measurement Model" => "api/measurementModel.md",
             "State Estimation" => "api/stateEstimation.md",
-            "Power and Current Analysis" => "api/analysis.md",
+            "Powers and Currents" => "api/analysis.md",
             "Setup and Print" => "api/setupPrint.md"
         ],
         "Background" => [

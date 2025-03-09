@@ -5,7 +5,7 @@ The function calculates the active power values related to buses, branches, and 
 within the DC analysis framework.
 
 # Updates
-This function updates the `power` field of the DC abstract type by computing the following
+This function updates the `power` field of the `DC` abstract type by computing the following
 electrical quantities:
 - `injection`: Active power injections at each bus.
 - `supply`: Active power injections from the generators at each bus.
@@ -20,6 +20,7 @@ dcModel!(system)
 
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
+
 power!(system, analysis)
 ```
 """
@@ -110,6 +111,7 @@ dcModel!(system)
 
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
+
 injection = injectionPower(system, analysis; label = 2)
 ```
 """
@@ -159,6 +161,7 @@ dcModel!(system)
 
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
+
 supply = supplyPower(system, analysis; label = 2)
 ```
 """
@@ -213,6 +216,7 @@ dcModel!(system)
 
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
+
 from = fromPower(system, analysis; label = 2)
 ```
 """
@@ -243,6 +247,7 @@ dcModel!(system)
 
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
+
 to = toPower(system, analysis; label = 2)
 ```
 """
@@ -272,6 +277,7 @@ dcModel!(system)
 
 analysis = dcPowerFlow(system)
 solve!(system, analysis)
+
 generator = generatorPower(system, analysis; label = 1)
 ```
 """

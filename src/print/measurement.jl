@@ -23,27 +23,31 @@ The following keywords control the printed data:
 !!! compat "Julia 1.10"
     The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
 
-# Example
+# Examples
+Print data for all voltmeters:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
 analysis = gaussNewton(system, device)
-for iteration = 1:20
-    stopping = solve!(system, analysis)
-    if stopping < 1e-8
-        break
-    end
-end
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true)
 
-# Print data for all voltmeters
 fmt = Dict("Voltage Magnitude" => "%.2f", "Voltage Magnitude Estimate" => "%.6f")
 show = Dict("Voltage Magnitude Residual" => false)
-printVoltmeterData(system, device, analysis; fmt, show, delimiter = " ", repeat = 10)
 
-# Print data for specific voltmeters
+printVoltmeterData(system, device, analysis; fmt, show, delimiter = " ", repeat = 10)
+```
+
+Print data for specific voltmeters:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = gaussNewton(system, device)
+stateEstimation!(system, analysis; power = true)
+
 width = Dict("Voltage Magnitude Estimate" => 11)
+
 printVoltmeterData(system, device, analysis; label = 1, width, header = true)
 printVoltmeterData(system, device, analysis; label = 6, width)
 printVoltmeterData(system, device, analysis; label = 8, width, footer = true)
@@ -181,27 +185,31 @@ The following keywords control the printed data:
 !!! compat "Julia 1.10"
     The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
 
-# Example
+# Examples
+Print data for all ammeters:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
 analysis = gaussNewton(system, device)
-for iteration = 1:20
-    stopping = solve!(system, analysis)
-    if stopping < 1e-8
-        break
-    end
-end
-current!(system, analysis)
+stateEstimation!(system, analysis; current = true)
 
-# Print data for all ammeters
 fmt = Dict("Current Magnitude" => "%.2f", "Current Magnitude Estimate" => "%.6f")
 show = Dict("Current Magnitude Residual" => false)
-printAmmeterData(system, device, analysis; fmt, show, delimiter = " ", repeat = 10)
 
-# Print data for specific ammeters
+printAmmeterData(system, device, analysis; fmt, show, delimiter = " ", repeat = 10)
+```
+
+Print data for specific ammeters:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = gaussNewton(system, device)
+stateEstimation!(system, analysis; current = true)
+
 width = Dict("Current Magnitude" => 10)
+
 printAmmeterData(system, device, analysis; label = "From 1", width, header = true)
 printAmmeterData(system, device, analysis; label = "From 4", width)
 printAmmeterData(system, device, analysis; label = "From 6", width, footer = true)
@@ -347,27 +355,31 @@ The following keywords control the printed data:
 !!! compat "Julia 1.10"
     The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
 
-# Example
+# Examples
+Print data for all wattmeters:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
 analysis = gaussNewton(system, device)
-for iteration = 1:20
-    stopping = solve!(system, analysis)
-    if stopping < 1e-8
-        break
-    end
-end
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true)
 
-# Print data for all wattmeters
 fmt = Dict("Active Power" => "%.2f", "Active Power Estimate" => "%.6f")
+
 show = Dict("Active Power Status" => false)
 printWattmeterData(system, device, analysis; fmt, show, delimiter = " ", repeat = 14)
+```
 
-# Print data for specific wattmeters
+Print data for specific wattmeters:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = gaussNewton(system, device)
+stateEstimation!(system, analysis; power = true)
+
 width = Dict("Active Power Residual" => 11)
+
 printWattmeterData(system, device, analysis; label = 2, width, header = true)
 printWattmeterData(system, device, analysis; label = 5, width)
 printWattmeterData(system, device, analysis; label = 9, width, footer = true)
@@ -510,27 +522,32 @@ The following keywords control the printed data:
 !!! compat "Julia 1.10"
     The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
 
-# Example
+# Examples
+Print data for all varmeters:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
 analysis = gaussNewton(system, device)
-for iteration = 1:20
-    stopping = solve!(system, analysis)
-    if stopping < 1e-8
-        break
-    end
-end
-power!(system, analysis)
+stateEstimation!(system, analysis; power = true)
 
-# Print data for all wattmeters
 fmt = Dict("Reactive Power" => "%.2f", "Reactive Power Estimate" => "%.6f")
 show = Dict("Reactive Power Status" => false)
-printVarmeterData(system, device, analysis; fmt, show, delimiter = " ", repeat = 14)
 
-# Print data for specific wattmeters
+printVarmeterData(system, device, analysis; fmt, show, delimiter = " ", repeat = 14)
+```
+
+Print data for specific varmeters:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = gaussNewton(system, device)
+stateEstimation!(system, analysis; power = true)
+
+
 width = Dict("Reactive Power Residual" => 11)
+
 printVarmeterData(system, device, analysis; label = 2, width, header = true)
 printVarmeterData(system, device, analysis; label = 5, width)
 printVarmeterData(system, device, analysis; label = 9, width, footer = true)
@@ -674,27 +691,31 @@ The following keywords control the printed data:
 !!! compat "Julia 1.10"
     The function [`printPmuData`](@ref printPmuData) requires Julia 1.10 or later.
 
-# Example
+# Examples
+Print data for all PMUs:
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
 analysis = gaussNewton(system, device)
-for iteration = 1:20
-    stopping = solve!(system, analysis)
-    if stopping < 1e-8
-        break
-    end
-end
-current!(system, analysis)
+stateEstimation!(system, analysis; current = true)
 
-# Print data for all PMUs
 fmt = Dict("Current Magnitude" => "%.2f", "Current Magnitude Variance" => "%.5f")
 show = Dict("Current Angle" => false, "Current Magnitude Status" => false)
-printPmuData(system, device, analysis; fmt, show, delimiter = " ", repeat = 10)
 
-# Print data for specific PMUs
+printPmuData(system, device, analysis; fmt, show, delimiter = " ", repeat = 10)
+```
+
+Print data for specific PMUs:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = gaussNewton(system, device)
+stateEstimation!(system, analysis; current = true)
+
 width = Dict("Current Magnitude" => 10, "Current Angle Status" => 8)
+
 printPmuData(system, device, analysis; label = "From 1", width, header = true)
 printPmuData(system, device, analysis; label = "From 4", width)
 printPmuData(system, device, analysis; label = "From 6", width, footer = true)

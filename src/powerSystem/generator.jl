@@ -5,14 +5,14 @@
         lowActive, minLowReactive, maxLowReactive, upActive, minUpReactive, maxUpReactive,
         loadFollowing, reactiveRamp, reserve10min, reserve30min, area)
 
-The function adds a new generator to the `PowerSystem` composite type. The generator can
-be added to an already defined bus.
+The function adds a new generator to the `PowerSystem` type. The generator can be added to
+an already defined bus.
 
 # Arguments
 If the `Analysis` type is omitted, the function applies changes to the `PowerSystem`
-composite type only. However, when including the `Analysis` type, it updates both the
-`PowerSystem` and `Analysis` types. This streamlined approach circumvents the necessity
-for completely reconstructing vectors and matrices when adding a new generator.
+type only. However, when including the `Analysis` type, it updates both the `PowerSystem`
+and `Analysis` types. This streamlined approach circumvents the necessity for completely
+reconstructing vectors and matrices when adding a new generator.
 
 # Keywords
 The generator is defined with the following keywords:
@@ -24,10 +24,10 @@ The generator is defined with the following keywords:
 * `active` (pu or W): Output active power.
 * `reactive` (pu or VAr): Output reactive power.
 * `magnitude` (pu or V): Voltage magnitude setpoint.
-* `minActive` (pu or W): Minimum allowed output active power value.
-* `maxActive` (pu or W): Maximum allowed output active power value.
-* `minReactive` (pu or VAr): Minimum allowed output reactive power value.
-* `maxReactive` (pu or VAr): Maximum allowed output reactive power value.
+* `minActive` (pu or W): Minimum allowed active power output value.
+* `maxActive` (pu or W): Maximum allowed active power output value.
+* `minReactive` (pu or VAr): Minimum allowed reactive power output value.
+* `maxReactive` (pu or VAr): Maximum allowed reactive power output value.
 * `lowActive` (pu or W): Lower allowed active power output value of PQ capability curve.
 * `minLowReactive` (pu or VAr): Minimum allowed reactive power output value at `lowActive` value.
 * `maxLowReactive` (pu or VAr): Maximum allowed reactive power output value at `lowActive` value.
@@ -44,10 +44,10 @@ Note that voltage magnitude values are referenced to line-to-neutral voltages, w
 when given in SI units, correspond to three-phase power.
 
 # Updates
-The function updates the `generator` field within the `PowerSystem` composite type, and in
-cases where parameters impact variables in the `bus` field, it automatically adjusts the
-field. Furthermore, it guarantees that any modifications to the parameters are transmitted
-to the `Analysis` type.
+The function updates the `generator` field within the `PowerSystem` type, and in cases
+where parameters impact variables in the `bus` field, it automatically adjusts the field.
+Furthermore, it guarantees that any modifications to the parameters are transmitted to the
+`Analysis` type.
 
 # Default Settings
 By default, certain keywords are assigned default values: `status = 1` and `magnitude = 1.0`
@@ -221,23 +221,22 @@ end
 The function allows for the alteration of parameters for an existing generator.
 
 # Arguments
-If the `Analysis` type is omitted, the function applies changes to the `PowerSystem`
-composite type only. However, when including the `Analysis` type, it updates both the
-`PowerSystem` and `Analysis` types. This streamlined process avoids the need to completely
-rebuild vectors and matrices when adjusting these parameter
+If the `Analysis` type is omitted, the function applies changes to the `PowerSystem` type
+only. However, when including the `Analysis` type, it updates both the `PowerSystem` and
+`Analysis` types. This streamlined process avoids the need to completely rebuild vectors
+and matrices when adjusting these parameter.
 
 # Keywords
 To update a specific generator, provide the necessary `kwargs` input arguments in accordance
 with the keywords specified in the [`addGenerator!`](@ref addGenerator!) function, along with
 their respective values. Ensure that the `label` keyword matches the label of the existing
-generator you want to modify. If any keywords are omitted, their corresponding values will
-remain unchanged.
+generator. If any keywords are omitted, their corresponding values will remain unchanged.
 
 # Updates
-The function updates the `generator` field within the `PowerSystem` composite type, and in
-cases where parameters impact variables in the `bus` field, it automatically adjusts the
-field. Furthermore, it guarantees that any modifications to the parameters are transmitted
-to the `Analysis` type.
+The function updates the `generator` field within the `PowerSystem` type, and in cases where
+parameters impact variables in the `bus` field, it automatically adjusts the field.
+Furthermore, it guarantees that any modifications to the parameters are transmitted to the
+`Analysis` type.
 
 # Units
 Units for input parameters can be changed using the same method as described for the
@@ -658,8 +657,8 @@ with the keywords specified within the [`addGenerator!`](@ref addGenerator!) fun
 with their corresponding values.
 
 # Units
-By default, the input units are associated with per-units as shown. However, users have
-the option to use other units instead of per-units using the [`@power`](@ref @power) and
+By default, the input units are associated with per-units. However, users have the option
+to use other units instead of per-units using the [`@power`](@ref @power) and
 [`@voltage`](@ref @voltage) macros.
 
 # Examples
@@ -740,14 +739,13 @@ end
         generator, active, reactive, piecewise, polynomial)
 
 The function either adds a new cost or modifies an existing one for the active or reactive
-power generated by the corresponding generator within the `PowerSystem` composite type.
-It has the capability to append a cost to an already defined generator.
+power generated by the corresponding generator within the `PowerSystem` type. It has the
+capability to append a cost to an already defined generator.
 
 # Arguments
-If the `Analysis` type is omitted, the function applies changes to the `PowerSystem`
-composite type only. However, when including the `Analysis` type, it updates both the
-`PowerSystem` and `Analysis` types. This streamlined approach circumvents the necessity
-for completely reconstructing vectors and matrices when adding a new branch.
+If the `Analysis` type is omitted, the function applies changes to the `PowerSystem` type
+only. However, when including the `Analysis` type, it updates both the `PowerSystem` and
+`Analysis` types.
 
 # Keywords
 The function accepts five keywords:
@@ -767,9 +765,9 @@ The function accepts five keywords:
   * last element (\\\$/hr): constant coefficient.
 
 # Updates
-The function updates the `generator.cost` field within the `PowerSystem` composite type.
-Furthermore, it guarantees that any modifications to the parameters are transmitted
-to the `Analysis` type.
+The function updates the `generator.cost` field within the `PowerSystem` type. Furthermore,
+it guarantees that any modifications to the parameters are transmitted to the `Analysis`
+type.
 
 # Units
 By default, the input units related with active powers are per-units, but they can be

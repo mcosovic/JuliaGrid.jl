@@ -2,7 +2,7 @@
     addVoltmeter!(system::PowerSystem, device::Measurement;
         label, bus, magnitude, variance, noise, status)
 
-The function adds a new voltmeter that measures bus voltage magnitude to the `Measurement`
+The function adds a voltmeter that measures bus voltage magnitude to the `Measurement`
 type within a given `PowerSystem` type. The voltmeter can be added to an already
 defined bus.
 
@@ -85,21 +85,21 @@ end
 
 """
     addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-        variance, status, noise)
+        variance, noise, status)
 
-The function incorporates voltmeters into the `Measurement` composite type for every bus
-within the `PowerSystem` type. These measurements are derived from the exact bus voltage
-magnitudes defined in the `AC` type.
+The function incorporates voltmeters into the `Measurement` type for every bus within the
+`PowerSystem` type. These measurements are derived from the exact bus voltage magnitudes
+defined in the `AC` type.
 
 # Keywords
 Voltmeters can be configured using:
 * `variance` (pu or V): Measurements Variance.
-* `status`: Operating status:
-  * `status = 1`: in-service,
-  * `status = 0`: out-of-service.
 * `noise`: Defines the method for generating the measurement means:
   * `noise = true`: adds white Gaussian noise to the voltage magnitudes using the defined variance,
   * `noise = false`: uses the exact voltage magnitude values without adding noise.
+* `status`: Operating status:
+  * `status = 1`: in-service,
+  * `status = 0`: out-of-service.
 
 # Updates
 The function updates the `voltmeter` field of the `Measurement` composite type.
@@ -120,13 +120,7 @@ device = measurement()
 
 acModel!(system)
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+powerFlow!(system, analysis)
 
 @voltmeter(label = "Voltmeter ?")
 addVoltmeter!(system, device, analysis; variance = 1e-3, noise = true)
@@ -181,21 +175,20 @@ The function allows for the alteration of parameters for a voltmeter.
 
 # Arguments
 If the `Analysis` type is omitted, the function applies changes to the `Measurement`
-composite type only. However, when including the `Analysis` type, it updates both the
-`Measurement` and `Analysis` types. This streamlined process avoids the need to completely
-rebuild vectors and matrices when adjusting these parameters.
+type only. However, when including the `Analysis` type, it updates both the `Measurement`
+and `Analysis` types. This streamlined process avoids the need to completely rebuild
+vectors and matrices when adjusting these parameters.
 
 # Keywords
 To update a specific voltmeter, provide the necessary `kwargs` input arguments in
 accordance with the keywords specified in the [`addVoltmeter!`](@ref addVoltmeter!)
 function, along with their respective values. Ensure that the `label` keyword matches the
-`label` of the existing voltmeter you want to modify. If any keywords are omitted, their
-corresponding values will remain unchanged.
+`label` of the existing voltmeter. If any keywords are omitted, their corresponding values
+will remain unchanged.
 
 # Updates
-The function updates the `voltmeter` field within the `Measurement` composite type.
-Furthermore, it guarantees that any modifications to the parameters are transmitted to the
-`Analysis` type.
+The function updates the `voltmeter` field within the `Measurement` type. Furthermore, it
+guarantees that any modifications to the parameters are transmitted to the `Analysis` type.
 
 # Units
 Units for input parameters can be changed using the same method as described for the
@@ -301,7 +294,7 @@ function updateVoltmeter!(
 end
 
 """
-    @voltmeter(label, variance, status, noise)
+    @voltmeter(label, variance, noise, status)
 
 The macro generates a template for a voltmeter, which can be utilized to define a voltmeter
 using the [`addVoltmeter!`](@ref addVoltmeter!) function.

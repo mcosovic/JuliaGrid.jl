@@ -21,32 +21,33 @@ The following keywords control the printed data:
 !!! compat "Julia 1.10"
     The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
 
-# Example
+# Examples
+Print data for all buses:
 ```jldoctest
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-power!(system, analysis)
+powerFlow!(system, analysis; power = true)
 
-# Print data for all buses
 fmt = Dict("Power Demand" => "%.2f", "Voltage Magnitude" => "%.2f", "Label" => "%s")
 show = Dict("Power Injection" => false, "Power Generation Reactive" => false)
-printBusData(system, analysis; fmt, show, repeat = 10)
 
-# Print data for specific buses
+printBusData(system, analysis; fmt, show, repeat = 10)
+```
+
+Print data for specific buses:
+```jldoctest
+system = powerSystem("case14.h5")
+
+analysis = newtonRaphson(system)
+powerFlow!(system, analysis; power = true)
+
 delimiter = " "
 width = Dict("Voltage" => 9, "Power Injection Active" => 9)
+
 printBusData(system, analysis; label = 2, delimiter, width, title = true, header = true)
 printBusData(system, analysis; label = 10, delimiter, width)
-printBusData(system, analysis; label = 12, delimiter, width)
-printBusData(system, analysis; label = 14, delimiter, width, footer = true)
+printBusData(system, analysis; label = 12, delimiter, width, footer = true)
 ```
 """
 function printBusData(
@@ -472,30 +473,31 @@ The following keywords control the printed data:
 !!! compat "Julia 1.10"
     The function [`printBranchData`](@ref printBranchData) requires Julia 1.10 or later.
 
-# Example
+# Examples
+Print data for all branches:
 ```jldoctest
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-power!(system, analysis)
+powerFlow!(system, analysis; power = true)
 
-# Print data for all branches
 fmt = Dict("Shunt Power" => "%.2f", "Series Power Reactive" => "%.2f")
 show = Dict("From-Bus Power" => false, "To-Bus Power Reactive" => false)
-printBranchData(system, analysis; fmt, show, repeat = 11, title = false)
 
-# Print data for specific branches
+printBranchData(system, analysis; fmt, show, repeat = 11, title = false)
+```
+
+Print data for specific branches:
+```jldoctest
+system = powerSystem("case14.h5")
+
+analysis = newtonRaphson(system)
+powerFlow!(system, analysis; power = true)
+
 delimiter = " "
 width = Dict("From-Bus Power" => 9, "To-Bus Power Active" => 9)
+
 printBranchData(system, analysis; label = 2, delimiter, width, header = true)
-printBranchData(system, analysis; label = 10, delimiter, width)
 printBranchData(system, analysis; label = 12, delimiter, width)
 printBranchData(system, analysis; label = 14, delimiter, width, footer = true)
 ```
@@ -969,28 +971,30 @@ The following keywords control the printed data:
 !!! compat "Julia 1.10"
     The function [`printGeneratorData`](@ref printGeneratorData) requires Julia 1.10 or later.
 
-# Example
+# Examples
+Print data for all generators:
 ```jldoctest
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-power!(system, analysis)
+powerFlow!(system, analysis; power = true)
 
-# Print data for all generators
 fmt = Dict("Power Output Active" => "%.2f")
 show = Dict("Power Output Reactive" => false)
-printGeneratorData(system, analysis; fmt, show, title = false)
 
-# Print data for specific generators
+printGeneratorData(system, analysis; fmt, show, title = false)
+```
+
+Print data for specific generators:
+``jldoctest
+system = powerSystem("case14.h5")
+
+analysis = newtonRaphson(system)
+powerFlow!(system, analysis; power = true)
+
 delimiter = " "
 width = Dict("Power Output Active" => 7)
+
 printGeneratorData(system, analysis; label = 1, delimiter, width, header = true)
 printGeneratorData(system, analysis; label = 4, delimiter, width)
 printGeneratorData(system, analysis; label = 5, delimiter, width, footer = true)
@@ -1285,16 +1289,10 @@ The following keywords control the printed data:
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-power!(system, analysis)
+powerFlow!(system, analysis; power = true)
 
 show = Dict("In-Use" => false)
+
 printBusSummary(system, analysis; show, delimiter = " ", title = false)
 ```
 """
@@ -1531,16 +1529,10 @@ The following keywords control the printed data:
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-power!(system, analysis)
+powerFlow!(system, analysis; power = true)
 
 show = Dict("Total" => false)
+
 printBranchSummary(system, analysis; show, delimiter = " ", title = false)
 ```
 """
@@ -1816,16 +1808,10 @@ The following keywords control the printed data:
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-power!(system, analysis)
+powerFlow!(system, analysis; power = true)
 
 show = Dict("Minimum" => false)
+
 printGeneratorSummary(system, analysis; show, delimiter = " ", title = false)
 ```
 """

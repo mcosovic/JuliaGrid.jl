@@ -2,7 +2,7 @@
     saveMeasurement(device::Measurement; path::String, reference::String, note::String)
 
 The function saves the measurement's data in the HDF5 file using the fields `voltmeter`,
-`ammeter`, `wattmeter`, `varmeter`, and `pmu` from the `Measurement` composite type.
+`ammeter`, `wattmeter`, `varmeter`, and `pmu` from the `Measurement` type.
 
 # Keywords
 The location and file name of the HDF5 file is specified by the mandatory keyword `path`
@@ -22,8 +22,7 @@ device = measurement()
 
 acModel!(system)
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
-power!(system, analysis)
+powerFlow!(system, analysis; power = true)
 
 addVoltmeter!(system, device, analysis)
 addWattmeter!(system, device, analysis)

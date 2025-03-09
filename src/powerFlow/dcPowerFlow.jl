@@ -4,12 +4,12 @@
 The function sets up the framework to solve the DC power flow.
 
 # Arguments
-The function requires the `PowerSystem` composite type to establish the framework. Next,
-the `Factorization` argument, while optional, determines the method used to solve the
-linear system of equations. It can take one of the following values:
-- `LU`: utilizes LU factorization (default),
-- `LDLt`: utilizes LDLt factorization,
-- `QR`: utilizes QR factorization.
+The function requires the `PowerSystem` type to establish the framework. Next, the
+`Factorization` argument, while optional, determines the method used to solve the linear
+system of equations. It can take one of the following values:
+- `LU`: Utilizes LU factorization (default).
+- `LDLt`: Utilizes LDLt factorization.
+- `QR`: Utilizes QR factorization.
 
 # Updates
 If the DC model was not created, the function will automatically initiate an update of the
@@ -22,7 +22,7 @@ The function returns an instance of the `DCPowerFlow` type, which includes the f
 fields:
 - `voltage`: The variable allocated to store the bus voltage angles.
 - `power`: The variable allocated to store the active powers.
-- `method`: The factorized nodal matrix.
+- `method`: The factorized nodal admittance matrix.
 
 # Examples
 Set up the DC power flow utilizing LU factorization:
@@ -137,7 +137,7 @@ The function serves as a wrapper for solving DC power flow and includes the func
 
 It computes bus voltage angles and optionally calculates power values.
 
-# Keyword
+# Keywords
 Users can use the following keywords:
 * `power`: Enables the computation of powers (default: `false`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).

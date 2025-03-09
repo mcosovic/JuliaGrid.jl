@@ -2,7 +2,7 @@
     addAmmeter!(system::PowerSystem, device::Measurement;
         label, from, to, magnitude, variance, noise, status)
 
-The function adds a new ammeter that measures branch current magnitude to the `Measurement`
+The function adds an ammeter that measures branch current magnitude to the `Measurement`
 type within a given `PowerSystem` type. The ammeter can be added to an already defined
 branch.
 
@@ -21,7 +21,7 @@ The ammeter is defined with the following keywords:
   * `status = 0`: out-of-service.
 
 # Updates
-The function updates the `ammeter` field of the `Measurement` composite type.
+The function updates the `ammeter` field of the `Measurement` type.
 
 # Default Settings
 Default settings for certain keywords are as follows: `variance = 1e-4`, `noise = false`,
@@ -155,14 +155,7 @@ device = measurement()
 
 acModel!(system)
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-current!(system, analysis)
+powerFlow!(system, analysis; current = true)
 
 @ammeter(label = "Ammeter ?")
 addAmmeter!(system, device, analysis; varianceFrom = 1e-3, statusTo = 0)
@@ -259,9 +252,9 @@ The function allows for the alteration of parameters for an ammeter.
 
 # Arguments
 If the `Analysis` type is omitted, the function applies changes to the `Measurement`
-composite type only. However, when including the `Analysis` type, it updates both the
-`Measurement` and `Analysis` types. This streamlined process avoids the need to completely
-rebuild vectors and matrices when adjusting these parameters.
+type only. However, when including the `Analysis` type, it updates both the `Measurement`
+and `Analysis` types. This streamlined process avoids the need to completely rebuild vectors
+and matrices when adjusting these parameters.
 
 # Keywords
 To update a specific ammeter, provide the necessary `kwargs` input arguments in accordance
@@ -271,9 +264,8 @@ existing ammeter you want to modify. If any keywords are omitted, their correspo
 values will remain unchanged.
 
 # Updates
-The function updates the `ammeter` field within the `Measurement` composite type.
-Furthermore, it guarantees that any modifications to the parameters are transmitted to the
-`Analysis` type.
+The function updates the `ammeter` field within the `Measurement` type. Furthermore, it
+guarantees that any modifications to the parameters are transmitted to the `Analysis` type.
 
 # Units
 Units for input parameters can be changed using the same method as described for the

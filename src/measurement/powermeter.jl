@@ -2,7 +2,7 @@
     addWattmeter!(system::PowerSystem, device::Measurement;
         label, bus, from, to, active, variance, noise, status)
 
-The function adds a new wattmeter that measures active power injection or active power flow
+The function adds a wattmeter that measures active power injection or active power flow
 to the `Measurement` type within a given `PowerSystem` type. The wattmeter can be added to
 an already defined bus or branch.
 
@@ -24,7 +24,7 @@ The wattmeter is defined with the following keywords:
 Note that when powers are given in SI units, they correspond to three-phase power.
 
 # Updates
-The function updates the `wattmeter` field of the `Measurement` composite type.
+The function updates the `wattmeter` field of the `Measurement` type.
 
 # Default Settings
 Default settings for certain keywords are as follows: `variance = 1e-4`, `noise = false`,
@@ -87,9 +87,9 @@ end
     addVarmeter!(system::PowerSystem, device::Measurement;
         label, bus, from, to, reactive, variance, noise, status)
 
-The function adds a new varmeter that measures reactive power injection or reactive power
-flow to the `Measurement` type within a given `PowerSystem` type. The varmeter can be added
-to an already defined bus or branch.
+The function adds a varmeter that measures reactive power injection or reactive power flow
+to the `Measurement` type within a given `PowerSystem` type. The varmeter can be added to
+an already defined bus or branch.
 
 # Keywords
 The varmeter is defined with the following keywords:
@@ -109,7 +109,7 @@ The varmeter is defined with the following keywords:
 Note that when powers are given in SI units, they correspond to three-phase power.
 
 # Updates
-The function updates the `varmeter` field of the `Measurement` composite type.
+The function updates the `varmeter` field of the `Measurement` type.
 
 # Default Settings
 Default settings for certain keywords are as follows: `variance = 1e-4`, `noise = false`,
@@ -236,10 +236,9 @@ end
     addWattmeter!(system::PowerSystem, device::Measurement, analysis::AC;
         varianceBus, statusBus, varianceFrom, statusFrom, varianceTo, statusTo, noise)
 
-The function incorporates wattmeters into the `Measurement` composite type for every bus
-and branch within the `PowerSystem` type. These measurements are derived from the exact
-active power injections at buses and active power flows in branches defined in the `AC`
-type.
+The function incorporates wattmeters into the `Measurement` type for every bus and branch
+within the `PowerSystem` type. These measurements are derived from the exact active power
+injections at buses and active power flows in branches defined in the `AC` type.
 
 # Keywords
 Wattmeters at the buses can be configured using:
@@ -286,14 +285,7 @@ device = measurement()
 
 acModel!(system)
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-power!(system, analysis)
+powerFlow!(system, analysis; power = true)
 
 @wattmeter(label = "Wattmeter ?")
 addWattmeter!(system, device, analysis; varianceBus = 1e-3, statusFrom = 0)
@@ -325,10 +317,9 @@ end
     addVarmeter!(system::PowerSystem, device::Measurement, analysis::AC;
         varianceBus, statusBus, varianceFrom, statusFrom, varianceTo, statusTo, noise)
 
-The function incorporates varmeters into the `Measurement` composite type for every bus
-and branch within the `PowerSystem` type. These measurements are derived from the exact
-reactive power injections at buses and reactive power flows in branches defined in the `AC`
-type.
+The function incorporates varmeters into the `Measurement` type for every bus and branch
+within the `PowerSystem` type. These measurements are derived from the exact reactive power
+injections at buses and reactive power flows in branches defined in the `AC` type.
 
 # Keywords
 Varmeters at the buses can be configured using:
@@ -375,14 +366,7 @@ device = measurement()
 
 acModel!(system)
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-power!(system, analysis)
+powerFlow!(system, analysis; power = true)
 
 @varmeter(label = "Varmeter ?")
 addVarmeter!(system, device, analysis; varianceFrom = 1e-3, statusBus = 0)
@@ -523,10 +507,10 @@ end
 The function allows for the alteration of parameters for a wattmeter.
 
 # Arguments
-If the `Analysis` type is omitted, the function applies changes to the `Measurement`
-composite type only. However, when including the `Analysis` type, it updates both the
-`Measurement` and `Analysis` types. This streamlined process avoids the need to completely
-rebuild vectors and matrices when adjusting these parameters.
+If the `Analysis` type is omitted, the function applies changes to the `Measurement` type
+only. However, when including the `Analysis` type, it updates both the `Measurement` and
+`Analysis` types. This streamlined process avoids the need to completely rebuild vectors
+and matrices when adjusting these parameters.
 
 # Keywords
 To update a specific wattmeter, provide the necessary `kwargs` input arguments in accordance
@@ -804,9 +788,9 @@ The function allows for the alteration of parameters for a varmeter.
 
 # Arguments
 If the `Analysis` type is omitted, the function applies changes to the `Measurement`
-composite type only. However, when including the `Analysis` type, it updates both the
-`Measurement` and `Analysis` types. This streamlined process avoids the need to completely
-rebuild vectors and matrices when adjusting these parameters.
+type only. However, when including the `Analysis` type, it updates both the `Measurement`
+and `Analysis` types. This streamlined process avoids the need to completely rebuild vectors
+and matrices when adjusting these parameters.
 
 # Keywords
 To update a specific varmeter, provide the necessary `kwargs` input arguments in accordance
@@ -816,9 +800,8 @@ existing varmeter you want to modify. If any keywords are omitted, their corresp
 values will remain unchanged.
 
 # Updates
-The function updates the `varmeter` field within the `Measurement` composite type.
-Furthermore, it guarantees that any modifications to the parameters are transmitted to the
-`Analysis` type.
+The function updates the `varmeter` field within the `Measurement` type. Furthermore, it
+guarantees that any modifications to the parameters are transmitted to the `Analysis` type.
 
 # Units
 Units for input parameters can be changed using the same method as described for the

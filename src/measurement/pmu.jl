@@ -4,10 +4,10 @@
         magnitude, varianceMagnitude, angle, varianceAngle,
         noise, correlated, polar, status)
 
-The function adds a new PMU to the `Measurement` type within a given `PowerSystem` type.
-The PMU can be added to an already defined bus or branch. When defining the PMU, it
-is essential to provide the bus voltage magnitude and angle if the PMU is located at a bus
-or the branch current magnitude and angle if the PMU is located at a branch.
+The function adds a PMU to the `Measurement` type within a given `PowerSystem` type. The
+PMU can be added to an already defined bus or branch. When defining the PMU, it is essential
+to provide the bus voltage magnitude and angle if the PMU is located at a bus or the branch
+current magnitude and angle if the PMU is located at a branch.
 
 # Keywords
 The PMU is defined with the following keywords:
@@ -35,7 +35,7 @@ The PMU is defined with the following keywords:
 Note that all voltage values are referenced to line-to-neutral voltages.
 
 # Updates
-The function updates the `pmu` field of the `Measurement` composite type.
+The function updates the `pmu` field of the `Measurement` type.
 
 # Default Settings
 Default settings for certain keywords are as follows: `varianceMagnitude = 1e-8`,
@@ -179,10 +179,9 @@ end
         varianceMagnitudeTo, varianceAngleTo, statusTo,
         noise, correlated, polar)
 
-The function incorporates PMUs into the `Measurement` composite type for every bus and
-branch within the `PowerSystem` type. These measurements are derived from the exact bus
-voltage magnitudes and angles, as well as branch current magnitudes and angles defined in
-the `AC` type.
+The function incorporates PMUs into the `Measurement` type for every bus and branch within
+the `PowerSystem` type. These measurements are derived from the exact bus voltage magnitudes
+and angles, as well as branch current magnitudes and angles defined in the `AC` type.
 
 # Keywords
 PMUs at the buses can be configured using:
@@ -219,7 +218,7 @@ Settings for handling phasor measurements include:
   * `polar = false`: adopts the rectangular coordinate system.
 
 # Updates
-The function updates the `pmu` field of the `Measurement` composite type.
+The function updates the `pmu` field of the `Measurement` type.
 
 # Default Settings
 Default settings for variance keywords are established at `1e-8`, with all statuses set to
@@ -239,14 +238,7 @@ device = measurement()
 
 acModel!(system)
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-current!(system, analysis)
+powerFlow!(system, analysis; current = true)
 
 @pmu(label = "PMU ?")
 addPmu!(system, device, analysis; varianceMagnitudeBus = 1e-3)
@@ -397,10 +389,10 @@ end
 The function allows for the alteration of parameters for a PMU.
 
 # Arguments
-If the `Analysis` type is omitted, the function applies changes to the `Measurement`
-composite type only. However, when including the `Analysis` type, it updates both the
-`Measurement` and `Analysis` types. This streamlined process avoids the need to completely
-rebuild vectors and matrices when adjusting these parameters.
+If the `Analysis` type is omitted, the function applies changes to the `Measurement` type
+only. However, when including the `Analysis` type, it updates both the `Measurement` and
+`Analysis` types. This streamlined process avoids the need to completely rebuild vectors
+and matrices when adjusting these parameters.
 
 # Keywords
 To update a specific PMU, provide the necessary `kwargs` input arguments in accordance

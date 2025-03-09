@@ -4,11 +4,11 @@
 The function sets up the Newton-Raphson method to solve the AC power flow.
 
 # Arguments
-The function requires the `PowerSystem` composite type to establish the framework. Next,
-the `Factorization` argument, while optional, determines the method used to solve the
+The function requires the `PowerSystem` type to establish the framework. Next, the
+`Factorization` argument, while optional, determines the method used to solve the
 linear system of equations within each iteration. It can take one of the following values:
-- `LU`: utilizes LU factorization (default),
-- `QR`: utilizes QR factorization.
+- `LU`: Utilizes LU factorization (default).
+- `QR`: Utilizes QR factorization.
 
 # Updates
 If the AC model has not been created, the function automatically initiates an update within
@@ -151,11 +151,11 @@ The function sets up the fast Newton-Raphson method of version BX to solve the A
 flow.
 
 # Arguments
-The function requires the `PowerSystem` composite type to establish the framework. Next,
-the `Factorization` argument, while optional, determines the method used to solve the
-linear system of equations within each iteration. It can take one of the following values:
-- `LU`: utilizes LU factorization (default),
-- `QR`: utilizes QR factorization.
+The function requires the `PowerSystem` type to establish the framework. Next, the
+`Factorization` argument, while optional, determines the method used to solve the linear
+system of equations within each iteration. It can take one of the following values:
+- `LU`: Utilizes LU factorization (default).
+- `QR`: Utilizes QR factorization.
 
 # Updates
 If the AC model has not been created, the function automatically initiates an update within
@@ -198,11 +198,11 @@ The function sets up the fast Newton-Raphson method of version XB to solve the A
 flow.
 
 # Arguments
-The function requires the `PowerSystem` composite type to establish the framework. Next,
-the `Factorization` argument, while optional, determines the method used to solve the
-linear system of equations within each iteration. It can take one of the following values:
-- `LU`: utilizes LU factorization (default),
-- `QR`: utilizes QR factorization.
+The function requires the `PowerSystem` type to establish the framework. Next, the
+`Factorization` argument, while optional, determines the method used to solve the linear
+system of equations within each iteration. It can take one of the following values:
+- `LU`: Utilizes LU factorization (default).
+- `QR`: Utilizes QR factorization.
 
 # Updates
 If the AC model has not been created, the function automatically initiates an update within
@@ -425,8 +425,8 @@ end
 
 The function sets up the Gauss-Seidel method to solve the AC power flow.
 
-# Arguments
-The function requires the `PowerSystem` composite type to establish the framework.
+# Argument
+The function requires the `PowerSystem` type to establish the framework.
 
 # Updates
 If the AC model has not been created, the function automatically initiates an update within
@@ -505,7 +505,7 @@ end
 The function calculates both active and reactive power injection mismatches.
 
 # Updates
-This function updates the mismatch variables in the Newton-Raphson and fast Newton-Raphson
+This function updates the `mismatch` variables in the Newton-Raphson and fast Newton-Raphson
 methods. It should be employed during the iteration loop before invoking the
 [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function.
 
@@ -641,10 +641,10 @@ end
     solve!(system::PowerSystem, analysis::ACPowerFlow)
 
 The function employs the Newton-Raphson, fast Newton-Raphson, or Gauss-Seidel method to
-solve the AC power flow model and calculate bus voltage magnitudes and angles.
+solve the AC power flow and calculate bus voltage magnitudes and angles.
 
-After the [`mismatch!`](@ref mismatch!) function is called, this function should be
-executed to perform a single iteration of the method.
+After the [`mismatch!`](@ref mismatch!) function is executed, the execution of this
+function will perform a single iteration of one of the methods.
 
 # Updates
 The calculated voltages are stored in the `voltage` field of the `ACPowerFlow` type.
@@ -1030,7 +1030,8 @@ needed.
 If `source` comes from a DC analysis, only the bus voltage angles are assigned in the
 `target` argument, while the bus voltage magnitudes remain unchanged.
 
-# Example
+# Examples
+Initialize the Newton-Raphson method with values from the Gauss-Seidel method:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -1045,11 +1046,25 @@ nr = newtonRaphson(system)
 setInitialPoint!(gs, nr)
 for i = 1:10
     stopping = mismatch!(system, nr)
-    if all(stopping .< 1e-8)
+    if all(stopping .< 1e-10)
         break
     end
     solve!(system, nr)
 end
+```
+
+Use wrapper functions and initialize Newton-Raphson with Gauss-Seidel values:
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+gs = gaussSeidel(system)
+powerFlow!(system, gs; iteration = 10)
+
+nr = newtonRaphson(system)
+
+setInitialPoint!(gs, nr)
+powerFlow!(system, nr; tolerance = 1e-10)
 ```
 """
 function setInitialPoint!(system::PowerSystem, analysis::ACPowerFlow)
@@ -1166,13 +1181,23 @@ Users can use the following keywords:
 * `current`: Enables current computation upon convergence or reaching the iteration limit (default: `false`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
-# Example
+# Examples
+Solve the AC power flow using the Newton-Raphson method:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; iteration = 30, tolerance = 1e-10, power = true, verbose = 3)
+powerFlow!(system, analysis; iteration = 30, tolerance = 1e-10, verbose = 3)
+```
+
+Solve the AC power flow using the Gauss-Seidel method:
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+analysis = gaussSeidel(system)
+powerFlow!(system, analysis; iteration = 200, power = true, current = true, verbose = 3)
 ```
 """
 function powerFlow!(

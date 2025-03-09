@@ -4,14 +4,14 @@
         resistance, reactance, conductance, susceptance, turnsRatio, shiftAngle,
         minDiffAngle, maxDiffAngle, minFromBus, maxFromBus, minToBus, maxToBus, type)
 
-The function adds a new branch to the `PowerSystem` composite type. A branch can be added
-between already defined buses.
+The function adds a new branch to the `PowerSystem` type. A branch can be added between
+already defined buses.
 
 # Arguments
-If the `Analysis` type is omitted, the function applies changes to the `PowerSystem`
-composite type only. However, when including the `Analysis` type, it updates both the
-`PowerSystem` and `Analysis` types. This streamlined approach circumvents the necessity
-for completely reconstructing vectors and matrices when adding a new branch.
+If the `Analysis` type is omitted, the function applies changes to the `PowerSystem` type
+only. However, when including the `Analysis` type, it updates both the `PowerSystem` and
+`Analysis` types. This streamlined approach circumvents the necessity for completely
+reconstructing vectors and matrices when adding a new branch.
 
 # Keywords
 The branch is defined with the following keywords:
@@ -43,10 +43,10 @@ The branch is defined with the following keywords:
 Note that when powers are given in SI units, they correspond to three-phase power.
 
 # Updates
-The function updates the `branch` field within the `PowerSystem` composite type, and in
-cases where parameters impact variables in the `ac` and `dc` fields, it automatically
-adjusts the fields. Furthermore, it guarantees that any modifications to the parameters
-are transmitted to the  `Analysis` type.
+The function updates the `branch` field within the `PowerSystem` type, and in cases where
+parameters impact variables in the `ac` and `dc` fields, it automatically adjusts the
+fields. Furthermore, it guarantees that any modifications to the parameters are transmitted
+to the `Analysis` type.
 
 # Default Settings
 By default, certain keywords are assigned default values: `status = 1`, `turnsRatio = 1.0`,
@@ -250,23 +250,22 @@ end
 The function allows for the alteration of parameters for an existing branch.
 
 # Arguments
-If the `Analysis` type is omitted, the function applies changes to the `PowerSystem`
-composite type only. However, when including the `Analysis` type, it updates both the
-`PowerSystem` and `Analysis` types. This streamlined process avoids the need to completely
-rebuild vectors and matrices when adjusting these parameter
+If the `Analysis` type is omitted, the function applies changes to the `PowerSystem` type
+only. However, when including the `Analysis` type, it updates both the `PowerSystem` and
+`Analysis` types. This streamlined process avoids the need to completely rebuild vectors
+and matrices when adjusting these parameter.
 
 # Keywords
 To update a specific branch, provide the necessary `kwargs` input arguments in accordance
 with the keywords specified in the [`addBranch!`](@ref addBranch!) function, along with
 their respective values. Ensure that the `label` keyword matches the label of the existing
-branch you want to modify. If any keywords are omitted, their corresponding values will
-remain unchanged.
+branch. If any keywords are omitted, their corresponding values will remain unchanged.
 
 # Updates
-The function updates the `branch` field within the `PowerSystem` composite type, and in
-cases where parameters impact variables in the `ac` and `dc` fields, it automatically
-adjusts the fields. Furthermore, it guarantees that any modifications to the parameters
-are transmitted to the `Analysis` type.
+The function updates the `branch` field within the `PowerSystem` type, and in cases where
+parameters impact variables in the `ac` and `dc` fields, it automatically adjusts the fields.
+Furthermore, it guarantees that any modifications to the parameters are transmitted to the
+`Analysis` type.
 
 # Units
 Units for input parameters can be changed using the same method as described for the

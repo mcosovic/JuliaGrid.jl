@@ -3,7 +3,7 @@
         label, type, active, reactive, conductance, susceptance,
         magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
 
-The function adds a new bus to the `PowerSystem` composite type.
+The function adds a new bus to the `PowerSystem` type.
 
 # Keywords
 The bus is defined with the following keywords:
@@ -28,7 +28,7 @@ Note that all voltage values, except for base voltages, are referenced to line-t
 voltages, while powers, when given in SI units, correspond to three-phase power.
 
 # Updates
-The function updates the `bus` field of the `PowerSystem` composite type.
+The function updates the `bus` field of the `PowerSystem` type.
 
 # Default Settings
 The default settings for certain keywords are as follows: `type = 1`, `magnitude = 1.0`,
@@ -131,21 +131,20 @@ end
 The function allows for the alteration of parameters for an existing bus.
 
 # Arguments
-If the `Analysis` type is omitted, the function applies changes to the `PowerSystem`
-composite type only. However, when including the `Analysis` type, it updates both the
-`PowerSystem` and `Analysis` types. This streamlined process avoids the need to completely
-rebuild vectors and matrices when adjusting these parameters.
+If the `Analysis` type is omitted, the function applies changes to the `PowerSystem` type
+only. However, when including the `Analysis` type, it updates both the `PowerSystem` and
+`Analysis` types. This streamlined process avoids the need to completely rebuild vectors
+and matrices when adjusting these parameters.
 
 # Keywords
 To update a specific bus, provide the necessary `kwargs` input arguments in accordance with
 the keywords specified in the [`addBus!`](@ref addBus!) function, along with their
-respective values. Ensure that the `label` keyword matches the `label` of the existing bus
-you want to modify. If any keywords are omitted, their corresponding values will remain
-unchanged.
+respective values. Ensure that the `label` keyword matches the `label` of the existing bus.
+If any keywords are omitted, their corresponding values will remain unchanged.
 
 # Updates
-The function updates the `bus` field within the `PowerSystem` composite type, and in cases
-where parameters impact variables in the `ac` field, it automatically adjusts the field.
+The function updates the `bus` field within the `PowerSystem` type, and in cases where
+parameters impact variables in the `ac` field, it automatically adjusts the field.
 Furthermore, it guarantees that any modifications to the parameters are transmitted to the
 `Analysis` type.
 

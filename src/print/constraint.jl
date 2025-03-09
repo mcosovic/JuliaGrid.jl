@@ -21,7 +21,8 @@ The following keywords control the printed data:
 !!! compat "Julia 1.10"
     The function [`printBusConstraint`](@ref printBusConstraint) requires Julia 1.10 or later.
 
-# Example
+# Examples
+Print data for all buses:
 ```jldoctest
 using Ipopt
 
@@ -30,14 +31,24 @@ system = powerSystem("case14.h5")
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 
-# Print data for all buses
 fmt = Dict("Active Power Balance" => "%.2e", "Reactive Power Balance Dual" => "%.4e")
 show = Dict("Voltage Magnitude" => false, "Reactive Power Balance Solution" => false)
-printBusConstraint(system, analysis; fmt, show, repeat = 10)
 
-# Print data for specific buses
+printBusConstraint(system, analysis; fmt, show, repeat = 10)
+```
+
+Print data for specific buses:
+```jldoctest
+using Ipopt
+
+system = powerSystem("case14.h5")
+
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+
 delimiter = " "
 width = Dict("Voltage Magnitude" => 8, "Active Power Balance Solution" => 12)
+
 printBusConstraint(system, analysis; label = 2, delimiter, width, header = true)
 printBusConstraint(system, analysis; label = 10, delimiter, width)
 printBusConstraint(system, analysis; label = 14, delimiter, width, footer = true)
@@ -453,29 +464,39 @@ The following keywords control the printed data:
 !!! compat "Julia 1.10"
     The function [`printBranchConstraint`](@ref printBranchConstraint) requires Julia 1.10 or later.
 
-# Example
+# Examples
+Print data for all branches:
 ```jldoctest
 using Ipopt
 
 system = powerSystem("case14.h5")
 updateBranch!(system; label = 3, minDiffAngle = 0.05, maxDiffAngle = 1.5)
-updateBranch!(system; label = 4, minDiffAngle = 0.05, maxDiffAngle = 1.1)
-updateBranch!(system; label = 4, maxFromBus = 0.4, maxToBus = 0.5)
 updateBranch!(system; label = 9, minFromBus = 0.1, maxFromBus = 0.3)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 
-# Print data for all branches
 fmt = Dict("Voltage Angle Difference" => "%.2f")
 show = Dict("To-Bus Apparent Power Flow Dual" => false)
-printBranchConstraint(system, analysis; fmt, show, repeat = 2)
 
-# Print data for specific branches
+printBranchConstraint(system, analysis; fmt, show)
+```
+
+Print data for specific branches:
+```jldoctest
+using Ipopt
+
+system = powerSystem("case14.h5")
+updateBranch!(system; label = 3, minDiffAngle = 0.05, maxDiffAngle = 1.5)
+updateBranch!(system; label = 9, minFromBus = 0.1, maxFromBus = 0.3)
+
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+
 delimiter = " "
 width = Dict("From-Bus Apparent Power Flow" => 13, "Voltage Angle Difference Dual" => 12)
+
 printBranchConstraint(system, analysis; label = 3, delimiter, width, header = true)
-printBranchConstraint(system, analysis; label = 4, delimiter, width)
 printBranchConstraint(system, analysis; label = 9, delimiter, width, footer = true)
 ```
 """
@@ -1074,7 +1095,8 @@ The following keywords control the printed data:
 !!! compat "Julia 1.10"
     The function [`printGeneratorConstraint`](@ref printGeneratorConstraint) requires Julia 1.10 or later.
 
-# Example
+# Examples
+Print data for all generators:
 ```jldoctest
 using Ipopt
 
@@ -1083,14 +1105,24 @@ system = powerSystem("case14.h5")
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 
-# Print data for all generators
 fmt = Dict("Active Power Capability" => "%.2f")
 show = Dict("Reactive Power Capability" => false, "Active Power Capability Dual" => false)
-printGeneratorConstraint(system, analysis; fmt, show, repeat = 3)
 
-# Print data for specific generators
+printGeneratorConstraint(system, analysis; fmt, show, repeat = 3)
+```
+
+Print data for specific generator:
+```jldoctest
+using Ipopt
+
+system = powerSystem("case14.h5")
+
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+solve!(system, analysis)
+
 delimiter = " "
 width = Dict("Active Power Capability" => 11, "Reactive Power Capability Dual" => 10)
+
 printGeneratorConstraint(system, analysis; label = 2, delimiter, width, header = true)
 printGeneratorConstraint(system, analysis; label = 3, delimiter, width)
 printGeneratorConstraint(system, analysis; label = 5, delimiter, width, footer = true)

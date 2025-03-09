@@ -5,20 +5,14 @@
 The function sets up the optimization model for solving the AC optimal power flow problem.
 
 # Arguments
-The function requires the `PowerSystem` composite type to establish the framework. Next,
-the `optimizer` argument is also required to create and solve the optimization problem.
+The function requires the `PowerSystem` type to establish the framework. Next, the
+`optimizer` argument is also required to create and solve the optimization problem.
 Specifically, JuliaGrid constructs the AC optimal power flow using the JuMP package and
 provides support for commonly employed solvers. For more detailed information,
-please consult the [JuMP documentation](https://jump.dev/jl/stable/packages/solvers/).
-
-# Updates
-If the AC model has not been created, the function automatically initiates an update within
-the `ac` field of the `PowerSystem` type.
+please consult the [JuMP documentation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
 
 # Keywords
-JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
-provided in the [JuMP documentation](https://jump.dev/jl/stable/reference/models/).
-However, certain configurations may require different method calls, such as:
+Users can configure the following parameters:
 * `iteration`: Specifies the maximum number of iterations.
 * `tolerance`: Specifies the allowed deviation from the optimal solution.
 * `bridge`: Manage the bridging mechanism (default: `false`).
@@ -28,6 +22,10 @@ However, certain configurations may require different method calls, such as:
 Additionally, users can modify variable names used for printing and writing through the
 keywords `magnitude`, `angle`, `active`, and `reactive`. For instance, users can choose
 `magnitude = "V"` and `angle = "θ"` to display equations in a more readable format.
+
+# Updates
+If the AC model has not been created, the function automatically initiates an update within
+the `ac` field of the `PowerSystem` type.
 
 # Returns
 The function returns an instance of the `ACOptimalPowerFlow` type, which includes the
@@ -42,7 +40,7 @@ following fields:
 system = powerSystem("case14.h5")
 acModel!(system)
 
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; iteration = 50, verbose = 1)
 ```
 """
 function acOptimalPowerFlow(
@@ -288,7 +286,7 @@ stored in the `power.generator` and `voltage` fields of the `ACOptimalPowerFlow`
 system = powerSystem("case14.h5")
 acModel!(system)
 
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; verbose = 1)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 ```
 """
@@ -842,7 +840,8 @@ in the `target` argument.
 This function may modify the `voltage`, `generator`, and `method.dual` fields of the
 `ACOptimalPowerFlow` type.
 
-# Example
+# Examples
+Reset the initial point of the AC optimal power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -853,6 +852,19 @@ solve!(system, analysis)
 updateBus!(system, analysis; label = 14, reactive = 0.13, magnitude = 1.2, angle = -0.17)
 
 setInitialPoint!(system, analysis)
+solve!(system, analysis)
+```
+
+Use the AC power flow results to initialize the AC optimal power flow:
+```jldoctest
+system = powerSystem("case14.h5")
+acModel!(system)
+
+powerFlow = newtonRaphson(system)
+powerFlow!(system, powerFlow)
+
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+setInitialPoint!(powerFlow, analysis)
 solve!(system, analysis)
 ```
 """
@@ -995,7 +1007,7 @@ It computes the active and reactive power outputs of the generators, as well as 
 voltage magnitudes and angles, with an option to compute the powers and currents related to
 buses and branches.
 
-# Keyword
+# Keywords
 Users can use the following keywords:
 * `iteration`: Specifies the maximum number of iterations.
 * `tolerance`: Specifies the allowed deviation from the optimal solution.

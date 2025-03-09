@@ -21,14 +21,7 @@ device = measurement()
 
 acModel!(system)
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-power!(system, analysis)
+powerFlow!(system, analysis; power = true)
 
 addVoltmeter!(system, device, analysis)
 addWattmeter!(system, device, analysis)
@@ -43,14 +36,7 @@ device = measurement()
 
 acModel!(system)
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-power!(system, analysis)
+powerFlow!(system, analysis; power = true)
 
 addVoltmeter!(system, device, analysis)
 addWattmeter!(system, device, analysis)
@@ -98,13 +84,7 @@ device = measurement()
 
 acModel!(system)
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+powerFlow!(system, analysis)
 
 addVoltmeter!(system, device, analysis)
 statusVoltmeter!(system, device; inservice = 10)
@@ -160,14 +140,7 @@ device = measurement()
 
 acModel!(system)
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-current!(system, analysis)
+powerFlow!(system, analysis; current = true)
 
 addAmmeter!(system, device, analysis)
 statusAmmeter!(system, device; inserviceFrom = 5, inserviceTo = 10)
@@ -250,14 +223,7 @@ device = measurement()
 
 acModel!(system)
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-power!(system, analysis)
+powerFlow!(system, analysis; power = true)
 
 addWattmeter!(system, device, analysis)
 statusWattmeter!(system, device; outserviceBus = 14, inserviceFrom = 10, outserviceTo = 2)
@@ -352,14 +318,7 @@ device = measurement()
 
 acModel!(system)
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-power!(system, analysis)
+powerFlow!(system, analysis; power = true)
 
 addVarmeter!(system, device, analysis)
 statusVarmeter!(system, device; inserviceFrom = 20)
@@ -456,14 +415,7 @@ device = measurement()
 
 acModel!(system)
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
-current!(system, analysis)
+powerFlow!(system, analysis; current = true)
 
 addPmu!(system, device, analysis)
 statusPmu!(system, device; inserviceBus = 14)

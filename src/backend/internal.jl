@@ -6,7 +6,7 @@ By default, the units for base power and base voltages are set to volt-ampere (V
 
 Prefixes must be specified according to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
 and should be included with the unit of `power` (VA) or unit of `voltage` (V). Keep in mind
-that the macro must be used after creating the composite type `PowerSystem`.
+that the macro must be used after creating the type `PowerSystem`.
 
 # Example
 ```jldoctest
@@ -39,7 +39,7 @@ macro base(system::Symbol, power::Symbol, voltage::Symbol)
 end
 
 """
-    @power(active, reactive, apparent)
+    @power(active, reactive, [apparent])
 
 JuliaGrid stores all data related with powers in per-units, and these cannot be altered.
 However, the power units of the built-in functions used to add or modified power system
@@ -100,7 +100,7 @@ macro power(active::Symbol, reactive::Symbol, apparent::Symbol = :pu)
 end
 
 """
-    @voltage(magnitude, angle, base)
+    @voltage(magnitude, angle, [base])
 
 JuliaGrid stores all data related with voltages in per-units and radians, and these cannot
 be altered. However, the voltage magnitude and angle units of the built-in functions used

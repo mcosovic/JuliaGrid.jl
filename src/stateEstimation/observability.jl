@@ -54,7 +54,7 @@ standard observability analysis. In this analysis, islands formed by active powe
 measurements correspond to those formed by reactive power measurements.
 
 # Arguments
-To define flow observable islands, this function needs the composite types `PowerSystem`
+To define maximal-observable islands, this function needs the composite types `PowerSystem`
 and `Measurement`.
 
 # Returns
@@ -383,11 +383,11 @@ be different to enable the function to successfully incorporate measurements fro
 into the `device` set of measurements.
 
 # Keyword
-The keyword threshold defines the zero pivot threshold value, with a default value of `1e-5`.
+The keyword `threshold` defines the zero pivot threshold value, with a default value of `1e-5`.
 More precisely, all computed pivots less than this value will be treated as zero pivots.
 
 # Updates
-The function updates the `device` variable of the `Measurement` composite type.
+The function updates the `device` variable of the `Measurement` type.
 
 # Example
 ```jldoctest
@@ -632,12 +632,7 @@ more detailed information, please refer to the
 The function accepts the following keywords:
 * `bridge`: Controls the bridging mechanism (default: `false`).
 * `name`: Handles the creation of string names (default: `false`).
-* `verbose`: Controls the solver output display:
-  * `verbose = 0`: silent mode (default),
-  * `verbose = 1`: prints only the exit message about convergence,
-  * `verbose = 2`: prints detailed native solver output (default).
-
-The default verbose setting can be modified using the [`@config`](@ref @config) macro.
+* `verbose`: Controls the output display, ranging from silent mode (`0`) to detailed output (`3`).
 
 # Returns
 The function returns an instance of the `PlacementPMU` type, containing variables such as:
@@ -658,8 +653,7 @@ system = powerSystem("case14.h5")
 device = measurement()
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
-current!(system, analysis)
+powerFlow!(system, analysis; current = true)
 
 placement = pmuPlacement(system, HiGHS.Optimizer)
 
@@ -746,9 +740,9 @@ end
         noise, correlated, polar,
         bridge, name, verbose)
 
-The function finds the optimal PMU placement by executing [pmuPlacement](@ref pmuPlacement).
-Then, based on the results from the `AC` type, it generates phasor measurements and
-integrates them into the `Measurement` type. If current values are missing in the `AC`
+The function finds the optimal PMU placement by executing [pmuPlacement](@ref pmuPlacement)
+function. Then, based on the results from the `AC` type, it generates phasor measurements
+and integrates them into the `Measurement` type. If current values are missing in the `AC`
 type, the function calculates the associated currents required to form measurement values.
 
 # Keywords
@@ -775,13 +769,11 @@ Settings for handling phasor measurements include:
 Settings for the optimization solver include:
 * `bridge`: Controls the bridging mechanism (default: `false`).
 * `name`: Handles the creation of string names (default: `false`).
-* `verbose`: Controls the solver output display:
-  * `verbose = 0`: silent mode (default),
-  * `verbose = 1`: prints only the exit message about convergence,
-  * `verbose = 2`: prints detailed native solver output.
+* `verbose`: Controls the output display, ranging from silent mode (`0`) to detailed output (`3`).
+
 
 # Updates
-The function updates the `pmu` field of the `Measurement` composite type.
+The function updates the `pmu` field of the `Measurement` type.
 
 # Returns
 The function returns an instance of the `PlacementPMU` type, containing variables such as:
@@ -797,8 +789,7 @@ system = powerSystem("case14.h5")
 device = measurement()
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
-current!(system, analysis)
+powerFlow!(system, analysis; current = true)
 
 pmuPlacement!(system, device, analysis, HiGHS.Optimizer)
 ```

@@ -2,9 +2,9 @@
     measurement(file::String)
 
 The function builds the composite type `Measurement` and populates `voltmeter`, `ammeter`,
-`wattmeter`, `varmeter`, and `pmu` fields. In general, once the composite type `Measurement`
-has been created, it is possible to add new measurement devices, or modify the parameters
-of existing ones.
+`wattmeter`, `varmeter`, and `pmu` fields. In general, once the type `Measurement` has
+been created, it is possible to add new measurement devices, or modify the parameters of
+existing ones.
 
 # Argument
 It requires a string path to the HDF5 file with the `.h5` extension.

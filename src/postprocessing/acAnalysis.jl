@@ -22,13 +22,8 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+powerFlow!(system, analysis)
+
 power!(system, analysis)
 ```
 """
@@ -236,13 +231,8 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+powerFlow!(system, analysis)
+
 active, reactive = injectionPower(system, analysis; label = 1)
 ```
 """
@@ -266,13 +256,8 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+powerFlow!(system, analysis)
+
 active, reactive = supplyPower(system, analysis; label = 1)
 ```
 """
@@ -342,15 +327,9 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+powerFlow!(system, analysis)
+
 active, reactive = shuntPower(system, analysis; label = 9)
-```
 ```
 """
 function shuntPower(system::PowerSystem, analysis::AC; label::IntStr)
@@ -373,13 +352,8 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+powerFlow!(system, analysis)
+
 active, reactive = fromPower(system, analysis; label = 2)
 ```
 """
@@ -408,13 +382,8 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+powerFlow!(system, analysis)
+
 active, reactive = toPower(system, analysis; label = 2)
 ```
 """
@@ -443,13 +412,8 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+powerFlow!(system, analysis)
+
 active, reactive = chargingPower(system, analysis; label = 2)
 ```
 """
@@ -477,13 +441,8 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+powerFlow!(system, analysis)
+
 active, reactive = seriesPower(system, analysis; label = 2)
 ```
 """
@@ -510,13 +469,8 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(system, analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(system, analysis)
-end
+powerFlow!(system, analysis)
+
 active, reactive = generatorPower(system, analysis; label = 1)
 ```
 """
@@ -625,11 +579,12 @@ The function computes the currents in the polar coordinate system associated wit
 and branches in the AC framework.
 
 # Updates
-This function calculates various electrical quantities in the polar coordinate system:
+This function updates the `current` field of the `AC` abstract type by computing the
+following electrical quantities:
 - `injection`: Current injections at each bus.
 - `from`: Current flows at each from-bus end of the branch.
 - `to`: Current flows at each to-bus end of the branch.
-- `series`: Current flows through the series impedance of the branch in the direction from the from-bus end to the to-bus end of the branch.
+- `series`: Current flows through the series impedance of the branch in the direction from-bus to-bus end.
 
 # Example
 ```jldoctest
@@ -640,6 +595,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
+
 current!(system, analysis)
 ```
 """
@@ -690,6 +646,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
+
 magnitude, angle = injectionCurrent(system, analysis; label = 1)
 ```
 """
@@ -716,6 +673,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
+
 magnitude, angle = fromCurrent(system, analysis; label = 2)
 ```
 """
@@ -747,6 +705,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
+
 magnitude, angle = toCurrent(system, analysis; label = 2)
 ```
 """
@@ -779,6 +738,7 @@ acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
+
 magnitude, angle = seriesCurrent(system, analysis; label = 2)
 ```
 """

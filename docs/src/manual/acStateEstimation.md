@@ -138,7 +138,7 @@ The [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Norma
 ---
 
 ##### Wrapper Function
-JuliaGrid includes a wrapper function [`stateEstimation!`](@ref stateEstimation!), for solving state estimation using Gauss-Newton method. If users aim to compute the state estimation with a minimal number of function calls, the process would be:
+JuliaGrid provides a wrapper function [`stateEstimation!`](@ref stateEstimation!) for AC state estimation. Hence, it offers a way to solve it using the Gauss-Newton method with reduced implementation effort:
 ```@example ACSEWLS
 setInitialPoint!(system, analysis) # hide
 analysis = gaussNewton(system, device)

@@ -2,8 +2,8 @@
     powerSystem(file::String)
 
 The function builds the composite type `PowerSystem` and populates `bus`, `branch`,
-`generator` and `base` fields. Once the composite type `PowerSystem` has been created, it
-is possible to add new buses, branches, or generators, or modify the parameters of
+`generator` and `base` fields. Once the type `PowerSystem` has been created, it is
+possible to add new buses, branches, or generators, or modify the parameters of
 existing ones.
 
 # Argument
@@ -60,10 +60,10 @@ end
 """
     powerSystem()
 
-Alternatively, the `PowerSystem` composite type can be initialized by calling the function
-without any arguments. This allows the model to be built from scratch and modified as
-needed. This generates an empty `PowerSystem` type, with only the base power initialized
-to 1.0e8 volt-amperes.
+Alternatively, the `PowerSystem` type can be initialized by calling the function without
+any arguments. This allows the model to be built from scratch and modified as needed.
+This generates an empty `PowerSystem` type, with only the base power initialized to 1.0e8
+volt-amperes.
 
 # Example
 ```jldoctest

@@ -5,20 +5,14 @@
 The function sets up the optimization model for solving the DC optimal power flow problem.
 
 # Arguments
-The function requires the `PowerSystem` composite type to establish the framework. Next,
-the `optimizer` argument is also required to create and solve the optimization problem.
+The function requires the `PowerSystem` type to establish the framework. Next, the
+`optimizer` argument is also required to create and solve the optimization problem.
 Specifically, JuliaGrid constructs the DC optimal power flow using the JuMP package and
 provides support for commonly employed solvers. For more detailed information,
-please consult the [JuMP documentation](https://jump.dev/jl/stable/packages/solvers/).
-
-# Updates
-If the DC model has not been created, the function automatically initiates an update within
-the `dc` field of the `PowerSystem` type.
+please consult the [JuMP documentation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
 
 # Keywords
-JuliaGrid offers the ability to manipulate the `jump` model based on the guidelines
-provided in the [JuMP documentation](https://jump.dev/jl/stable/reference/models/).
-However, certain configurations may require different method calls, such as:
+Users can configure the following parameters:
 * `iteration`: Specifies the maximum number of iterations.
 * `tolerance`: Specifies the allowed deviation from the optimal solution.
 * `bridge`: Manage the bridging mechanism (default: `false`).
@@ -28,6 +22,10 @@ However, certain configurations may require different method calls, such as:
 Additionally, users can modify variable names used for printing and writing through the
 keywords `angle` and `active`. For instance, users can choose `angle = "θ"` to display
 equations in a more readable format.
+
+# Updates
+If the DC model has not been created, the function automatically initiates an update within
+the `dc` field of the `PowerSystem` type.
 
 # Returns
 The function returns an instance of the `DCOptimalPowerFlow` type, which includes the
@@ -41,7 +39,7 @@ following fields:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 ```
 """
 function dcOptimalPowerFlow(
@@ -181,7 +179,7 @@ The calculated active powers, as well as voltage angles, are stored in the
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 ```
 """
@@ -384,12 +382,13 @@ in the `target` argument based on data from `source`.
 This function may modify the `voltage`, `generator`, and `method.dual` fields of the
 `DCOptimalPowerFlow` type.
 
-# Example
+# Examples
+Reset the initial point of the DC optimal power flow:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 solve!(system, analysis)
 
 updateBus!(system, analysis; label = 14, active = 0.1, angle = -0.17)
@@ -397,6 +396,21 @@ updateBus!(system, analysis; label = 14, active = 0.1, angle = -0.17)
 setInitialPoint!(system, analysis)
 solve!(system, analysis)
 ```
+
+Use the DC power flow results to initialize the DC optimal power flow:
+```jldoctest
+system = powerSystem("case14.h5")
+dcModel!(system)
+
+powerFlow = dcPowerFlow(system)
+solve!(system, powerFlow)
+
+analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
+
+setInitialPoint!(powerFlow, analysis)
+solve!(system, analysis)
+```
+
 """
 function setInitialPoint!(system::PowerSystem, analysis::DCOptimalPowerFlow)
     @inbounds for i = 1:system.bus.number
@@ -497,7 +511,7 @@ The function serves as a wrapper for solving DC optimal power flow and includes 
 It computes the active power outputs of the generators, as well as the bus voltage angles,
 with an option to compute the powers related to buses and branches.
 
-# Keyword
+# Keywords
 Users can use the following keywords:
 * `iteration`: Specifies the maximum number of iterations.
 * `tolerance`: Specifies the allowed deviation from the optimal solution.
@@ -509,7 +523,7 @@ Users can use the following keywords:
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 powerFlow!(system, analysis; power = true, verbose = 1)
 ```
 """
