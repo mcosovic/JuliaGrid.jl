@@ -1391,7 +1391,7 @@ function busSummary(
         eval(smr, i, scaleVolg, voltage.magnitude[i], "Voltage Magnitude")
         eval(smr, i, scale[:θ], voltage.angle[i], "Voltage Angle")
 
-        if !haskey(bus.supply.generator, i)
+        if haskey(bus.supply.generator, i)
             if haskey(smr.type, "Power Generation")
                 smr.inuse["Power Generation"] += 1
                 eval(smr, i, scale[:P], power.supply.active[i], "Power Generation Active")
