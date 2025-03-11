@@ -18,22 +18,22 @@ using JuliaGrid, Ipopt, HiGHS
 ###### AC State Estimation
 * [`gaussNewton`](@ref gaussNewton)
 * [`acLavStateEstimation`](@ref acLavStateEstimation)
-* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}}))
+* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}}))
 * [`stateEstimation!`](@ref stateEstimation!)
 * [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation))
-* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{T}}) where T <: Union{Normal, Orthogonal})
+* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::ACStateEstimation{NWLS{T}}) where T <: Union{Normal, Orthogonal})
 
 ###### PMU State Estimation
 * [`pmuStateEstimation`](@ref pmuStateEstimation)
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation)
-* [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}}))
-* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::PMUStateEstimation{LinearWLS{T}}) where T <: Union{Normal, Orthogonal})
+* [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LWLS{Normal}}))
+* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::PMUStateEstimation{LWLS{T}}) where T <: Union{Normal, Orthogonal})
 
 ###### DC State Estimation
 * [`dcStateEstimation`](@ref dcStateEstimation)
 * [`dcLavStateEstimation`](@ref dcLavStateEstimation)
-* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}}))
-* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::DCStateEstimation{LinearWLS{T}}) where T <: Union{Normal, Orthogonal})
+* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LWLS{Normal}}))
+* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::DCStateEstimation{LWLS{T}}) where T <: Union{Normal, Orthogonal})
 
 ###### Bad Data Analysis
 * [`residualTest!`](@ref residualTest!)
@@ -55,9 +55,9 @@ pmuPlacement!
 ```@docs
 gaussNewton
 acLavStateEstimation
-solve!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{Normal}})
+solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}})
 setInitialPoint!(::PowerSystem, ::ACStateEstimation)
-stateEstimation!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{T}}) where T <: Union{Normal, Orthogonal}
+stateEstimation!(::PowerSystem, ::ACStateEstimation{NWLS{T}}) where T <: Union{Normal, Orthogonal}
 ```
 
 ---
@@ -66,8 +66,8 @@ stateEstimation!(::PowerSystem, ::ACStateEstimation{NonlinearWLS{T}}) where T <:
 ```@docs
 pmuStateEstimation
 pmuLavStateEstimation
-solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})
-stateEstimation!(::PowerSystem, ::PMUStateEstimation{LinearWLS{T}}) where T <: Union{Normal, Orthogonal}
+solve!(::PowerSystem, ::PMUStateEstimation{LWLS{Normal}})
+stateEstimation!(::PowerSystem, ::PMUStateEstimation{LWLS{T}}) where T <: Union{Normal, Orthogonal}
 ```
 
 ---
@@ -76,8 +76,8 @@ stateEstimation!(::PowerSystem, ::PMUStateEstimation{LinearWLS{T}}) where T <: U
 ```@docs
 dcStateEstimation
 dcLavStateEstimation
-solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})
-stateEstimation!(::PowerSystem, ::DCStateEstimation{LinearWLS{T}}) where T <: Union{Normal, Orthogonal}
+solve!(::PowerSystem, ::DCStateEstimation{LWLS{Normal}})
+stateEstimation!(::PowerSystem, ::DCStateEstimation{LWLS{T}}) where T <: Union{Normal, Orthogonal}
 ```
 
 ---

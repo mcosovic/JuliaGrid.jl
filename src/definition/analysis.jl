@@ -1,8 +1,8 @@
 export Analysis, AC, DC, Normal, Orthogonal
 export ACPowerFlow, NewtonRaphson, FastNewtonRaphson, GaussSeidel, DCPowerFlow
 export ACOptimalPowerFlow, DCOptimalPowerFlow
-export ACStateEstimation, NonlinearWLS, LAV
-export DCStateEstimation, LinearWLS
+export ACStateEstimation, NWLS, LAV
+export DCStateEstimation, LWLS
 export PMUStateEstimation
 export Island, PMUPlacement
 
@@ -32,7 +32,7 @@ abstract type DC <: Analysis end
 
 An abstract type representing weighted least squares state estimation methods where normal
 equation is solved. It is used as a type parameter in models such as
-[`LinearWLS`](@ref LinearWLS) and [`NonlinearWLS`](@ref NonlinearWLS) to indicate that the
+[`LWLS`](@ref LWLS) and [`NWLS`](@ref NWLS) to indicate that the
 analysis is based on the normal equation.
 """
 abstract type Normal end
@@ -41,8 +41,8 @@ abstract type Normal end
     Orthogonal
 
 An abstract type representing orthogonal method used in weighted-least squares state
-estimation. It is used as a type parameter in models such as [`LinearWLS`](@ref LinearWLS)
-and [`NonlinearWLS`](@ref NonlinearWLS) to indicate that the analysis is based on the
+estimation. It is used as a type parameter in models such as [`LWLS`](@ref LWLS)
+and [`NWLS`](@ref NWLS) to indicate that the analysis is based on the
 orthogonal method.
 """
 abstract type Orthogonal end
@@ -364,7 +364,7 @@ mutable struct BadData
 end
 
 """
-    LinearWLS{T <: Union{Normal, Orthogonal}}
+    LWLS{T <: Union{Normal, Orthogonal}}
 
 A composite type representing a linear weighted-least squares state estimation model.
 
@@ -377,7 +377,7 @@ A composite type representing a linear weighted-least squares state estimation m
 - `pattern::Int64`: Tracks pattern changes in the coefficient matrix.
 - `run::Bool`: Indicates whether factorization can be reused.
 """
-mutable struct LinearWLS{T <: Union{Normal, Orthogonal}}
+mutable struct LWLS{T <: Union{Normal, Orthogonal}}
     coefficient::SparseMatrixCSC{Float64, Int64}
     precision::SparseMatrixCSC{Float64, Int64}
     mean::Vector{Float64}
@@ -388,7 +388,7 @@ mutable struct LinearWLS{T <: Union{Normal, Orthogonal}}
 end
 
 """
-    NonlinearWLS{T <: Union{Normal, Orthogonal}}
+    NWLS{T <: Union{Normal, Orthogonal}}
 
 A composite type representing a nonlinear weighted-least squares state estimation model.
 
@@ -405,7 +405,7 @@ A composite type representing a nonlinear weighted-least squares state estimatio
 - `range::Vector{Int64}`: Range of measurement devices.
 - `pattern::Int64`: Tracks pattern changes in the Jacobian matrix.
 """
-mutable struct NonlinearWLS{T <: Union{Normal, Orthogonal}}
+mutable struct NWLS{T <: Union{Normal, Orthogonal}}
     jacobian::SparseMatrixCSC{Float64, Int64}
     precision::SparseMatrixCSC{Float64, Int64}
     mean::Vector{Float64}
@@ -482,31 +482,31 @@ mutable struct Island
 end
 
 """
-    DCStateEstimation{T} <: DC where T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, LAV}
+    DCStateEstimation{T} <: DC where T <: Union{LWLS{Normal}, LWLS{Orthogonal}, LAV}
 
 A composite type built using the [`dcStateEstimation`](@ref dcStateEstimation) and
 [`dcLavStateEstimation`](@ref dcLavStateEstimation) functions to build the DC state
 estimation framework. The type parameter `T` defines the estimation method,
-which can be either [`LinearWLS`](@ref LinearWLS) or [`LAV`](@ref LAV).
+which can be either [`LWLS`](@ref LWLS) or [`LAV`](@ref LAV).
 
 # Fields
 - `voltage::PolarAngle`: Bus voltage angles.
 - `power::DCPower`: Active powers at the buses and generators.
 - `method::T`: The estimation model associated with the method used to solve the DC state estimation.
 """
-struct DCStateEstimation{T} <: DC where T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, LAV}
+struct DCStateEstimation{T} <: DC where T <: Union{LWLS{Normal}, LWLS{Orthogonal}, LAV}
     voltage::PolarAngle
     power::DCPower
     method::T
 end
 
 """
-    PMUStateEstimation{T} <: AC where T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, LAV}
+    PMUStateEstimation{T} <: AC where T <: Union{LWLS{Normal}, LWLS{Orthogonal}, LAV}
 
 A composite type built using the [`pmuStateEstimation`](@ref pmuStateEstimation) and
 [`pmuLavStateEstimation`](@ref pmuLavStateEstimation) functions to build the PMU state
 estimation framework. The type parameter `T` defines the estimation method,
-which can be either [`LinearWLS`](@ref LinearWLS) or [`LAV`](@ref LAV).
+which can be either [`LWLS`](@ref LWLS) or [`LAV`](@ref LAV).
 
 # Fields
 - `voltage::Polar`: Bus voltages represented in polar form.
@@ -514,7 +514,7 @@ which can be either [`LinearWLS`](@ref LinearWLS) or [`LAV`](@ref LAV).
 - `current::ACCurrent`: Currents at the buses and branches.
 - `method::T`: The estimation model associated with the method used to solve the PMU state estimation.
 """
-struct PMUStateEstimation{T} <: AC where T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, LAV}
+struct PMUStateEstimation{T} <: AC where T <: Union{LWLS{Normal}, LWLS{Orthogonal}, LAV}
     voltage::Polar
     power::ACPower
     current::ACCurrent
@@ -539,12 +539,12 @@ mutable struct PMUPlacement
 end
 
 """
-    ACStateEstimation{T} <: AC where T <: Union{NonlinearWLS{Normal}, NonlinearWLS{Orthogonal}, LAV}
+    ACStateEstimation{T} <: AC where T <: Union{NWLS{Normal}, NWLS{Orthogonal}, LAV}
 
 A composite type built using the [`gaussNewton`](@ref gaussNewton) and
 [`acLavStateEstimation`](@ref acLavStateEstimation) functions to build the AC state
 estimation framework. The type parameter `T` defines the estimation method,
-which can be either [`NonlinearWLS`](@ref LinearWLS) or [`LAV`](@ref LAV).
+which can be either [`NWLS`](@ref LWLS) or [`LAV`](@ref LAV).
 
 # Fields
 - `voltage::Polar`: Bus voltages represented in polar form.
@@ -552,7 +552,7 @@ which can be either [`NonlinearWLS`](@ref LinearWLS) or [`LAV`](@ref LAV).
 - `current::ACCurrent`: Currents at the buses and branches.
 - `method::T`: The estimation model associated with the method used to solve the AC state estimation.
 """
-struct ACStateEstimation{T} <: AC where T <: Union{NonlinearWLS{Normal}, NonlinearWLS{Orthogonal}, LAV}
+struct ACStateEstimation{T} <: AC where T <: Union{NWLS{Normal}, NWLS{Orthogonal}, LAV}
     voltage::Polar
     power::ACPower
     current::ACCurrent

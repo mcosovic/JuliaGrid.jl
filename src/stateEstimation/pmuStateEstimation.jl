@@ -59,7 +59,7 @@ function pmuStateEstimation(system::PowerSystem, device::Measurement,
         ),
         power,
         current,
-        LinearWLS{Normal}(
+        LWLS{Normal}(
             coeff,
             precision,
             mean,
@@ -88,7 +88,7 @@ function pmuStateEstimation(
         Polar(Float64[], Float64[]),
         power,
         current,
-        LinearWLS{Orthogonal}(
+        LWLS{Orthogonal}(
             coeff,
             precision,
             mean,
@@ -380,7 +380,7 @@ analysis = pmuLavStateEstimation(system, device, Ipopt.Optimizer; verbose = 1)
 solve!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Normal}})
+function solve!(system::PowerSystem, analysis::PMUStateEstimation{LWLS{Normal}})
     se = analysis.method
     bus = system.bus
 
@@ -408,7 +408,7 @@ function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Norm
     end
 end
 
-function solve!(system::PowerSystem, analysis::PMUStateEstimation{LinearWLS{Orthogonal}})
+function solve!(system::PowerSystem, analysis::PMUStateEstimation{LWLS{Orthogonal}})
     se = analysis.method
     bus = system.bus
 
@@ -495,7 +495,7 @@ end
         iteration, tolerance, power, verbose)
 
 The function serves as a wrapper for solving PMU state estimation and includes the functions:
-* [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LinearWLS{Normal}})),
+* [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LWLS{Normal}})),
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
@@ -534,7 +534,7 @@ stateEstimation!(system, analysis; iteration = 30, tolerance = 1e-6, verbose = 3
 """
 function stateEstimation!(
     system::PowerSystem,
-    analysis::PMUStateEstimation{LinearWLS{T}};
+    analysis::PMUStateEstimation{LWLS{T}};
     iteration::Int64 = 40,
     tolerance::Float64 = 1e-8,
     power::Bool = false,

@@ -224,7 +224,7 @@ Once the model is established, we solve the WLS equation to derive the estimate 
 	\hat{\bm {\Theta}} = [\mathbf H^{T} \bm \Sigma^{-1} \mathbf H]^{-1} \mathbf H^{T} \bm \Sigma^{-1} (\mathbf z - \mathbf{c}).
 ```
 
-This process is executed using the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})) function:
+This process is executed using the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LWLS{Normal}})) function:
 ```@example DCSETutorial
 solve!(system, analysis)
 ```
@@ -284,7 +284,7 @@ At this point, QR factorization is performed on the rectangular matrix:
   \bar{\mathbf{H}} = {\mathbf W^{1/2}} \mathbf H = \mathbf{Q}\mathbf{R}.
 ```
 
-Executing this procedure involves the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})) function:
+Executing this procedure involves the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LWLS{Normal}})) function:
 ```@example DCSETutorial
 solve!(system, analysis)
 nothing # hide

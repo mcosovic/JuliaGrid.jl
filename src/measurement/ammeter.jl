@@ -310,7 +310,7 @@ end
 function updateAmmeter!(
     system::PowerSystem,
     device::Measurement,
-    analysis::ACStateEstimation{NonlinearWLS{T}};
+    analysis::ACStateEstimation{NWLS{T}};
     label::IntStrMiss,
     magnitude::FltIntMiss = missing,
     kwargs...

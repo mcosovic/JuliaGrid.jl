@@ -58,7 +58,7 @@ function dcStateEstimation(
     DCStateEstimation(
         PolarAngle(Float64[]),
         power,
-        LinearWLS{Normal}(
+        LWLS{Normal}(
             coefficient,
             precision,
             mean,
@@ -82,7 +82,7 @@ function dcStateEstimation(
             Float64[]
         ),
         power,
-        LinearWLS{Orthogonal}(
+        LWLS{Orthogonal}(
             coefficient,
             precision,
             mean,
@@ -361,7 +361,7 @@ analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer; verbose = 1)
 solve!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, analysis::DCStateEstimation{LinearWLS{Normal}})
+function solve!(system::PowerSystem, analysis::DCStateEstimation{LWLS{Normal}})
     se = analysis.method
     bus = system.bus
     slackAngle = bus.voltage.angle[bus.layout.slack]
@@ -395,7 +395,7 @@ function solve!(system::PowerSystem, analysis::DCStateEstimation{LinearWLS{Norma
     addSlackCoeff(analysis, slackRange, elementsRemove, bus.layout.slack)
 end
 
-function solve!(system::PowerSystem, analysis::DCStateEstimation{LinearWLS{Orthogonal}})
+function solve!(system::PowerSystem, analysis::DCStateEstimation{LWLS{Orthogonal}})
     bus = system.bus
     voltage = analysis.voltage
     se = analysis.method
@@ -491,7 +491,7 @@ end
         iteration, tolerance, power, verbose)
 
 The function serves as a wrapper for solving DC state estimation and includes the functions:
-* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LinearWLS{Normal}})),
+* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{LWLS{Normal}})),
 * [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
 
 It computes bus voltage angles using the WLS or LAV model with the option to compute powers.
@@ -526,7 +526,7 @@ stateEstimation!(system, analysis; iteration = 30, tolerance = 1e-6, verbose = 1
 """
 function stateEstimation!(
     system::PowerSystem,
-    analysis::DCStateEstimation{LinearWLS{T}};
+    analysis::DCStateEstimation{LWLS{T}};
     iteration::IntMiss = missing,
     tolerance::FltIntMiss = missing,
     power::Bool = false,

@@ -112,7 +112,7 @@ end
 
 ##### Measurement Statistics #####
 function printTop(
-    analysis::ACStateEstimation{NonlinearWLS{T}},
+    analysis::ACStateEstimation{NWLS{T}},
     verbose::Int64
 ) where T <: Union{Normal, Orthogonal}
 
