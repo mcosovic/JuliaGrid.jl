@@ -14,7 +14,7 @@ using JuliaGrid
 * [`Branch`](@ref Branch)
 * [`Generator`](@ref Generator)
 * [`BaseData`](@ref BaseData)
-* [`Model`](@ref Model)
+* [`Model`](@ref JuliaGrid.Model)
 
 ###### Measurement Model
 * [`Measurement`](@ref Measurement)
@@ -28,6 +28,9 @@ using JuliaGrid
 * [`Analysis`](@ref Analysis)
 * [`AC`](@ref AC)
 * [`DC`](@ref DC)
+* [`LDLt`](@ref JuliaGrid.LDLt)
+* [`LU`](@ref JuliaGrid.LU)
+* [`QR`](@ref JuliaGrid.QR)
 
 ###### Power Flow
 * [`ACPowerFlow`](@ref ACPowerFlow)
@@ -63,7 +66,7 @@ Bus
 Branch
 Generator
 BaseData
-Model
+JuliaGrid.Model
 ```
 
 ---
@@ -85,6 +88,9 @@ PMU
 Analysis
 AC
 DC
+JuliaGrid.LDLt
+JuliaGrid.LU
+JuliaGrid.QR
 ```
 
 ---
