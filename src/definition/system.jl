@@ -1,4 +1,4 @@
-export PowerSystem, Bus, Branch, Generator, BasePower, Model
+export PowerSystem, Bus, Branch, Generator, BasePower, BaseData, Model
 export Measurement, Voltmeter, Ammeter, Wattmeter, Varmeter, PMU
 
 ##### Bus #####
