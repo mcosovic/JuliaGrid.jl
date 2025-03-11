@@ -100,7 +100,7 @@ nothing # hide
 ##### Print Results in the REPL
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example WLSDCStateEstimationSolution
-@voltage(pu, deg, V)
+@voltage(pu, deg)
 printBusData(system, analysis)
 @default(unit) # hide
 ```
@@ -363,7 +363,7 @@ print(system.bus.label, analysis.power.injection.active)
 ##### Print Results in the REPL
 Users can utilize any of the print functions outlined in the [Print API](@ref setupPrintAPI) related to the DC analysis. For example, to print state estimation data related to wattmeters, we can use:
 ```@example WLSDCStateEstimationSolution
-@power(MW, pu, pu)
+@power(MW, pu)
 printWattmeterData(system, device, analysis)
 @default(unit) # hide
 ```

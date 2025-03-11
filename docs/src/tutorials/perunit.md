@@ -310,7 +310,7 @@ nothing # hide
 ##### Results
 Now, we will examine the results in per-units:
 ```@example power
-@voltage(pu, rad, V)
+@voltage(pu, rad)
 @power(pu, pu)
 
 show = Dict("Power Generation" => false, "Shunt Power" => false)

@@ -29,11 +29,11 @@ The branch is defined with the following keywords:
 * `shiftAngle` (rad or deg): Transformer phase shift angle, where positive value defines delay.
 * `minDiffAngle` (rad or deg): Minimum voltage angle difference value between from-bus and to-bus ends.
 * `maxDiffAngle` (rad or deg): Maximum voltage angle difference value between from-bus and to-bus ends.
-* `minFromBus` (pu, VA, W, or A): Minimum branch flow rating at the from-bus end.
-* `maxFromBus` (pu, VA, W, or A): Maximum branch flow rating at the from-bus end.
-* `minToBus` (pu, VA, W, or A): Minimum branch flow rating at the to-bus end.
-* `maxToBus` (pu, VA, W, or A): Maximum branch flow rating at the to-bus end.
-* `type`: Types of `minFromBus`, `maxFromBus`, `minToBus`, and `maxToBus` branch flow ratings:
+* `minFromBus` (pu, VA, W, or A): Minimum branch flow limit at the from-bus end.
+* `maxFromBus` (pu, VA, W, or A): Maximum branch flow limit at the from-bus end.
+* `minToBus` (pu, VA, W, or A): Minimum branch flow limit at the to-bus end.
+* `maxToBus` (pu, VA, W, or A): Maximum branch flow limit at the to-bus end.
+* `type`: Types of `minFromBus`, `maxFromBus`, `minToBus`, and `maxToBus` branch flow limits:
   * `type = 1`: active power flow (pu or W),
   * `type = 2`: apparent power flow (pu or VA),
   * `type = 3`: apparent power flow (pu or VA) with a squared inequality constraint,

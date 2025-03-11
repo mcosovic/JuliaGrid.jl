@@ -1,3 +1,5 @@
+export LU, QR, LDLt
+
 ##### Types #####
 const FltInt = Union{Float64, Int64}
 const FltIntMiss = Union{Float64, Int64, Missing}
@@ -293,11 +295,25 @@ Base.@kwdef mutable struct PrefixLive
 end
 pfx = PrefixLive()
 
-##### Matrix Factorization Type #####
-export LU, QR, LDLt
+"""
+    QR
 
+An abstract type used for representing QR factorization in JuliaGrid.
+"""
 abstract type QR end
+
+"""
+    LU
+
+An abstract type used for representing LU factorization in JuliaGrid.
+"""
 abstract type LU end
+
+"""
+    LDLt
+
+An abstract type used for representing LDLt factorization in JuliaGrid.
+"""
 abstract type LDLt end
 
 const factorized = Dict{DataType, Factorization{Float64}}()

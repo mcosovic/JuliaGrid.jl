@@ -222,7 +222,7 @@ nothing # hide
 ##### Print Results in the REPL
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example ACSEWLS
-@voltage(pu, deg, V)
+@voltage(pu, deg)
 printBusData(system, analysis)
 @default(unit) # hide
 ```
@@ -515,7 +515,7 @@ print(system.branch.label, analysis.current.from.angle)
 ##### Print Results in the REPL
 Users can utilize any of the print functions outlined in the [Print API](@ref setupPrintAPI). For example, to print state estimation data related to wattmeters, we can use:
 ```@example WLSACStateEstimationSolution
-@power(MW, pu, pu)
+@power(MW, pu)
 printWattmeterData(system, device, analysis)
 @default(unit) # hide
 nothing # hide

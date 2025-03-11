@@ -33,6 +33,20 @@ mutable struct BusSupply
     generator::Dict{Int64, Vector{Int64}}
 end
 
+"""
+    Bus
+
+A composite type used in [`PowerSystem`](@ref PowerSystem) to store bus-related data.
+
+# Fields
+- `label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: Bus labels.
+- `demand::BusDemand`: Active and reactive power demands.
+- `supply::BusSupply`: Active and reactive power supplies from generators.
+- `shunt::BusShunt`: Active and reactive power injections or demands from shunt elements.
+- `voltage::BusVoltage`: Initial voltages and voltage magnitude constraints.
+- `layout::BusLayout`: Bus layout, including bus types.
+- `number::Int64`: Total number of buses.
+"""
 mutable struct Bus
     label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     demand::BusDemand
@@ -74,6 +88,19 @@ mutable struct BranchLayout
     label::Int64
 end
 
+"""
+    Branch
+
+A composite type used in [`PowerSystem`](@ref PowerSystem) to store branch-related data.
+
+# Fields
+- `label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: Branch labels.
+- `parameter::BranchParameter`: Data related to the π-model of the branches.
+- `flow::BranchFlow`: Branch flow constraints.
+- `voltage::BranchVoltage`: Voltage angle difference constraints.
+- `layout::BranchLayout`: Branch layout, including operational statuses.
+- `number::Int64`: Total number of branches.
+"""
 mutable struct Branch
     label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     parameter::BranchParameter
@@ -132,6 +159,21 @@ mutable struct GeneratorLayout
     label::Int64
 end
 
+"""
+    Generator
+
+A composite type used in [`PowerSystem`](@ref PowerSystem) to store generator-related data.
+
+# Fields
+- `label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: Generator labels.
+- `output::GeneratorOutput`: Active and reactive power outputs.
+- `capability::GeneratorCapability`: Power output constraints.
+- `ramping::GeneratorRamping`: Ramp rate limits.
+- `voltage::GeneratorVoltage`: Voltage magnitude setpoints.
+- `cost::GeneratorCost`: Costs associated with active and reactive power outputs.
+- `layout::GeneratorLayout`: Generator layout, including operational statuses.
+- `number::Int64`: Total number of generators.
+"""
 mutable struct Generator
     label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     output::GeneratorOutput
@@ -143,7 +185,6 @@ mutable struct Generator
     number::Int64
 end
 
-##### Base Data #####
 mutable struct BasePower
     value::Float64
     unit::String
@@ -156,6 +197,15 @@ mutable struct BaseVoltage
     prefix::Float64
 end
 
+"""
+    BaseData
+
+A composite type used in [`PowerSystem`](@ref PowerSystem) to store base data.
+
+# Fields
+- `power::BasePower`: Base power.
+- `voltage::BaseVoltage`: Base voltages.
+"""
 mutable struct BaseData
     power::BasePower
     voltage::BaseVoltage
@@ -183,13 +233,34 @@ mutable struct ACModel
     pattern::Int64
 end
 
-##### Model #####
+"""
+    Model
+
+A composite type used in [`PowerSystem`](@ref PowerSystem) to store vectors and matrices
+related to the power system's topology and parameters.
+
+# Fields
+- `ac::ACModel`: AC model, including the nodal admittance matrix and Y-parameters of two-port branches.
+- `dc::DCModel`: DC model, including the nodal admittance matrix and branch admittances.
+"""
 mutable struct Model
     ac::ACModel
     dc::DCModel
 end
 
-##### Power System #####
+"""
+    PowerSystem
+
+A composite type constructed using the [`powerSystem`](@ref powerSystem) function to store
+power system data.
+
+# Fields
+- `bus::Bus`: Bus-related data.
+- `branch::Branch`: Branch-related data.
+- `generator::Generator`: Generator-related data.
+- `base::BaseData`: Base power and base voltages.
+- `model::Model`: Data related to AC and DC analyses.
+"""
 mutable struct PowerSystem
     bus::Bus
     branch::Branch
@@ -235,6 +306,17 @@ mutable struct PmuLayout
     label::Int64
 end
 
+"""
+    Voltmeter
+
+A composite type used in [`Measurement`](@ref Measurement) to store voltmeter-related data.
+
+# Fields
+- `label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: Voltmeter labels.
+- `magnitude::GaussMeter`: Bus voltage magnitude measurements.
+- `layout::VoltmeterLayout`: Placement indices and indicators.
+- `number::Int64`: Total number of voltmeters.
+"""
 mutable struct Voltmeter
     label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     magnitude::GaussMeter
@@ -242,6 +324,17 @@ mutable struct Voltmeter
     number::Int64
 end
 
+"""
+    Ammeter
+
+A composite type used in [`Measurement`](@ref Measurement) to store ammeter-related data.
+
+# Fields
+- `label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: Ammeter labels.
+- `magnitude::GaussMeter`: Branch current magnitude measurements.
+- `layout::AmmeterLayout`: Placement indices and indicators.
+- `number::Int64`: Total number of ammeters.
+"""
 mutable struct Ammeter
     label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     magnitude::GaussMeter
@@ -249,6 +342,17 @@ mutable struct Ammeter
     number::Int64
 end
 
+"""
+    Wattmeter
+
+A composite type used in [`Measurement`](@ref Measurement) to store wattmeter-related data.
+
+# Fields
+- `label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: Wattmeter labels.
+- `active::GaussMeter`: Active power injection and active power flow measurements.
+- `layout::PowermeterLayout`: Placement indices and indicators.
+- `number::Int64`: Total number of wattmeters.
+"""
 mutable struct Wattmeter
     label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     active::GaussMeter
@@ -256,6 +360,17 @@ mutable struct Wattmeter
     number::Int64
 end
 
+"""
+    Varmeter
+
+A composite type used in [`Measurement`](@ref Measurement) to store varmeter-related data.
+
+# Fields
+- `label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: Varmeter labels.
+- `reactive::GaussMeter`: Reactive power injection and reactive power flow measurements.
+- `layout::PowermeterLayout`: Placement indices and indicators.
+- `number::Int64`: Total number of varmeters.
+"""
 mutable struct Varmeter
     label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     reactive::GaussMeter
@@ -263,6 +378,18 @@ mutable struct Varmeter
     number::Int64
 end
 
+"""
+    PMU
+
+A composite type used in [`Measurement`](@ref Measurement) to store PMU-related data.
+
+# Fields
+- `label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: PMU labels.
+- `magnitude::GaussMeter`: Bus voltage and branch current magnitude measurements.
+- `angle::GaussMeter`: Bus voltage and branch current angle measurements.
+- `layout::PmuLayout`: Placement indices and indicators.
+- `number::Int64`: Total number of PMUs.
+"""
 mutable struct PMU
     label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     magnitude::GaussMeter
@@ -271,6 +398,19 @@ mutable struct PMU
     number::Int64
 end
 
+"""
+    Measurement
+
+A composite type built using the [`measurement`](@ref measurement) function to store
+measurement data.
+
+# Fields
+- `voltmeter::Voltmeter`: Data related to bus voltage magnitude measurements.
+- `ammeter::Ammeter`: Data related to branch current magnitude measurements.
+- `wattmeter::Wattmeter`: Data related to active power injection and active power flow measurements.
+- `varmeter::Varmeter`: Data related to reactive power injection and reactive power flow measurements.
+- `pmu::PMU`: Data related to bus voltage and branch current phasor measurements.
+"""
 mutable struct Measurement
     voltmeter::Voltmeter
     ammeter::Ammeter

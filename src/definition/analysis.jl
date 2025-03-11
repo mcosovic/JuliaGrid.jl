@@ -1,17 +1,51 @@
-export AC, DC
+export Analysis, AC, DC, Normal, Orthogonal
 export ACPowerFlow, NewtonRaphson, FastNewtonRaphson, GaussSeidel, DCPowerFlow
 export ACOptimalPowerFlow, DCOptimalPowerFlow
-export ACStateEstimation, NonlinearWLS, Normal, Orthogonal, LAV
+export ACStateEstimation, NonlinearWLS, LAV
 export DCStateEstimation, LinearWLS
 export PMUStateEstimation
-export Island, PlacementPMU
+export Island, PMUPlacement
 
-##### Abstract Types #####
-abstract type AC end
-abstract type DC end
+"""
+    Analysis
 
-abstract type Orthogonal end
+An abstract type used for representing both AC and DC analyses in JuliaGrid.
+"""
+abstract type Analysis end
+
+"""
+    AC <: Analysis
+
+An abstract type representing AC analyses in JuliaGrid.
+"""
+abstract type AC <: Analysis end
+
+"""
+    DC <: Analysis
+
+An abstract type representing DC analyses in JuliaGrid.
+"""
+abstract type DC <: Analysis end
+
+"""
+    Normal
+
+An abstract type representing weighted least squares state estimation methods where normal
+equation is solved. It is used as a type parameter in models such as
+[`LinearWLS`](@ref LinearWLS) and [`NonlinearWLS`](@ref NonlinearWLS) to indicate that the
+analysis is based on the normal equation.
+"""
 abstract type Normal end
+
+"""
+    Orthogonal
+
+An abstract type representing orthogonal method used in weighted-least squares state
+estimation. It is used as a type parameter in models such as [`LinearWLS`](@ref LinearWLS)
+and [`NonlinearWLS`](@ref NonlinearWLS) to indicate that the analysis is based on the
+orthogonal method.
+"""
+abstract type Orthogonal end
 
 ##### Powers in the AC Framework #####
 mutable struct ACPower
@@ -42,7 +76,21 @@ mutable struct DCPower
     generator::CartesianReal
 end
 
-##### Newton-Raphson #####
+"""
+    NewtonRaphson
+
+A composite type built using the [`newtonRaphson`](@ref newtonRaphson) function to build
+the AC power flow framework solved by the Newton-Raphson method.
+
+# Fields
+- `jacobian::SparseMatrixCSC{Float64, Int64}`: Jacobian matrix.
+- `mismatch::Vector{Float64}`: Vector of mismatches.
+- `increment::Vector{Float64}`: Vector of state variable increments.
+- `factorization::Factorization{Float64}`: Factorization of the Jacobian matrix.
+- `pq::Vector{Int64}`: Indices related to demand buses.
+- `pvpq::Vector{Int64}`: Indices related to demand and generator buses.
+- `pattern::Int64`: Tracks pattern changes in entries of the Jacobian matrix.
+"""
 mutable struct NewtonRaphson
     jacobian::SparseMatrixCSC{Float64, Int64}
     mismatch::Vector{Float64}
@@ -61,6 +109,22 @@ mutable struct FastNewtonRaphsonModel
     factorization::Factorization{Float64}
 end
 
+"""
+    FastNewtonRaphson
+
+A composite type built using the [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX) or
+[`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB) functions to build the AC power flow
+framework solved by the fast Newton-Raphson method.
+
+# Fields
+- `active:FastNewtonRaphsonModel`: Jacobian, mismatches, and incrementes for active power equations.
+- `reactive:FastNewtonRaphsonModel`: Jacobian, mismatches, and incrementes for active power equations.
+- `pq::Vector{Int64}`: Indices related to demand buses.
+- `pvpq::Vector{Int64}`: Indices related to demand and generator buses.
+- `acmodel::Int64`: Tracks values changing in entries of the Jacobian matrices.
+- `pattern::Int64`: Tracks pattern changes in entries of the Jacobian matrices.
+- `bx::Bool`: Version of the method, either BX or XB.
+"""
 mutable struct FastNewtonRaphson
     active::FastNewtonRaphsonModel
     reactive::FastNewtonRaphsonModel
@@ -71,15 +135,38 @@ mutable struct FastNewtonRaphson
     const bx::Bool
 end
 
-##### Gauss-Seidel #####
+"""
+    GaussSeidel
+
+A composite type built using the [`gaussSeidel`](@ref gaussSeidel) function to build the
+AC power flow framework solved by the Gauss-Seidel method.
+
+# Fields
+- `voltage::Vector{ComplexF64}`: Vector of complex voltage values.
+- `pq::Vector{Int64}`: Indices related to demand buses.
+- `pv::Vector{Int64}`: Indices related to generator buses.
+"""
 struct GaussSeidel
     voltage::Vector{ComplexF64}
     pq::Vector{Int64}
     pv::Vector{Int64}
 end
 
-##### AC Power Flow #####
-struct ACPowerFlow{T <: Union{NewtonRaphson, FastNewtonRaphson, GaussSeidel}} <: AC
+"""
+    ACPowerFlow{T} <: AC where T <: Union{NewtonRaphson, FastNewtonRaphson, GaussSeidel}
+
+A composite type representing an AC power flow framework that uses a specified method for
+solving the AC power flow equations. The type parameter `T` defines the method used,
+which can be either [`NewtonRaphson`](@ref NewtonRaphson),
+[`FastNewtonRaphson`](@ref FastNewtonRaphson), or [`GaussSeidel`](@ref GaussSeidel).
+
+# Fields
+- `voltage::Polar`: Bus voltages represented in polar form.
+- `power::ACPower`: Active and reactive powers at the buses, branches, and generators.
+- `current::ACCurrent`: Currents at the buses and branches.
+- `method::T`: Vectors and matrices associated with the method used to solve the AC power flow.
+"""
+struct ACPowerFlow{T} <: AC where T <: Union{NewtonRaphson, FastNewtonRaphson, GaussSeidel}
     voltage::Polar
     power::ACPower
     current::ACCurrent
@@ -93,6 +180,17 @@ mutable struct DCPowerFlowMethod
     pattern::Int64
 end
 
+"""
+    DCPowerFlow <: DC
+
+A composite type built using the [`dcPowerFlow`](@ref dcPowerFlow) function to build the
+DC power flow framework.
+
+# Fields
+- `voltage::PolarAngle`: Bus voltage angles.
+- `power::DCPower`: Active powers at the buses, branches, and generators.
+- `method::DCPowerFlowMethod`: Factorization of the nodal admittance matrix.
+"""
 struct DCPowerFlow <: DC
     voltage::PolarAngle
     power::DCPower
@@ -180,6 +278,18 @@ mutable struct ACOptimalPowerFlowMethod
     objective::ACObjective
 end
 
+"""
+    ACOptimalPowerFlow <: AC
+
+A composite type built using the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function
+to represent the AC optimal power flow framework.
+
+# Fields
+- `voltage::Polar`: Bus voltages represented in polar form.
+- `power::ACPower`: Active and reactive powers at buses, branches, and generators.
+- `current::ACCurrent`: Currents at buses and branches.
+- `method::ACOptimalPowerFlowMethod`: The JuMP model, including variables, constraints, and objective.
+"""
 mutable struct ACOptimalPowerFlow <: AC
     voltage::Polar
     power::ACPower
@@ -228,6 +338,17 @@ mutable struct DCOptimalPowerFlowMethod
     objective::QuadExpr
 end
 
+"""
+    DCOptimalPowerFlow <: DC
+
+A composite type built using the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function
+to represent the DC optimal power flow framework.
+
+# Fields
+- `voltage::PolarAngle`: Bus voltage angles.
+- `power::DCPower`: Active powers at buses, branches, and generators.
+- `method::DCOptimalPowerFlowMethod`: The JuMP model, including variables, constraints, and objective.
+"""
 mutable struct DCOptimalPowerFlow <: DC
     voltage::PolarAngle
     power::DCPower
@@ -242,6 +363,20 @@ mutable struct BadData
     index::Int64
 end
 
+"""
+    LinearWLS{T <: Union{Normal, Orthogonal}}
+
+A composite type representing a linear weighted-least squares state estimation model.
+
+# Fields
+- `coefficient::SparseMatrixCSC{Float64, Int64}`: Coefficient matrix.
+- `precision::SparseMatrixCSC{Float64, Int64}`: Precision matrix.
+- `mean::Vector{Float64}`: Mean vector.
+- `factorization::Factorization{Float64}`: Factorization of the coefficient matrix.
+- `number::Int64`: Number of measurement devices.
+- `pattern::Int64`: Tracks pattern changes in the coefficient matrix.
+- `run::Bool`: Indicates whether factorization can be reused.
+"""
 mutable struct LinearWLS{T <: Union{Normal, Orthogonal}}
     coefficient::SparseMatrixCSC{Float64, Int64}
     precision::SparseMatrixCSC{Float64, Int64}
@@ -252,6 +387,24 @@ mutable struct LinearWLS{T <: Union{Normal, Orthogonal}}
     run::Bool
 end
 
+"""
+    NonlinearWLS{T <: Union{Normal, Orthogonal}}
+
+A composite type representing a nonlinear weighted-least squares state estimation model.
+
+# Fields
+- `jacobian::SparseMatrixCSC{Float64, Int64}`: Jacobian matrix.
+- `precision::SparseMatrixCSC{Float64, Int64}`: Precision matrix.
+- `mean::Vector{Float64}`: Mean vector.
+- `residual::Vector{Float64}`: Residual vector.
+- `increment::Vector{Float64}`: Increment vector.
+- `factorization::Factorization{Float64}`: Factorization of the Jacobian matrix.
+- `objective::Float64`: Value of the objective function.
+- `type::Vector{Int8}`: Indicators of measurement types.
+- `index::Vector{Int64}`: Indices of buses and branches where measurements are located.
+- `range::Vector{Int64}`: Range of measurement devices.
+- `pattern::Int64`: Tracks pattern changes in the Jacobian matrix.
+"""
 mutable struct NonlinearWLS{T <: Union{Normal, Orthogonal}}
     jacobian::SparseMatrixCSC{Float64, Int64}
     precision::SparseMatrixCSC{Float64, Int64}
@@ -275,6 +428,22 @@ struct StateAC
     incidence::Dict{Tuple{Int64, Int64}, Int64}
 end
 
+"""
+    LAV
+
+A composite type representing a least absolute value state estimation model.
+
+# Fields
+- `jump::JuMP.Model`: The JuMP model.
+- `state::Union{StateAC, Nothing}`: State variables data.
+- `statex::Vector{VariableRef}`: References to optimization variables for bus voltages.
+- `statey::Vector{VariableRef}`: References to optimization variables for bus voltages.
+- `residualx::Vector{VariableRef}`: References to optimization variables for residuals.
+- `residualy::Vector{VariableRef}`: References to optimization variables for residuals.
+- `residual::Dict{Int64, ConstraintRef}`: References to the residual constraints.
+- `range::Vector{Int64}`: Range of measurement devices.
+- `number::Int64`: Number of measurement devices.
+"""
 mutable struct LAV
     jump::JuMP.Model
     state::Union{StateAC, Nothing}
@@ -293,35 +462,97 @@ mutable struct TieData
     injection::Set{Int64}
 end
 
+"""
+    Island
+
+A composite type built using the
+[`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Measurement)) and
+[`islandTopological`](@ref islandTopological(::PowerSystem, ::Measurement)) functions, which
+holds data about observable islands.
+
+# Fields
+- `island::Vector{Vector{Int64}}`: List of observable islands, where each island is represented by a vector of bus indices.
+- `bus::Vector{Int64}`: Positions of buses in relation to each island.
+- `tie::TieData`: Tie data associated with buses and branches.
+"""
 mutable struct Island
     island::Vector{Vector{Int64}}
     bus::Vector{Int64}
     tie::TieData
 end
 
-##### DC State Estimation #####
-struct DCStateEstimation{T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, LAV}} <: DC
+"""
+    DCStateEstimation{T} <: DC where T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, LAV}
+
+A composite type built using the [`dcStateEstimation`](@ref dcStateEstimation) and
+[`dcLavStateEstimation`](@ref dcLavStateEstimation) functions to build the DC state
+estimation framework. The type parameter `T` defines the estimation method,
+which can be either [`LinearWLS`](@ref LinearWLS) or [`LAV`](@ref LAV).
+
+# Fields
+- `voltage::PolarAngle`: Bus voltage angles.
+- `power::DCPower`: Active powers at the buses and generators.
+- `method::T`: The estimation model associated with the method used to solve the DC state estimation.
+"""
+struct DCStateEstimation{T} <: DC where T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, LAV}
     voltage::PolarAngle
     power::DCPower
     method::T
 end
 
-##### PMU State Estimation #####
-struct PMUStateEstimation{T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, LAV}} <: AC
+"""
+    PMUStateEstimation{T} <: AC where T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, LAV}
+
+A composite type built using the [`pmuStateEstimation`](@ref pmuStateEstimation) and
+[`pmuLavStateEstimation`](@ref pmuLavStateEstimation) functions to build the PMU state
+estimation framework. The type parameter `T` defines the estimation method,
+which can be either [`LinearWLS`](@ref LinearWLS) or [`LAV`](@ref LAV).
+
+# Fields
+- `voltage::Polar`: Bus voltages represented in polar form.
+- `power::ACPower`: Active and reactive powers at the buses and branches.
+- `current::ACCurrent`: Currents at the buses and branches.
+- `method::T`: The estimation model associated with the method used to solve the PMU state estimation.
+"""
+struct PMUStateEstimation{T} <: AC where T <: Union{LinearWLS{Normal}, LinearWLS{Orthogonal}, LAV}
     voltage::Polar
     power::ACPower
     current::ACCurrent
     method::T
 end
 
-mutable struct PlacementPMU
+"""
+    PMUPlacement
+
+A composite type built using the [`pmuPlacement`](@ref pmuPlacement) function, which
+stores data on phasor measurement unit (PMU) placement.
+
+# Fields
+- `bus::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: PMU placement at buses.
+- `from::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: PMU placement at from-buses.
+- `to::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: PMU placement at to-buses.
+"""
+mutable struct PMUPlacement
     bus::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     from::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
     to::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
 end
 
-##### AC State Estimation #####
-struct ACStateEstimation{T <: Union{NonlinearWLS{Normal}, NonlinearWLS{Orthogonal}, LAV}} <: AC
+"""
+    ACStateEstimation{T} <: AC where T <: Union{NonlinearWLS{Normal}, NonlinearWLS{Orthogonal}, LAV}
+
+A composite type built using the [`gaussNewton`](@ref gaussNewton) and
+[`acLavStateEstimation`](@ref acLavStateEstimation) functions to build the AC state
+estimation framework. The type parameter `T` defines the estimation method,
+which can be either [`NonlinearWLS`](@ref LinearWLS) or [`LAV`](@ref LAV).
+
+# Fields
+- `voltage::Polar`: Bus voltages represented in polar form.
+- `power::ACPower`: Active and reactive powers at the buses and branches.
+- `current::ACCurrent`: Currents at the buses and branches.
+- `method::T`: The estimation model associated with the method used to solve the AC state estimation.
+"""
+struct ACStateEstimation{T} <: AC where T <: Union{NonlinearWLS{Normal}, NonlinearWLS{Orthogonal}, LAV}
     voltage::Polar
     power::ACPower
     current::ACCurrent

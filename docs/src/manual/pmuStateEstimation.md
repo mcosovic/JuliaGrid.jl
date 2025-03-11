@@ -175,7 +175,7 @@ nothing # hide
 ##### Print Results in the REPL
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example PMUOptimalPlacement
-@voltage(pu, deg, V)
+@voltage(pu, deg)
 printBusData(system, analysis)
 @default(unit) # hide
 ```
@@ -431,7 +431,7 @@ print(system.branch.label, analysis.current.from.magnitude)
 ##### Print Results in the REPL
 Users can utilize any of the print functions outlined in the [Print API](@ref setupPrintAPI). For example, to print state estimation data related to PMUs, we can use:
 ```@example PMUStateEstimationSolution
-@voltage(pu, deg, V)
+@voltage(pu, deg)
 show = Dict("Voltage Angle" => false, "Current Angle" => false)
 printPmuData(system, device, analysis; show)
 @default(unit) # hide

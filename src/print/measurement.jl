@@ -545,7 +545,6 @@ device = measurement("measurement14.h5")
 analysis = gaussNewton(system, device)
 stateEstimation!(system, analysis; power = true)
 
-
 width = Dict("Reactive Power Residual" => 11)
 
 printVarmeterData(system, device, analysis; label = 2, width, header = true)

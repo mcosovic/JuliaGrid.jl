@@ -53,7 +53,7 @@ addWattmeter!(system, device; label = "Wattmeter 2", from = "Branch 1", active =
 
 Adding wattmeters using a custom unit system:
 ```jldoctest
-@power(MW, pu, pu)
+@power(MW, pu)
 system = powerSystem()
 device = measurement()
 
@@ -139,7 +139,7 @@ addVarmeter!(system, device; label = "Varmeter 2", from = "Branch 1", reactive =
 
 Adding varmeters using a custom unit system:
 ```jldoctest
-@power(MW, pu, pu)
+@power(pu, MVAr)
 system = powerSystem()
 device = measurement()
 
@@ -966,7 +966,7 @@ addWattmeter!(system, device; from = "Branch 1", active = 0.1)
 
 Adding wattmeters using a custom unit system:
 ```jldoctest
-@power(MW, pu, pu)
+@power(MW, pu)
 system = powerSystem()
 device = measurement()
 
@@ -1050,7 +1050,7 @@ addVarmeter!(system, device; from = "Branch 1", reactive = 0.1)
 
 Adding varmeters using a custom unit system:
 ```jldoctest
-@power(MW, pu, pu)
+@power(pu, MVAr)
 system = powerSystem()
 device = measurement()
 

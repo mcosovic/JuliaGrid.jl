@@ -43,7 +43,7 @@ function islandTopologicalFlow(system::PowerSystem, device::Measurement)
 end
 
 """
-    islandTopological(system::PowerSystem, meter::Measurement)
+    islandTopological(system::PowerSystem, device::Measurement)
 
 The function employs a topological method to identify maximal-observable islands.
 Specifically, it employs active power measurements to pinpoint flow-observable islands.
@@ -635,7 +635,7 @@ The function accepts the following keywords:
 * `verbose`: Controls the output display, ranging from silent mode (`0`) to detailed output (`3`).
 
 # Returns
-The function returns an instance of the `PlacementPMU` type, containing variables such as:
+The function returns an instance of the `PMUPlacement` type, containing variables such as:
 * `bus`: Bus labels with indices marking the positions of PMUs at buses.
 * `from`: Branch labels with indices marking the positions of PMUs at from-bus ends.
 * `to`: Branch labels with indices marking the positions of PMUs at to-bus ends.
@@ -683,7 +683,7 @@ function pmuPlacement(
     branch = system.branch
     ac = system.model.ac
 
-    placementPmu = PlacementPMU(
+    placementPmu = PMUPlacement(
         OrderedDict{template.config.system, Int64}(),
         OrderedDict{template.config.system, Int64}(),
         OrderedDict{template.config.system, Int64}()
@@ -776,7 +776,7 @@ Settings for the optimization solver include:
 The function updates the `pmu` field of the `Measurement` type.
 
 # Returns
-The function returns an instance of the `PlacementPMU` type, containing variables such as:
+The function returns an instance of the `PMUPlacement` type, containing variables such as:
 * `bus`: Bus labels with indices marking the positions of PMUs at buses.
 * `from`: Branch labels with indices marking the positions of PMUs at from-bus ends.
 * `to`: Branch labels with indices marking the positions of PMUs at to-bus ends.

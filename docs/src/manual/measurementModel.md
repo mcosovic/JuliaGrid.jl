@@ -254,7 +254,7 @@ By default, the `active` and `variance` keywords are expected to be provided in 
 ```@example addWattmeterSI
 using JuliaGrid # hide
 @default(unit)  # hide
-@power(MW, pu, pu)
+@power(MW, pu)
 
 system = powerSystem()
 device = measurement()
@@ -316,7 +316,7 @@ Just as we explained for the previous device, users have the flexibility to sele
 ```@example addVarmeterSI
 using JuliaGrid # hide
 @default(unit)  # hide
-@power(pu, MVAr, pu)
+@power(pu, MVAr)
 
 system = powerSystem()
 device = measurement()

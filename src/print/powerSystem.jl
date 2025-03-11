@@ -1406,7 +1406,7 @@ function busSummary(
                 eval(smr, i, scale[:Q], bus.demand.reactive[i], "Power Demand Reactive")
             end
         end
-        eval
+
         if haskey(smr.type, "Power Injection")
             eval(smr, i, scale[:P], power.injection.active[i], "Power Injection Active")
             eval(smr, i, scale[:Q], power.injection.reactive[i], "Power Injection Reactive")
