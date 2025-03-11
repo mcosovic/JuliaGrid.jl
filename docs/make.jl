@@ -63,7 +63,7 @@ makedocs(
             "Measurement Model" => "api/measurementModel.md",
             "State Estimation" => "api/stateEstimation.md",
             "Powers and Currents" => "api/analysis.md",
-            "Setup and Print" => "api/setupPrint.md".
+            "Setup and Print" => "api/setupPrint.md",
             "Public Types" => "api/publicTypes.md"
         ],
         "Background" => [
