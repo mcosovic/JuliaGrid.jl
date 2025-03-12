@@ -1,5 +1,5 @@
 # [Public Types](@id PublicTypesAPI)
-This section introduces the public types available in JuliaGrid. These types are designed to model and represent key components of power systems, measurements, and analyses, enabling users to efficiently simulate, optimize, and analyze various scenarios.
+This section introduces the public types available in JuliaGrid. These types are designed to model and represent key components of power systems, measurements, and analyses.
 
 To load public types into the current scope, utilize the following command:
 ```@example LoadApi
