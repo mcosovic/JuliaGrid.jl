@@ -489,11 +489,6 @@ specifies the estimation method. Supported methods include [`WLS`](@ref WLS) and
 [`dcStateEstimation`](@ref dcStateEstimation) or
 [`dcLavStateEstimation`](@ref dcLavStateEstimation) function.
 
-A composite type built using the [`dcStateEstimation`](@ref dcStateEstimation) and
-[`dcLavStateEstimation`](@ref dcLavStateEstimation) functions to define the the DC state
-estimation model. The type parameter `T` defines the estimation method, which can be
-either [`WLS`](@ref WLS) or [`LAV`](@ref LAV).
-
 # Fields
 - `voltage::PolarAngle`: Bus voltage angles.
 - `power::DCPower`: Active powers at the buses and generators.
