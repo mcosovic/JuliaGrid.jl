@@ -362,7 +362,7 @@ Next, the WLS equation is solved to obtain the estimate of state variables:
 	\hat{\mathbf x} = [\mathbf H^T \bm \Sigma^{-1} \mathbf H]^{-1} \mathbf H^T \bm \Sigma^{-1} \mathbf z.
 ```
 
-This process is executed using the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LWLS{Normal}})) function:
+This process is executed using the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{WLS{Normal}})) function:
 ```@example PMUSETutorial
 solve!(system, analysis)
 ```
@@ -426,7 +426,7 @@ At this point, QR factorization is performed on the rectangular matrix:
   \bar{\mathbf H} = {\mathbf W^{1/2}} \mathbf H = \mathbf Q \mathbf R.
 ```
 
-Executing this procedure involves the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LWLS{Normal}})) function:
+Executing this procedure involves the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{WLS{Normal}})) function:
 ```@example PMUSETutorial
 solve!(system, analysis)
 nothing # hide

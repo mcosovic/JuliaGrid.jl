@@ -562,7 +562,7 @@ end
 function updateWattmeter!(
     system::PowerSystem,
     device::Measurement,
-    analysis::ACStateEstimation{NWLS{T}};
+    analysis::ACStateEstimation{GaussNewton{T}};
     label::IntStrMiss,
     active::FltIntMiss = missing,
     kwargs...
@@ -656,7 +656,7 @@ end
 function updateWattmeter!(
     system::PowerSystem,
     device::Measurement,
-    analysis::DCStateEstimation{LWLS{T}};
+    analysis::DCStateEstimation{WLS{T}};
     label::IntStrMiss,
     active::FltIntMiss = missing,
     kwargs...
@@ -840,7 +840,7 @@ end
 
 function updateVarmeter!(
     system::PowerSystem, device::Measurement,
-    analysis::ACStateEstimation{NWLS{T}};
+    analysis::ACStateEstimation{GaussNewton{T}};
     label::IntStrMiss,
     reactive::FltIntMiss = missing,
     kwargs...

@@ -51,8 +51,8 @@ using JuliaGrid
 * [`ACStateEstimation`](@ref ACStateEstimation)
 * [`PMUStateEstimation`](@ref PMUStateEstimation)
 * [`DCStateEstimation`](@ref DCStateEstimation)
-* [`LWLS`](@ref LWLS)
-* [`NWLS`](@ref NWLS)
+* [`GaussNewton`](@ref GaussNewton)
+* [`WLS`](@ref WLS)
 * [`LAV`](@ref LAV)
 * [`Normal`](@ref Normal)
 * [`Orthogonal`](@ref Orthogonal)
@@ -127,8 +127,8 @@ PMUPlacement
 ACStateEstimation
 PMUStateEstimation
 DCStateEstimation
-LWLS
-NWLS
+GaussNewton
+WLS
 LAV
 Normal
 Orthogonal

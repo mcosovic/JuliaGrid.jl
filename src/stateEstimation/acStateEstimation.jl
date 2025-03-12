@@ -60,7 +60,7 @@ function gaussNewton(
         ),
         power,
         current,
-        NWLS{Normal}(
+        GaussNewton{Normal}(
             jcb,
             pcs,
             mean,
@@ -92,7 +92,7 @@ function gaussNewton(system::PowerSystem, device::Measurement, ::Type{<:Orthogon
         ),
         power,
         current,
-        NWLS{Orthogonal}(
+        GaussNewton{Orthogonal}(
             jcb,
             pcs,
             mean,
@@ -886,7 +886,7 @@ analysis = acLavStateEstimation(system, device, Ipopt.Optimizer; verbose = 1)
 solve!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, analysis::ACStateEstimation{NWLS{Normal}})
+function solve!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton{Normal}})
     normalEquation!(system, analysis)
 
     bus = system.bus
@@ -929,7 +929,7 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{NWLS{Normal}})
     return maxAbsΔ
 end
 
-function solve!(system::PowerSystem, analysis::ACStateEstimation{NWLS{Orthogonal}})
+function solve!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton{Orthogonal}})
     normalEquation!(system, analysis)
 
     bus = system.bus
@@ -1199,7 +1199,7 @@ end
         iteration, tolerance, power, current, verbose)
 
 The function serves as a wrapper for solving AC state estimation and includes the functions:
-* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}})),
+* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})),
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
@@ -1240,7 +1240,7 @@ stateEstimation!(system, analysis; iteration = 30, power = true, verbose = 1)
 """
 function stateEstimation!(
     system::PowerSystem,
-    analysis::ACStateEstimation{NWLS{T}};
+    analysis::ACStateEstimation{GaussNewton{T}};
     iteration::Int64 = 40,
     tolerance::Float64 = 1e-8,
     power::Bool = false,

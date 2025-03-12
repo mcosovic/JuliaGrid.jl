@@ -1,8 +1,8 @@
 export Analysis, AC, DC, Normal, Orthogonal
 export ACPowerFlow, NewtonRaphson, FastNewtonRaphson, GaussSeidel, DCPowerFlow
 export ACOptimalPowerFlow, DCOptimalPowerFlow
-export ACStateEstimation, NWLS, LAV
-export DCStateEstimation, LWLS
+export ACStateEstimation, GaussNewton, LAV
+export DCStateEstimation, WLS
 export PMUStateEstimation
 export Island, PMUPlacement
 
@@ -30,18 +30,19 @@ abstract type DC <: Analysis end
 """
     Normal
 
-An abstract type representing weighted least squares state estimation methods where normal
-equation is solved. It is used as a type parameter in models such as [`LWLS`](@ref LWLS)
-and [`NWLS`](@ref NWLS) to indicate that the analysis is based on the normal equation.
+An abstract type representing weighted least-squares state estimation, where the normal
+equation is solved by factorizing the gain matrix and performing forward/backward
+substitutions on the right-hand-side vector. It is used as a type parameter in
+[`GaussNewton`](@ref GaussNewton) [`WLS`](@ref WLS) models.
 """
 abstract type Normal end
 
 """
     Orthogonal
 
-An abstract type representing orthogonal method used in weighted-least squares state
-estimation. It is used as a type parameter in models such as [`LWLS`](@ref LWLS) and
-[`NWLS`](@ref NWLS) to indicate that the analysis is based on the orthogonal method.
+An abstract type representing weighted least-squares state estimation, where the normal
+equation is solved using an orthogonal method. It is used as a type parameter in
+[`GaussNewton`](@ref GaussNewton) and [`WLS`](@ref WLS) models.
 """
 abstract type Orthogonal end
 
@@ -78,7 +79,7 @@ end
     NewtonRaphson
 
 A composite type built using the [`newtonRaphson`](@ref newtonRaphson) function to define
-the AC power flow framework, which will be solved using the Newton-Raphson method.
+the AC power flow model, which will be solved using the Newton-Raphson method.
 
 # Fields
 - `jacobian::SparseMatrixCSC{Float64, Int64}`: Jacobian matrix.
@@ -111,8 +112,8 @@ end
     FastNewtonRaphson
 
 A composite type built using the [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX) or
-[`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB) functions to define
-the AC power flow framework, which will be solved using the fast Newton-Raphson method.
+[`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB) functions to define the AC power flow
+model, which will be solved using the fast Newton-Raphson method.
 
 # Fields
 - `active:FastNewtonRaphsonModel`: Jacobian, mismatches, and incrementes for active power equations.
@@ -137,7 +138,7 @@ end
     GaussSeidel
 
 A composite type built using the [`gaussSeidel`](@ref gaussSeidel) function to define
-the AC power flow framework, which will be solved using the Gauss-Seidel method.
+the AC power flow model, which will be solved using the Gauss-Seidel method.
 
 # Fields
 - `voltage::Vector{ComplexF64}`: Vector of complex voltage values.
@@ -153,10 +154,10 @@ end
 """
     ACPowerFlow{T} <: AC where T <: Union{NewtonRaphson, FastNewtonRaphson, GaussSeidel}
 
-A composite type representing an AC power flow framework that uses a specified method for
-solving the AC power flow equations. The type parameter `T` defines the method used,
-which can be either [`NewtonRaphson`](@ref NewtonRaphson),
-[`FastNewtonRaphson`](@ref FastNewtonRaphson), or [`GaussSeidel`](@ref GaussSeidel).
+A composite type representing an AC power flow model that uses a specified method for
+solving the AC power flow. The type parameter `T` defines the method used, which can be
+either [`NewtonRaphson`](@ref NewtonRaphson), [`FastNewtonRaphson`](@ref FastNewtonRaphson),
+or [`GaussSeidel`](@ref GaussSeidel).
 
 # Fields
 - `voltage::Polar`: Bus voltages represented in polar form.
@@ -182,7 +183,7 @@ end
     DCPowerFlow <: DC
 
 A composite type built using the [`dcPowerFlow`](@ref dcPowerFlow) function to define
-the DC power flow framework.
+the DC power flow model.
 
 # Fields
 - `voltage::PolarAngle`: Bus voltage angles.
@@ -280,7 +281,7 @@ end
     ACOptimalPowerFlow <: AC
 
 A composite type built using the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function
-to define the AC optimal power flow framework.
+to define the AC optimal power flow model.
 
 # Fields
 - `voltage::Polar`: Bus voltages represented in polar form.
@@ -340,7 +341,7 @@ end
     DCOptimalPowerFlow <: DC
 
 A composite type built using the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function
-to define the DC optimal power flow framework.
+to define the DC optimal power flow model.
 
 # Fields
 - `voltage::PolarAngle`: Bus voltage angles.
@@ -362,9 +363,9 @@ mutable struct BadData
 end
 
 """
-    LWLS{T <: Union{Normal, Orthogonal}}
+    WLS{T <: Union{Normal, Orthogonal}}
 
-A composite type representing a linear weighted-least squares state estimation model.
+A composite type representing a linear weighted least-squares state estimation model.
 
 # Fields
 - `coefficient::SparseMatrixCSC{Float64, Int64}`: Coefficient matrix.
@@ -375,7 +376,7 @@ A composite type representing a linear weighted-least squares state estimation m
 - `pattern::Int64`: Tracks pattern changes in the coefficient matrix.
 - `run::Bool`: Indicates whether factorization can be reused.
 """
-mutable struct LWLS{T <: Union{Normal, Orthogonal}}
+mutable struct WLS{T <: Union{Normal, Orthogonal}}
     coefficient::SparseMatrixCSC{Float64, Int64}
     precision::SparseMatrixCSC{Float64, Int64}
     mean::Vector{Float64}
@@ -386,9 +387,10 @@ mutable struct LWLS{T <: Union{Normal, Orthogonal}}
 end
 
 """
-    NWLS{T <: Union{Normal, Orthogonal}}
+    GaussNewton{T <: Union{Normal, Orthogonal}}
 
-A composite type representing a nonlinear weighted-least squares state estimation model.
+A composite type built using the [`gaussNewton`](@ref gaussNewton) function to define
+the AC state estimation model, which will be solved using the Gauss-Newton method.
 
 # Fields
 - `jacobian::SparseMatrixCSC{Float64, Int64}`: Jacobian matrix.
@@ -403,7 +405,7 @@ A composite type representing a nonlinear weighted-least squares state estimatio
 - `range::Vector{Int64}`: Range of measurement devices.
 - `pattern::Int64`: Tracks pattern changes in the Jacobian matrix.
 """
-mutable struct NWLS{T <: Union{Normal, Orthogonal}}
+mutable struct GaussNewton{T <: Union{Normal, Orthogonal}}
     jacobian::SparseMatrixCSC{Float64, Int64}
     precision::SparseMatrixCSC{Float64, Int64}
     mean::Vector{Float64}
@@ -463,13 +465,12 @@ end
 """
     Island
 
-A composite type built using the
-[`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Measurement)) and
-[`islandTopological`](@ref islandTopological(::PowerSystem, ::Measurement)) functions, which
-holds data about observable islands.
+A composite type built using the [`islandTopologicalFlow`](@ref islandTopologicalFlow) and
+[`islandTopological`](@ref islandTopological) functions, which holds data about observable
+islands.
 
 # Fields
-- `island::Vector{Vector{Int64}}`: List of observable islands, where each island is represented by a vector of bus indices.
+- `island::Vector{Vector{Int64}}`: List of observable islands, represented by a vector of bus indices.
 - `bus::Vector{Int64}`: Positions of buses in relation to each island.
 - `tie::TieData`: Tie data associated with buses and branches.
 """
@@ -480,31 +481,31 @@ mutable struct Island
 end
 
 """
-    DCStateEstimation{T} <: DC where T <: Union{LWLS{Normal}, LWLS{Orthogonal}, LAV}
+    DCStateEstimation{T} <: DC where T <: Union{WLS, LAV}
 
 A composite type built using the [`dcStateEstimation`](@ref dcStateEstimation) and
 [`dcLavStateEstimation`](@ref dcLavStateEstimation) functions to define the the DC state
-estimation framework. The type parameter `T` defines the estimation method, which can be
-either [`LWLS`](@ref LWLS) or [`LAV`](@ref LAV).
+estimation model. The type parameter `T` defines the estimation method, which can be
+either [`WLS`](@ref WLS) or [`LAV`](@ref LAV).
 
 # Fields
 - `voltage::PolarAngle`: Bus voltage angles.
 - `power::DCPower`: Active powers at the buses and generators.
 - `method::T`: The estimation model associated with the method used to solve the DC state estimation.
 """
-struct DCStateEstimation{T} <: DC where T <: Union{LWLS{Normal}, LWLS{Orthogonal}, LAV}
+struct DCStateEstimation{T} <: DC where T <: Union{WLS, LAV}
     voltage::PolarAngle
     power::DCPower
     method::T
 end
 
 """
-    PMUStateEstimation{T} <: AC where T <: Union{LWLS{Normal}, LWLS{Orthogonal}, LAV}
+    PMUStateEstimation{T} <: AC where T <: Union{WLS, LAV}
 
 A composite type built using the [`pmuStateEstimation`](@ref pmuStateEstimation) and
 [`pmuLavStateEstimation`](@ref pmuLavStateEstimation) functions to define PMU state
-estimation framework. The type parameter `T` defines the estimation method,
-which can be either [`LWLS`](@ref LWLS) or [`LAV`](@ref LAV).
+estimation model. The type parameter `T` defines the estimation method, which can be
+either [`WLS`](@ref WLS) or [`LAV`](@ref LAV).
 
 # Fields
 - `voltage::Polar`: Bus voltages represented in polar form.
@@ -512,7 +513,7 @@ which can be either [`LWLS`](@ref LWLS) or [`LAV`](@ref LAV).
 - `current::ACCurrent`: Currents at the buses and branches.
 - `method::T`: The estimation model associated with the method used to solve the PMU state estimation.
 """
-struct PMUStateEstimation{T} <: AC where T <: Union{LWLS{Normal}, LWLS{Orthogonal}, LAV}
+struct PMUStateEstimation{T} <: AC where T <: Union{WLS, LAV}
     voltage::Polar
     power::ACPower
     current::ACCurrent
@@ -537,12 +538,12 @@ mutable struct PMUPlacement
 end
 
 """
-    ACStateEstimation{T} <: AC where T <: Union{NWLS{Normal}, NWLS{Orthogonal}, LAV}
+    ACStateEstimation{T} <: AC where T <: Union{GaussNewton, LAV}
 
 A composite type built using the [`gaussNewton`](@ref gaussNewton) and
 [`acLavStateEstimation`](@ref acLavStateEstimation) functions to define the AC state
-estimation framework. The type parameter `T` defines the estimation method, which can be
-either [`NWLS`](@ref NWLS) or [`LAV`](@ref LAV).
+estimation model. The type parameter `T` defines the estimation method, which can be
+either [`GaussNewton`](@ref GaussNewton) or [`LAV`](@ref LAV).
 
 # Fields
 - `voltage::Polar`: Bus voltages represented in polar form.
@@ -550,7 +551,7 @@ either [`NWLS`](@ref NWLS) or [`LAV`](@ref LAV).
 - `current::ACCurrent`: Currents at the buses and branches.
 - `method::T`: The estimation model associated with the method used to solve the AC state estimation.
 """
-struct ACStateEstimation{T} <: AC where T <: Union{NWLS{Normal}, NWLS{Orthogonal}, LAV}
+struct ACStateEstimation{T} <: AC where T <: Union{GaussNewton, LAV}
     voltage::Polar
     power::ACPower
     current::ACCurrent

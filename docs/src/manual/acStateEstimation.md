@@ -6,14 +6,14 @@ To perform nonlinear or AC state estimation, the initial requirement is to have 
 ---
 
 To obtain bus voltages and solve the state estimation problem, users can either implement an iterative process for the WLS model or simply execute the following function for the LAV model:
-* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}})).
+* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})).
 
 After solving the AC state estimation, JuliaGrid provides functions for computing powers and currents:
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
 Alternatively, instead of designing their own iteration process for the Gauss-Newton method or using the function responsible for solving the LAV model, and computing powers and currents, users can use the wrapper function:
-* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::ACStateEstimation{NWLS{T}}) where T <: Union{Normal, Orthogonal}).
+* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}).
 
 Users can also access specialized functions for computing specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators within the power system.
 
@@ -102,7 +102,7 @@ nothing # hide
 ---
 
 ##### State Estimator
-To conduct an iterative process using the Gauss-Newton method, it is essential to include the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}})) function inside the iteration loop. For example:
+To conduct an iterative process using the Gauss-Newton method, it is essential to include the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function inside the iteration loop. For example:
 ```@example ACSEWLS
 for iteration = 1:20
     solve!(system, analysis)
@@ -118,7 +118,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ---
 
 ##### Breaking the Iterative Process
-The iterative process can be terminated using the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}})) function. The following code demonstrates how to utilize this function to break out of the iteration loop:
+The iterative process can be terminated using the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function. The following code demonstrates how to utilize this function to break out of the iteration loop:
 ```@example ACSEWLS
 analysis = gaussNewton(system, device)
 for iteration = 1:20
@@ -130,7 +130,7 @@ for iteration = 1:20
 end
 nothing # hide
 ```
-The [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}})) function returns the maximum absolute values of the state variable increment, which are commonly used as a convergence criterion in the iterative Gauss-Newton algorithm.
+The [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function returns the maximum absolute values of the state variable increment, which are commonly used as a convergence criterion in the iterative Gauss-Newton algorithm.
 
 !!! note "Info"
     Readers can refer to the [AC State Estimation](@ref ACStateEstimationTutorials) tutorial for implementation insights.
@@ -311,12 +311,12 @@ nothing # hide
 ---
 
 ##### Setup Initial Primal Values
-In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}})) function is executed. Initial primal values are determined based on the `voltage` fields within the `ACStateEstimation` type. By default, these values are established using the initial bus voltage magnitudes and angles from `PowerSystem` type:
+In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function is executed. Initial primal values are determined based on the `voltage` fields within the `ACStateEstimation` type. By default, these values are established using the initial bus voltage magnitudes and angles from `PowerSystem` type:
 ```@repl ACSEWLS
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}})) function. Additionally, the [setInitialPoint!](@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation)) function allows users to configure the initial point as required.
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function. Additionally, the [setInitialPoint!](@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation)) function allows users to configure the initial point as required.
 
 ---
 
@@ -341,7 +341,7 @@ nothing # hide
 ## [Measurement Set Update](@id ACMeasurementsAlterationManual)
 After establishing the `Measurement` type using the [`measurement`](@ref measurement) function, users gain the capability to incorporate new measurement devices or update existing ones.
 
-Once updates are completed, users can seamlessly progress towards generating the `ACStateEstimation` type using the [`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation) function. Ultimately, resolving the AC state estimation is achieved through the utilization of the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}})) function:
+Once updates are completed, users can seamlessly progress towards generating the `ACStateEstimation` type using the [`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation) function. Ultimately, resolving the AC state estimation is achieved through the utilization of the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function:
 ```@example WLSACStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide

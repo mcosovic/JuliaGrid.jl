@@ -468,7 +468,7 @@ end
 function updatePmu!(
     system::PowerSystem,
     device::Measurement,
-    analysis::DCStateEstimation{LWLS{T}};
+    analysis::DCStateEstimation{WLS{T}};
     label::IntStr,
     kwargs...
 ) where T <: Union{Normal, Orthogonal}
@@ -541,7 +541,7 @@ end
 function updatePmu!(
     system::PowerSystem,
     device::Measurement,
-    analysis::PMUStateEstimation{LWLS{T}};
+    analysis::PMUStateEstimation{WLS{T}};
     label::IntStrMiss,
     kwargs...
 ) where T <: Union{Normal, Orthogonal}
@@ -693,7 +693,7 @@ end
 function updatePmu!(
     system::PowerSystem,
     device::Measurement,
-    analysis::ACStateEstimation{NWLS{T}};
+    analysis::ACStateEstimation{GaussNewton{T}};
     label::IntStrMiss,
     kwargs...
 ) where T <: Union{Normal, Orthogonal}

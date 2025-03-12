@@ -6,14 +6,14 @@ To perform linear state estimation solely based on PMU data, the initial require
 ---
 
 To obtain bus voltages and solve the PMU state estimation problem, users can use the wrapper function:
-* [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LWLS{Normal}})).
+* [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{WLS{Normal}})).
 
 After solving the PMU state estimation, JuliaGrid provides functions for computing powers and currents:
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
 
 Alternatively, instead of using functions responsible for solving state estimation and computing powers and currents, users can use the wrapper function:
-* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::PMUStateEstimation{LWLS{T}}) where T <: Union{Normal, Orthogonal}).
+* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::PMUStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal}).
 
 Users can also access specialized functions for computing specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators within the power system.
 
@@ -105,7 +105,7 @@ nothing # hide
     analysis = pmuStateEstimation(system, device, QR)
     ```
 
-To obtain the bus voltage magnitudes and angles, the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LWLS{Normal}})) function can be invoked as shown:
+To obtain the bus voltage magnitudes and angles, the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{WLS{Normal}})) function can be invoked as shown:
 ```@example PMUOptimalPlacement
 solve!(system, analysis)
 nothing # hide
@@ -203,7 +203,7 @@ end
 ---
 
 ## [Bad Data Processing](@id PMUBadDataDetectionManual)
-After acquiring the WLS solution using the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LWLS{Normal}})) function, users can conduct bad data analysis employing the largest normalized residual test. Continuing with our defined power system and measurement set, let us introduce a new phasor measurement. Upon proceeding to find the solution for this updated state:
+After acquiring the WLS solution using the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{WLS{Normal}})) function, users can conduct bad data analysis employing the largest normalized residual test. Continuing with our defined power system and measurement set, let us introduce a new phasor measurement. Upon proceeding to find the solution for this updated state:
 ```@example PMUOptimalPlacement
 addPmu!(system, device; bus = "Bus 3", magnitude = 3.2, angle = 0.0, noise = false)
 
@@ -259,12 +259,12 @@ nothing # hide
 ---
 
 ##### Setup Initial Primal Values
-In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LWLS{Normal}})) function is executed. Initial primal values are determined based on the `voltage` fields within the `PMUStateEstimation` type. By default, these values are initially established using the initial bus voltage magnitudes and angles from `PowerSystem` type:
+In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{WLS{Normal}})) function is executed. Initial primal values are determined based on the `voltage` fields within the `PMUStateEstimation` type. By default, these values are initially established using the initial bus voltage magnitudes and angles from `PowerSystem` type:
 ```@repl PMUOptimalPlacement
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LWLS{Normal}})) function. It is important to note that JuliaGrid utilizes the provided data to set initial primal values in the rectangular coordinate system. Additionally, the [setInitialPoint!](@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation)) function allows users to configure the initial point as required.
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{WLS{Normal}})) function. It is important to note that JuliaGrid utilizes the provided data to set initial primal values in the rectangular coordinate system. Additionally, the [setInitialPoint!](@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation)) function allows users to configure the initial point as required.
 
 ---
 
@@ -289,7 +289,7 @@ nothing # hide
 ## [Measurement Set Update](@id PMUMeasurementsAlterationManual)
 After establishing the `Measurement` type using the [`measurement`](@ref measurement) function, users gain the capability to incorporate new measurement devices or update existing ones.
 
-Once updates are completed, users can seamlessly progress towards generating the `PMUStateEstimation` type using the [`pmuStateEstimation`](@ref pmuStateEstimation) or [`pmuLavStateEstimation`](@ref pmuLavStateEstimation) function. Ultimately, resolving the PMU state estimation is achieved through the utilization of the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{LWLS{Normal}})) function:
+Once updates are completed, users can seamlessly progress towards generating the `PMUStateEstimation` type using the [`pmuStateEstimation`](@ref pmuStateEstimation) or [`pmuLavStateEstimation`](@ref pmuLavStateEstimation) function. Ultimately, resolving the PMU state estimation is achieved through the utilization of the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{WLS{Normal}})) function:
 ```@example WLSPMUStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide

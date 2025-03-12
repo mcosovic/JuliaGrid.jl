@@ -48,7 +48,7 @@ solve!(system, analysis)
 function residualTest!(
     system::PowerSystem,
     device::Measurement,
-    analysis::DCStateEstimation{LWLS{T}};
+    analysis::DCStateEstimation{WLS{T}};
     threshold::Float64 = 3.0
 ) where T <: Union{Normal, Orthogonal}
 
@@ -125,7 +125,7 @@ end
 function residualTest!(
     system::PowerSystem,
     device::Measurement,
-    analysis::PMUStateEstimation{LWLS{T}};
+    analysis::PMUStateEstimation{WLS{T}};
     threshold::Float64 = 3.0
 )  where T <: Union{Normal, Orthogonal}
 
@@ -204,7 +204,7 @@ end
 function residualTest!(
     system::PowerSystem,
     device::Measurement,
-    analysis::ACStateEstimation{NWLS{T}};
+    analysis::ACStateEstimation{GaussNewton{T}};
     threshold::Float64 = 3.0
 )  where T <: Union{Normal, Orthogonal}
 

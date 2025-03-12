@@ -823,7 +823,7 @@ Here, we utilize a "flat start" approach in our method. It is important to keep 
 ---
 
 ##### Iterative Process
-To apply the Gauss-Newton method, JuliaGrid provides the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}})) function. This function is utilized iteratively until a stopping criterion is met, as demonstrated in the following code snippet:
+To apply the Gauss-Newton method, JuliaGrid provides the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function. This function is utilized iteratively until a stopping criterion is met, as demonstrated in the following code snippet:
 ```@example ACSETutorial
 for iteration = 1:20
     stopping = solve!(system, analysis)
@@ -833,7 +833,7 @@ for iteration = 1:20
 end
 ```
 
-The function [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}})) calculates the vector of residuals at each iteration using the equation:
+The function [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) calculates the vector of residuals at each iteration using the equation:
 ```math
   \mathbf r (\mathbf x^{(\nu)}) = \mathbf{z} - \mathbf h (\mathbf x^{(\nu)}).
 ```
@@ -873,7 +873,7 @@ Here again, the JuliaGrid implementation of the AC state estimation follows a sp
 
 Note that the increment vector and Jacobian matrix hold the slack bus with a known voltage angle. An element of the increment vector and a column of the Jacobian matrix are not deleted, and the presence on the slack bus is handled internally by JuliaGrid, which is evident from the factorization of the gain matrix.
 
-The function [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}})) adds the computed increment term to the previous solution to obtain a new solution:
+The function [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) adds the computed increment term to the previous solution to obtain a new solution:
 ```math
   \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)}.
 ```
@@ -884,7 +884,7 @@ Therefore, the bus voltage magnitudes ``\mathbf{V} = [V_i]`` and angles ``\bm{\T
 𝚯 = analysis.voltage.angle
 ```
 
-Finally, the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{NWLS{Normal}})) function provides the maximum absolute value of state variable increments, typically employed as the termination criterion for the iteration loop. Specifically, if it falls below a predefined stopping criterion ``\epsilon``, the algorithm converges:
+Finally, the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function provides the maximum absolute value of state variable increments, typically employed as the termination criterion for the iteration loop. Specifically, if it falls below a predefined stopping criterion ``\epsilon``, the algorithm converges:
 ```math
   \max \{|\Delta x_i|,\; \forall i \} < \epsilon.
 ```

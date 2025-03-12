@@ -112,7 +112,7 @@ end
 
 ##### Measurement Statistics #####
 function printTop(
-    analysis::ACStateEstimation{NWLS{T}},
+    analysis::ACStateEstimation{GaussNewton{T}},
     verbose::Int64
 ) where T <: Union{Normal, Orthogonal}
 
