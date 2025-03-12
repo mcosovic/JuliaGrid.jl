@@ -111,7 +111,7 @@ end
 """
     FastNewtonRaphson
 
-A composite type built using the [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX) or
+A composite type built using the [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX) and
 [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB) functions to define the AC power flow
 model, which will be solved using the fast Newton-Raphson method.
 
@@ -154,10 +154,10 @@ end
 """
     ACPowerFlow{T} <: AC where T <: Union{NewtonRaphson, FastNewtonRaphson, GaussSeidel}
 
-A composite type representing an AC power flow model that uses a specified method for
-solving the AC power flow. The type parameter `T` defines the method used, which can be
-either [`NewtonRaphson`](@ref NewtonRaphson), [`FastNewtonRaphson`](@ref FastNewtonRaphson),
-or [`GaussSeidel`](@ref GaussSeidel).
+A composite type representing an AC power flow model, where the type parameter `T` specifies
+the numerical method used to solve the power flow. Supported methods include
+[`NewtonRaphson`](@ref NewtonRaphson), [`FastNewtonRaphson`](@ref FastNewtonRaphson), and
+[`GaussSeidel`](@ref GaussSeidel).
 
 # Fields
 - `voltage::Polar`: Bus voltages represented in polar form.
@@ -483,6 +483,12 @@ end
 """
     DCStateEstimation{T} <: DC where T <: Union{WLS, LAV}
 
+A composite type representing a DC state estimation model, where the type parameter `T`
+specifies the estimation method. Supported methods include [`WLS`](@ref WLS) and
+[`LAV`](@ref LAV). The model is constructed using either the
+[`dcStateEstimation`](@ref dcStateEstimation) or
+[`dcLavStateEstimation`](@ref dcLavStateEstimation) function.
+
 A composite type built using the [`dcStateEstimation`](@ref dcStateEstimation) and
 [`dcLavStateEstimation`](@ref dcLavStateEstimation) functions to define the the DC state
 estimation model. The type parameter `T` defines the estimation method, which can be
@@ -502,10 +508,11 @@ end
 """
     PMUStateEstimation{T} <: AC where T <: Union{WLS, LAV}
 
-A composite type built using the [`pmuStateEstimation`](@ref pmuStateEstimation) and
-[`pmuLavStateEstimation`](@ref pmuLavStateEstimation) functions to define PMU state
-estimation model. The type parameter `T` defines the estimation method, which can be
-either [`WLS`](@ref WLS) or [`LAV`](@ref LAV).
+A composite type representing a PMU state estimation model, where the type parameter `T`
+specifies the estimation method. Supported methods include [`WLS`](@ref WLS) and
+[`LAV`](@ref LAV). The model is constructed using either the
+[`pmuStateEstimation`](@ref pmuStateEstimation) or
+[`pmuLavStateEstimation`](@ref pmuLavStateEstimation) function.
 
 # Fields
 - `voltage::Polar`: Bus voltages represented in polar form.
@@ -527,23 +534,24 @@ A composite type built using the [`pmuPlacement`](@ref pmuPlacement) function, w
 stores data on optimal PMU placement.
 
 # Fields
-- `bus::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: PMU placement at buses.
-- `from::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: PMU placement at from-buses.
-- `to::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}`: PMU placement at to-buses.
+- `bus::LabelDict`: Phasor measurement placement at buses.
+- `from::LabelDict`: Phasor measurement placement at from-buses.
+- `to::LabelDict`: Phasor measurement placement at to-buses.
 """
 mutable struct PMUPlacement
-    bus::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
-    from::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
-    to::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
+    bus::LabelDict
+    from::LabelDict
+    to::LabelDict
 end
 
 """
     ACStateEstimation{T} <: AC where T <: Union{GaussNewton, LAV}
 
-A composite type built using the [`gaussNewton`](@ref gaussNewton) and
-[`acLavStateEstimation`](@ref acLavStateEstimation) functions to define the AC state
-estimation model. The type parameter `T` defines the estimation method, which can be
-either [`GaussNewton`](@ref GaussNewton) or [`LAV`](@ref LAV).
+A composite type representing an AC state estimation model, where the type parameter `T`
+specifies the estimation method. Supported methods include [`GaussNewton`](@ref GaussNewton)
+and [`LAV`](@ref LAV). The model is constructed using either the
+[`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation)
+function.
 
 # Fields
 - `voltage::Polar`: Bus voltages represented in polar form.

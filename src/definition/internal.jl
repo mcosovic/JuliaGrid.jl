@@ -7,6 +7,7 @@ const BoolMiss = Union{Bool, Missing}
 const IntMiss = Union{Int64, Missing}
 const IntStr = Union{Int64, String}
 const IntStrMiss = Union{Int64, String, Missing}
+const LabelDict = Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
 
 ##### Polar Coordinate #####
 mutable struct Polar
