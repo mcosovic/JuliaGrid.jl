@@ -35,7 +35,7 @@ using JuliaGrid, Ipopt, HiGHS
 * [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{WLS{Normal}}))
 * [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::DCStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal})
 
-###### Bad Data Analysis
+###### Bad Data Processing
 * [`residualTest!`](@ref residualTest!)
 
 ---
@@ -82,7 +82,7 @@ stateEstimation!(::PowerSystem, ::DCStateEstimation{WLS{T}}) where T <: Union{No
 
 ---
 
-## Bad Data Analysis
+## Bad Data Processing
 ```@docs
 residualTest!
 ```

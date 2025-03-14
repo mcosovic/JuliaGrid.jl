@@ -57,6 +57,9 @@ using JuliaGrid
 * [`Normal`](@ref Normal)
 * [`Orthogonal`](@ref Orthogonal)
 
+###### Bad Data Processing
+* [`BadData`](@ref BadData)
+
 ---
 
 ## Power System Model
@@ -132,4 +135,11 @@ WLS
 LAV
 Normal
 Orthogonal
+```
+
+---
+
+## Bad Data Processing
+```@docs
+BadData
 ```
