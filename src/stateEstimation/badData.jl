@@ -112,7 +112,17 @@ function residualTest!(
                 watt.active.status[index] = 0
             end
         else
-            (bad.label, index),_ = iterate(pmu.label, bad.index - watt.number)
+            cnt = 0
+            for (label, idx) in pmu.label
+                if pmu.layout.bus[idx]
+                    cnt += 1
+                end
+                if cnt == bad.index - watt.number
+                    bad.label = label
+                    index = idx
+                    break
+                end
+            end
             if bad.detect
                 pmu.angle.status[index] = 0
             end
