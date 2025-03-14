@@ -33,7 +33,7 @@ abstract type DC <: Analysis end
 An abstract type representing weighted least-squares state estimation, where the normal
 equation is solved by factorizing the gain matrix and performing forward/backward
 substitutions on the right-hand-side vector. It is used as a type parameter in
-[`GaussNewton`](@ref GaussNewton) [`WLS`](@ref WLS) models.
+[`GaussNewton`](@ref GaussNewton) and [`WLS`](@ref WLS) models.
 """
 abstract type Normal end
 
