@@ -4,7 +4,7 @@ export ACOptimalPowerFlow, DCOptimalPowerFlow
 export ACStateEstimation, GaussNewton, LAV
 export DCStateEstimation, WLS
 export PMUStateEstimation
-export Island, PMUPlacement, BadData
+export Island, PMUPlacement, ResidualTest
 
 """
     Analysis
@@ -355,7 +355,7 @@ mutable struct DCOptimalPowerFlow <: DC
 end
 
 """
-    BadData
+    ResidualTest
 
 A composite type built using [`residualTest!`](@ref residualTest!) function, which stores
 results from the bad data processing.
@@ -366,7 +366,7 @@ results from the bad data processing.
 - `label::IntStr`: The label of the measurement suspected to be an outlier.
 - `index::Int64`: The index of the outlier measurement within the model.
 """
-mutable struct BadData
+mutable struct ResidualTest
     detect::Bool
     maxNormalizedResidual::Float64
     label::IntStr

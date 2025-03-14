@@ -27,10 +27,11 @@ makedocs(
             "AC Optimal Power Flow" => "manual/acOptimalPowerFlow.md",
             "DC Optimal Power Flow" => "manual/dcOptimalPowerFlow.md",
             "Measurement Model" => "manual/measurementModel.md",
-            "Observability Analysis" => "manual/observability.md",
+            "Observability Analysis" => "manual/observabilityAnalysis.md",
             "AC State Estimation" => "manual/acStateEstimation.md",
             "PMU State Estimation" => "manual/pmuStateEstimation.md",
-            "DC State Estimation" => "manual/dcStateEstimation.md"
+            "DC State Estimation" => "manual/dcStateEstimation.md",
+            "Bad Data Analysis" => "manual/badDataAnalysis.md"
         ],
         "Tutorials" => [
             "Power System Model" => "tutorials/powerSystemModel.md",
@@ -39,11 +40,12 @@ makedocs(
             "AC Optimal Power Flow" => "tutorials/acOptimalPowerFlow.md",
             "DC Optimal Power Flow" => "tutorials/dcOptimalPowerFlow.md",
             "Measurement Model" => "tutorials/measurementModel.md",
-            "Observability Analysis" => "tutorials/observability.md",
+            "Observability Analysis" => "tutorials/observabilityAnalysis.md",
             "AC State Estimation" => "tutorials/acStateEstimation.md",
             "PMU State Estimation" => "tutorials/pmuStateEstimation.md",
             "DC State Estimation" => "tutorials/dcStateEstimation.md",
             "Per-Unit System" => "tutorials/perunit.md",
+            "Bad Data Analysis" => "tutorials/badDataAnalysis.md"
         ],
         "Examples" => [
             "Power System Datasets" => "examples/powerSystemDatasets.md",
@@ -51,7 +53,7 @@ makedocs(
             "DC Power Flow" => "examples/dcPowerFlow.md",
             "AC Optimal Power Flow" => "examples/acOptimalPowerFlow.md",
             "DC Optimal Power Flow" => "examples/dcOptimalPowerFlow.md",
-            "Observability Analysis" => "examples/observability.md",
+            "Observability Analysis" => "examples/observabilityAnalysis.md",
             "AC State Estimation" => "examples/acStateEstimation.md",
             "PMU State Estimation" => "examples/pmuStateEstimation.md",
             "DC State Estimation" => "examples/dcStateEstimation.md"

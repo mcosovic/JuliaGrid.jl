@@ -57,8 +57,8 @@ using JuliaGrid
 * [`Normal`](@ref Normal)
 * [`Orthogonal`](@ref Orthogonal)
 
-###### Bad Data Processing
-* [`BadData`](@ref BadData)
+###### Bad Data Analysis
+* [`ResidualTest`](@ref ResidualTest)
 
 ---
 
@@ -139,7 +139,7 @@ Orthogonal
 
 ---
 
-## Bad Data Processing
+## Bad Data Analysis
 ```@docs
-BadData
+ResidualTest
 ```

@@ -27,7 +27,7 @@ the corresponding measurement from the coefficient matrix and mean vector. This 
 direct progress to the function that solves the state estimation problem.
 
 # Returns
-The function returns an instance of the `BadData` type, which includes:
+The function returns an instance of the `ResidualTest` type, which includes:
 - `detect`: Returns `true` after the function's execution if bad data is detected.
 - `maxNormalizedResidual`: Denotes the value of the largest normalized residual.
 - `label`: Signifies the label of the bad data.
@@ -59,7 +59,7 @@ function residualTest!(
     watt = device.wattmeter
     pmu = device.pmu
 
-    bad = BadData(false, 0.0, "", 0)
+    bad = ResidualTest(false, 0.0, "", 0)
 
     slackRange, elementsRemove = delSlackCoeff(analysis, bus.layout.slack)
 
@@ -144,7 +144,7 @@ function residualTest!(
     bus = system.bus
     se = analysis.method
 
-    bad = BadData(false, 0.0, "", 0)
+    bad = ResidualTest(false, 0.0, "", 0)
 
     gain = transpose(se.coefficient) * se.precision * se.coefficient
     if !isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64})
@@ -229,7 +229,7 @@ function residualTest!(
     watt = device.wattmeter
     var = device.varmeter
 
-    bad = BadData(false, 0.0, "", 0)
+    bad = ResidualTest(false, 0.0, "", 0)
 
     normalEquation!(system, analysis)
 

@@ -19,11 +19,6 @@ Users can also access specialized functions for computing specific types of [pow
 
 ---
 
-After obtaining the bus voltages, when the user employs the WLS model, they can check if the measurement set contains outliers through bad data analysis and remove those measurements using:
-* [`residualTest!`](@ref residualTest!).
-
----
-
 ## [Bus Type Modification](@id ACSEBusTypeModificationManual)
 In AC state estimation, it is necessary to designate a slack bus, where the bus voltage angle is known. Therefore, when establishing the `ACStateEstimation` type, the initially assigned slack bus is evaluated and may be altered. If the designated slack bus (`type = 3`) lacks a connected in-service generator, it will be changed to a demand bus (`type = 1`). Conversely, the first generator bus (`type = 2`) with an active in-service generator linked to it will be reassigned as the new slack bus (`type = 3`).
 
@@ -249,55 +244,8 @@ end
 
 ---
 
-## [Bad Data Processing](@id ACBadDataDetectionManual)
-After acquiring the WLS solution using the Gauss-Newton method, users can conduct bad data analysis employing the largest normalized residual test. Continuing with our defined power system and measurement set, let us introduce a new measurement. Upon proceeding to find the solution for this updated state:
-```@example ACSEWLS
-addWattmeter!(system, device; from = "Branch 2", active = 31.1)
-
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; verbose = 1)
-nothing # hide
-```
-
-Here, we can observe the impact of the outlier on the solution:
-```@repl ACSEWLS
-print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
-```
-
-Following the solution acquisition, we can verify the presence of erroneous data. Detection of such data is determined by the `threshold` keyword. If the largest normalized residual's value exceeds the threshold, the measurement will be identified as bad data and consequently removed from the AC state estimation model:
-```@example ACSEWLS
-outlier = residualTest!(system, device, analysis; threshold = 4.0)
-nothing # hide
-```
-
-Users can examine the data obtained from the bad data analysis:
-```@repl ACSEWLS
-outlier.detect
-outlier.maxNormalizedResidual
-outlier.label
-```
-
-Hence, upon detecting bad data, the `detect` variable will hold `true`. The `maxNormalizedResidual` variable retains the value of the largest normalized residual, while the `label` contains the label of the measurement identified as bad data. JuliaGrid will mark the respective measurement as out-of-service within the `Measurement` type.
-
-After removing bad data, a new estimate can be computed without considering this specific measurement. The user has the option to either restart the [`gaussNewton`](@ref gaussNewton) function or proceed directly to the iteration loop. However, if the latter option is chosen, using voltages obtained with outlier presence as the initial point could significantly impede algorithm convergence. To avoid this undesirable outcome, the user should first establish a new initial point and commence the iteration procedure. For instance:
-```@example ACSEWLS
-setInitialPoint!(system, analysis)
-stateEstimation!(system, analysis; verbose = 1)
-nothing # hide
-```
-
-Consequently, we obtain a new solution devoid of the impact of the outlier measurement:
-```@repl ACSEWLS
-print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
-```
-
-!!! note "Info"
-    Readers can refer to the [Bad Data Processing](@ref ACBadDataTutorials) tutorial for implementation insights.
-
----
-
 ## [Least Absolute Value Estimator](@id PMULAVtateEstimationSolutionManual)
-The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data processing procedures [aburbook; Ch. 6](@cite). However, it is important to note that achieving robustness typically involves increased computational complexity.
+The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data analysis procedures [aburbook; Ch. 6](@cite). However, it is important to note that achieving robustness typically involves increased computational complexity.
 
 To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the `Ipopt` solver proves sufficient to obtain a solution:
 ```@example ACSEWLS

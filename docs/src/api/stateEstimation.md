@@ -1,5 +1,5 @@
 # [State Estimation](@id StateEstimationAPI)
-For further information on this topic, please see the [AC State Estimation](@ref ACStateEstimationManual), [PMU State Estimation](@ref PMUStateEstimationManual) or [DC State Estimation](@ref DCStateEstimationManual) sections of the Manual. Below, we have provided a list of functions that can be utilized for state estimation, observability analysis, or bad data processing.
+For further information on this topic, please see the [AC State Estimation](@ref ACStateEstimationManual), [PMU State Estimation](@ref PMUStateEstimationManual) or [DC State Estimation](@ref DCStateEstimationManual) sections of the Manual. Below, we have provided a list of functions that can be utilized for state estimation, observability analysis, or bad data analysis.
 
 To load state estimation API functionalities into the current scope, utilize the following command:
 ```@example LoadApi
@@ -35,7 +35,7 @@ using JuliaGrid, Ipopt, HiGHS
 * [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{WLS{Normal}}))
 * [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::DCStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal})
 
-###### Bad Data Processing
+###### Bad Data Analysis
 * [`residualTest!`](@ref residualTest!)
 
 ---
@@ -82,7 +82,7 @@ stateEstimation!(::PowerSystem, ::DCStateEstimation{WLS{T}}) where T <: Union{No
 
 ---
 
-## Bad Data Processing
+## Bad Data Analysis
 ```@docs
 residualTest!
 ```

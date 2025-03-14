@@ -252,7 +252,7 @@ printBusData(system, analysis; show)
 nothing # hide
 ```
 
-The bus voltage estimates appear suspicious, indicating the presence of bad data among the newly added ammeter measurements. To address this, we perform bad data processing:
+The bus voltage estimates appear suspicious, indicating the presence of bad data among the newly added ammeter measurements. To address this, we perform bad data analysis:
 ```@example acStateEstimation
 outlier = residualTest!(system, device, analysis; threshold = 4.0)
 nothing # hide
@@ -264,7 +264,7 @@ outlier.detect
 outlier.maxNormalizedResidual
 ```
 
-The bad data processing function automatically removes the detected outlier. Before repeating the AC state estimation, using a warm start is not advisable, as the previous state was obtained in the presence of bad data. Instead, it is useful to reset the initial point, for example, by using the values defined within the power system data:
+The bad data analysis function automatically removes the detected outlier. Before repeating the AC state estimation, using a warm start is not advisable, as the previous state was obtained in the presence of bad data. Instead, it is useful to reset the initial point, for example, by using the values defined within the power system data:
 ```@example acStateEstimation
 setInitialPoint!(system, analysis)
 stateEstimation!(system, analysis; power = true)
