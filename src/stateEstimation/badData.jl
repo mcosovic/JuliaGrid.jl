@@ -254,6 +254,10 @@ function residualTest!(
         end
     end
 
+    @inbounds for (k, i) in enumerate(slackRange)
+        jcb[jcb.rowval[i], bus.layout.slack] = elementsRemove[k]
+    end
+
     if bad.maxNormalizedResidual > threshold
         bad.detect = true
     end
@@ -317,10 +321,6 @@ function residualTest!(
         se.mean[bad.index] = 0.0
         se.residual[bad.index] = 0.0
         se.type[bad.index] = 0
-    end
-
-    @inbounds for (k, i) in enumerate(slackRange)
-        jcb[jcb.rowval[i], bus.layout.slack] = elementsRemove[k]
     end
 
     return bad

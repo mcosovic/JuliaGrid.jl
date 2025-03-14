@@ -105,7 +105,6 @@ function dcStateEstimationWls(system::PowerSystem, device::Measurement)
     model!(system, dc)
     changeSlackBus!(system)
 
-    deviceNumber = wattmeter.number + pmu.number
     nnzCff = 0
     @inbounds for (i, idx) in enumerate(wattmeter.layout.index)
         if wattmeter.layout.bus[i]
@@ -115,12 +114,15 @@ function dcStateEstimationWls(system::PowerSystem, device::Measurement)
         end
     end
 
+    nnzBus = 0
     @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
             nnzCff += 1
+            nnzBus += 1
         end
     end
 
+    deviceNumber = wattmeter.number + nnzBus
     mean = fill(0.0, deviceNumber)
     pcs = spdiagm(0 => mean)
     cff = SparseModel(fill(0, nnzCff), fill(0, nnzCff), fill(0.0, nnzCff), 1, 1)
