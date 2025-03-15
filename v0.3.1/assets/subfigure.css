@@ -1,0 +1,16 @@
+.image-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+.image-item {
+  text-align: center;
+  width: 30%;
+  min-width: 375px;
+}
+.image-item-three {
+  text-align: center;
+  width: 30%;
+  min-width: 250px;
+}
