@@ -50,7 +50,7 @@ stateEstimation!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
-Detection of bad data is determined by the `threshold` keyword. If the largest normalized residual's value exceeds the threshold, the measurement will be identified as bad data and consequently removed from the AC state estimation model:
+Detection of bad data is determined by the `threshold` keyword. If the largest normalized residual value exceeds the `threshold`, the measurement will be identified as bad data and consequently removed from the AC state estimation model:
 ```@example ACSEWLS
 outlier = residualTest!(system, device, analysis; threshold = 4.0)
 nothing # hide
@@ -138,17 +138,11 @@ outlier.detect
 outlier.label
 ```
 
-As before, the state estimation model is updated:
+As before, the state estimation model is updated, enabling the user to recompute the WLS estimator:
 ```@repl ACSEWLS
 analysis.method.mean
 analysis.method.coefficient
-```
 
-This allows the WLS estimator to be recomputed:
-```@example ACSEWLS
 stateEstimation!(system, analysis)
 nothing # hide
 ```
-
----
-

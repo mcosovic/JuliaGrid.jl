@@ -53,7 +53,7 @@ function dcStateEstimation(
     device::Measurement,
     factorization::Type{<:Union{QR, LDLt, LU}} = LU
 )
-    coefficient, mean, precision, power = dcStateEstimationWls(system, device)
+    coefficient, mean, precision, power, idx, numDevice = dcStateEstimationWls(system, device)
 
     DCStateEstimation(
         PolarAngle(Float64[]),
@@ -63,7 +63,8 @@ function dcStateEstimation(
             precision,
             mean,
             factorized[factorization],
-            device.wattmeter.number + device.pmu.number,
+            idx,
+            numDevice,
             -1,
             true,
         )
@@ -75,7 +76,7 @@ function dcStateEstimation(
     device::Measurement,
     ::Type{<:Orthogonal}
 )
-    coefficient, mean, precision, power = dcStateEstimationWls(system, device)
+    coefficient, mean, precision, power, idx, numDevice = dcStateEstimationWls(system, device)
 
     DCStateEstimation(
         PolarAngle(
@@ -87,7 +88,8 @@ function dcStateEstimation(
             precision,
             mean,
             factorized[QR],
-            device.wattmeter.number + device.pmu.number,
+            idx,
+            numDevice,
             -1,
             true,
         )
@@ -114,16 +116,17 @@ function dcStateEstimationWls(system::PowerSystem, device::Measurement)
         end
     end
 
-    nnzBus = 0
+    pmuIdx = Dict{Int64, Int64}()
+    numDevice = copy(wattmeter.number)
     @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
             nnzCff += 1
-            nnzBus += 1
+            numDevice += 1
+            pmuIdx[i] = numDevice
         end
     end
 
-    deviceNumber = wattmeter.number + nnzBus
-    mean = fill(0.0, deviceNumber)
+    mean = fill(0.0, numDevice)
     pcs = spdiagm(0 => mean)
     cff = SparseModel(fill(0, nnzCff), fill(0, nnzCff), fill(0.0, nnzCff), 1, 1)
 
@@ -168,7 +171,7 @@ function dcStateEstimationWls(system::PowerSystem, device::Measurement)
         end
     end
 
-    coefficient = sparse(cff.row, cff.col, cff.val, deviceNumber, bus.number)
+    coefficient = sparse(cff.row, cff.col, cff.val, numDevice, bus.number)
 
     power = DCPower(
         CartesianReal(Float64[]),
@@ -178,7 +181,7 @@ function dcStateEstimationWls(system::PowerSystem, device::Measurement)
         CartesianReal(Float64[])
     )
 
-   return coefficient, mean, pcs, power
+   return coefficient, mean, pcs, power, pmuIdx, numDevice
 end
 
 """
@@ -243,7 +246,6 @@ function dcLavStateEstimation(
     dc = system.model.dc
     wattmeter = device.wattmeter
     pmu = device.pmu
-    total = wattmeter.number + pmu.number
 
     checkSlackBus(system)
     model!(system, dc)
@@ -251,14 +253,16 @@ function dcLavStateEstimation(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
+    setAttribute(jump, iteration, tolerance, verbose)
 
-    if !ismissing(iteration)
-        set_attribute(jump, "max_iter", iteration)
+    total = copy(wattmeter.number)
+    pmuIdx = Dict{Int64, Int64}()
+    @inbounds for i = 1:pmu.number
+        if pmu.layout.bus[i]
+            total += 1
+            pmuIdx[i] = total
+        end
     end
-    if !ismissing(tolerance)
-        set_attribute(jump, "tol", tolerance)
-    end
-    jump.ext[:verbose] = verbose
 
     se = LAV(
         jump,
@@ -268,6 +272,7 @@ function dcLavStateEstimation(
         @variable(jump, 0 <= residualx[i = 1:total]),
         @variable(jump, 0 <= residualy[i = 1:total]),
         Dict{Int64, ConstraintRef}(),
+        pmuIdx,
         fill(1, 3),
         total
     )
@@ -300,21 +305,19 @@ function dcLavStateEstimation(
     end
     se.range[2] = wattmeter.number + 1
 
-    @inbounds for (i, k) in enumerate(wattmeter.number + 1:total)
-        if pmu.layout.bus[i]
-            if pmu.angle.status[i] == 1
-                expr = θi(se, pmu.layout.index[i])
-                mean = meanθi(pmu, bus, i)
+    @inbounds for (i, k) in se.index
+        if pmu.angle.status[i] == 1
+            expr = θi(se, pmu.layout.index[i])
+            mean = meanθi(pmu, bus, i)
 
-                addConstrLav!(se, expr, mean, k)
-                addObjectLav!(se, objective, k)
-            else
-                fix(se.residualx[k], 0.0; force = true)
-                fix(se.residualy[k], 0.0; force = true)
-            end
+            addConstrLav!(se, expr, mean, k)
+            addObjectLav!(se, objective, k)
+        else
+            fix(se.residualx[k], 0.0; force = true)
+            fix(se.residualy[k], 0.0; force = true)
         end
     end
-    se.range[2] = total + 1
+    se.range[3] = total + 1
 
     @objective(se.jump, Min, objective)
 

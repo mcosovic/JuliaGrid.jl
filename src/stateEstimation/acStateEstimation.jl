@@ -645,14 +645,7 @@ function acLavStateEstimation(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
-
-    if !ismissing(iteration)
-        set_attribute(jump, "max_iter", iteration)
-    end
-    if !ismissing(tolerance)
-        set_attribute(jump, "tol", tolerance)
-    end
-    jump.ext[:verbose] = verbose
+    setAttribute(jump, iteration, tolerance, verbose)
 
     method = LAV(
         jump,
@@ -669,6 +662,7 @@ function acLavStateEstimation(
         @variable(jump, 0 <= residualx[i = 1:total]),
         @variable(jump, 0 <= residualy[i = 1:total]),
         Dict{Int64, ConstraintRef}(),
+        Dict{Int64, Int64}(),
         fill(1, 6),
         total
     )

@@ -64,6 +64,7 @@ function pmuStateEstimation(system::PowerSystem, device::Measurement,
             precision,
             mean,
             factorized[factorization],
+            Dict{Int64, Int64}(),
             2 * device.pmu.number,
             -1,
             true,
@@ -93,6 +94,7 @@ function pmuStateEstimation(
             precision,
             mean,
             factorized[QR],
+            Dict{Int64, Int64}(),
             2 * device.pmu.number,
             -1,
             true,
@@ -270,14 +272,7 @@ function pmuLavStateEstimation(
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
-
-    if !ismissing(iteration)
-        set_attribute(jump, "max_iter", iteration)
-    end
-    if !ismissing(tolerance)
-        set_attribute(jump, "tol", tolerance)
-    end
-    jump.ext[:verbose] = verbose
+    setAttribute(jump, iteration, tolerance, verbose)
 
     method = LAV(
         jump,
@@ -287,6 +282,7 @@ function pmuLavStateEstimation(
         @variable(jump, 0 <= residualx[i = 1:total]),
         @variable(jump, 0 <= residualy[i = 1:total]),
         Dict{Int64, ConstraintRef}(),
+        Dict{Int64, Int64}(),
         fill(1, 1),
         pmu.number
     )

@@ -487,7 +487,7 @@ function updatePmu!(
     if pmu.layout.bus[idxPmu]
         newStatus = pmu.angle.status[idxPmu]
         idxBus = pmu.layout.index[idxPmu]
-        idx = idxPmu + device.wattmeter.number
+        idx = analysis.method.index[idxPmu]
 
         if oldStatus != newStatus || oldVariance != pmu.angle.variance[idxPmu]
             se.run = true
@@ -521,11 +521,11 @@ function updatePmu!(
     key = pmukwargs(template.pmu; kwargs...)
 
     idxPmu = pmu.label[getLabel(pmu, label, "PMU")]
-    idx = idxPmu + device.wattmeter.number
 
     updatePmu!(system, device; label, key...)
 
     if pmu.layout.bus[idxPmu]
+        idx = se.index[idxPmu]
         if pmu.angle.status[idxPmu] == 1
             add!(se, idx)
 

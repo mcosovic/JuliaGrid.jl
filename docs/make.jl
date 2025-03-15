@@ -20,7 +20,7 @@ makedocs(
     ),
     pages = [
         "Introduction" => "index.md",
-        "Manual" =>[
+        "Manual" => [
             "Power System Model" => "manual/powerSystemModel.md",
             "AC Power Flow" => "manual/acPowerFlow.md",
             "DC Power Flow" => "manual/dcPowerFlow.md",
@@ -44,8 +44,8 @@ makedocs(
             "AC State Estimation" => "tutorials/acStateEstimation.md",
             "PMU State Estimation" => "tutorials/pmuStateEstimation.md",
             "DC State Estimation" => "tutorials/dcStateEstimation.md",
-            "Per-Unit System" => "tutorials/perunit.md",
-            "Bad Data Analysis" => "tutorials/badDataAnalysis.md"
+            "Bad Data Analysis" => "tutorials/badDataAnalysis.md",
+            "Per-Unit System" => "tutorials/perunit.md"
         ],
         "Examples" => [
             "Power System Datasets" => "examples/powerSystemDatasets.md",
@@ -58,7 +58,7 @@ makedocs(
             "PMU State Estimation" => "examples/pmuStateEstimation.md",
             "DC State Estimation" => "examples/dcStateEstimation.md"
         ],
-        "API Reference" =>[
+        "API Reference" => [
             "Power System Model" => "api/powerSystemModel.md",
             "Power Flow" => "api/powerFlow.md",
             "Optimal Power Flow" => "api/optimalPowerFlow.md",
