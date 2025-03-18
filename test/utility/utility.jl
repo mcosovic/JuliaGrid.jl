@@ -149,7 +149,7 @@ function testPowerMatpower(matpower::Dict{String, Any}, analysis::DC; atol = 0)
     @test analysis.power.generator.active ≈ matpower["generator"] atol = atol
 end
 
-function testDevice(meter::GaussMeter, fully::GaussMeter, idx::Int64, status::Int64)
+function testDevice(meter, fully, idx::Int64, status::Int64)
     @test meter.mean[end] ≈ fully.mean[idx] atol = 1e-14
     @test meter.status[end] == status
 end
