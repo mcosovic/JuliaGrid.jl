@@ -228,8 +228,6 @@ function residualTest!(
 
     bad = ResidualTest(false, 0.0, "", 0)
 
-    normalEquation!(system, analysis)
-
     slackRange = jcb.colptr[bus.layout.slack]:(jcb.colptr[bus.layout.slack + 1] - 1)
     elementsRemove = jcb.nzval[slackRange]
     @inbounds for (k, i) in enumerate(slackRange)
@@ -238,7 +236,11 @@ function residualTest!(
     gain = (transpose(jcb) * se.precision * jcb)
     gain[bus.layout.slack, bus.layout.slack] = 1.0
 
-    F = lu(gain)
+    if !isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64})
+        F = lu(gain)
+    else
+        F = se.factorization
+    end
 
     gainInverse = sparseInverse(F, gain, 2 * bus.number)
 

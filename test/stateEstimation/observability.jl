@@ -105,7 +105,6 @@
         )
 
         restorationGram!(system, device, pseudo, islands)
-        analysis = dcStateEstimation(system, device)
 
         pseudoSet = ["P1"; "P2"; "P5"; "P9"; "P10"]
         for key in keys(device.wattmeter.label)
@@ -155,98 +154,77 @@
         end
 
         pseudo = measurement()
-        addWattmeter!(
-            system, pseudo; label = "P3", bus = "Bus 3", active = 0.04
-        )
-        addVarmeter!(
-            system, pseudo; label = "P3", bus = "Bus 3", reactive = 0.04
-        )
+        addWattmeter!(system, pseudo; label = "P3", bus = "Bus 3", active = 0.04)
+        addVarmeter!(system, pseudo; label = "P3", bus = "Bus 3", reactive = 0.04)
 
         restorationGram!(system, device, pseudo, islands)
-        analysis = dcStateEstimation(system, device)
         @test device.wattmeter.label["P3"] == 17
     end
 
     system14 = powerSystem(path * "case14test.m")
+
     updateBranch!(system14, label = 3, status = 1)
     updateBranch!(system14, label = 18, status = 1)
+
     dcModel!(system14)
-    analysis = dcPowerFlow(system14)
-    solve!(system14, analysis)
-    power!(system14, analysis)
+    pf = dcPowerFlow(system14)
+    powerFlow!(system14, pf; power = true)
 
     @testset "Case 3" begin
         device = measurement()
         for (key, idx) in system14.bus.label
-            addWattmeter!(system14, device; bus = key, active = analysis.power.injection.active[idx])
+            addWattmeter!(system14, device; bus = key, active = pf.power.injection.active[idx])
         end
         for (key, idx) in system14.branch.label
-            addWattmeter!(system14, device; from = key, active = analysis.power.from.active[idx])
+            addWattmeter!(system14, device; from = key, active = pf.power.from.active[idx])
         end
         statusWattmeter!(system14, device; inservice = 10)
         islands = islandTopological(system14, device)
 
         pseudo = measurement()
         for (key, idx) in system14.branch.label
-            addWattmeter!(
-                system14, pseudo; label = "Pseudo $key",
-                to = key, active = analysis.power.to.active[idx]
-            )
-            addVarmeter!(
-                system14, pseudo; label = "Pseudo $key",
-                to = key, reactive = analysis.power.to.active[idx]
-            )
+            addWattmeter!(system14, pseudo; label = "Pseudo $key", to = key, active = pf.power.to.active[idx])
+            addVarmeter!(system14, pseudo; label = "Pseudo $key", to = key, reactive = pf.power.to.active[idx])
         end
 
         restorationGram!(system14, device, pseudo, islands)
-        analysisSE = dcStateEstimation(system14, device)
-        solve!(system14, analysisSE)
-        @test analysisSE.voltage.angle ≈ analysis.voltage.angle
+
+        se = dcStateEstimation(system14, device)
+        stateEstimation!(system14, se)
+        @test se.voltage.angle ≈ pf.voltage.angle
     end
 
     @testset "Case 4" begin
         device = measurement()
         for (key, idx) in system14.bus.label
-            addWattmeter!(
-                system14, device; bus = key, active = analysis.power.injection.active[idx]
-            )
+            addWattmeter!(system14, device; bus = key, active = pf.power.injection.active[idx])
         end
         for (key, idx) in system14.branch.label
-            addWattmeter!(
-                system14, device; from = key, active = analysis.power.from.active[idx]
-            )
+            addWattmeter!(system14, device; from = key, active = pf.power.from.active[idx])
         end
         statusWattmeter!(system14, device; inservice = 8)
         islands = islandTopological(system14, device)
 
         pseudo = measurement()
         for (key, idx) in system14.bus.label
-            addWattmeter!(
-                system14, pseudo; label = "Pseudo $key",
-                bus = key, active = analysis.power.injection.active[idx]
-            )
-            addVarmeter!(
-                system14, pseudo; label = "Pseudo $key",
-                bus = key, reactive = analysis.power.injection.active[idx]
-            )
+            addWattmeter!(system14, pseudo; label = "Pseudo $key", bus = key, active = pf.power.injection.active[idx])
+            addVarmeter!(system14, pseudo; label = "Pseudo $key", bus = key, reactive = pf.power.injection.active[idx])
         end
+
         restorationGram!(system14, device, pseudo, islands)
-        analysisSE = dcStateEstimation(system14, device)
-        solve!(system14, analysisSE)
-        @test analysisSE.voltage.angle ≈ analysis.voltage.angle
+
+        se = dcStateEstimation(system14, device)
+        stateEstimation!(system14, se)
+        @test se.voltage.angle ≈ pf.voltage.angle
     end
 
     @testset "Case 5" begin
         device = measurement()
         for (key, idx) in system14.bus.label
-            addWattmeter!(
-                system14, device; bus = key, active = analysis.power.injection.active[idx]
-            )
+            addWattmeter!(system14, device; bus = key, active = pf.power.injection.active[idx])
         end
         for (key, idx) in system14.branch.label
-            addWattmeter!(
-                system14, device; from = key, active = analysis.power.from.active[idx]
-            )
+            addWattmeter!(system14, device; from = key, active = pf.power.from.active[idx])
         end
         statusWattmeter!(system14, device; inservice = 11)
         islands = islandTopological(system14, device)
@@ -255,12 +233,14 @@
         for (key, idx) in system14.bus.label
             addPmu!(
                 system14, pseudo; label = "Pseudo $key", bus = key,
-                magnitude = 1, varianceMagnitude = 1, angle = analysis.voltage.angle[idx]
+                magnitude = 1, varianceMagnitude = 1, angle = pf.voltage.angle[idx]
             )
         end
+
         restorationGram!(system14, device, pseudo, islands)
-        analysisSE = dcStateEstimation(system14, device)
-        solve!(system14, analysisSE)
-        @test analysisSE.voltage.angle ≈ analysis.voltage.angle
+
+        se = dcStateEstimation(system14, device)
+        stateEstimation!(system14, se)
+        @test se.voltage.angle ≈ pf.voltage.angle
     end
 end

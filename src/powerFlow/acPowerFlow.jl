@@ -137,6 +137,7 @@ function newtonRaphson(system::PowerSystem, factorization::Type{<:Union{QR, LU}}
             fill(0.0, dimJcb),
             fill(0.0, dimJcb),
             factorized[factorization],
+            0,
             pq,
             pvpq,
             -1
@@ -338,6 +339,7 @@ end
                 fill(0.0, pqNum),
                 factorized[factorization],
             ),
+            0,
             pq,
             pvpq,
             -1,
@@ -493,6 +495,7 @@ function gaussSeidel(system::PowerSystem)
         ),
         GaussSeidel(
             voltg,
+            0,
             pq,
             pv
         )
@@ -744,6 +747,8 @@ function solve!(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
             volt.angle[i] = volt.angle[i] - pf.increment[pvpq[i]]
         end
     end
+
+    pf.iteration += 1
 end
 
 function solve!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
@@ -797,6 +802,8 @@ function solve!(system::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
             volt.magnitude[i] += reactive.increment[pq[i]]
         end
     end
+
+    pf.iteration += 1
 end
 
 function solve!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel})
@@ -832,6 +839,8 @@ function solve!(system::PowerSystem, analysis::ACPowerFlow{GaussSeidel})
 
         analysis.voltage.magnitude[i], analysis.voltage.angle[i] = absang(volt[i])
     end
+
+    analysis.method.iteration += 1
 end
 
 """
@@ -1210,27 +1219,38 @@ function powerFlow!(
     verbose::Int64 = template.config.verbose
 )
     converged = false
+    maxExceeded = false
 
     printTop(system, analysis, verbose)
     printMiddle(analysis, verbose)
 
-    saveIter = 0
     for iter = 0:iteration
         delP, delQ = mismatch!(system, analysis)
 
-        printSolver(iter, delP, delQ, verbose)
-        saveIter = iter
-
+        printSolver(analysis, delP, delQ, verbose)
         if delP < tolerance && delQ < tolerance
             converged = true
+            break
+        end
+        if analysis.method.iteration == iteration
+            maxExceeded = true
             break
         end
 
         solve!(system, analysis)
     end
+
+    # if !converged
+    #     delP, delQ = mismatch!(system, analysis)
+    #     if delP < tolerance && delQ < tolerance
+    #         converged = true
+    #     end
+    #     printSolver(analysis.method.iteration, delP, delQ, verbose)
+    # end
+
     printSolver(system, analysis, verbose)
 
-    printExit(analysis, saveIter, iteration, converged, verbose)
+    printExit(analysis, maxExceeded, converged, verbose)
 
     if power
         power!(system, analysis)

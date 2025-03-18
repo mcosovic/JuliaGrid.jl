@@ -40,6 +40,8 @@ function compstruct(obj1::S, obj2::S; atol = 0.0) where S
     end
 end
 
+##### Utility #####
+include("utility/utility.jl")
 
 ##### Power System #####
 include("powerSystem/loadSave.jl")

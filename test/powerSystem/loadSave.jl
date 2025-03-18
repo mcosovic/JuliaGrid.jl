@@ -4,12 +4,10 @@
     @base(matlab, MVA, kV)
 
     ########## Save Power System ##########
-    savePowerSystem(
-        matlab; path = path * "case14test.h5", reference = "IEEE 14", note = "Test Data"
-    )
+    savePowerSystem(matlab; path = path * "case14.h5", reference = "IEEE 14", note = "Test")
 
     ########## Load Power System ##########
-    hdf5 = powerSystem(path * "case14test.h5")
+    hdf5 = powerSystem(path * "case14.h5")
     @base(hdf5, MVA, kV)
 
     @testset "Power System Data" begin
@@ -37,12 +35,10 @@ end
     @base(matlab, MVA, kV)
 
     ########## Save Power System ##########
-    savePowerSystem(
-        matlab; path = path * "case14Int.h5", reference = "IEEE 14", note = "Test Data"
-    )
+    savePowerSystem(matlab; path = path * "case14.h5", reference = "IEEE 14", note = "Test")
 
     ########## Load Power System ##########
-    hdf5 = powerSystem(string(path, "case14Int.h5"))
+    hdf5 = powerSystem(string(path, "case14.h5"))
     @base(hdf5, MVA, kV)
 
     @testset "Power System Data" begin

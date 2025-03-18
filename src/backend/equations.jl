@@ -68,7 +68,8 @@ function GijBijθij(ac::ACModel, V::Polar, i::Int64, j::Int64)
     return Gij, Bij, sinθij, cosθij
 end
 
-function PiQiSum(V::Polar,
+function PiQiSum(
+    V::Polar,
     Gij::Float64,
     tgc1::Float64,
     Bij::Float64,

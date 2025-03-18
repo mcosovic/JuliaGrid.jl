@@ -139,7 +139,18 @@ end
 
 function addGenerator!(
     system::PowerSystem,
-    analysis::Union{ACPowerFlow, DCPowerFlow};
+    analysis::ACPowerFlow;
+    label::IntStrMiss = missing,
+    bus::IntStrMiss,
+    kwargs...
+)
+    addGenerator!(system; label, bus, kwargs...)
+    analysis.method.iteration = 0
+end
+
+function addGenerator!(
+    system::PowerSystem,
+    ::DCPowerFlow;
     label::IntStrMiss = missing,
     bus::IntStrMiss,
     kwargs...
@@ -335,10 +346,11 @@ end
 
 function updateGenerator!(
     system::PowerSystem,
-    analysis::Union{ACPowerFlow{NewtonRaphson}, ACPowerFlow{FastNewtonRaphson}};
+    analysis::ACPowerFlow{T};
     label::IntStrMiss,
     kwargs...
-)
+) where T <: Union{NewtonRaphson, FastNewtonRaphson}
+
     gen = system.generator
     key = generatorkwargs(; kwargs...)
 
@@ -359,6 +371,7 @@ function updateGenerator!(
         idx = system.bus.supply.generator[idxBus][1]
         analysis.voltage.magnitude[idxBus] = gen.voltage.magnitude[idx]
     end
+    analysis.method.iteration = 0
 end
 
 function updateGenerator!(

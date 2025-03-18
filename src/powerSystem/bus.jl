@@ -246,6 +246,7 @@ function updateBus!(
     if isset(key.angle)
         analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
     end
+    analysis.method.iteration = 0
 end
 
 function updateBus!(
@@ -283,6 +284,7 @@ function updateBus!(
             analysis.method.reactive.jacobian[i, i] += bus.shunt.susceptance[idx]
         end
     end
+    analysis.method.iteration = 0
 end
 
 function updateBus!(

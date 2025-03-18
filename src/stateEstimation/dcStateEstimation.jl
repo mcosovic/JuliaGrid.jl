@@ -116,7 +116,7 @@ function dcStateEstimationWls(system::PowerSystem, device::Measurement)
         end
     end
 
-    pmuIdx = Dict{Int64, Int64}()
+    pmuIdx = OrderedDict{Int64, Int64}()
     numDevice = copy(wattmeter.number)
     @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
@@ -158,17 +158,12 @@ function dcStateEstimationWls(system::PowerSystem, device::Measurement)
         end
     end
 
-    cff.idx = wattmeter.number + 1
-    @inbounds for i = 1:pmu.number
-        if pmu.layout.bus[i]
-            mean[cff.idx] = pmu.angle.status[i] * meanθi(pmu, bus, i)
-            pcs.nzval[cff.idx] = 1 / pmu.angle.variance[i]
+    @inbounds for (i, k) in pmuIdx
+        mean[k] = pmu.angle.status[i] * meanθi(pmu, bus, i)
+        pcs.nzval[k] = 1 / pmu.angle.variance[i]
 
-            cff.val[cff.cnt] = pmu.angle.status[i]
-            dcIndices(cff, cff.idx, pmu.layout.index[i])
-
-            cff.idx += 1
-        end
+        cff.val[cff.cnt] = pmu.angle.status[i]
+        dcIndices(cff, k, pmu.layout.index[i])
     end
 
     coefficient = sparse(cff.row, cff.col, cff.val, numDevice, bus.number)
@@ -256,7 +251,7 @@ function dcLavStateEstimation(
     setAttribute(jump, iteration, tolerance, verbose)
 
     total = copy(wattmeter.number)
-    pmuIdx = Dict{Int64, Int64}()
+    pmuIdx = OrderedDict{Int64, Int64}()
     @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
             total += 1

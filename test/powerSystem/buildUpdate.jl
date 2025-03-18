@@ -9,6 +9,7 @@
 
     # Add Buses
     @bus(area = 1, lossZone = 1, base = 230e3)
+
     addBus!(build; label = "1", type = 3, active = 0.17, conductance = 0.09)
     addBus!(build; label = 2, type = 2, magnitude = 1.1, minMagnitude = 0.9, base = 115e3)
     addBus!(build; label = 4, active = 0.7, reactive = 0.05, susceptance = 0.3)
@@ -19,29 +20,26 @@
     addBus!(build; label = 9, active = 0.4, reactive = 0.04, base = 115e3)
 
     # Add Branches
-    @branch(
-        minDiffAngle = 0, maxDiffAngle = 360 * pi / 180,
-        susceptance = 0.14, resistance = 0.09, reactance = 0.02
-    )
-    addBranch!(
-        build;
-        from = 8, to = 5, susceptance = 0, turnsRatio = 0.956, shiftAngle = 2.2 * rad
-    )
+    @branch(susceptance = 0.14, resistance = 0.09, reactance = 0.02)
+    @branch(minDiffAngle = 0, maxDiffAngle = 360 * pi / 180)
+
+    addBranch!(build; from = 8, to = 5, turnsRatio = 0.956, shiftAngle = 2.2 * rad)
     addBranch!(build; from = "5", to = "6", susceptance = 0, turnsRatio = 1.05)
     addBranch!(build; from = 4, to = 6, resistance = 0.17, reactance = 0.31, status = 0)
     addBranch!(build; from = 5, to = 7, resistance = 0.01, reactance = 0.05)
-    addBranch!(
-        build; from = 2, to = 9, reactance = 0.06, susceptance = 0, turnsRatio = 1.073
-    )
+    addBranch!(build; from = 2, to = 9, reactance = 0.06, turnsRatio = 1.073)
     addBranch!(build; from = 2, to = 7, resistance = 0.05, reactance = 0.02, status = 0)
-    addBranch!(
-        build; from = 1, to = 2, resistance = 0.07, reactance = 0.09, minFromBus = -0.1,
-        maxFromBus = 0.1, minToBus = -0.1, maxToBus = 0.1
-    )
+    addBranch!(build; from = 1, to = 2, resistance = 0.07, reactance = 0.09)
     addBranch!(build; from = 4, to = 9, resistance = 0.08, reactance = 0.30)
+
+    updateBranch!(build; label = 1, susceptance = 0)
+    updateBranch!(build; label = 5, susceptance = 0)
+    updateBranch!(build; label = 7, minFromBus = -0.1, maxFromBus = 0.1)
+    updateBranch!(build; label = 7, minToBus = -0.1, maxToBus = 0.1)
 
     # Add Generators
     @generator(label = "?", minReactive = -0.5, maxReactive = 0.9)
+
     addGenerator!(build; bus = "1", active = 3.7, maxReactive = 1.75, maxActive = 4.72)
     addGenerator!(build; bus = 2, active = 2.1, magnitude = 1.1, maxActive = 3.16, status = 0)
     addGenerator!(build; bus = 2, active = 2.6, reactive = 0.3, maxActive = 3.16)
@@ -70,14 +68,10 @@
     updateBus!(build; label = 8,  minMagnitude = 0.8, maxMagnitude = 1.2)
 
     # Update Branches
-    updateBranch!(
-        build;
-        label = 1, status = 0, resistance = 0.05, turnsRatio = 0.89, shiftAngle = 1.2 * rad
-    )
-    updateBranch!(
-        build;
-        label = 7, minFromBus = -5, maxFromBus = 5, minToBus = -5, maxToBus = 5, type = 3
-    )
+    updateBranch!(build; label = 1, resistance = 0.05, status = 0)
+    updateBranch!(build; label = 1, turnsRatio = 0.89, shiftAngle = 1.2 * rad)
+    updateBranch!(build; label = 7, minFromBus = -5, maxFromBus = 5, type = 3)
+    updateBranch!(build; label = 7, minToBus = -5, maxToBus = 5)
     updateBranch!(build; label = 3, status = 1, susceptance = 0.1)
     updateBranch!(build; label = 6, status = 1, resistance = 0.08, reactance = 0.04)
     updateBranch!(build; label = 2, status = 0)
@@ -121,17 +115,17 @@ end
 
     # Add Buses
     @bus(area = 1, lossZone = 1, base = 0.23)
+
     addBus!(build; label = 1, type = 3, active = 17e3, conductance = 9e3)
     addBus!(build; type = 2, magnitude = 1.1 * 115 / fn, minMagnitude = 0.9 * 115 / fn, base = 0.115)
     addBus!(build; label = 4, active = 70e3, reactive = 5, susceptance = 30)
     addBus!(build; label = 5, active = 200e3, reactive = 50, angle = -1.8)
     addBus!(build; label = 6, active = 75e3, reactive = 50, base = 0.115)
-    addBus!(
-        build;
-        active = 35e3, reactive = 15, magnitude = 0.9 * 230 / fn, maxMagnitude = 1.06 * 230 / fn
-    )
+    addBus!(build; active = 35e3, reactive = 15)
     addBus!(build; susceptance = -10, magnitude = 0.98 * 230 / fn, angle = 7.1)
     addBus!(build; label = 9, active = 40e3, reactive = 4, base = 0.115)
+
+    updateBus!(build; label = 7, magnitude = 0.9 * 230 / fn, maxMagnitude = 1.06 * 230 / fn)
 
     # Add Branches
     Zb1 = (230e3 * 0.956)^2 / (100e6)
@@ -140,53 +134,36 @@ end
     Zb4 = (115e3 * 1.073)^2 / (100e6)
     Zb5 = 115^2 / 100
 
-    @branch(
-        minDiffAngle = 0, maxDiffAngle = 360, susceptance = 0.14,
-        resistance = 0.09, reactance = 0.02
-    )
-    addBranch!(
-        build; from = 8, to = 5, resistance = 0.09 * Zb1, reactance = 0.02 * Zb1,
-        susceptance = 0, turnsRatio = 0.956, shiftAngle = 2.2
-    )
-    addBranch!(
-        build; from = 5, to = 6, resistance = 0.09 * Zb2, reactance = 0.02 * Zb2,
-        susceptance = 0, turnsRatio = 1.05
-    )
-    addBranch!(
-        build; from = 4, to = 6, resistance = 0.17 * Zb3, reactance = 0.31 * Zb3,
-        susceptance = 0.14 / Zb3, status = 0
-    )
-    addBranch!(
-        build; from = 5, to = 7, resistance = 0.01 * Zb3, reactance = 0.05 * Zb3,
-        susceptance = 0.14 / Zb3
-    )
-    addBranch!(
-        build; from = 2, to = 9, resistance = 0.09 * Zb4, reactance = 0.06 * Zb4,
-        susceptance = 0, turnsRatio = 1.073
-    )
-    addBranch!(
-        build; from = 2, to = 7, resistance = 0.05 * Zb5, reactance = 0.02 * Zb5,
-        susceptance = 0.14 / Zb5, status = 0
-    )
-    addBranch!(
-        build; from = 1, to = 2, resistance = 0.07 * Zb3, reactance = 0.09 * Zb3,
-        susceptance = 0.14 / Zb3, minFromBus = -10e-3, maxFromBus = 10e-3,
-        minToBus = -10e-3, maxToBus = 10e-3
-    )
-    addBranch!(
-        build; from = 4, to = 9, resistance = 0.08 * Zb3, reactance = 0.30 * Zb3,
-        susceptance = 0.14 / Zb3
-    )
+    @branch(susceptance = 0.14, resistance = 0.09, reactance = 0.02)
+    @branch(minDiffAngle = 0, maxDiffAngle = 360)
+
+    addBranch!(build; from = 8, to = 5, reactance = 0.02 * Zb1, turnsRatio = 0.956)
+    addBranch!(build; from = 5, to = 6, resistance = 0.09 * Zb2, turnsRatio = 1.05)
+    addBranch!(build; from = 4, to = 6, resistance = 0.17 * Zb3, susceptance = 0.14 / Zb3)
+    addBranch!(build; from = 5, to = 7, resistance = 0.01 * Zb3, susceptance = 0.14 / Zb3)
+    addBranch!(build; from = 2, to = 9, susceptance = 0, turnsRatio = 1.073)
+    addBranch!(build; from = 2, to = 7, resistance = 0.05 * Zb5, reactance = 0.02 * Zb5)
+    addBranch!(build; from = 1, to = 2, resistance = 0.07 * Zb3, reactance = 0.09 * Zb3)
+    addBranch!(build; from = 4, to = 9, reactance = 0.30 * Zb3, susceptance = 0.14 / Zb3)
+
+    updateBranch!(build; label = 1, resistance = 0.09 * Zb1, susceptance = 0, shiftAngle = 2.2)
+    updateBranch!(build; label = 2, susceptance = 0, reactance = 0.02 * Zb2)
+    updateBranch!(build; label = 3, reactance = 0.31 * Zb3, status = 0)
+    updateBranch!(build; label = 4, reactance = 0.05 * Zb3)
+    updateBranch!(build; label = 5, resistance = 0.09 * Zb4, reactance = 0.06 * Zb4)
+    updateBranch!(build; label = 6, susceptance = 0.14 / Zb5, status = 0)
+    updateBranch!(build; label = 7, susceptance = 0.14 / Zb3, minFromBus = -10e-3)
+    updateBranch!(build; label = 7, maxFromBus = 10e-3, minToBus = -10e-3, maxToBus = 10e-3)
+    updateBranch!(build; label = 8, resistance = 0.08 * Zb3)
 
     # Add Generators
     @generator(minReactive = -50, maxReactive = 90)
     addGenerator!(build; bus = 1, active = 370e3, maxReactive = 175, maxActive = 472e3)
-    addGenerator!(
-        build;
-        bus = 2, active = 210e3, magnitude = 1.1 * 115 / fn, maxActive = 316e3, status = 0
-    )
+    addGenerator!(build; bus = 2, active = 210e3, magnitude = 1.1 * 115 / fn)
     addGenerator!(build; bus = 2, active = 260e3, reactive = 30, maxActive = 316e3)
     addGenerator!(build; bus = 1, active = 80e3, reactive = 30, status = 0)
+
+    updateGenerator!(build; label = 2, maxActive = 316e3, status = 0)
 
     # Add Costs
     cost!(build; generator = 1, active = 2, polynomial = [0.01e-6; 40e-3; 4])
@@ -216,31 +193,19 @@ end
     Zb2 = 120^2 / 100
     Zb3 = (230e3 * 0.89)^2 / (100e6)
 
-    updateBranch!(
-        build; label = 6, status = 1, resistance = 0.08 * Zb2, reactance = 0.04 * Zb2
-    )
-    updateBranch!(
-        build;
-        label = 1, status = 0, resistance = 0.05 * Zb3, turnsRatio = 0.89, shiftAngle = 1.2
-    )
-    updateBranch!(
-        build; label = 7, minFromBus = -0.5, maxFromBus = 0.5, minToBus = -0.5,
-        maxToBus = 0.5, type = 3
-    )
+    updateBranch!(build; label = 6, resistance = 0.08 * Zb2, reactance = 0.04 * Zb2, status = 1)
+    updateBranch!(build; label = 1, resistance = 0.05 * Zb3, turnsRatio = 0.89, shiftAngle = 1.2)
+    updateBranch!(build; label = 1, status = 0)
+    updateBranch!(build; label = 7, minFromBus = -0.5, maxFromBus = 0.5)
+    updateBranch!(build; label = 7, minToBus = -0.5, maxToBus = 0.5, type = 3)
     updateBranch!(build; label = 3, status = 1, susceptance = 0.1 / Zb1)
     updateBranch!(build; label = 2, status = 0)
     updateBranch!(build; label = 8, minDiffAngle = -2, maxDiffAngle = 1)
 
     # Update Generators
-    updateGenerator!(
-        build; label = 1, lowActive = 100e3, minLowReactive = 200, maxLowReactive = 300
-    )
-    updateGenerator!(
-        build; label = 1, upActive = 500e3, minUpReactive = 300, maxUpReactive = 400
-    )
-    updateGenerator!(
-        build; label = 1, loadFollowing = 500e3, reserve10min = 300e3, reactiveRamp = 400
-    )
+    updateGenerator!(build; label = 1, lowActive = 100e3, minLowReactive = 200, maxLowReactive = 300)
+    updateGenerator!(build; label = 1, upActive = 500e3, minUpReactive = 300, maxUpReactive = 400)
+    updateGenerator!(build; label = 1, loadFollowing = 500e3, reserve10min = 300e3, reactiveRamp = 400)
     updateGenerator!(build; label = 2, status = 1, magnitude = 1.2 * 120 / fn)
     updateGenerator!(build; label = 4, status = 1, active = 10e3, reactive = 20)
     updateGenerator!(build; label = 1, status = 0, minActive = 10e3, maxActive = 100e3)

@@ -5,8 +5,11 @@ To perform nonlinear or AC state estimation, the initial requirement is to have 
 
 ---
 
-To obtain bus voltages and solve the state estimation problem, users can either implement an iterative process for the WLS model or simply execute the following function for the LAV model:
-* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})).
+To obtain bus voltages and solve the state estimation problem, users need to implement an iterative process for the WLS model using:
+* [`increment!`](@ref increment!),
+* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}).
+
+Alternatively, to obtain the LAV estimator, simply execute the second function.
 
 After solving the AC state estimation, JuliaGrid provides functions for computing powers and currents:
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
@@ -97,9 +100,10 @@ nothing # hide
 ---
 
 ##### State Estimator
-To conduct an iterative process using the Gauss-Newton method, it is essential to include the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function inside the iteration loop. For example:
+To conduct an iterative process using the Gauss-Newton method, it is essential to include the [`increment!`](@ref increment!) and [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}) functions inside the iteration loop. For example:
 ```@example ACSEWLS
 for iteration = 1:20
+    increment!(system, analysis)
     solve!(system, analysis)
 end
 nothing # hide
@@ -113,19 +117,20 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ---
 
 ##### Breaking the Iterative Process
-The iterative process can be terminated using the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function. The following code demonstrates how to utilize this function to break out of the iteration loop:
+The iterative process can be terminated using the [`increment!`](@ref increment!) function. The following code demonstrates how to utilize this function to break out of the iteration loop:
 ```@example ACSEWLS
 analysis = gaussNewton(system, device)
 for iteration = 1:20
-    stopping = solve!(system, analysis)
+    stopping = increment!(system, analysis)
     if stopping < 1e-8
         println("Solution Found.")
         break
     end
+    solve!(system, analysis)
 end
 nothing # hide
 ```
-The [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function returns the maximum absolute values of the state variable increment, which are commonly used as a convergence criterion in the iterative Gauss-Newton algorithm.
+The [`increment!`](@ref increment!) function returns the maximum absolute values of the state variable increment, which are commonly used as a convergence criterion in the iterative Gauss-Newton algorithm.
 
 !!! note "Info"
     Readers can refer to the [AC State Estimation](@ref ACStateEstimationTutorials) tutorial for implementation insights.
@@ -289,7 +294,7 @@ nothing # hide
 ## [Measurement Set Update](@id ACMeasurementsAlterationManual)
 After establishing the `Measurement` type using the [`measurement`](@ref measurement) function, users gain the capability to incorporate new measurement devices or update existing ones.
 
-Once updates are completed, users can seamlessly progress towards generating the `ACStateEstimation` type using the [`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation) function. Ultimately, resolving the AC state estimation is achieved through the utilization of the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function:
+Once updates are completed, users can seamlessly progress towards generating the `ACStateEstimation` type using the [`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation) function and solving the AC state estimation:
 ```@example WLSACStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide

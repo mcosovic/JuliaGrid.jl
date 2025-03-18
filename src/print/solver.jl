@@ -363,12 +363,12 @@ function printMiddle(system::PowerSystem, analysis::PMUStateEstimation, verbose:
 end
 
 ##### Solver Data #####
-function printSolver(iter::Int64, delP::Float64, delQ::Float64, verbose::Int64)
+function printSolver(analysis::ACPowerFlow, delP::Float64, delQ::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
-        if iter % 10 == 0
+        if analysis.method.iteration % 10 == 0
             println("Iteration   Active Mismatch   Reactive Mismatch")
         end
-        print(format(Format("%*i "), 9, iter))
+        print(format(Format("%*i "), 9, analysis.method.iteration))
         print(format(Format("%*.4e"), 17, delP))
         print(format(Format("%*.4e\n"), 20, delQ))
     end
@@ -411,13 +411,13 @@ function minmaxIncrement(::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson}
     extrema(analysis.method.reactive.increment)
 end
 
-function printSolver(analysis::ACStateEstimation, iter::Int64, inc::Float64, verbose::Int64)
+function printSolver(analysis::ACStateEstimation, inc::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
-        if iter % 10 == 1
+        if analysis.method.iteration % 10 == 0
             println("Iteration   Maximum Increment   Objective Value")
         end
 
-        print(format(Format("%*i "), 9, iter))
+        print(format(Format("%*i "), 9, analysis.method.iteration))
         print(format(Format("%*.4e"), 19, inc))
         print(format(Format("%*.8e\n"), 18, analysis.method.objective))
     end
@@ -452,8 +452,7 @@ end
 ##### Print Exit Messages #####
 function printExit(
     analysis::AC,
-    iter::Int64,
-    maxiter::Int64,
+    maxExceeded::Bool,
     converged::Bool,
     verbose::Int64,
 )
@@ -462,10 +461,10 @@ function printExit(
         if converged
             println(
                 "EXIT: The solution was found using the " * method *
-                " method in $iter iterations."
+                " method in $(analysis.method.iteration) iterations."
             )
         else
-            if iter == maxiter
+            if maxExceeded
                 println("EXIT: The " * method * " method exceeded the maximum number of iterations.")
             else
                 println("EXIT: The " * method * " method failed to converge.")

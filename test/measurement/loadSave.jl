@@ -21,18 +21,9 @@
     addVarmeter!(system, device; to = 2, reactive = 0.1, status = 0, noise = true)
 
     @pmu(label = "!", statusTo = 0, varianceMagnitudeTo = 1e-3)
-    addPmu!(
-        system, device;
-        bus = 9, magnitude = 1.6, angle = -0.1, status = 1, polar = true
-    )
-    addPmu!(
-        system, device; from = 14, magnitude = 1.2, angle = -0.2,
-        varianceMagnitude = 1e-4, polar = false, noise = true
-    )
-    addPmu!(
-        system, device; to = 19, magnitude = 0.3, angle = 0.1, status = 0,
-        correlated = true, noise = true, polar = true
-    )
+    addPmu!(system, device; bus = 9, magnitude = 1.6, angle = -0.1, status = 1, polar = true)
+    addPmu!(system, device; from = 14, magnitude = 1.2, angle = -0.2, polar = false, noise = true)
+    addPmu!(system, device; to = 19, magnitude = 0.3, angle = 0.1, correlated = true, polar = true)
 
     ########## Save Measurement Data ##########
     saveMeasurement(device; path = path * "measurement14.h5")
@@ -73,18 +64,9 @@ end
     addVarmeter!(system, device; to = 2, reactive = 0.1, status = 0, noise = true)
 
     @pmu(statusTo = 0, varianceMagnitudeTo = 1e-3)
-    addPmu!(
-        system, device;
-        bus = 9, magnitude = 1.6, angle = -0.1, status = 1, polar = true
-    )
-    addPmu!(
-        system, device; from = 14, magnitude = 1.2, angle = -0.2,
-        varianceMagnitude = 1e-4, polar = false, noise = true
-    )
-    addPmu!(
-        system, device; to = 19, magnitude = 0.3, angle = 0.1, status = 0,
-        correlated = true, noise = true, polar = true
-    )
+    addPmu!(system, device; bus = 9, magnitude = 1.6, angle = -0.1, status = 1, polar = true)
+    addPmu!(system, device; from = 14, magnitude = 1.2, angle = -0.2, polar = false)
+    addPmu!(system, device; to = 19, magnitude = 0.3, angle = 0.1, status = 0, noise = true)
 
     ########## Save Measurement Data ##########
     saveMeasurement(device; path = path * "measurement14Int.h5")

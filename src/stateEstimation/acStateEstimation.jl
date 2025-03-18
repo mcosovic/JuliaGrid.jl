@@ -68,6 +68,7 @@ function gaussNewton(
             fill(0.0, 2 * system.bus.number),
             factorized[factorization],
             0.0,
+            0,
             type,
             index,
             range,
@@ -100,6 +101,7 @@ function gaussNewton(system::PowerSystem, device::Measurement, ::Type{<:Orthogon
             fill(0.0, 2 * system.bus.number),
             factorized[QR],
             0.0,
+            0,
             type,
             index,
             range,
@@ -845,42 +847,32 @@ function acLavStateEstimation(
 end
 
 """
-    solve!(system::PowerSystem, analysis::ACStateEstimation)
+    increment!(system::PowerSystem, analysis::ACStateEstimation)
 
-By computing the bus voltage magnitudes and angles, the function solves the AC state
-estimation model.
+By solving the normal equation, this function computes the bus voltage magnitude and angle
+increments.
 
 # Updates
-The resulting bus voltage magnitudes and angles are stored in the `voltage` field of the
-`ACStateEstimation` type.
+The function updates the `residual`, `jacobian`, and `factorisation` variables within the
+`ACStateEstimation` type. Using these results, it then computes and updates the `increment`
+variable within the same type. It should be used during the Gauss-Newton iteration loop
+before invoking the [`solve!`](@ref solve!(::PowerSystem, analysis::ACStateEstimation))
+function.
 
-# Examples
-Solving the AC state estimation model and obtaining the WLS estimator:
+# Returns
+The function returns the maximum absolute increment value, which can be used to terminate
+the iteration loop of the Gauss-Newton method applied to solve the AC state estimation problem.
+
+# Example
 ```jldoctest
 system = powerSystem("case14.h5")
 device = measurement("measurement14.h5")
 
 analysis = gaussNewton(system, device)
-for iteration = 1:20
-    stopping = solve!(system, analysis)
-    if stopping < 1e-8
-        break
-    end
-end
-```
-
-Solving the AC state estimation model and obtaining the LAV estimator:
-```jldoctest
-using Ipopt
-
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
-
-analysis = acLavStateEstimation(system, device, Ipopt.Optimizer; verbose = 1)
-solve!(system, analysis)
+increment!(system, analysis)
 ```
 """
-function solve!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton{Normal}})
+function increment!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton{Normal}})
     normalEquation!(system, analysis)
 
     bus = system.bus
@@ -912,18 +904,11 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton{Nor
     end
 
     se.increment[bus.layout.slack] = 0.0
-    maxAbsΔ = 0.0
-    @inbounds for i = 1:bus.number
-        volt.angle[i] = volt.angle[i] + se.increment[i]
-        volt.magnitude[i] = volt.magnitude[i] + se.increment[i + bus.number]
 
-        maxAbsΔ = max(maxAbsΔ, abs(se.increment[i]), abs(se.increment[i + bus.number]))
-    end
-
-    return maxAbsΔ
+    return maximum(abs, se.increment)
 end
 
-function solve!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton{Orthogonal}})
+function increment!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton{Orthogonal}})
     normalEquation!(system, analysis)
 
     bus = system.bus
@@ -956,19 +941,65 @@ function solve!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton{Ort
     end
 
     se.increment[bus.layout.slack] = 0.0
-    maxAbsΔ = 0.0
-    @inbounds for i = 1:bus.number
-        volt.angle[i] = volt.angle[i] + se.increment[i]
-        volt.magnitude[i] = volt.magnitude[i] + se.increment[i + bus.number]
-
-        maxAbsΔ = max(maxAbsΔ, abs(se.increment[i]), abs(se.increment[i + bus.number]))
-    end
 
     @inbounds for i = 1:lastindex(se.mean)
         se.precision.nzval[i] ^= 2
     end
 
-    return maxAbsΔ
+    return maximum(abs, se.increment)
+end
+
+"""
+    solve!(system::PowerSystem, analysis::ACStateEstimation)
+
+By computing the bus voltage magnitudes and angles, the function solves the AC state estimation.
+Note that if the Gauss-Newton method is employed to obtain the WLS estimator, this function
+simply updates the state variables using the obtained increments.
+
+# Updates
+The resulting bus voltage magnitudes and angles are stored in the `voltage` field of the
+`ACStateEstimation` type.
+
+# Examples
+Solving the AC state estimation model and obtaining the WLS estimator:
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = gaussNewton(system, device)
+for iteration = 1:20
+    stopping = increment!(system, analysis)
+    if stopping < 1e-8
+        break
+    end
+    solve!(system, analysis
+end
+```
+
+Solving the AC state estimation model and obtaining the LAV estimator:
+```jldoctest
+using Ipopt
+
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = acLavStateEstimation(system, device, Ipopt.Optimizer; verbose = 1)
+solve!(system, analysis)
+```
+"""
+function solve!(
+    system::PowerSystem,
+    analysis::ACStateEstimation{GaussNewton{T}}
+) where T <: Union{Normal, Orthogonal}
+
+    bus = system.bus
+    volt = analysis.voltage
+
+    @inbounds for i = 1:bus.number
+        volt.angle[i] = volt.angle[i] + analysis.method.increment[i]
+        volt.magnitude[i] = volt.magnitude[i] + analysis.method.increment[i + bus.number]
+    end
+    analysis.method.iteration += 1
 end
 
 function solve!(
@@ -1019,20 +1050,22 @@ device = measurement("measurement14.h5")
 
 analysis = gaussNewton(system, device)
 for iteration = 1:20
-    stopping = solve!(system, analysis)
+    stopping = increment!(system, analysis)
     if stopping < 1e-8
         break
     end
+    solve!(system, analysis)
 end
 
 residualTest!(system, device, analysis; threshold = 1.0)
 
 setInitialPoint!(system, analysis)
 for iteration = 1:20
-    stopping = solve!(system, analysis)
+    stopping = increment!(system, analysis)
     if stopping < 1e-8
         break
     end
+    solve!(system, analysis)
 end
 ```
 
@@ -1243,24 +1276,28 @@ function stateEstimation!(
 )  where T <: Union{Normal, Orthogonal}
 
     converged = false
+    maxExceeded = false
 
     printTop(analysis, verbose)
     printMiddle(system, analysis, verbose)
 
-    saveIter = 0
-    for iter = 1:iteration
-        increment = solve!(system, analysis)
+    for iter = 0:iteration
+        maxInc = increment!(system, analysis)
 
-        printSolver(analysis, iter, increment, verbose)
-        if increment < tolerance
-            saveIter = iter
+        printSolver(analysis, maxInc, verbose)
+        if maxInc < tolerance
             converged = true
             break
         end
+        if analysis.method.iteration == iteration
+            maxExceeded = true
+            break
+        end
+        solve!(system, analysis)
     end
 
     printSolver(system, analysis, verbose)
-    printExit(analysis, saveIter, iteration, converged, verbose)
+    printExit(analysis, maxExceeded, converged, verbose)
 
     if power
         power!(system, analysis)

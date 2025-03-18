@@ -18,8 +18,8 @@ using JuliaGrid, Ipopt, HiGHS
 ###### AC State Estimation
 * [`gaussNewton`](@ref gaussNewton)
 * [`acLavStateEstimation`](@ref acLavStateEstimation)
-* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}}))
-* [`stateEstimation!`](@ref stateEstimation!)
+* [`increment!`](@ref increment!)
+* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal})
 * [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation))
 * [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal})
 
@@ -54,8 +54,9 @@ pmuPlacement!
 ## AC State Estimation
 ```@docs
 gaussNewton
+increment!
 acLavStateEstimation
-solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})
+solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
 setInitialPoint!(::PowerSystem, ::ACStateEstimation)
 stateEstimation!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
 ```

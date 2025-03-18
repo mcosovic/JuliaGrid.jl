@@ -86,6 +86,7 @@ the AC power flow model, which will be solved using the Newton-Raphson method.
 - `mismatch::Vector{Float64}`: Vector of mismatches.
 - `increment::Vector{Float64}`: Vector of state variable increments.
 - `factorization::Factorization{Float64}`: Factorization of the Jacobian matrix.
+- `iteration::Int64`: The iteration counter.
 - `pq::Vector{Int64}`: Indices related to demand buses.
 - `pvpq::Vector{Int64}`: Indices related to demand and generator buses.
 - `pattern::Int64`: Tracks pattern changes in entries of the Jacobian matrix.
@@ -95,6 +96,7 @@ mutable struct NewtonRaphson
     mismatch::Vector{Float64}
     increment::Vector{Float64}
     factorization::Factorization{Float64}
+    iteration::Int64
     pq::Vector{Int64}
     pvpq::Vector{Int64}
     pattern::Int64
@@ -118,6 +120,7 @@ model, which will be solved using the fast Newton-Raphson method.
 # Fields
 - `active:FastNewtonRaphsonModel`: Jacobian, mismatches, and incrementes for active power equations.
 - `reactive:FastNewtonRaphsonModel`: Jacobian, mismatches, and incrementes for active power equations.
+- `iteration::Int64`: The iteration counter.
 - `pq::Vector{Int64}`: Indices related to demand buses.
 - `pvpq::Vector{Int64}`: Indices related to demand and generator buses.
 - `acmodel::Int64`: Tracks values changing in entries of the Jacobian matrices.
@@ -127,6 +130,7 @@ model, which will be solved using the fast Newton-Raphson method.
 mutable struct FastNewtonRaphson
     active::FastNewtonRaphsonModel
     reactive::FastNewtonRaphsonModel
+    iteration::Int64
     pq::Vector{Int64}
     pvpq::Vector{Int64}
     acmodel::Int64
@@ -142,11 +146,13 @@ the AC power flow model, which will be solved using the Gauss-Seidel method.
 
 # Fields
 - `voltage::Vector{ComplexF64}`: Vector of complex voltage values.
+- `iteration::Int64`: The iteration counter.
 - `pq::Vector{Int64}`: Indices related to demand buses.
 - `pv::Vector{Int64}`: Indices related to generator buses.
 """
-struct GaussSeidel
+mutable struct GaussSeidel
     voltage::Vector{ComplexF64}
+    iteration::Int64
     pq::Vector{Int64}
     pv::Vector{Int64}
 end
@@ -383,7 +389,7 @@ A composite type representing a linear weighted least-squares state estimation m
 - `precision::SparseMatrixCSC{Float64, Int64}`: Precision matrix.
 - `mean::Vector{Float64}`: Mean vector.
 - `factorization::Factorization{Float64}`: Factorization of the coefficient matrix.
-- `index::Dict{Int64, Int64}`: Indices if needed.
+- `index::OrderedDict{Int64, Int64}`: Indices if needed.
 - `number::Int64`: Number of measurement devices.
 - `pattern::Int64`: Tracks pattern changes in the coefficient matrix.
 - `run::Bool`: Indicates whether factorization can be reused.
@@ -393,7 +399,7 @@ mutable struct WLS{T <: Union{Normal, Orthogonal}}
     precision::SparseMatrixCSC{Float64, Int64}
     mean::Vector{Float64}
     factorization::Factorization{Float64}
-    index::Dict{Int64, Int64}
+    index::OrderedDict{Int64, Int64}
     number::Int64
     pattern::Int64
     run::Bool
@@ -413,6 +419,7 @@ the AC state estimation model, which will be solved using the Gauss-Newton metho
 - `increment::Vector{Float64}`: Increment vector.
 - `factorization::Factorization{Float64}`: Factorization of the Jacobian matrix.
 - `objective::Float64`: Value of the objective function.
+- `iteration::Int64`: The iteration counter.
 - `type::Vector{Int8}`: Indicators of measurement types.
 - `index::Vector{Int64}`: Indices of buses and branches where measurements are located.
 - `range::Vector{Int64}`: Range of measurement devices.
@@ -426,6 +433,7 @@ mutable struct GaussNewton{T <: Union{Normal, Orthogonal}}
     increment::Vector{Float64}
     factorization::Factorization{Float64}
     objective::Float64
+    iteration::Int64
     type::Vector{Int8}
     index::Vector{Int64}
     range::Vector{Int64}
@@ -454,7 +462,7 @@ A composite type representing a least absolute value state estimation model.
 - `residualx::Vector{VariableRef}`: References to optimization variables for residuals.
 - `residualy::Vector{VariableRef}`: References to optimization variables for residuals.
 - `residual::Dict{Int64, ConstraintRef}`: References to the residual constraints.
-- `index::Dict{Int64, Int64}`: Indices if needed.
+- `index::OrderedDict{Int64, Int64}`: Indices if needed.
 - `range::Vector{Int64}`: Range of measurement devices.
 - `number::Int64`: Number of measurement devices.
 """
@@ -466,7 +474,7 @@ mutable struct LAV
     residualx::Vector{VariableRef}
     residualy::Vector{VariableRef}
     residual::Dict{Int64, ConstraintRef}
-    index::Dict{Int64, Int64}
+    index::OrderedDict{Int64, Int64}
     range::Vector{Int64}
     number::Int64
 end
