@@ -54,8 +54,8 @@ pmuPlacement!
 ## AC State Estimation
 ```@docs
 gaussNewton
-increment!
 acLavStateEstimation
+increment!
 solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
 setInitialPoint!(::PowerSystem, ::ACStateEstimation)
 stateEstimation!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
