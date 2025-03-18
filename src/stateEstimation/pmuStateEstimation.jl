@@ -282,7 +282,7 @@ function pmuLavStateEstimation(
         @variable(jump, 0 <= residualx[i = 1:total]),
         @variable(jump, 0 <= residualy[i = 1:total]),
         Dict{Int64, ConstraintRef}(),
-        Dict{Int64, Int64}(),
+        OrderedDict{Int64, Int64}(),
         fill(1, 1),
         pmu.number
     )
