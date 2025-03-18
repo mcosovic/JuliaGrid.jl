@@ -106,6 +106,7 @@ PrecompileTools.@setup_workload begin
 
         ########## AC State Estimation ###########
         analysis = gaussNewton(system, device)
+        increment!(system, analysis)
         solve!(system, analysis)
         residualTest!(system, device, analysis)
         power!(system, analysis)
