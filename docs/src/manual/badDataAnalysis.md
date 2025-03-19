@@ -5,7 +5,7 @@ After computing the weighted least-squares (WLS) estimator, users can perform ba
 
 ---
 
-## [Chi-Squared Test](@id ChiTestTutorials)
+## [Chi-Squared Test](@id ChiTestManual)
 The Chi-squared test is the method used to detect the presence of bad data or outliers in the measurement set. If the Chi-squared test indicates the presence of bad data, users can proceed with the largest normalized residual test, which will identify and remove outlier from the measurement set.
 
 !!! note "Info"
@@ -60,7 +60,7 @@ As seen, the Chi-squared test returns `true`, indicating that there are outliers
 
 ---
 
-## [Largest Normalized Residual Test](@id ResidualTestTutorials)
+## [Largest Normalized Residual Test](@id ResidualTestManual)
 The largest normalized residual test identifies bad data based on a predefined threshold. Specifically, if the largest normalized residual exceeds the threshold, the corresponding measurement is flagged as bad data, marked as out of service within the `Measurement` type, and removed from the state estimation model. This allows users to solve the state estimation problem immediately without rebuilding the state estimation model.
 
 !!! note "Info"
