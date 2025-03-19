@@ -391,6 +391,7 @@ A composite type representing a linear weighted least-squares state estimation m
 - `factorization::Factorization{Float64}`: Factorization of the coefficient matrix.
 - `index::OrderedDict{Int64, Int64}`: Indices if needed.
 - `number::Int64`: Number of measurement devices.
+- `inservice`::Int64: Number of equations related to in-service measurement devices.
 - `pattern::Int64`: Tracks pattern changes in the coefficient matrix.
 - `run::Bool`: Indicates whether factorization can be reused.
 """
@@ -401,6 +402,7 @@ mutable struct WLS{T <: Union{Normal, Orthogonal}}
     factorization::Factorization{Float64}
     index::OrderedDict{Int64, Int64}
     number::Int64
+    inservice::Int64
     pattern::Int64
     run::Bool
 end

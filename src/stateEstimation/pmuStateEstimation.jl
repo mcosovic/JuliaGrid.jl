@@ -50,7 +50,7 @@ analysis = pmuStateEstimation(system, device, Orthogonal)
 function pmuStateEstimation(system::PowerSystem, device::Measurement,
     factorization::Type{<:Union{QR, LDLt, LU}} = LU)
 
-    coeff, mean, precision, power, current, _ = pmuEstimationWls(system, device)
+    coeff, mean, precision, power, current, inservice, _ = pmuEstimationWls(system, device)
 
     PMUStateEstimation(
         Polar(
@@ -66,6 +66,7 @@ function pmuStateEstimation(system::PowerSystem, device::Measurement,
             factorized[factorization],
             OrderedDict{Int64, Int64}(),
             2 * device.pmu.number,
+            inservice,
             -1,
             true,
         )
@@ -77,7 +78,7 @@ function pmuStateEstimation(
     device::Measurement,
     ::Type{<:Orthogonal}
 )
-    coeff, mean, precision, power, current, correlated = pmuEstimationWls(system, device)
+    coeff, mean, precision, power, current, inservice, correlated = pmuEstimationWls(system, device)
 
     if correlated
         throw(ErrorException(
@@ -96,6 +97,7 @@ function pmuStateEstimation(
             factorized[QR],
             OrderedDict{Int64, Int64}(),
             2 * device.pmu.number,
+            inservice,
             -1,
             true,
         )
@@ -131,6 +133,7 @@ function pmuEstimationWls(system::PowerSystem, device::Measurement)
     mean = fill(0.0, 2 * pmu.number)
     cff = SparseModel(fill(0, nnzCff), fill(0, nnzCff), fill(0.0, nnzCff), 1, 1)
     pcs = SparseModel(fill(0, nnzPcs), fill(0, nnzPcs), fill(0.0, nnzPcs), 1, 1)
+    inservice = 0
 
     @inbounds for (i, k) in enumerate(pmu.layout.index)
         sinθ, cosθ = sincos(pmu.angle.mean[i])
@@ -145,6 +148,8 @@ function pmuEstimationWls(system::PowerSystem, device::Measurement)
 
         if pmu.layout.bus[i]
             if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
+                inservice += 2
+
                 mean[cff.idx] = pmu.magnitude.mean[i] * cosθ
                 mean[cff.idx + 1] = pmu.magnitude.mean[i] * sinθ
 
@@ -156,6 +161,8 @@ function pmuEstimationWls(system::PowerSystem, device::Measurement)
             cff.idx += 2
         else
             if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
+                inservice += 2
+
                 mean[cff.idx] = pmu.magnitude.mean[i] * cosθ
                 mean[cff.idx + 1] = pmu.magnitude.mean[i] * sinθ
 
@@ -201,7 +208,7 @@ function pmuEstimationWls(system::PowerSystem, device::Measurement)
         Polar(Float64[], Float64[])
     )
 
-    return coefficient, mean, precision, power, current, correlated
+    return coefficient, mean, precision, power, current, inservice, correlated
 end
 
 """

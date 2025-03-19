@@ -28,6 +28,8 @@ system30 = powerSystem(path * "case30test.m")
         se = gaussNewton(system14, device)
         stateEstimation!(system14, se)
 
+        @test chiTest!(system14, device, se)
+
         outlier = residualTest!(system14, device, se; threshold = 3.0)
         @test outlier.label == "Varmeter 4"
         @test outlier.maxNormalizedResidual ≈ 52.5 atol = 1e-1
@@ -70,6 +72,8 @@ system30 = powerSystem(path * "case30test.m")
 
         se = gaussNewton(system14, device, Orthogonal)
         stateEstimation!(system14, se)
+
+        @test chiTest!(system14, device, se)
 
         outlier = residualTest!(system14, device, se; threshold = 3.0)
         @test outlier.label == "PMU 10"
@@ -128,8 +132,11 @@ end
 
     @testset "One Outlier" begin
         updatePmu!(system14, device; label = "PMU 2", magnitude = 15)
+
         se = pmuStateEstimation(system14, device)
         stateEstimation!(system14, se)
+
+        @test chiTest!(system14, device, se)
 
         outlier = residualTest!(system14, device, se; threshold = 3.0)
         @test outlier.label == "PMU 2"
@@ -169,6 +176,8 @@ end
 
         se = pmuStateEstimation(system14, device, Orthogonal)
         stateEstimation!(system14, se)
+
+        @test chiTest!(system14, device, se)
 
         outlier = residualTest!(system14, device, se; threshold = 3.0)
         @test outlier.label == "PMU 2"
@@ -239,6 +248,8 @@ end
         se = dcStateEstimation(system14, device)
         stateEstimation!(system14, se)
 
+        @test chiTest!(system14, device, se)
+
         outlier = residualTest!(system14, device, se; threshold = 3.0)
         @test outlier.label == "Wattmeter 2"
         @test outlier.maxNormalizedResidual ≈ 829.9 atol = 1e-1
@@ -269,10 +280,12 @@ end
 
     @testset "Orthogonal Method with One Outlier" begin
         updateWattmeter!(system14, device; label = "Wattmeter 2", status = 1)
-        updatePmu!(system14, device; label = "PMU 10", status = 1, angle = V.angle[10]
-        )
+        updatePmu!(system14, device; label = "PMU 10", status = 1, angle = V.angle[10])
+
         se = dcStateEstimation(system14, device, Orthogonal)
         stateEstimation!(system14, se)
+
+        @test chiTest!(system14, device, se)
 
         outlier = residualTest!(system14, device, se; threshold = 3.0)
         @test outlier.label == "Wattmeter 2"

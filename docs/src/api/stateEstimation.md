@@ -36,6 +36,7 @@ using JuliaGrid, Ipopt, HiGHS
 * [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::DCStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal})
 
 ###### Bad Data Analysis
+* [`chiTest!`](@ref chiTest!)
 * [`residualTest!`](@ref residualTest!)
 
 ---
@@ -85,5 +86,6 @@ stateEstimation!(::PowerSystem, ::DCStateEstimation{WLS{T}}) where T <: Union{No
 
 ## Bad Data Analysis
 ```@docs
+chiTest!
 residualTest!
 ```

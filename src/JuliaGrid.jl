@@ -9,6 +9,7 @@ import HDF5: File, Group, Dataset, h5open, h5read, readmmap, attrs, attributes
 import OrderedCollections: OrderedDict
 import Printf: Format, format, @printf
 import Random: randperm, shuffle, shuffle!
+import Distributions: quantile, Chisq
 
 ######### Types and Constants ##########
 include("definition/internal.jl")
@@ -89,7 +90,7 @@ include("stateEstimation/badData.jl")
 include("stateEstimation/observability.jl")
 export gaussNewton, acLavStateEstimation, increment!, stateEstimation!
 export pmuStateEstimation, pmuLavStateEstimation
-export dcStateEstimation, dcLavStateEstimation, residualTest!
+export dcStateEstimation, dcLavStateEstimation, chiTest!, residualTest!
 export islandTopologicalFlow, islandTopological, restorationGram!, pmuPlacement, pmuPlacement!
 
 ########## Postprocessing ##########

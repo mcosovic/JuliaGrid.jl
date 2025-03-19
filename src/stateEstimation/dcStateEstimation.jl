@@ -53,18 +53,19 @@ function dcStateEstimation(
     device::Measurement,
     factorization::Type{<:Union{QR, LDLt, LU}} = LU
 )
-    coefficient, mean, precision, power, idx, numDevice = dcStateEstimationWls(system, device)
+    coeff, mean, precision, power, idx, numDevice, inservice = dcStateEstimationWls(system, device)
 
     DCStateEstimation(
         PolarAngle(Float64[]),
         power,
         WLS{Normal}(
-            coefficient,
+            coeff,
             precision,
             mean,
             factorized[factorization],
             idx,
             numDevice,
+            inservice,
             -1,
             true,
         )
@@ -76,7 +77,7 @@ function dcStateEstimation(
     device::Measurement,
     ::Type{<:Orthogonal}
 )
-    coefficient, mean, precision, power, idx, numDevice = dcStateEstimationWls(system, device)
+    coeff, mean, precision, power, idx, numDevice, inservice = dcStateEstimationWls(system, device)
 
     DCStateEstimation(
         PolarAngle(
@@ -84,12 +85,13 @@ function dcStateEstimation(
         ),
         power,
         WLS{Orthogonal}(
-            coefficient,
+            coeff,
             precision,
             mean,
             factorized[QR],
             idx,
             numDevice,
+            inservice,
             -1,
             true,
         )
@@ -129,11 +131,13 @@ function dcStateEstimationWls(system::PowerSystem, device::Measurement)
     mean = fill(0.0, numDevice)
     pcs = spdiagm(0 => mean)
     cff = SparseModel(fill(0, nnzCff), fill(0, nnzCff), fill(0.0, nnzCff), 1, 1)
+    inservice = 0
 
     @inbounds for (i, k) in enumerate(wattmeter.layout.index)
         pcs.nzval[i] = 1 / wattmeter.active.variance[i]
 
         status = wattmeter.active.status[i]
+        inservice += status
         if wattmeter.layout.bus[i]
             mean[i] = status * meanPi(bus, dc, wattmeter, i, k)
 
@@ -159,10 +163,13 @@ function dcStateEstimationWls(system::PowerSystem, device::Measurement)
     end
 
     @inbounds for (i, k) in pmuIdx
-        mean[k] = pmu.angle.status[i] * meanθi(pmu, bus, i)
+        status = pmu.angle.status[i]
+        inservice += status
+
+        mean[k] = status * meanθi(pmu, bus, i)
         pcs.nzval[k] = 1 / pmu.angle.variance[i]
 
-        cff.val[cff.cnt] = pmu.angle.status[i]
+        cff.val[cff.cnt] = status
         dcIndices(cff, k, pmu.layout.index[i])
     end
 
@@ -176,7 +183,7 @@ function dcStateEstimationWls(system::PowerSystem, device::Measurement)
         CartesianReal(Float64[])
     )
 
-   return coefficient, mean, pcs, power, pmuIdx, numDevice
+   return coefficient, mean, pcs, power, pmuIdx, numDevice, inservice
 end
 
 """

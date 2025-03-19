@@ -557,3 +557,89 @@ function removeRow(A::SparseMatrixCSC{Float64, Int64}, idx::Int64)
     end
 end
 
+"""
+    chiTest!(system::PowerSystem, device::Measurement, analysis::StateEstimation;
+        confidence)
+
+The function performs a Chi-square bad data detection test. This test can be applied after
+obtaining WLS estimator.
+
+# Arguments
+This function requires the types `PowerSystem`, `Measurement`, and `StateEstimation`. The
+abstract type `StateEstimation` can have the following subtypes:
+- `ACStateEstimation`: Conducts bad data analysis within AC state estimation.
+- `PMUStateEstimation`: Conducts bad data analysis within PMU state estimation.
+- `DCStateEstimation`: Conducts bad data analysis within DC state estimation.
+
+# Keyword
+The keyword `confidence` specifies the detection confidence level, with a default value
+of `0.95`.
+
+# Returns
+Returns `true` if bad data is detected; otherwise, returns `false`.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+device = measurement("measurement14.h5")
+
+analysis = gaussNewton(system, device)
+solve!(system, analysis)
+
+bad = chiTest!(system, device, analysis; confidence = 0.96)
+```
+"""
+function chiTest!(
+    system::PowerSystem,
+    ::Measurement,
+    analysis::ACStateEstimation{GaussNewton{T}};
+    confidence::Float64 = 0.95
+)  where T <: Union{Normal, Orthogonal}
+
+    se = analysis.method
+
+    df = lastindex(se.type) - count(==(0), se.type) - 2 * system.bus.number + 1
+    chi = quantile(Chisq(df), confidence)
+
+    return se.objective >= chi
+end
+
+function chiTest!(
+    system::PowerSystem,
+    ::Measurement,
+    analysis::DCStateEstimation{WLS{T}};
+    confidence::Float64 = 0.95
+)  where T <: Union{Normal, Orthogonal}
+
+    se = analysis.method
+
+    residual = se.mean - se.coefficient * analysis.voltage.angle
+    objective = transpose(residual) * se.precision * residual
+
+    df = se.inservice - system.bus.number + 1
+    chi = quantile(Chisq(df), confidence)
+
+    return objective >= chi
+end
+
+function chiTest!(
+    system::PowerSystem,
+    ::Measurement,
+    analysis::PMUStateEstimation{WLS{T}};
+    confidence::Float64 = 0.95
+)  where T <: Union{Normal, Orthogonal}
+
+    se = analysis.method
+    volt = analysis.voltage
+
+    realV = volt.magnitude .* cos.(volt.angle)
+    imagV = volt.magnitude .* sin.(volt.angle)
+
+    residual = se.mean - se.coefficient * [realV; imagV]
+    objective = transpose(residual) * se.precision * residual
+
+    df = se.inservice - 2 * system.bus.number
+    chi = quantile(Chisq(df), confidence)
+
+    return objective >= chi
+end
