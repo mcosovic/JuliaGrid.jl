@@ -1280,6 +1280,7 @@ function stateEstimation!(
 
     converged = false
     maxExceeded = false
+    analysis.method.iteration = 0
 
     printTop(analysis, verbose)
     printMiddle(system, analysis, verbose)

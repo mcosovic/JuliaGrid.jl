@@ -1220,6 +1220,7 @@ function powerFlow!(
 )
     converged = false
     maxExceeded = false
+    analysis.method.iteration = 0
 
     printTop(system, analysis, verbose)
     printMiddle(analysis, verbose)
