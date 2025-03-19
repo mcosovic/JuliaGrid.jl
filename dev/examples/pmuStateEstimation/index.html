@@ -68,8 +68,8 @@ end</code></pre><p>Current phasor measurements can also be generated in the same
 |               | Measurement | Variance | Status | Measurement | Variance | Status |
 |               |        [pu] |     [pu] |        |       [rad] |    [rad] |        |
 |---------------|-------------|----------|--------|-------------|----------|--------|
-| Bus 2         |      0.9817 | 1.00e-08 |      1 |     -0.0269 | 1.00e-08 |      1 |
-| Bus 5         |      0.9782 | 1.00e-08 |      1 |     -0.0407 | 1.00e-08 |      1 |
+| Bus 2         |      0.9818 | 1.00e-08 |      1 |     -0.0269 | 1.00e-08 |      1 |
+| Bus 5         |      0.9781 | 1.00e-08 |      1 |     -0.0408 | 1.00e-08 |      1 |
 |-----------------------------------------------------------------------------------|
 |-----------------------------------------------------------------------------------|
 | PMU Data                                                                          |
@@ -94,12 +94,12 @@ end</code></pre><p>Current phasor measurements can also be generated in the same
 |   Bus | Magnitude |   Angle | Active | Reactive | Active | Reactive |  Active | Reactive |
 |       |      [pu] |   [rad] |   [pu] |     [pu] |   [pu] |     [pu] |    [pu] |     [pu] |
 |-------|-----------|---------|--------|----------|--------|----------|---------|----------|
-| Bus 1 |    0.9999 |  0.0000 | 0.7772 |   0.2349 | 0.0000 |   0.0000 |  0.7772 |   0.2349 |
+| Bus 1 |    0.9999 | -0.0000 | 0.7772 |   0.2349 | 0.0000 |   0.0000 |  0.7772 |   0.2349 |
 | Bus 2 |    0.9818 | -0.0269 | 0.0000 |   0.0000 | 0.2170 |   0.1270 | -0.2170 |  -0.1270 |
-| Bus 3 |    0.9897 | -0.0797 | 0.0000 |  -0.0000 | 0.4780 |  -0.0390 | -0.4780 |   0.0390 |
-| Bus 4 |    0.9999 | -0.0302 | 0.4120 |   0.1687 | 0.0760 |   0.0160 |  0.3360 |   0.1527 |
+| Bus 3 |    0.9897 | -0.0798 | 0.0000 |   0.0000 | 0.4780 |  -0.0390 | -0.4780 |   0.0390 |
+| Bus 4 |    0.9999 | -0.0303 | 0.4120 |   0.1687 | 0.0760 |   0.0160 |  0.3360 |   0.1527 |
 | Bus 5 |    0.9781 | -0.0408 | 0.0000 |   0.0000 | 0.1120 |   0.0750 | -0.1120 |  -0.0750 |
-| Bus 6 |    0.9760 | -0.0398 | 0.0000 |   0.0000 | 0.2950 |   0.1660 | -0.2950 |  -0.1660 |
+| Bus 6 |    0.9761 | -0.0398 | 0.0000 |   0.0000 | 0.2950 |   0.1660 | -0.2950 |  -0.1660 |
 |------------------------------------------------------------------------------------------|</code></pre><p>Users can also compare these results with those obtained from AC power flow:</p><pre><code class="language-julia hljs">power!(system, powerFlow)
 printBusData(system, powerFlow; show)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|------------------------------------------------------------------------------------------|
 | Bus Data                                                                                 |
@@ -123,7 +123,7 @@ printBusData(system, powerFlow; show)</code></pre><pre class="documenter-example
 |   Branch | From-Bus | To-Bus |  Active | Reactive |  Active | Reactive |
 |          |          |        |    [pu] |     [pu] |    [pu] |     [pu] |
 |----------|----------|--------|---------|----------|---------|----------|
-| Branch 1 | Bus 1    | Bus 2  |  0.5827 |   0.1360 | -0.5755 |  -0.1181 |
+| Branch 1 | Bus 1    | Bus 2  |  0.5827 |   0.1359 | -0.5756 |  -0.1180 |
 | Branch 2 | Bus 2    | Bus 3  |  0.2191 |  -0.0467 | -0.2181 |   0.0586 |
 | Branch 3 | Bus 3    | Bus 4  | -0.2599 |  -0.0196 |  0.2613 |   0.0328 |
 | Branch 4 | Bus 4    | Bus 5  |  0.0747 |   0.1199 | -0.0743 |  -0.1165 |
@@ -141,9 +141,9 @@ updatePmu!(system, device, analysis; label = &quot;From Branch 2&quot;, angle = 
 |       |      [pu] |   [rad] |    [pu] |     [pu] |   [pu] |     [pu] |    [pu] |     [pu] |
 |-------|-----------|---------|---------|----------|--------|----------|---------|----------|
 | Bus 1 |    1.0023 |  0.0184 |  0.9476 |   0.2633 | 0.0000 |   0.0000 |  0.9476 |   0.2633 |
-| Bus 2 |    0.9837 | -0.0081 |  0.3810 |  -0.0038 | 0.2170 |   0.1270 |  0.1640 |  -0.1308 |
-| Bus 3 |    0.9915 | -0.0609 |  0.1924 |  -0.0092 | 0.4780 |  -0.0390 | -0.2856 |   0.0298 |
-| Bus 4 |    0.9984 | -0.0486 |  0.2199 |   0.1639 | 0.0760 |   0.0160 |  0.1439 |   0.1479 |
+| Bus 2 |    0.9838 | -0.0081 |  0.3810 |  -0.0038 | 0.2170 |   0.1270 |  0.1640 |  -0.1308 |
+| Bus 3 |    0.9915 | -0.0609 |  0.1923 |  -0.0092 | 0.4780 |  -0.0390 | -0.2857 |   0.0298 |
+| Bus 4 |    0.9984 | -0.0486 |  0.2200 |   0.1640 | 0.0760 |   0.0160 |  0.1440 |   0.1480 |
 | Bus 5 |    0.9768 | -0.0596 | -0.1058 |   0.0308 | 0.1120 |   0.0750 | -0.2178 |  -0.0442 |
 | Bus 6 |    0.9735 | -0.0581 | -0.4421 |  -0.0083 | 0.2950 |   0.1660 | -0.7371 |  -0.1743 |
 |-------------------------------------------------------------------------------------------|</code></pre><p>With the updated measurement values, the estimated results deviate more significantly from the exact values obtained through AC power flow, as the modified measurements no longer align with them.</p><hr/><h2 id="Modifying-Measurement-Set"><a class="docs-heading-anchor" href="#Modifying-Measurement-Set">Modifying Measurement Set</a><a id="Modifying-Measurement-Set-1"></a><a class="docs-heading-anchor-permalink" href="#Modifying-Measurement-Set" title="Permalink"></a></h2><p>Excluding phasor measurements from the set, when obtained using optimal placement, should be done with caution, as it can easily render the system unobservable. In this example, two measurements will be taken out-of-service, and two additional measurements will be immediately included to maintain observability:</p><pre><code class="language-julia hljs">updatePmu!(system, device; label = &quot;From Branch 2&quot;, status = 0)
@@ -159,10 +159,10 @@ stateEstimation!(system, analysis; power = true, verbose = 1)</code></pre><pre c
 |   Bus | Magnitude |   Angle | Active | Reactive | Active | Reactive |  Active | Reactive |
 |       |      [pu] |   [rad] |   [pu] |     [pu] |   [pu] |     [pu] |    [pu] |     [pu] |
 |-------|-----------|---------|--------|----------|--------|----------|---------|----------|
-| Bus 1 |    0.9999 |  0.0000 | 0.7772 |   0.2349 | 0.0000 |   0.0000 |  0.7772 |   0.2349 |
+| Bus 1 |    0.9999 | -0.0000 | 0.7772 |   0.2349 | 0.0000 |   0.0000 |  0.7772 |   0.2349 |
 | Bus 2 |    0.9818 | -0.0269 | 0.0000 |   0.0000 | 0.2170 |   0.1270 | -0.2170 |  -0.1270 |
-| Bus 3 |    0.9897 | -0.0797 | 0.0000 |  -0.0000 | 0.4780 |  -0.0390 | -0.4780 |   0.0390 |
-| Bus 4 |    0.9999 | -0.0302 | 0.4120 |   0.1687 | 0.0760 |   0.0160 |  0.3360 |   0.1527 |
+| Bus 3 |    0.9897 | -0.0798 | 0.0000 |   0.0000 | 0.4780 |  -0.0390 | -0.4780 |   0.0390 |
+| Bus 4 |    0.9999 | -0.0303 | 0.4120 |   0.1687 | 0.0760 |   0.0160 |  0.3360 |   0.1527 |
 | Bus 5 |    0.9781 | -0.0408 | 0.0000 |   0.0000 | 0.1120 |   0.0750 | -0.1120 |  -0.0750 |
-| Bus 6 |    0.9760 | -0.0398 | 0.0000 |   0.0000 | 0.2950 |   0.1660 | -0.2950 |  -0.1660 |
-|------------------------------------------------------------------------------------------|</code></pre><p>By taking certain measurements out-of-service, the estimation was affected. Adding more precise measurements while maintaining observability led to an estimation that more accurately reflects the exact power system state.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../acStateEstimation/">« AC State Estimation</a><a class="docs-footer-nextpage" href="../dcStateEstimation/">DC State Estimation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.9.0 on <span class="colophon-date" title="Wednesday 19 March 2025 14:15">Wednesday 19 March 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+| Bus 6 |    0.9761 | -0.0398 | 0.0000 |   0.0000 | 0.2950 |   0.1660 | -0.2950 |  -0.1660 |
+|------------------------------------------------------------------------------------------|</code></pre><p>By taking certain measurements out-of-service, the estimation was affected. Adding more precise measurements while maintaining observability led to an estimation that more accurately reflects the exact power system state.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../acStateEstimation/">« AC State Estimation</a><a class="docs-footer-nextpage" href="../dcStateEstimation/">DC State Estimation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.9.0 on <span class="colophon-date" title="Wednesday 19 March 2025 14:31">Wednesday 19 March 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
