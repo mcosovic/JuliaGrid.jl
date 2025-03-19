@@ -1,5 +1,5 @@
 # [Bad Data Analysis](@id BadDataTutorials)
-One of the essential state estimation routines is the bad data analysis, which follows after obtaining the weighted least-squares (WLS) estimator. Its main task is to detect and identify measurement errors, and eliminate them if possible. This is usually done by processing the measurement residuals [aburbook; Ch. 5](@cite), and typically, the largest normalized residual test is used to identify bad data. The largest normalized residual test is performed after we obtained the solution of the state estimation in the repetitive process of identifying and eliminating bad data measurements one after another [korres2010distributed](@cite).
+One of the essential state estimation routines is the bad data analysis, which follows after obtaining the weighted least-squares (WLS) estimator. Its main task is to detect and identify measurement errors, and eliminate them if possible. This is usually done by processing the measurement residuals [aburbook; Ch. 5](@cite), and typically, the largest normalized residual test is used to identify bad data. The largest normalized residual test is performed after we obtained the solution of the state estimation in the repetitive process of identifying and eliminating bad data measurements one after another [korres2010distributed](@cite). Additionally, the Chi-squared test, which can precede the largest normalized residual test, serves to detect the presence of bad data and quickly determine if the largest normalized residual test should be performed [aburbook; Sec. 5.4](@cite).
 
 To initiate the process, let us construct the `PowerSystem` type and formulate the AC model:
 ```@example BadData
@@ -44,16 +44,42 @@ nothing # hide
 
 ---
 
-## [Largest Normalized Residual Test](@id ResidualTestTutorials)
 Let the WLS estimator ``\hat {\mathbf x}`` be obtained by solving the AC state estimation:
 ```@example BadData
 analysis = gaussNewton(system, device)
 stateEstimation!(system, analysis)
 ```
 
-Next, we run the bad data analysis:
+---
+
+## [Chi-Squared Test](@id ChiTestTutorials)
+Next, we run the shi-squared test:
+```@repl BadData
+chiTest(system, device, analysis; confidence = 0.96)
+```
+
+At this stage, JuliaGrid uses the objective value obtained from the AC state estimation:
+```math
+	f(\hat{\mathbf x}) = \sum_{i=1}^k\cfrac{[z_i - h_i(\hat{\mathbf x})]^2}{v_i},
+```
+which can be accessed as:
+```@repl BadData
+analysis.method.objective
+```
+
+Next, retrieve the value from the Chi-squared distribution corresponding to the detection `confidence` and ``(k - s)`` degrees of freedom, where ``k`` is the number of measurement functions and ``s`` is the number of state variables. This provides the value of ``\chi^2_{p}(k - s)``. Then, the bad data test can be defined as:
+```math
+	f(\hat{\mathbf x}) \geq \chi^2_{p}(k - s).
+```
+If the inequality is satisfied, bad data is suspected in the measurement set, and the function returns `true`; otherwise, it returns `false`.
+
+---
+
+## [Largest Normalized Residual Test](@id ResidualTestTutorials)
+As observed from the Chi-squared test, bad data is present in the measurement set. We then perform the largest normalized residual test to identify the outlier and remove it from the measurements:
 ```@example BadData
 outlier = residualTest!(system, device, analysis; threshold = 4.0)
+
 nothing # hide
 ```
 

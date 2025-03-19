@@ -1,14 +1,15 @@
 # [Bad Data Analysis](@id BadDataManual)
-After computing the weighted least-squares (WLS) estimator, users can detect outliers in the measurement set through bad data analysis and remove them using the largest normalized residual test:
+After computing the weighted least-squares (WLS) estimator, users can perform bad data analysis. There are two tests available: the Chi-squared test for detecting bad data, and the largest normalized residual test, which can be used not only for detection but also for identifying and removing bad data:
+* [`chiTest`](@ref chiTest),
 * [`residualTest!`](@ref residualTest!).
 
 ---
 
-## [Largest Normalized Residual Test](@id ResidualTestTutorials)
-The largest normalized residual test identifies bad data based on a predefined threshold. Specifically, if the largest normalized residual exceeds the threshold, the corresponding measurement is flagged as bad data, marked as out of service within the `Measurement` type, and removed from the state estimation model. This allows users to solve the state estimation problem immediately without rebuilding the state estimation model.
+## [Chi-Squared Test](@id ChiTestTutorials)
+The Chi-squared test is the method used to detect the presence of bad data or outliers in the measurement set. If the Chi-squared test indicates the presence of bad data, users can proceed with the largest normalized residual test, which will identify and remove outlier from the measurement set.
 
 !!! note "Info"
-    Readers can refer to the [Bad Data Analysis](@ref BadDataTutorials) tutorial for implementation insights.
+    Readers can refer to the [Chi-Squared Test](@ref ChiTestTutorials) tutorial for implementation insights.
 
 To begin, we will define the `PowerSystem` and `Measurement` types:
 ```@example ACSEWLS
@@ -42,21 +43,36 @@ nothing # hide
 ```
 ---
 
-##### AC State Estimation
-Let us now create the state estimation model `ACStateEstimation` and obtain the WLS estimator:
+Now, let us create the state estimation model `ACStateEstimation` and compute the WLS estimator:
 ```@example ACSEWLS
 analysis = gaussNewton(system, device)
 stateEstimation!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
-Detection of bad data is determined by the `threshold` keyword. If the largest normalized residual value exceeds the `threshold`, the measurement will be identified as bad data and consequently removed from the AC state estimation model:
+Next, we are interested in detecting bad data in the measurement set, so let us use the Chi-squared test:
+```@repl ACSEWLS
+chiTest(system, device, analysis)
+nothing # hide
+```
+
+As seen, the Chi-squared test returns `true`, indicating that there are outliers in the measurement set. It is now advisable to proceed with the largest normalized residual test. We note that the same test can be performed for DC state estimation, as well as for state estimation using only PMUs.
+
+---
+
+## [Largest Normalized Residual Test](@id ResidualTestTutorials)
+The largest normalized residual test identifies bad data based on a predefined threshold. Specifically, if the largest normalized residual exceeds the threshold, the corresponding measurement is flagged as bad data, marked as out of service within the `Measurement` type, and removed from the state estimation model. This allows users to solve the state estimation problem immediately without rebuilding the state estimation model.
+
+!!! note "Info"
+    Readers can refer to the [Largest Normalized Residual Test](@ref ResidualTestTutorials) tutorial for implementation insights.
+
+After using the Chi-squared test to detect the presence of bad data in the measurement set, let us now identify outliers and remove them:
 ```@example ACSEWLS
 outlier = residualTest!(system, device, analysis; threshold = 4.0)
 nothing # hide
 ```
 
-Users can examine the data obtained from the bad data analysis:
+Bad data detection is determined by the `threshold` keyword. If the largest normalized residual value exceeds the `threshold`, the measurement will be identified as bad data and removed from the AC state estimation model. As a result, we have the following information:
 ```@repl ACSEWLS
 outlier.detect
 outlier.maxNormalizedResidual

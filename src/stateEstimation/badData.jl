@@ -330,6 +330,7 @@ function residualTest!(
         se.mean[bad.index] = 0.0
         se.residual[bad.index] = 0.0
         se.type[bad.index] = 0
+        se.iteration = 0
     end
 
     return bad
@@ -561,7 +562,7 @@ end
     chiTest(system::PowerSystem, device::Measurement, analysis::StateEstimation;
         confidence)
 
-The function performs a Chi-square bad data detection test. This test can be applied after
+The function performs a Chi-squared bad data detection test. This test can be applied after
 obtaining WLS estimator.
 
 # Arguments
