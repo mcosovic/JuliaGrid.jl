@@ -1240,14 +1240,6 @@ function powerFlow!(
         solve!(system, analysis)
     end
 
-    # if !converged
-    #     delP, delQ = mismatch!(system, analysis)
-    #     if delP < tolerance && delQ < tolerance
-    #         converged = true
-    #     end
-    #     printSolver(analysis.method.iteration, delP, delQ, verbose)
-    # end
-
     printSolver(system, analysis, verbose)
 
     printExit(analysis, maxExceeded, converged, verbose)

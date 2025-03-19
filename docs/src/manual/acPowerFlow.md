@@ -252,7 +252,7 @@ analysis = newtonRaphson(system)
 for iteration = 1:100
     stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
-        println("Solution Found.")
+        println("Solution found in $(analysis.method.iteration) iterations.")
         break
     end
     solve!(system, analysis)
@@ -260,10 +260,7 @@ end
 nothing # hide
 ```
 
-The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function returns the maximum absolute values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms. Note that the function can also be used to terminate the loop when using the Gauss-Seidel method, even though it is not required.
-
-!!! tip "Tip"
-    To ensure an accurate count of iterations, the user should place the iteration counter after the condition expressions within the if construct.
+The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function returns the maximum absolute values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms.
 
 ---
 
@@ -277,7 +274,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    Users can choose any of the approaches presented in this section to solve AC power flow based on their needs.
+    Users can choose any of the approaches presented in this section to solve AC power flow based on their needs. Additionally, users can review the algorithm used in the wrapper function within the [AC Power Flow](@ref ACPowerFlowTutorials) tutorial section. For example, they can refer to the [Newton-Raphson algorithm](@ref NewtonRaphsonAlgorithmTutorials).
 
 ---
 

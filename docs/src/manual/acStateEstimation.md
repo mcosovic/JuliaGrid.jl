@@ -5,7 +5,7 @@ To perform nonlinear or AC state estimation, the initial requirement is to have 
 
 ---
 
-To obtain bus voltages and solve the state estimation problem, users need to implement an iterative process for the WLS model using:
+To obtain bus voltages and solve the state estimation problem, users need to implement the Gauss-Newton iterative process for the WLS model using:
 * [`increment!`](@ref increment!),
 * [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}).
 
@@ -123,7 +123,7 @@ analysis = gaussNewton(system, device)
 for iteration = 1:20
     stopping = increment!(system, analysis)
     if stopping < 1e-8
-        println("Solution Found.")
+        println("Solution found in $(analysis.method.iteration) iterations.")
         break
     end
     solve!(system, analysis)
@@ -147,7 +147,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    Users can choose any approach in this section to obtain the WLS estimator based on their needs.
+    Users can choose any approach in this section to obtain the WLS estimator based on their needs. Additionally, users can review the [Gauss-Newton Algorithm](@ref GaussNewtonAlgorithmTutorials) used in the wrapper function within the tutorial section.
 
 ---
 

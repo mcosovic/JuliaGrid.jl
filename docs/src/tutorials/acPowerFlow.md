@@ -177,7 +177,7 @@ Here, we utilize a "flat start" approach in our method. It is important to keep 
 ##### Iterative Process
 To implement the Newton-Raphson method, the iterative approach based on the Taylor series expansion, JuliaGrid provides the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson}::ACPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) functions. These functions are utilized to carry out the Newton-Raphson method iteratively until a stopping criterion is reached, as demonstrated in the following code snippet:
 ```@example PowerFlowSolution
-for iteration = 1:100
+for iteration = 0:20
     stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
@@ -186,14 +186,14 @@ for iteration = 1:100
 end
 ```
 
-The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{1, 2, \dots\}``. The equations used for these computations are:
+The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{0, 1, 2, \dots\}``. The equations used for these computations are:
 ```math
-  f_{P_i}(\mathbf x^{(\nu-1)}) = V_i^{(\nu-1)} \sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}^{(\nu-1)} + B_{ij}\sin\theta_{ij}^{(\nu-1)}) V_j^{(\nu-1)} - P_i,
+  f_{P_i}(\mathbf x^{(\nu)}) = V_i^{(\nu)} \sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}^{(\nu)} + B_{ij}\sin\theta_{ij}^{(\nu)}) V_j^{(\nu)} - P_i,
   \;\;\; \forall i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv},
 ```
 as well as the reactive power injection mismatch for demand buses:
 ```math
-  f_{Q_i}(\mathbf x^{(\nu-1)}) = V_i^{(\nu)} \sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}^{(\nu-1)} - B_{ij}\cos\theta_{ij}^{(\nu-1)}) V_j^{(\nu-1)} - Q_i,
+  f_{Q_i}(\mathbf x^{(\nu)}) = V_i^{(\nu)} \sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}^{(\nu)} - B_{ij}\cos\theta_{ij}^{(\nu)}) V_j^{(\nu)} - Q_i,
   \;\;\; \forall i \in \mathcal{N}_\mathrm{pq}.
 ```
 
@@ -204,13 +204,13 @@ The resulting vector from these calculations is stored in the `mismatch` variabl
 
 In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
 ```math
-  \max \{|f_{P_i}(\mathbf x^{(\nu-1)})|,\; \forall i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv} \} < \epsilon \\
-  \max \{|f_{Q_i}(\mathbf x^{(\nu-1)})|,\; \forall i \in \mathcal{N}_\mathrm{pq} \} < \epsilon.
+  \max \{|f_{P_i}(\mathbf x^{(\nu)})|,\; \forall i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv} \} < \epsilon \\
+  \max \{|f_{Q_i}(\mathbf x^{(\nu)})|,\; \forall i \in \mathcal{N}_\mathrm{pq} \} < \epsilon.
 ```
 
 Next, the function [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) computes the increments of bus voltage angle and magnitude at each iteration using:
 ```math
-  \mathbf \Delta \mathbf{x}^{(\nu-1)} = -\mathbf J (\mathbf{x}^{(\nu-1)})^{-1} \mathbf f (\mathbf{x}^{(\nu-1)}),
+  \mathbf \Delta \mathbf{x}^{(\nu)} = -\mathbf J (\mathbf{x}^{(\nu)})^{-1} \mathbf f (\mathbf{x}^{(\nu)}),
 ```
 where ``\mathbf \Delta \mathbf x = [\mathbf \Delta \mathbf x_\mathrm{a}, \mathbf \Delta \mathbf x_\mathrm{m}]^T`` consists of the vector of bus voltage angle increments ``\mathbf \Delta \mathbf x_\mathrm{a} \in \mathbb{R}^{n-1}`` and bus voltage magnitude increments ``\mathbf \Delta \mathbf x_\mathrm{m} \in \mathbb{R}^{n_\mathrm{pq}}``, and ``\mathbf J (\mathbf{x}) \in \mathbb{R}^{n_\mathrm{u} \times n_\mathrm{u}}`` is the Jacobian matrix, ``n_\mathrm{u} = n + n_\mathrm{pq} - 1``.
 
@@ -233,7 +233,7 @@ These specified orders dictate the row and column order of the Jacobian matrix `
 
 Finally, the function [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) adds the computed increment term to the previous solution to obtain a new solution:
 ```math
-  \mathbf{x}^{(\nu)} = \mathbf{x}^{(\nu-1)} + \mathbf \Delta \mathbf{x}^{(\nu-1)}.
+  \mathbf{x}^{(\nu + 1)} = \mathbf{x}^{(\nu)} + \mathbf \Delta \mathbf{x}^{(\nu)}.
 ```
 
 The bus voltage magnitudes ``\mathbf V = [V_i]`` and angles ``\bm \Theta = [\theta_i]`` are then updated based on the obtained solution ``\mathbf x``. It is important to note that only the voltage magnitudes related to demand buses and angles related to demand and generator buses are updated; not all values are updated. Therefore, the final solution obtained by JuliaGrid is stored in the following vectors:
@@ -322,6 +322,26 @@ while non-diagonal elements of the Jacobian sub-matrices are:
     (G_{ij}\sin\theta_{ij}^{(\nu)} - B_{ij}\cos\theta_{ij}^{(\nu)}) V_i^{(\nu)}.
   \end{aligned}
 ```
+
+---
+
+##### [The Newton-Raphson Algorithm](@id NewtonRaphsonAlgorithmTutorials)
+In summary, the Newton-Raphson iterative algorithm for solving the AC power flow follows these steps:
+
+|           |                                                                 |                                                                                          |
+|:----------|:----------------------------------------------------------------|:-----------------------------------------------------------------------------------------|
+| 1.        | Initialize the iteration index                                  | ``\nu = 0``                                                                              |
+| 2.        | Set the initial values for bus voltage magnitudes and angles    | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                             |
+| 3.        | Compute the mismatches for active and reactive power injections | ``\mathbf f (\mathbf{x}^{(\nu)})``                                                       |
+| 4.        | Check for convergence                                           | ``f_{P\max}(\mathbf x^{(\nu)}) < \epsilon``, ``f_{Q\max}(\mathbf x^{(\nu)}) < \epsilon`` |
+| 5.        | If the convergence criteria are met, stop the process           |                                                                                          |
+| 6.        | Compute the voltage magnitude and angle increments              | ``\mathbf \Delta \mathbf{x}^{(\nu)}``                                                    |
+| 7.        | Update the voltage magnitude and angle values                   | ``\mathbf{x}^{(\nu + 1)} = \mathbf{x}^{(\nu)} + \mathbf \Delta \mathbf{x}^{(\nu)}``      |
+| 8.        | Increase the iteration index                                    | ``\nu := \nu + 1``                                                                       |
+| 9.        | Repeat from step 3.                                             |                                                                                          |
+|           |                                                                 |                                                                                          |
+
+The main computational effort is in step 6, which involves forming and factorizing the Jacobian matrix and performing forward and backward substitutions to obtain the vector of increments.
 
 ---
 
@@ -529,7 +549,7 @@ Additionally, during this stage, JuliaGrid generates the initial vectors for bus
 ##### Iterative Process
 JuliaGrid offers the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) functions to implement the fast Newton-Raphson method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
 ```@example PowerFlowSolution
-for iteration = 1:100
+for iteration = 0:100
     stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
@@ -548,14 +568,14 @@ The functions ``\mathbf{f}_\mathrm{P}(\mathbf x)`` and ``\mathbf{f}_\mathrm{Q}(\
   \end{aligned}
 ```
 
-Therefore, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{1, 2, \dots\}``:
+Therefore, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{0, 1, 2, \dots\}``:
 ```math
   \begin{aligned}
-    h_{P_i}(\mathbf {x}^{(\nu-1)}) &=
-    \sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}^{(\nu-1)} + B_{ij}\sin\theta_{ij}^{(\nu-1)})V_j^{(\nu-1)} - \cfrac{P_i}{V_i^{(\nu-1)}},
+    h_{P_i}(\mathbf {x}^{(\nu)}) &=
+    \sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}^{(\nu)} + B_{ij}\sin\theta_{ij}^{(\nu)})V_j^{(\nu)} - \cfrac{P_i}{V_i^{(\nu)}},
     \;\;\; \forall i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv} \\
-    h_{Q_i}(\mathbf {x}^{(\nu-1)}) &=
-    \sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}^{(\nu-1)} - B_{ij}\cos\theta_{ij}^{(\nu-1)})V_j^{(\nu-1)} - \cfrac{Q_i}{V_i^{(\nu-1)}},
+    h_{Q_i}(\mathbf {x}^{(\nu)}) &=
+    \sum\limits_{j=1}^n (G_{ij}\sin\theta_{ij}^{(\nu)} - B_{ij}\cos\theta_{ij}^{(\nu)})V_j^{(\nu)} - \cfrac{Q_i}{V_i^{(\nu)}},
     \;\;\; \forall i \in \mathcal{N}_\mathrm{pq}.
   \end{aligned}
 ```
@@ -574,7 +594,7 @@ In addition to computing the mismatches in active and reactive power injection, 
 
 Next, the function [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) computes the bus voltage angle increments:
 ```math
-  \mathbf \Delta \mathbf x_\mathrm{a}^{(\nu-1)} = \mathbf{B}_1^{-1} \mathbf{h}_\mathrm{P}(\mathbf x^{(\nu-1)}).
+  \mathbf \Delta \mathbf x_\mathrm{a}^{(\nu)} = \mathbf{B}_1^{-1} \mathbf{h}_\mathrm{P}(\mathbf x^{(\nu)}).
 ```
 
 To obtain the voltage angle increments, JuliaGrid initially performs LU factorization on the Jacobian matrix ``\mathbf{B}_1 = \mathbf{L}_1\mathbf{U}_1``. This factorization is executed only once and is utilized in each iteration of the algorithm:
@@ -593,7 +613,7 @@ The vector of increments that corresponds to the active power equations can be a
 
 The solution is then updated as follows:
 ```math
-  \mathbf x_\mathrm{a}^{(\nu)} = \mathbf x_\mathrm{a}^{(\nu-1)} + \mathbf \Delta \mathbf x_\mathrm{a}^{(\nu-1)}.
+  \mathbf x_\mathrm{a}^{(\nu + 1)} = \mathbf x_\mathrm{a}^{(\nu)} + \mathbf \Delta \mathbf x_\mathrm{a}^{(\nu)}.
 ```
 It is important to note that only the voltage angles related to demand and generator buses are updated, while the vector of bus voltage angles of all buses is stored:
 ```@repl PowerFlowSolution
@@ -602,7 +622,7 @@ It is important to note that only the voltage angles related to demand and gener
 
 After calculating the update for voltage angles, to calculate the magnitude updates the fast Newton-Raphson method then solves the equation:
 ```math
-  \mathbf \Delta \mathbf x_\mathrm{m}^{(\nu-1)} = \mathbf{B}_2^{-1} \mathbf{h}_\mathrm{Q}(\mathbf x^{(\nu)}).
+  \mathbf \Delta \mathbf x_\mathrm{m}^{(\nu)} = \mathbf{B}_2^{-1} \mathbf{h}_\mathrm{Q}(\mathbf x^{(\nu)}).
 ```
 
 Similarly to the previous instance, JuliaGrid initially executes LU factorization on the Jacobian matrix ``\mathbf{B}_2 = \mathbf{L}_2\mathbf{U}_2``. However, it provides the flexibility for users to opt for QR factorization instead. This factorization occurs only once and is utilized in each iteration of the fast Newton-Raphson algorithm:
@@ -618,13 +638,35 @@ The vector of increments that corresponds to the reactive power equations can be
 
 Finally, the solution is updated as follows:
 ```math
-  \mathbf x_\mathrm{m}^{(\nu)} = \mathbf x_\mathrm{m}^{(\nu-1)} + \mathbf \Delta \mathbf x_\mathrm{m}^{(\nu-1)}.
+  \mathbf x_\mathrm{m}^{(\nu + 1)} = \mathbf x_\mathrm{m}^{(\nu)} + \mathbf \Delta \mathbf x_\mathrm{m}^{(\nu)}.
 ```
 
 Again, it is important to note that only the voltage magnitudes of demand buses are updated, while the vector of bus voltage magnitude for all buses is stored:
 ```@repl PowerFlowSolution
 𝐕 = analysis.voltage.magnitude
 ```
+
+---
+
+##### The Fast Newton-Raphson Algorithm
+In summary, the fast Newton-Raphson iterative algorithm for solving the AC power flow follows these steps:
+
+|           |                                                                 |                                                                                                                   |
+|:----------|:----------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------|
+| 1.        | Initialize the iteration index                                  | ``\nu = 0``                                                                                                       |
+| 2.        | Set the initial values for bus voltage magnitudes and angles    | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                                                      |
+| 3.        | Compute the mismatches for active and reactive power injections | ``\mathbf{h}_\mathrm{P}(\mathbf x^{(\nu)})``, ``\mathbf{h}_\mathrm{Q}(\mathbf x^{(\nu)})``                        |
+| 4.        | Check for convergence                                           | ``h_{P\max}(\mathbf x^{(\nu)}) < \epsilon``, ``h_{Q\max}(\mathbf x^{(\nu)}) < \epsilon``                          |
+| 5.        | If the convergence criteria are met, stop the process           |                                                                                                                   |
+| 6.        | Compute the voltage angle increments                            | ``\mathbf \Delta \mathbf x_\mathrm{a}^{(\nu)}``                                                                   |
+| 7.        | Update the voltage angle values                                 | ``\mathbf x_\mathrm{a}^{(\nu + 1)} = \mathbf x_\mathrm{a}^{(\nu)} + \mathbf \Delta \mathbf x_\mathrm{a}^{(\nu)}`` |
+| 8.        | Compute the voltage magnitude increments                        | ``\mathbf \Delta \mathbf x_\mathrm{m}^{(\nu)}``                                                                   |
+| 9.        | Update the voltage magnitude values                             | ``\mathbf x_\mathrm{m}^{(\nu + 1)} = \mathbf x_\mathrm{m}^{(\nu)} + \mathbf \Delta \mathbf x_\mathrm{m}^{(\nu)}`` |
+| 10.       | Increase the iteration index                                    | ``\nu := \nu + 1``                                                                                                |
+| 11.       | Repeat from step 3.                                             |                                                                                                                   |
+|           |                                                                 |                                                                                                                   |
+
+The main computational effort is in steps 6 and 8, where forward and backward substitutions are performed to obtain the vectors of increments using the Jacobian matrices, which are formed and factorized before the iterative algorithm is executed.
 
 ---
 
@@ -668,7 +710,7 @@ This results in the creation of the initial vectors of bus voltage magnitudes ``
 ##### Iterative Process
 JuliaGrid offers the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) functions to implement the Gauss-Seidel method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
 ```@example PowerFlowSolution
-for iteration = 1:300
+for iteration = 0:300
     stopping = mismatch!(system, analysis)
     if all(stopping .< 1e-8)
         break
@@ -677,45 +719,45 @@ for iteration = 1:300
 end
 ```
 
-In contrast to the Newton-Raphson and fast Newton-Raphson methods, the Gauss-Seidel method does not require the calculation of the mismatch in active and reactive power injection at each iteration. Instead, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function is used solely to verify the convergence criteria. At each iteration ``\nu = \{1, 2, \dots\}``, we calculate the active power injection mismatch for demand and generator buses, as shown below:
+In contrast to the Newton-Raphson and fast Newton-Raphson methods, the Gauss-Seidel method does not require the calculation of the mismatch in active and reactive power injection at each iteration. Instead, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function is used solely to verify the convergence criteria. At each iteration ``\nu = \{0, 1, 2, \dots\}``, we calculate the active power injection mismatch for demand and generator buses, as shown below:
 ```math
-  f_{P_i}(\mathbf x^{(\nu-1)}) = \Re\{\bar{V}_i^{(\nu - 1)} \bar{I}_i^{*(\nu - 1)}\} - P_i, \;\;\; \forall i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv}.
+  f_{P_i}(\mathbf x^{(\nu)}) = \Re\{\bar{V}_i^{(\nu)} \bar{I}_i^{*(\nu)}\} - P_i, \;\;\; \forall i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv}.
 ```
 
 We also compute the reactive power injection mismatch for demand buses, given by:
 ```math
-  f_{Q_i}(\mathbf x^{(\nu-1)}) = \Im\{\bar{V}_i^{(\nu - 1)} \bar{I}_i^{*(\nu - 1)}\} - Q_i, \;\;\; \forall i \in \mathcal{N}_\mathrm{pq}.
+  f_{Q_i}(\mathbf x^{(\nu)}) = \Im\{\bar{V}_i^{(\nu)} \bar{I}_i^{*(\nu)}\} - Q_i, \;\;\; \forall i \in \mathcal{N}_\mathrm{pq}.
 ```
 
 However, these mismatches are not stored, as they are only used to obtain the maximum absolute values of these mismatches. The maximum values of these mismatches are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``, as shown below:
 ```math
-  \max \{|f_{P_i}(\mathbf x^{(\nu-1)})|,\; \forall i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv} \} < \epsilon \\
-  \max \{|f_{Q_i}(\mathbf x^{(\nu-1)})|,\; \forall i \in \mathcal{N}_\mathrm{pq} \} < \epsilon.
+  \max \{|f_{P_i}(\mathbf x^{(\nu)})|,\; \forall i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv} \} < \epsilon \\
+  \max \{|f_{Q_i}(\mathbf x^{(\nu)})|,\; \forall i \in \mathcal{N}_\mathrm{pq} \} < \epsilon.
 ```
 
 After initializing complex bus voltages ``\bar{V}_i^{(0)}`` for all buses in the power system, the function [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) proceeds to compute the voltages for demand buses using the Gauss-Seidel method:
 ```math
-  \bar{V}_i^{(\nu)} =
-  \cfrac{1}{Y_{ii}} \left(\cfrac{P_i - \mathrm{j} Q_i}{\bar{V}_i^{*(\nu-1)}} -
-  \sum\limits_{\substack{j = 1}}^{i - 1} Y_{ij}\bar{V}_j^{(\nu)} -
-  \sum\limits_{\substack{j = i + 1}}^n Y_{ij}\bar{V}_j^{(\nu-1)}\right),
+  \bar{V}_i^{(\nu + 1)} =
+  \cfrac{1}{Y_{ii}} \left(\cfrac{P_i - \mathrm{j} Q_i}{\bar{V}_i^{*(\nu)}} -
+  \sum\limits_{\substack{j = 1}}^{i - 1} Y_{ij}\bar{V}_j^{(\nu + 1)} -
+  \sum\limits_{\substack{j = i + 1}}^n Y_{ij}\bar{V}_j^{(\nu)}\right),
   \;\;\; \forall i \in \mathcal{N}_\mathrm{pq}.
 ```
 
 The next step is to determine the solution for generator buses in two stages: first, the reactive power injection is calculated, and then the bus complex voltage is updated using the following equations:
 ```math
   \begin{aligned}
-    Q_i^{(\nu)} &=
-    -\Im \left\{ \bar{V}_i^{*(\nu)} \sum\limits_{j=1}^n Y_{ij}\bar{V}_j^{(\nu)}\right\}, \;\;\; \forall i \in \mathcal{N}_\mathrm{pv} \\
-    \bar{V}_i^{(\nu )} &:=
-    \cfrac{1}{Y_{ii}} \Bigg(\cfrac{P_i - \mathrm{j} Q_i^{(\nu)}}{\bar{V}_i^{*(\nu )}}-
-    \sum\limits_{\substack{j = 1,\;j \neq i}}^n Y_{ij}\bar{V}_j^{(\nu)} \Bigg), \;\;\; \forall i \in \mathcal{N}_\mathrm{pv}.
+    Q_i^{(\nu + 1)} &=
+    -\Im \left\{ \bar{V}_i^{*(\nu + 1)} \sum\limits_{j=1}^n Y_{ij}\bar{V}_j^{(\nu + 1)}\right\}, \;\;\; \forall i \in \mathcal{N}_\mathrm{pv} \\
+    \bar{V}_i^{(\nu + 1)} &:=
+    \cfrac{1}{Y_{ii}} \Bigg(\cfrac{P_i - \mathrm{j} Q_i^{(\nu + 1)}}{\bar{V}_i^{*(\nu + 1)}}-
+    \sum\limits_{\substack{j = 1,\;j \neq i}}^n Y_{ij}\bar{V}_j^{(\nu + 1)} \Bigg), \;\;\; \forall i \in \mathcal{N}_\mathrm{pv}.
   \end{aligned}
 ```
 
 The obtained voltage magnitude may not be equal to the magnitude specified for the generator bus, so a voltage correction step is necessary:
 ```math
-  \bar{V}_i^{(\nu)} := V_i^{(0)} \cfrac{\bar{V}_i^{(\nu)}}{V_i^{(\nu)}}, \;\;\; \forall i \in \mathcal{N}_\mathrm{pv}.
+  \bar{V}_i^{(\nu + 1)} := V_i^{(0)} \cfrac{\bar{V}_i^{(\nu + 1)}}{V_i^{(\nu + 1)}}, \;\;\; \forall i \in \mathcal{N}_\mathrm{pv}.
 ```
 
 JuliaGrid stores the final results in vectors that contain all bus voltage magnitudes and angles:
@@ -723,6 +765,27 @@ JuliaGrid stores the final results in vectors that contain all bus voltage magni
 𝐕 = analysis.voltage.magnitude
 𝚯 = analysis.voltage.angle
 ```
+
+---
+
+##### The Gauss-Seidel Algorithm
+In summary, the Gauss-Seidel iterative algorithm for solving the AC power flow follows these steps:
+
+|           |                                                                  |                                                                                                                   |
+|:----------|:-----------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------|
+| 1.        | Initialize the iteration index                                   | ``\nu = 0``                                                                                                       |
+| 2.        | Set the initial values for bus voltage magnitudes and angles     | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                                                      |
+| 3.        | Compute the mismatches for active and reactive power injections  | ``f_{P_i}(\mathbf x^{(\nu)})``, ``f_{Q_i}(\mathbf x^{(\nu)})``                        |
+| 4.        | Check for convergence                                            | ``h_{P\max}(\mathbf x^{(\nu)}) < \epsilon``, ``h_{Q\max}(\mathbf x^{(\nu)}) < \epsilon``                     |
+| 5.        | If the convergence criteria are met, stop the process            |                                                                                                 |
+| 6.        | Compute the voltages for demand buses                            | ``\bar{V}_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pv}``   |
+| 7.        | Compute the reactive power injections for generator buses        | ``Q_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pq}`` |
+| 8.        | Update and apply correction the bus voltages for generator buses | ``\bar{V}_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pq}``     |
+| 9.        | Increase the iteration index                                     | ``\nu := \nu + 1``                                                                                                |
+| 10.       | Repeat from step 3.                                              |                                                                                                                   |
+|           |                                                                  |                                                                                                                   |
+
+The computational effort per iteration is negligible, while the main bottleneck is the large number of iterations required for convergence.
 
 ---
 

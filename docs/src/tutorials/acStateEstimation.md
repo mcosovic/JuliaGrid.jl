@@ -825,7 +825,7 @@ Here, we utilize a "flat start" approach in our method. It is important to keep 
 ##### Iterative Process
 To apply the Gauss-Newton method, JuliaGrid provides the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function. This function is utilized iteratively until a stopping criterion is met, as demonstrated in the following code snippet:
 ```@example ACSETutorial
-for iteration = 1:20
+for iteration = 0:20
     stopping = increment!(system, analysis)
     if stopping < 1e-8
         break
@@ -914,6 +914,27 @@ Observing the precision matrix, we notice that it loses its diagonal form due to
 
 ---
 
+##### [The Gauss-Newton Algorithm](@id GaussNewtonAlgorithmTutorials)
+In summary, the Gauss-Raphson iterative algorithm for solving the AC state estimation follows these steps:
+
+|           |                                                       |                                                                                     |
+|:----------|:------------------------------------------------------|:------------------------------------------------------------------------------------|
+| 1.        | Initialize the iteration index                        | ``\nu = 0``                                                                         |
+| 2.        | Set the initial values for state variables            | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                        |
+| 3.        | Compute the measurement residuals                     | ``\mathbf r (\mathbf x^{(\nu)})``                                                   |
+| 4.        | Compute the gain matrix                               | ``\mathbf G (\mathbf x^{(\nu)})``                                                   |
+| 5.        | Compute the state variable increments                 | ``\mathbf \Delta \mathbf x^{(\nu)}``                                                |
+| 6.        | Check for convergence                                 | ``\Delta x_{\max} < \epsilon``                                                      |
+| 7.        | If the convergence criteria are met, stop the process |                                                                                     |
+| 8.        | Update the state variablesvalues                      | ``\mathbf{x}^{(\nu + 1)} = \mathbf{x}^{(\nu)} + \mathbf \Delta \mathbf{x}^{(\nu)}`` |
+| 9.        | Increase the iteration index                          | ``\nu := \nu + 1``                                                                  |
+| 10        | Repeat from step 3.                                   |                                                                                     |
+|           |                                                       |                                                                                     |
+
+The main computational effort is in step 5, which involves factorizing the gain matrix, and performing forward and backward substitutions to obtain the vector of increments.
+
+---
+
 ##### [Alternative Formulation](@id ACAlternativeFormulationTutorials)
 The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal method [aburbook; Sec. 3.2](@cite).
 
@@ -927,7 +948,7 @@ To address ill-conditioned situations arising from significant differences in me
 ```@example ACSETutorial
 analysis = gaussNewton(system, device, Orthogonal)
 
-for iteration = 1:20
+for iteration = 0:20
     stopping = increment!(system, analysis)
     if stopping < 1e-8
         break
