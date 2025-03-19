@@ -14,8 +14,8 @@ system30 = powerSystem(path * "case30test.m")
     reactiveLimit!(system14, analysis)
 
     analysis = newtonRaphson(system14)
-    analysis.method.iteration = iteration
     powerFlow!(system14, analysis)
+    analysis.method.iteration += iteration
 
     adjustAngle!(system14, analysis; slack = 1)
 
@@ -32,8 +32,8 @@ system30 = powerSystem(path * "case30test.m")
     @suppress reactiveLimit!(system30, analysis)
 
     analysis = newtonRaphson(system30)
-    analysis.method.iteration = iteration
     powerFlow!(system30, analysis)
+    analysis.method.iteration += iteration
 
     adjustAngle!(system30, analysis; slack = 1)
 
