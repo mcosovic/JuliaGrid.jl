@@ -90,7 +90,7 @@ include("stateEstimation/badData.jl")
 include("stateEstimation/observability.jl")
 export gaussNewton, acLavStateEstimation, increment!, stateEstimation!
 export pmuStateEstimation, pmuLavStateEstimation
-export dcStateEstimation, dcLavStateEstimation, chiTest!, residualTest!
+export dcStateEstimation, dcLavStateEstimation, chiTest, residualTest!
 export islandTopologicalFlow, islandTopological, restorationGram!, pmuPlacement, pmuPlacement!
 
 ########## Postprocessing ##########

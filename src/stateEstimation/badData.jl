@@ -558,7 +558,7 @@ function removeRow(A::SparseMatrixCSC{Float64, Int64}, idx::Int64)
 end
 
 """
-    chiTest!(system::PowerSystem, device::Measurement, analysis::StateEstimation;
+    chiTest(system::PowerSystem, device::Measurement, analysis::StateEstimation;
         confidence)
 
 The function performs a Chi-square bad data detection test. This test can be applied after
@@ -586,10 +586,10 @@ device = measurement("measurement14.h5")
 analysis = gaussNewton(system, device)
 solve!(system, analysis)
 
-bad = chiTest!(system, device, analysis; confidence = 0.96)
+bad = chiTest(system, device, analysis; confidence = 0.96)
 ```
 """
-function chiTest!(
+function chiTest(
     system::PowerSystem,
     ::Measurement,
     analysis::ACStateEstimation{GaussNewton{T}};
@@ -604,7 +604,7 @@ function chiTest!(
     return se.objective >= chi
 end
 
-function chiTest!(
+function chiTest(
     system::PowerSystem,
     ::Measurement,
     analysis::DCStateEstimation{WLS{T}};
@@ -622,7 +622,7 @@ function chiTest!(
     return objective >= chi
 end
 
-function chiTest!(
+function chiTest(
     system::PowerSystem,
     ::Measurement,
     analysis::PMUStateEstimation{WLS{T}};

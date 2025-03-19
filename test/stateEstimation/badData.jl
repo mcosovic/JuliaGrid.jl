@@ -28,7 +28,7 @@ system30 = powerSystem(path * "case30test.m")
         se = gaussNewton(system14, device)
         stateEstimation!(system14, se)
 
-        @test chiTest!(system14, device, se)
+        @test chiTest(system14, device, se)
 
         outlier = residualTest!(system14, device, se; threshold = 3.0)
         @test outlier.label == "Varmeter 4"
@@ -73,7 +73,7 @@ system30 = powerSystem(path * "case30test.m")
         se = gaussNewton(system14, device, Orthogonal)
         stateEstimation!(system14, se)
 
-        @test chiTest!(system14, device, se)
+        @test chiTest(system14, device, se)
 
         outlier = residualTest!(system14, device, se; threshold = 3.0)
         @test outlier.label == "PMU 10"
@@ -136,7 +136,7 @@ end
         se = pmuStateEstimation(system14, device)
         stateEstimation!(system14, se)
 
-        @test chiTest!(system14, device, se)
+        @test chiTest(system14, device, se)
 
         outlier = residualTest!(system14, device, se; threshold = 3.0)
         @test outlier.label == "PMU 2"
@@ -177,7 +177,7 @@ end
         se = pmuStateEstimation(system14, device, Orthogonal)
         stateEstimation!(system14, se)
 
-        @test chiTest!(system14, device, se)
+        @test chiTest(system14, device, se)
 
         outlier = residualTest!(system14, device, se; threshold = 3.0)
         @test outlier.label == "PMU 2"
@@ -248,7 +248,7 @@ end
         se = dcStateEstimation(system14, device)
         stateEstimation!(system14, se)
 
-        @test chiTest!(system14, device, se)
+        @test chiTest(system14, device, se)
 
         outlier = residualTest!(system14, device, se; threshold = 3.0)
         @test outlier.label == "Wattmeter 2"
@@ -285,7 +285,7 @@ end
         se = dcStateEstimation(system14, device, Orthogonal)
         stateEstimation!(system14, se)
 
-        @test chiTest!(system14, device, se)
+        @test chiTest(system14, device, se)
 
         outlier = residualTest!(system14, device, se; threshold = 3.0)
         @test outlier.label == "Wattmeter 2"
