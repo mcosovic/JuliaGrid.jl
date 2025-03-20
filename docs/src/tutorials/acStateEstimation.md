@@ -915,23 +915,23 @@ Observing the precision matrix, we notice that it loses its diagonal form due to
 ---
 
 ##### [The Gauss-Newton Algorithm](@id GaussNewtonAlgorithmTutorials)
-In summary, the Gauss-Raphson iterative algorithm for solving the AC state estimation follows these steps:
+In summary, the Gauss-Newton iterative algorithm for solving AC state estimation follows these steps:
 
-|           |                                                       |                                                                                     |
+| Step      | Description                                           | Expression                                                                          |
 |:----------|:------------------------------------------------------|:------------------------------------------------------------------------------------|
 | 1.        | Initialize the iteration index                        | ``\nu = 0``                                                                         |
-| 2.        | Set the initial values for state variables            | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                        |
+| 2.        | Set the initial state variable values                 | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                        |
 | 3.        | Compute the measurement residuals                     | ``\mathbf r (\mathbf x^{(\nu)})``                                                   |
 | 4.        | Compute the gain matrix                               | ``\mathbf G (\mathbf x^{(\nu)})``                                                   |
 | 5.        | Compute the state variable increments                 | ``\mathbf \Delta \mathbf x^{(\nu)}``                                                |
 | 6.        | Check for convergence                                 | ``\Delta x_{\max} < \epsilon``                                                      |
-| 7.        | If the convergence criteria are met, stop the process |                                                                                     |
-| 8.        | Update the state variablesvalues                      | ``\mathbf{x}^{(\nu + 1)} = \mathbf{x}^{(\nu)} + \mathbf \Delta \mathbf{x}^{(\nu)}`` |
+| 7.        | If the convergence criterion is met, stop the process |                                                                                     |
+| 8.        | Update the state variable values                      | ``\mathbf{x}^{(\nu + 1)} = \mathbf{x}^{(\nu)} + \mathbf \Delta \mathbf{x}^{(\nu)}`` |
 | 9.        | Increase the iteration index                          | ``\nu := \nu + 1``                                                                  |
 | 10        | Repeat from step 3.                                   |                                                                                     |
 |           |                                                       |                                                                                     |
 
-The main computational effort is in step 5, which involves factorizing the gain matrix, and performing forward and backward substitutions to obtain the vector of increments.
+The main computational effort is in step 5, which involves factorizing the gain matrix and performing forward and backward substitutions to obtain the vector of increments.
 
 ---
 
@@ -1109,6 +1109,7 @@ The function stores the computed powers in the rectangular coordinate system. It
 | Branch | [To-bus end flows](@ref BranchNetworkEquationsTutorials)      | ``\mathbf P_\mathrm{j} = [P_{ji}]``              | ``\mathbf Q_\mathrm{j} = [Q_{ji}]``              |
 | Branch | [Shunt elements](@ref BranchShuntElementsTutorials)           | ``\mathbf P_\mathrm{s} = [P_{\mathrm{s}ij}]``    | ``\mathbf Q_\mathrm{s} = [Q_{\mathrm{s}ij}]``    |
 | Branch | [Series elements](@ref BranchSeriesElementTutorials)          | ``\mathbf P_\mathrm{l} = [P_{\mathrm{l}ij}]``    | ``\mathbf Q_\mathrm{l} = [Q_{\mathrm{l}ij}]``    |
+|           |                                                            |                                                  |                                                  |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
@@ -1198,6 +1199,7 @@ The function stores the computed currents in the polar coordinate system. It cal
 | Branch | [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf I_\mathrm{i} = [I_{ij}]``           | ``\bm \psi_\mathrm{i} = [\psi_{ij}]``           |
 | Branch | [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf I_\mathrm{j} = [I_{ji}]``           | ``\bm \psi_\mathrm{j} = [\psi_{ji}]``           |
 | Branch | [Series elements](@ref BranchSeriesElementTutorials)       | ``\mathbf I_\mathrm{l} = [I_{\mathrm{l}ij}]`` | ``\bm \psi_\mathrm{l} = [\psi_{\mathrm{l}ij}]`` |
+|        |                                                            |                                               |                                                 |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).

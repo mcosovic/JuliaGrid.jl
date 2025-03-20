@@ -58,6 +58,7 @@ using JuliaGrid
 * [`Orthogonal`](@ref Orthogonal)
 
 ###### Bad Data Analysis
+* [`ChiTest`](@ref ChiTest)
 * [`ResidualTest`](@ref ResidualTest)
 
 ---
@@ -141,5 +142,6 @@ Orthogonal
 
 ## Bad Data Analysis
 ```@docs
+ChiTest
 ResidualTest
 ```

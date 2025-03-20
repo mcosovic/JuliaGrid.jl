@@ -55,25 +55,35 @@ stateEstimation!(system, analysis)
 ---
 
 ## [Chi-Squared Test](@id ChiTestTutorials)
-Next, we run the shi-squared test:
-```@repl BadData
-chiTest(system, device, analysis; confidence = 0.96)
+Next, we perform the chi-squared test to check for the presence of outliers:
+```@example BadData
+chi = chiTest(system, device, analysis; confidence = 0.96)
 ```
 
 At this stage, JuliaGrid uses the objective value obtained from the AC state estimation:
 ```math
 	f(\hat{\mathbf x}) = \sum_{i=1}^k\cfrac{[z_i - h_i(\hat{\mathbf x})]^2}{v_i},
 ```
-which can be accessed as:
+
+This value is stored in the `ChiTest` type as:
 ```@repl BadData
-analysis.method.objective
+chi.objective
 ```
 
-Next, retrieve the value from the Chi-squared distribution corresponding to the detection `confidence` and ``(k - s)`` degrees of freedom, where ``k`` is the number of measurement functions and ``s`` is the number of state variables. This provides the value of ``\chi^2_{p}(k - s)``. Then, the bad data test can be defined as:
+Next, retrieve the value from the Chi-squared distribution corresponding to the detection `confidence` and ``(k - s)`` degrees of freedom, where ``k`` is the number of measurement functions and ``s`` is the number of state variables. This provides the value of ``\chi^2_{p}(k - s)``:
+```@repl BadData
+chi.treshold
+```
+
+Then, the bad data test can be defined as:
 ```math
 	f(\hat{\mathbf x}) \geq \chi^2_{p}(k - s).
 ```
-If the inequality is satisfied, bad data is suspected in the measurement set, and the function returns `true`; otherwise, it returns `false`.
+
+If the inequality is satisfied, bad data is suspected in the measurement set:
+```@repl BadData
+chi.detect
+```
 
 ---
 

@@ -50,13 +50,19 @@ stateEstimation!(system, analysis; verbose = 1)
 nothing # hide
 ```
 
-Next, we are interested in detecting bad data in the measurement set, so let us use the Chi-squared test:
-```@repl ACSEWLS
-chiTest(system, device, analysis)
+Next, we aim to detect bad data in the measurement set using the Chi-squared test:
+```@example ACSEWLS
+chi = chiTest(system, device, analysis)
 nothing # hide
 ```
 
-As seen, the Chi-squared test returns `true`, indicating that there are outliers in the measurement set. It is now advisable to proceed with the largest normalized residual test. We note that the same test can be performed for DC state estimation, as well as for state estimation using only PMUs.
+We obtained the detection flag for bad data:
+```@repl ACSEWLS
+chi.detect
+nothing # hide
+```
+
+It indicates the presence of outliers in the measurement set. At this point, it is advisable to proceed with the largest normalized residual test. The same test can also be performed for DC state estimation, as well as for state estimation using only PMUs.
 
 ---
 

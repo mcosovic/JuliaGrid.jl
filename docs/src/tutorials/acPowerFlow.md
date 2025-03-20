@@ -78,6 +78,7 @@ To solve these equations, it is necessary to specify two known variables. Althou
 | Demand           | 1         | ``P_i``, ``Q_i``      | ``V_i``, ``\theta_i`` |
 | Generator        | 2         | ``P_i``, ``V_i``      | ``Q_i``, ``\theta_i`` |
 | Slack            | 3         | ``V_i``, ``\theta_i`` | ``P_i``, ``Q_i``      |
+|                  |           |                       |                       |
 
 Consequently, JuliaGrid operates with sets ``\mathcal{N}_\mathrm{pq}`` and ``\mathcal{N}_\mathrm{pv}`` that contain demand and generator buses, respectively, and exactly one slack bus in the set ``\mathcal{N}_\mathrm{sb}``. The bus types are stored in the variable:
 ```@repl PowerFlowSolution
@@ -326,13 +327,13 @@ while non-diagonal elements of the Jacobian sub-matrices are:
 ---
 
 ##### [The Newton-Raphson Algorithm](@id NewtonRaphsonAlgorithmTutorials)
-In summary, the Newton-Raphson iterative algorithm for solving the AC power flow follows these steps:
+In summary, the Newton-Raphson iterative algorithm for solving AC power flow follows these steps:
 
-|           |                                                                 |                                                                                          |
+| Step      | Description                                                     | Expression                                                                               |
 |:----------|:----------------------------------------------------------------|:-----------------------------------------------------------------------------------------|
 | 1.        | Initialize the iteration index                                  | ``\nu = 0``                                                                              |
-| 2.        | Set the initial values for bus voltage magnitudes and angles    | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                             |
-| 3.        | Compute the mismatches for active and reactive power injections | ``\mathbf f (\mathbf{x}^{(\nu)})``                                                       |
+| 2.        | Set the initial bus voltage magnitudes and angles               | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                             |
+| 3.        | Compute mismatches for active and reactive power injections     | ``\mathbf f (\mathbf{x}^{(\nu)})``                                                       |
 | 4.        | Check for convergence                                           | ``f_{P\max}(\mathbf x^{(\nu)}) < \epsilon``, ``f_{Q\max}(\mathbf x^{(\nu)}) < \epsilon`` |
 | 5.        | If the convergence criteria are met, stop the process           |                                                                                          |
 | 6.        | Compute the voltage magnitude and angle increments              | ``\mathbf \Delta \mathbf{x}^{(\nu)}``                                                    |
@@ -649,13 +650,13 @@ Again, it is important to note that only the voltage magnitudes of demand buses 
 ---
 
 ##### The Fast Newton-Raphson Algorithm
-In summary, the fast Newton-Raphson iterative algorithm for solving the AC power flow follows these steps:
+In summary, the fast Newton-Raphson iterative algorithm for solving AC power flow follows these steps:
 
-|           |                                                                 |                                                                                                                   |
+| Step      | Description                                                     | Expression                                                                                                        |
 |:----------|:----------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------|
 | 1.        | Initialize the iteration index                                  | ``\nu = 0``                                                                                                       |
-| 2.        | Set the initial values for bus voltage magnitudes and angles    | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                                                      |
-| 3.        | Compute the mismatches for active and reactive power injections | ``\mathbf{h}_\mathrm{P}(\mathbf x^{(\nu)})``, ``\mathbf{h}_\mathrm{Q}(\mathbf x^{(\nu)})``                        |
+| 2.        | Set the initial bus voltage magnitudes and angles               | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                                                      |
+| 3.        | Compute mismatches for active and reactive power injections     | ``\mathbf{h}_\mathrm{P}(\mathbf x^{(\nu)})``, ``\mathbf{h}_\mathrm{Q}(\mathbf x^{(\nu)})``                        |
 | 4.        | Check for convergence                                           | ``h_{P\max}(\mathbf x^{(\nu)}) < \epsilon``, ``h_{Q\max}(\mathbf x^{(\nu)}) < \epsilon``                          |
 | 5.        | If the convergence criteria are met, stop the process           |                                                                                                                   |
 | 6.        | Compute the voltage angle increments                            | ``\mathbf \Delta \mathbf x_\mathrm{a}^{(\nu)}``                                                                   |
@@ -769,21 +770,21 @@ JuliaGrid stores the final results in vectors that contain all bus voltage magni
 ---
 
 ##### The Gauss-Seidel Algorithm
-In summary, the Gauss-Seidel iterative algorithm for solving the AC power flow follows these steps:
+In summary, the Gauss-Seidel iterative algorithm for solving AC power flow follows these steps:
 
-|           |                                                                  |                                                                                                                   |
-|:----------|:-----------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------|
-| 1.        | Initialize the iteration index                                   | ``\nu = 0``                                                                                                       |
-| 2.        | Set the initial values for bus voltage magnitudes and angles     | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                                                      |
-| 3.        | Compute the mismatches for active and reactive power injections  | ``f_{P_i}(\mathbf x^{(\nu)})``, ``f_{Q_i}(\mathbf x^{(\nu)})``                        |
-| 4.        | Check for convergence                                            | ``h_{P\max}(\mathbf x^{(\nu)}) < \epsilon``, ``h_{Q\max}(\mathbf x^{(\nu)}) < \epsilon``                     |
-| 5.        | If the convergence criteria are met, stop the process            |                                                                                                 |
-| 6.        | Compute the voltages for demand buses                            | ``\bar{V}_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pv}``   |
-| 7.        | Compute the reactive power injections for generator buses        | ``Q_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pq}`` |
-| 8.        | Update and apply correction the bus voltages for generator buses | ``\bar{V}_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pq}``     |
-| 9.        | Increase the iteration index                                     | ``\nu := \nu + 1``                                                                                                |
-| 10.       | Repeat from step 3.                                              |                                                                                                                   |
-|           |                                                                  |                                                                                                                   |
+| Step      | Description                                                      | Expression                                                                               |
+|:----------|:-----------------------------------------------------------------|:-----------------------------------------------------------------------------------------|
+| 1.        | Initialize the iteration index                                   | ``\nu = 0``                                                                              |
+| 2.        | Set the initial bus voltage magnitudes and angles                | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                             |
+| 3.        | Compute mismatches for active and reactive power injections      | ``f_{P_i}(\mathbf x^{(\nu)})``, ``f_{Q_i}(\mathbf x^{(\nu)})``                           |
+| 4.        | Check for convergence                                            | ``h_{P\max}(\mathbf x^{(\nu)}) < \epsilon``, ``h_{Q\max}(\mathbf x^{(\nu)}) < \epsilon`` |
+| 5.        | If the convergence criteria are met, stop the process            |                                                                                          |
+| 6.        | Compute voltages for demand buses                                | ``\bar{V}_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pv}``                     |
+| 7.        | Compute the reactive power injections for generator buses        | ``Q_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pq}``                           |
+| 8.        | Update and apply correction the bus voltages for generator buses | ``\bar{V}_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pq}``                     |
+| 9.        | Increase the iteration index                                     | ``\nu := \nu + 1``                                                                       |
+| 10.       | Repeat from step 3.                                              |                                                                                          |
+|           |                                                                  |                                                                                          |
 
 The computational effort per iteration is negligible, while the main bottleneck is the large number of iterations required for convergence.
 
@@ -808,6 +809,7 @@ The function stores the computed powers in the rectangular coordinate system. It
 | Branch    | [Shunt elements](@ref BranchShuntElementsTutorials)         | ``\mathbf P_\mathrm{s} = [P_{\mathrm{s}ij}]``  | ``\mathbf Q_\mathrm{s} = [Q_{\mathrm{s}ij}]``  |
 | Branch    | [Series elements](@ref BranchSeriesElementTutorials)        | ``\mathbf P_\mathrm{l} = [P_{\mathrm{l}ij}]``  | ``\mathbf Q_\mathrm{l} = [Q_{\mathrm{l}ij}]``  |
 | Generator | [Outputs](@ref GeneratorPowerOutputsManual)                 | ``\mathbf P_\mathrm{g} = [P_{\mathrm{g}i}]``   | ``\mathbf Q_\mathrm{g} = [Q_{\mathrm{g}i}]``   |
+|           |                                                             |                                                |                                                |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
@@ -926,6 +928,7 @@ The function stores the computed currents in the polar coordinate system. It cal
 | Branch    | [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf I_\mathrm{i} = [I_{ij}]``           | ``\bm \psi_\mathrm{i} = [\psi_{ij}]``           |
 | Branch    | [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf I_\mathrm{j} = [I_{ji}]``           | ``\bm \psi_\mathrm{j} = [\psi_{ji}]``           |
 | Branch    | [Series elements](@ref BranchSeriesElementTutorials)       | ``\mathbf I_\mathrm{l} = [I_{\mathrm{l}ij}]`` | ``\bm \psi_\mathrm{l} = [\psi_{\mathrm{l}ij}]`` |
+|           |                                                            |                                               |                                                 |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).

@@ -553,6 +553,7 @@ The function stores the computed powers in the rectangular coordinate system. It
 | Branch | [To-bus end flows](@ref BranchNetworkEquationsTutorials)       | ``\mathbf P_\mathrm{j} = [P_{ji}]``              | ``\mathbf Q_\mathrm{j} = [Q_{ji}]``              |
 | Branch | [Shunt elements](@ref BranchShuntElementsTutorials)            | ``\mathbf P_\mathrm{s} = [P_{\mathrm{s}ij}]``    | ``\mathbf Q_\mathrm{s} = [P_{\mathrm{s}ij}]``    |
 | Branch | [Series elements](@ref BranchSeriesElementTutorials)           | ``\mathbf P_\mathrm{l} = [P_{\mathrm{l}ij}]``    | ``\mathbf Q_\mathrm{l} = [Q_{\mathrm{l}ij}]``    |
+|        |                                                                |                                                  |                                                  |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
@@ -642,6 +643,7 @@ The function stores the computed currents in the polar coordinate system. It cal
 | Branch | [From-bus end flows](@ref BranchNetworkEquationsTutorials) | ``\mathbf I_\mathrm{i} = [I_{ij}]``           | ``\bm \psi_\mathrm{i} = [\psi_{ij}]``           |
 | Branch | [To-bus end flows](@ref BranchNetworkEquationsTutorials)   | ``\mathbf I_\mathrm{j} = [I_{ji}]``           | ``\bm \psi_\mathrm{j} = [\psi_{ji}]``           |
 | Branch | [Series elements](@ref BranchSeriesElementTutorials)       | ``\mathbf I_\mathrm{l} = [I_{\mathrm{l}ij}]`` | ``\bm \psi_\mathrm{l} = [\psi_{\mathrm{l}ij}]`` |
+|        |                                                            |                                               |                                                 |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
