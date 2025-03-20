@@ -139,13 +139,12 @@ end
 
 function addGenerator!(
     system::PowerSystem,
-    analysis::ACPowerFlow;
+    ::ACPowerFlow;
     label::IntStrMiss = missing,
     bus::IntStrMiss,
     kwargs...
 )
     addGenerator!(system; label, bus, kwargs...)
-    analysis.method.iteration = 0
 end
 
 function addGenerator!(
@@ -371,7 +370,6 @@ function updateGenerator!(
         idx = system.bus.supply.generator[idxBus][1]
         analysis.voltage.magnitude[idxBus] = gen.voltage.magnitude[idx]
     end
-    analysis.method.iteration = 0
 end
 
 function updateGenerator!(

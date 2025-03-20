@@ -602,7 +602,7 @@ function chiTest(
     df = lastindex(se.type) - count(==(0), se.type) - 2 * system.bus.number + 1
     chi = quantile(Chisq(df), confidence)
 
-    return se.objective >= chi
+    return ChiTest(se.objective >= chi, chi, se.objective)
 end
 
 function chiTest(
@@ -620,7 +620,7 @@ function chiTest(
     df = se.inservice - system.bus.number + 1
     chi = quantile(Chisq(df), confidence)
 
-    return objective >= chi
+    return ChiTest(objective >= chi, chi, objective)
 end
 
 function chiTest(
@@ -642,5 +642,5 @@ function chiTest(
     df = se.inservice - 2 * system.bus.number
     chi = quantile(Chisq(df), confidence)
 
-    return objective >= chi
+    return ChiTest(objective >= chi, chi, objective)
 end

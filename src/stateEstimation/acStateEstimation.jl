@@ -1091,7 +1091,6 @@ function setInitialPoint!(system::PowerSystem, analysis::ACStateEstimation)
         analysis.voltage.magnitude[i] = system.bus.voltage.magnitude[i]
         analysis.voltage.angle[i] = system.bus.voltage.angle[i]
     end
-    analysis.method.iteration = 0
 end
 
 function setInitialPoint!(source::AC, target::ACStateEstimation)
@@ -1102,7 +1101,6 @@ function setInitialPoint!(source::AC, target::ACStateEstimation)
         target.voltage.magnitude[i] = source.voltage.magnitude[i]
         target.voltage.angle[i] = source.voltage.angle[i]
     end
-    target.method.iteration = 0
 end
 
 function setInitialPoint!(source::DC, target::ACStateEstimation)
@@ -1111,7 +1109,6 @@ function setInitialPoint!(source::DC, target::ACStateEstimation)
     @inbounds for i = 1:length(source.voltage.angle)
         target.voltage.angle[i] = source.voltage.angle[i]
     end
-    target.method.iteration = 0
 end
 
 function oneIndices!(

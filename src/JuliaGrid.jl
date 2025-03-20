@@ -2,12 +2,12 @@ module JuliaGrid
 
 using JuMP
 
-import LinearAlgebra: lu, lu!, ldlt, ldlt!, qr, ldiv, ldiv!, I, Factorization
-import SparseArrays: SparseMatrixCSC, sparse, spzeros, spdiagm, dropzeros!, nzrange, nnz, UMFPACK, SPQR, CHOLMOD
+import LinearAlgebra: lu, lu!, ldlt, ldlt!, qr, ldiv, ldiv!, diag, I, Factorization
+import SparseArrays: sparse, spzeros, spdiagm, dropzeros!, nzrange, nnz, SparseMatrixCSC, UMFPACK, SPQR, CHOLMOD
 
-import HDF5: File, Group, Dataset, h5open, h5read, readmmap, attrs, attributes
+import HDF5: h5open, h5read, readmmap, attrs, attributes, File, Group, Dataset
 import OrderedCollections: OrderedDict
-import Printf: Format, format, @printf
+import Printf: format, @printf, Format
 import Random: randperm, shuffle, shuffle!
 import Distributions: quantile, Chisq
 

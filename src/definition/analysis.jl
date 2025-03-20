@@ -4,7 +4,7 @@ export ACOptimalPowerFlow, DCOptimalPowerFlow
 export ACStateEstimation, GaussNewton, LAV
 export DCStateEstimation, WLS
 export PMUStateEstimation
-export Island, PMUPlacement, ResidualTest
+export Island, PMUPlacement, ResidualTest, ChiTest
 
 """
     Analysis
@@ -361,25 +361,6 @@ mutable struct DCOptimalPowerFlow <: DC
 end
 
 """
-    ResidualTest
-
-A composite type built using [`residualTest!`](@ref residualTest!) function, which stores
-results from the bad data processing.
-
-# Fields
-- `detect::Bool`: Flag indicating bad data detection.
-- `maxNormalizedResidual::Float64`: The maximum value of the normalized residual.
-- `label::IntStr`: The label of the measurement suspected to be an outlier.
-- `index::Int64`: The index of the outlier measurement within the model.
-"""
-mutable struct ResidualTest
-    detect::Bool
-    maxNormalizedResidual::Float64
-    label::IntStr
-    index::Int64
-end
-
-"""
     WLS{T <: Union{Normal, Orthogonal}}
 
 A composite type representing a linear weighted least-squares state estimation model.
@@ -584,4 +565,40 @@ struct ACStateEstimation{T} <: AC where T <: Union{GaussNewton, LAV}
     power::ACPower
     current::ACCurrent
     method::T
+end
+
+"""
+    ResidualTest
+
+A composite type built using [`residualTest!`](@ref residualTest!) function, which stores
+results from the bad data processing.
+
+# Fields
+- `detect::Bool`: Flag indicating bad data detection.
+- `maxNormalizedResidual::Float64`: The maximum value of the normalized residual.
+- `label::IntStr`: The label of the measurement suspected to be an outlier.
+- `index::Int64`: The index of the outlier measurement within the model.
+"""
+mutable struct ResidualTest
+    detect::Bool
+    maxNormalizedResidual::Float64
+    label::IntStr
+    index::Int64
+end
+
+"""
+    ChiTest
+
+A composite type constructed using the [`chiTest`](@ref chiTest) function, which stores
+results from the Chi-squared bad data detection test.
+
+# Fields
+- `detect::Bool`: Flag indicating whether bad data was detected.
+- `threshold::Float64`: Chi-squared critical value.
+- `objective::Float64`: Objective function value from WLS state estimation.
+"""
+mutable struct ChiTest
+    detect::Bool
+    treshold::Float64
+    objective::Float64
 end

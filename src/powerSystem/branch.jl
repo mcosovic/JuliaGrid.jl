@@ -169,7 +169,6 @@ function addBranch!(
 ) where T <: Union{NewtonRaphson, GaussSeidel}
 
     addBranch!(system; label, from, to, kwargs...)
-    analysis.method.iteration = 0
 end
 
 function addBranch!(
@@ -185,7 +184,6 @@ function addBranch!(
     if system.branch.layout.status[system.branch.number] == 1
         fastNewtonRaphsonJacobian(system, analysis, system.branch.number, 1)
     end
-    analysis.method.iteration = 0
 end
 
 function addBranch!(
@@ -402,7 +400,6 @@ function updateBranch!(
 ) where T <: Union{NewtonRaphson, GaussSeidel}
 
     updateBranch!(system; label, kwargs...)
-    analysis.method.iteration = 0
 end
 
 function updateBranch!(
@@ -422,7 +419,6 @@ function updateBranch!(
     if system.branch.layout.status[idx] == 1
         fastNewtonRaphsonJacobian(system, analysis, idx, 1)
     end
-    analysis.method.iteration = 0
 end
 
 function updateBranch!(system::PowerSystem, ::DCPowerFlow; label::IntStrMiss, kwargs...)
