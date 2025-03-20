@@ -23,21 +23,21 @@ fmt2 = Dict(&quot;From-Bus Power&quot; =&gt; &quot;%.2f&quot;, &quot;To-Bus Powe
   Reactive Power:                            4
 Number of state variables:                   5
 
-Iteration   Active Mismatch   Reactive Mismatch
-        0        4.6182e-01          9.6314e-01
-        1        1.7775e-01          3.3630e-02
-        2        1.9163e-02          3.4009e-03
-        3        2.4457e-03          4.0033e-04
-        4        3.0636e-04          4.8632e-05
-        5        3.7658e-05          5.9215e-06
-        6        4.5927e-06          7.2015e-07
-        7        5.5865e-07          8.7518e-08
-        8        6.7895e-08          1.0633e-08
-        9        8.2494e-09          1.2917e-09
+Iteration   Max Active Mismatch   Max Reactive Mismatch
+        0        4.61818182e-01          9.63142262e-01
+        1        1.77748104e-01          3.36304103e-02
+        2        1.91631619e-02          3.40094647e-03
+        3        2.44565654e-03          4.00326340e-04
+        4        3.06356277e-04          4.86320320e-05
+        5        3.76577214e-05          5.92151978e-06
+        6        4.59272704e-06          7.20154616e-07
+        7        5.58645482e-07          8.75181686e-08
+        8        6.78952866e-08          1.06328286e-08
+        9        8.24944624e-09          1.29169581e-09
 
-                     Minimum Value   Maximum Value
-Magnitude Increment:   -5.7490e-09      2.8740e-09
-Angle Increment:       -4.9430e-09     -1.5264e-09
+                       Minimum Value   Maximum Value
+Magnitude Increment:     -5.7490e-09      2.8740e-09
+Angle Increment:         -4.9430e-09     -1.5264e-09
 
 EXIT: The solution was found using the fast Newton-Raphson method in 9 iterations.</code></pre><p>Once the AC power flow is solved, we can analyze the results related to the buses. For instance:</p><pre><code class="language-julia hljs">printBusData(system, fnr; show = show1, fmt = fmt1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|------------------------------------------------------------------------------------------|
 | Bus Data                                                                                 |
@@ -128,4 +128,4 @@ updateGenerator!(system, fnr; label = &quot;Generator 2&quot;, active = 23.1, re
     <p style="text-align: center; margin-top: -5px;">
     Figure 4: Power flows in the 4-bus power system with modified network topology.
     </p>
-</div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../powerSystemDatasets/">« Power System Datasets</a><a class="docs-footer-nextpage" href="../dcPowerFlow/">DC Power Flow »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.9.0 on <span class="colophon-date" title="Wednesday 19 March 2025 15:56">Wednesday 19 March 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../powerSystemDatasets/">« Power System Datasets</a><a class="docs-footer-nextpage" href="../dcPowerFlow/">DC Power Flow »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.9.0 on <span class="colophon-date" title="Thursday 20 March 2025 12:38">Thursday 20 March 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
