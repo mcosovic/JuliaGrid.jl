@@ -366,11 +366,11 @@ end
 function printSolver(analysis::ACPowerFlow, delP::Float64, delQ::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if analysis.method.iteration % 10 == 0
-            println("Iteration   Active Mismatch   Reactive Mismatch")
+            println("Iteration   Max Active Mismatch   Max Reactive Mismatch")
         end
         print(format(Format("%*i "), 9, analysis.method.iteration))
-        print(format(Format("%*.4e"), 17, delP))
-        print(format(Format("%*.4e\n"), 20, delQ))
+        print(format(Format("%*.8e"), 21, delP))
+        print(format(Format("%*.8e\n"), 24, delQ))
     end
 end
 
@@ -383,14 +383,14 @@ function printSolver(
     if verbose == 2 || verbose == 3
         mag, ang = minmaxIncrement(system, analysis)
 
-        print("\n" * " "^21 * "Minimum Value   Maximum Value")
+        print("\n" * " "^23 * "Minimum Value   Maximum Value")
 
         print("\nMagnitude Increment:")
-        print(format(Format("%*.4e"), 14, mag[1]))
+        print(format(Format("%*.4e"), 16, mag[1]))
         print(format(Format("%*.4e\n"), 16, mag[2]))
 
         print("Angle Increment:")
-        print(format(Format("%*.4e"), 18, ang[1]))
+        print(format(Format("%*.4e"), 20, ang[1]))
         print(format(Format("%*.4e\n\n"), 16, ang[2]))
     end
 end
@@ -414,12 +414,12 @@ end
 function printSolver(analysis::ACStateEstimation, inc::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if analysis.method.iteration % 10 == 0
-            println("Iteration   Maximum Increment   Objective Value")
+            println("Iteration   Objective Function Value   Max Absolute Increment")
         end
 
         print(format(Format("%*i "), 9, analysis.method.iteration))
-        print(format(Format("%*.4e"), 19, inc))
-        print(format(Format("%*.8e\n"), 18, analysis.method.objective))
+        print(format(Format("%*.12e"), 26, analysis.method.objective))
+        print(format(Format("%*.8e\n"), 25, inc))
     end
 end
 
@@ -427,25 +427,18 @@ function printSolver(system::PowerSystem, analysis::ACStateEstimation, verbose::
     if verbose == 2 || verbose == 3
         slack = copy(analysis.method.increment[system.bus.layout.slack])
 
-        analysis.method.increment[system.bus.layout.slack] = -Inf
-        angmax = maximum(analysis.method.increment[1:system.bus.number])
+        maxres, idxres = findmax(abs, analysis.method.residual)
+        maxwrss, idxwrss = findmax(analysis.method.residual.^2 .* diag(analysis.method.precision))
 
-        analysis.method.increment[system.bus.layout.slack] = Inf
-        angmin = minimum(analysis.method.increment[1:system.bus.number])
+        print("\n" * " "^21 * "Measurement   Maximum Value")
 
-        analysis.method.increment[system.bus.layout.slack] = slack
+        print("\nAbsolute Residual:")
+        print(format(Format("%*i"), 14, idxres))
+        print(format(Format("%*.4e\n"), 16, maxres))
 
-        mag = extrema(analysis.method.increment[(system.bus.number + 1):end])
-
-        print("\n" * " "^21 * "Minimum Value   Maximum Value")
-
-        print("\nMagnitude Increment:")
-        print(format(Format("%*.4e"), 14, mag[1]))
-        print(format(Format("%*.4e\n"), 16, mag[2]))
-
-        print("Angle Increment:")
-        print(format(Format("%*.4e"), 18, angmin))
-        print(format(Format("%*.4e\n\n"), 16, angmax))
+        print("Objective Value:")
+        print(format(Format("%*i"), 16, idxwrss))
+        print(format(Format("%*.4e\n\n"), 16, maxwrss))
     end
 end
 
