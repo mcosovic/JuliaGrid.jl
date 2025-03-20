@@ -2,7 +2,7 @@
 This example utilizes the power system shown in Figure 1. Similar to the AC optimal power flow, we adjust constraints and modify the topology to highlight JuliaGrid’s ability to efficiently handle such scenarios.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/acOptimalPowerFlow//4bus.svg" width="400"/>
+    <img src="../../assets/examples/acOptimalPowerFlow//4bus.svg" width="400" class="my-svg"/>
     <p>Figure 1: The 4-bus power system.</p>
 </div>
 &nbsp;
@@ -129,7 +129,7 @@ printBranchData(system, analysis; fmt)
 Thus, we obtained the active power flows, as illustrated in Figure 2.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/dcOptimalPowerFlow/4bus_base.svg" width="450"/>
+    <img src="../../assets/examples/dcOptimalPowerFlow/4bus_base.svg" width="450" class="my-svg"/>
     <p>Figure 2: Active power flows in the 4-bus power system for the base case scenario.</p>
 </div>
 ```
@@ -167,7 +167,7 @@ printBranchData(system, analysis; fmt)
 The obtained results allow us to illustrate the active power flows in Figure 3.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/dcOptimalPowerFlow/4bus_demand.svg" width="450"/>
+    <img src="../../assets/examples/dcOptimalPowerFlow/4bus_demand.svg" width="450" class="my-svg"/>
     <p>Figure 3: Active power flows in the 4-bus power system with modified demands.</p>
 </div>
 ```
@@ -202,7 +202,7 @@ printBranchData(system, analysis; fmt)
 Figure 4 illustrates the power flows for this scenario. Compared to the previous scenario, Figure 4 shows that `Branch 2` has significantly lower active power flow, while `Branch 3` has become considerably more loaded.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/dcOptimalPowerFlow/4bus_cost.svg" width="450"/>
+    <img src="../../assets/examples/dcOptimalPowerFlow/4bus_cost.svg" width="450" class="my-svg"/>
     <p>Figure 4: Active power flows in the 4-bus power system with modified generator costs.</p>
 </div>
 ```
@@ -236,7 +236,7 @@ printBranchData(system, analysis; fmt)
 Based on the obtained results, we can illustrate the power flows in Figure 5.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/dcOptimalPowerFlow/4bus_flow.svg" width="450"/>
+    <img src="../../assets/examples/dcOptimalPowerFlow/4bus_flow.svg" width="450" class="my-svg"/>
     <p>Figure 5: Active power flows in the 4-bus power system with added branch flow constraints.</p>
 </div>
 ```
@@ -269,7 +269,7 @@ printBranchData(system, analysis; fmt)
 Figure 6 illustrates these results under the outage of `Branch 2`.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/dcOptimalPowerFlow/4bus_service.svg" width="450"/>
+    <img src="../../assets/examples/dcOptimalPowerFlow/4bus_service.svg" width="450" class="my-svg"/>
     <p>Figure 6: Active power flows in the 4-bus power system with modified network topology.</p>
 </div>
 ```

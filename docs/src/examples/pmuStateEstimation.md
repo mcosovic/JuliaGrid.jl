@@ -3,7 +3,7 @@ This example examines a 6-bus power system, illustrated in Figure 1. The goal is
 
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/pmuStateEstimation/6bus.svg" width="360"/>
+    <img src="../../assets/examples/pmuStateEstimation/6bus.svg" width="360" class="my-svg"/>
     <p>Figure 1: The 6-bus power system.</p>
 </div>
 &nbsp;
@@ -78,7 +78,7 @@ If users choose to generate phasor measurement values using optimal power flow o
 Hence, Figure 2 illustrates the phasor measurement configuration, which includes bus voltage and branch current phasor measurements.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/pmuStateEstimation/6bus_phasor.svg" width="340"/>
+    <img src="../../assets/examples/pmuStateEstimation/6bus_phasor.svg" width="340" class="my-svg"/>
     <p>Figure 2: The 6-bus power system with phasor measurement configuration.</p>
 </div>
 &nbsp;
@@ -101,7 +101,7 @@ nothing # hide
 AC power flow analysis requires generator and load data. The system configuration is shown in Figure 3.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/pmuStateEstimation/6bus_acpf.svg" width="450"/>
+    <img src="../../assets/examples/pmuStateEstimation/6bus_acpf.svg" width="450" class="my-svg"/>
     <p>Figure 3: The 6-bus power system with generators and loads.</p>
 </div>
 &nbsp;

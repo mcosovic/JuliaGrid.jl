@@ -2,7 +2,7 @@
 DC power flow provides an approximate solution compared to AC power flow. We use the same power system model as in the AC power flow analysis, shown in Figure 1, to perform several DC power flow simulations. These simulations represent quasi-steady-state conditions where the system undergoes parameter and topology changes.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/acPowerFlow/4bus.svg" width="400"/>
+    <img src="../../assets/examples/acPowerFlow/4bus.svg" width="400" class="my-svg"/>
     <p>Figure 1: The 4-bus power system.</p>
 </div>
 &nbsp;
@@ -92,7 +92,7 @@ printBranchData(system, analysis)
 Thus, using bus and branch data, we obtained the active power flows, as illustrated in Figure 2.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/dcPowerFlow/4bus_base.svg" width="450"/>
+    <img src="../../assets/examples/dcPowerFlow/4bus_base.svg" width="450" class="my-svg"/>
     <p>Figure 2: Active power flows in the 4-bus power system for the base case scenario.</p>
 </div>
 &nbsp;
@@ -129,7 +129,7 @@ printBranchData(system, analysis)
 Compared to the base case, the directions of power flows remain unchanged, but the amounts of active power differ, as shown in Figure 3.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/dcPowerFlow/4bus_power.svg" width="400"/>
+    <img src="../../assets/examples/dcPowerFlow/4bus_power.svg" width="400" class="my-svg"/>
     <p>Figure 3: Active power flows in the 4-bus power system with modified supplies and demands.</p>
 </div>
 ```
@@ -158,7 +158,7 @@ printBranchData(system, analysis)
 Finally, Figure 4 illustrates the active power flows in the case of a `Branch 3` outage.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/dcPowerFlow/4bus_service.svg" width="400"/>
+    <img src="../../assets/examples/dcPowerFlow/4bus_service.svg" width="400" class="my-svg"/>
     <p>Figure 4: Active power flows in the 4-bus power system with modified network topology.</p>
 </div>
 ```

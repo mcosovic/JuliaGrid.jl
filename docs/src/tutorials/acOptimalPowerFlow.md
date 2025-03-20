@@ -145,15 +145,15 @@ Typically, cost functions are represented as linear, quadratic, or cubic, as sho
 ```@raw html
 <div class="image-container">
     <div class="image-item-three">
-        <img src="../../assets/cost_function_linear.svg" width="85%"/>
+        <img src="../../assets/tutorials/acOptimalPowerFlow/cost_function_linear.svg" width="85%" class="my-svg"/>
         <p>(a) The linear function.</p>
     </div>
     <div class="image-item-three">
-        <img src="../../assets/cost_function_quadratic.svg" width="85%"/>
+        <img src="../../assets/tutorials/acOptimalPowerFlow/cost_function_quadratic.svg" width="85%" class="my-svg"/>
         <p>(b) The quadratic function.</p>
     </div>
     <div class="image-item-three">
-        <img src="../../assets/cost_function_cubic.svg" width="85%"/>
+        <img src="../../assets/tutorials/acOptimalPowerFlow/cost_function_cubic.svg" width="85%" class="my-svg"/>
         <p>(c) The cubic function.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
@@ -181,15 +181,15 @@ The second option for defining cost functions in the AC optimal power flow is to
 ```@raw html
 <div class="image-container">
     <div class="image-item-three">
-        <img src="../../assets/cost_function_piecewise_one.svg" width="85%"/>
+        <img src="../../assets/tutorials/acOptimalPowerFlow/cost_function_piecewise_one.svg" width="85%" class="my-svg"/>
         <p>(a) One-segment function.</p>
     </div>
     <div class="image-item-three">
-        <img src="../../assets/cost_function_piecewise_two.svg" width="85%"/>
+        <img src="../../assets/tutorials/acOptimalPowerFlow/cost_function_piecewise_two.svg" width="85%" class="my-svg"/>
         <p>(b) Two-segment function.</p>
     </div>
     <div class="image-item-three">
-        <img src="../../assets/cost_function_piecewise_three.svg" width="85%"/>
+        <img src="../../assets/tutorials/acOptimalPowerFlow/cost_function_piecewise_three.svg" width="85%" class="my-svg"/>
         <p>(c) Three-segment function.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
@@ -462,7 +462,7 @@ print(analysis.method.constraint.capability.reactive)
 These capability limits of the generators define the feasible region, represented as a gray area in Figure 3, which forms the solution space for the active and reactive output powers of the generators.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/pq_curve.svg" width="350"/>
+    <img src="../../assets/tutorials/acOptimalPowerFlow/pq_curve.svg" width="350" class="my-svg"/>
     <p>Figure 3: Feasible region defined by power capability constraints.</p>
 </div>
 &nbsp;
@@ -471,7 +471,7 @@ These capability limits of the generators define the feasible region, represente
 However, this representation might not be the most accurate depiction of the generator's output power behavior. In reality, there exists a tradeoff between the active and reactive power outputs of the generators [zimmerman2016matpower](@cite). Specifically, when a generator operates at its maximum active power ``P_{\mathrm{g}i}^\mathrm{max}``, it may not be able to produce the maximum ``Q_{\mathrm{g}i}^\mathrm{max}`` or minimum ``Q_{\mathrm{g}i}^\mathrm{min}`` reactive power. To capture this tradeoff, we introduce the ability to include additional upper and lower constraints on the feasible region, leading to its reduction as shown in Figure 4.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/pq_curve_sloped.svg" width="350"/>
+    <img src="../../assets/tutorials/acOptimalPowerFlow/pq_curve_sloped.svg" width="350" class="my-svg"/>
     <p>Figure 4: Feasible region defined by power capability and boundary constraints.</p>
 </div>
 &nbsp;

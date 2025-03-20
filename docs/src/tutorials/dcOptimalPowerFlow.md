@@ -128,11 +128,11 @@ Furthermore, it is worth noting that the function can be given simply as a const
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../../assets/cost_function_linear.svg" width="65%"/>
+        <img src="../../assets/tutorials/acOptimalPowerFlow/cost_function_linear.svg" width="65%" class="my-svg"/>
         <p>(a) The linear function.</p>
     </div>
     <div class="image-item">
-        <img src="../../assets/cost_function_quadratic.svg" width="65%"/>
+        <img src="../../assets/tutorials/acOptimalPowerFlow/cost_function_quadratic.svg" width="65%" class="my-svg"/>
         <p>(b) The quadratic function.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">
@@ -160,11 +160,11 @@ The DC optimal power flow in JuliaGrid offers another option for defining cost f
 ```@raw html
 <div class="image-container">
     <div class="image-item">
-        <img src="../../assets/cost_function_piecewise_one.svg" width="65%"/>
+        <img src="../../assets/tutorials/acOptimalPowerFlow/cost_function_piecewise_one.svg" width="65%" class="my-svg"/>
         <p>(a) One-segment function.</p>
     </div>
     <div class="image-item">
-        <img src="../../assets/cost_function_piecewise_two.svg" width="65%"/>
+        <img src="../../assets/tutorials/acOptimalPowerFlow/cost_function_piecewise_two.svg" width="65%" class="my-svg"/>
         <p>(b) Two-segment function.</p>
     </div>
     <p style="text-align: center; margin-top: -5px;">

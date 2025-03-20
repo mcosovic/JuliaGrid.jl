@@ -2,7 +2,7 @@
 In this example, we monitor a 6-bus power system, shown in Figure 1, and estimate bus voltage angles using DC state estimation.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/pmuStateEstimation/6bus_acpf.svg" width="450"/>
+    <img src="../../assets/examples/pmuStateEstimation/6bus_acpf.svg" width="450" class="my-svg"/>
     <p>Figure 1: The 6-bus power system.</p>
 </div>
 &nbsp;
@@ -123,7 +123,7 @@ printWattmeterData(system, device)
 Figure 2 illustrates this measurement configuration, which includes active power injection measurements at all buses and two active power flow measurements.
 ```@raw html
 <div style="text-align: center;">
-    <img src="../../assets/dcStateEstimation/6bus_wattmeter.svg" width="380"/>
+    <img src="../../assets/examples/dcStateEstimation/6bus_wattmeter.svg" width="380" class="my-svg"/>
     <p>Figure 2: The 6-bus power system with active power measurement configuration.</p>
 </div>
 &nbsp;

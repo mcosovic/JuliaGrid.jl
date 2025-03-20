@@ -58,6 +58,7 @@ stateEstimation!(system, analysis)
 Next, we perform the chi-squared test to check for the presence of outliers:
 ```@example BadData
 chi = chiTest(system, device, analysis; confidence = 0.96)
+nothing # hide
 ```
 
 At this stage, JuliaGrid uses the objective value obtained from the AC state estimation:
