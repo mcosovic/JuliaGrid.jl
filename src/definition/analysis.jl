@@ -593,7 +593,7 @@ A composite type constructed using the [`chiTest`](@ref chiTest) function, which
 results from the Chi-squared bad data detection test.
 
 # Fields
-- `detect::Bool`: Flag indicating whether bad data was detected.
+- `detect::Bool`: Flag indicating bad data detection.
 - `threshold::Float64`: Chi-squared critical value.
 - `objective::Float64`: Objective function value from WLS state estimation.
 """

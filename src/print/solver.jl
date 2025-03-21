@@ -227,7 +227,7 @@ function printMiddle(analysis::ACPowerFlow{NewtonRaphson}, verbose::Int64)
     if verbose == 2 || verbose == 3
         entri = nnz(analysis.method.jacobian)
         state = lastindex(analysis.method.increment)
-        maxms = "Number of entries in the Jacobian matrix:"
+        maxms = "Number of entries in the Jacobian:"
 
         wd1 = textwidth(string(entri)) + 1
         wd2 = textwidth(maxms)
@@ -248,7 +248,7 @@ function printMiddle(analysis::ACPowerFlow{FastNewtonRaphson}, verbose::Int64)
         react = nnz(method.reactive.jacobian)
         entri = activ + react
         state = lastindex(method.active.increment) + lastindex(method.reactive.increment)
-        maxms = "Number of entries in the Jacobian matrices:"
+        maxms = "Number of entries in the Jacobians:"
 
         wd1 = textwidth(string(entri)) + 1
         wd2 = textwidth(maxms)
@@ -304,10 +304,10 @@ end
 function printMiddle(system::PowerSystem, analysis::ACStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         wd = textwidth(string(nnz(analysis.method.jacobian))) + 1
-        mwd = textwidth("Number of entries in the Jacobian matrix:")
+        mwd = textwidth("Number of entries in the Jacobian:")
         tot = wd + mwd
 
-        print("Number of entries in the Jacobian matrix:")
+        print("Number of entries in the Jacobian:")
         print(format(Format("%*i\n"), wd, nnz(analysis.method.jacobian)))
 
         print("Number of measurement functions:")
@@ -366,11 +366,13 @@ end
 function printSolver(analysis::ACPowerFlow, delP::Float64, delQ::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if analysis.method.iteration % 10 == 0
-            println("Iteration   Max Active Mismatch   Max Reactive Mismatch")
+            println("-"^63)
+            println("Iteration   Max Abs Active Mismatch   Max Abs Reactive Mismatch")
+            println("-"^63)
         end
         print(format(Format("%*i "), 9, analysis.method.iteration))
-        print(format(Format("%*.8e"), 21, delP))
-        print(format(Format("%*.8e\n"), 24, delQ))
+        print(format(Format("%*.8e"), 25, delP))
+        print(format(Format("%*.8e\n"), 28, delQ))
     end
 end
 
@@ -414,12 +416,14 @@ end
 function printSolver(analysis::ACStateEstimation, inc::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if analysis.method.iteration % 10 == 0
-            println("Iteration   Objective Function Value   Max Absolute Increment")
+            println("-"^47)
+            println("Iteration   Objective Value   Max Abs Increment")
+            println("-"^47)
         end
 
         print(format(Format("%*i "), 9, analysis.method.iteration))
-        print(format(Format("%*.12e"), 26, analysis.method.objective))
-        print(format(Format("%*.8e\n"), 25, inc))
+        print(format(Format("%*.8e"), 17, analysis.method.objective))
+        print(format(Format("%*.8e\n"), 20, inc))
     end
 end
 
@@ -430,14 +434,14 @@ function printSolver(system::PowerSystem, analysis::ACStateEstimation, verbose::
         maxres, idxres = findmax(abs, analysis.method.residual)
         maxwrss, idxwrss = findmax(analysis.method.residual.^2 .* diag(analysis.method.precision))
 
-        print("\n" * " "^21 * "Measurement   Maximum Value")
+        print("\n" * " "^20 * "Measurement   Maximum Value")
 
         print("\nAbsolute Residual:")
-        print(format(Format("%*i"), 14, idxres))
+        print(format(Format("%*i"), 13, idxres))
         print(format(Format("%*.4e\n"), 16, maxres))
 
         print("Objective Value:")
-        print(format(Format("%*i"), 16, idxwrss))
+        print(format(Format("%*i"), 15, idxwrss))
         print(format(Format("%*.4e\n\n"), 16, maxwrss))
     end
 end
