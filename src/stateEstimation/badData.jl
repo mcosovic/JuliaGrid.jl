@@ -307,7 +307,7 @@ function residualTest!(
             (bad.label, idx),_ = iterate(device.pmu.label, pmuIndex)
             if bad.detect
                 if device.pmu.layout.polar[idx]
-                    if se.type[bad.index] in [2; 3; 10]
+                    if se.type[bad.index] in [2; 3; 4; 5; 12]
                         device.pmu.magnitude.status[idx] = 0
                     else
                         device.pmu.angle.status[idx] = 0

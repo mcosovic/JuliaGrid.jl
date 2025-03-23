@@ -5,8 +5,6 @@ system30 = powerSystem(path * "case30test.m")
     @default(unit)
 
     ########## IEEE 14-bus Test Case ##########
-    @pmu(varianceMagnitudeBus = 1, varianceAngleBus = 1)
-
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.25)
     updateBus!(system14; label = 1, magnitude = 1.0)
@@ -21,7 +19,7 @@ system30 = powerSystem(path * "case30test.m")
     powerFlow!(system14, pf; power = true, current = true)
 
     device = measurement()
-    @pmu(varianceMagnitudeBus = 1e-4, varianceAngleBus = 1e-4)
+    @pmu(varianceMagnitudeBus = 1, varianceAngleBus = 1)
     addPmu!(system14, device, pf; statusFrom = -1, statusTo = -1, polar = true)
 
     @testset "IEEE 14: Voltmeter Measurements" begin
@@ -35,8 +33,16 @@ system30 = powerSystem(path * "case30test.m")
     @testset "IEEE 14: Ammeter Measurements" begin
         meter = deepcopy(device)
 
-        @ammeter(varianceFrom = 1e-4, varianceTo = 1e-4)
+        @ammeter(varianceFrom = 1e-2, varianceTo = 1e-2)
         addAmmeter!(system14, meter, pf)
+        testEstimation(system14, meter, pf)
+    end
+
+    @testset "IEEE 14: Ammeter Squared Measurements" begin
+        meter = deepcopy(device)
+
+        @ammeter(varianceFrom = 1e-4, varianceTo = 1e-4)
+        addAmmeter!(system14, meter, pf; square = true)
         testEstimation(system14, meter, pf)
     end
 
@@ -67,20 +73,22 @@ system30 = powerSystem(path * "case30test.m")
     @testset "IEEE 14: Branch Varmeter Measurements" begin
         meter = deepcopy(device)
 
-        @varmeter(varianceFrom = 1e-4, varianceTo = 1e-4)
+        @varmeter(varianceFrom = 1e-2, varianceTo = 1e-2)
         addVarmeter!(system14, meter, pf; statusBus = -1)
         testEstimation(system14, meter, pf)
     end
 
-    @testset "IEEE 14: Bus Rectangular PMU Measurements" begin
+    @testset "IEEE 14: PMU Bus Rectangular Correlated Measurements" begin
         device = measurement()
 
-        addPmu!(system14, device, pf; statusFrom = -1, statusTo = -1, correlated = true)
+        addPmu!(
+            system14, device, pf; varianceMagnitudeBus = 1e-4, varianceAngleBus = 1e-4,
+            statusFrom = -1, statusTo = -1, correlated = true)
         addPmuBus(system14, device, pf)
         testEstimation(system14, device, pf)
     end
 
-    @testset "IEEE 14: Branch Rectangular PMU Measurements" begin
+    @testset "IEEE 14: PMU Branch Rectangular Measurements" begin
         device = measurement()
 
         @pmu(varianceMagnitudeFrom = 1e-4, varianceAngleFrom = 1e-4)
@@ -90,7 +98,7 @@ system30 = powerSystem(path * "case30test.m")
         testEstimation(system14, device, pf)
     end
 
-    @testset "IEEE 14: Branch Rectangular Correlated PMU Measurements" begin
+    @testset "IEEE 14: PMU Branch Rectangular Correlated Measurements" begin
         device = measurement()
 
         addPmu!(system14, device, pf; statusBus = -1, correlated = true)
@@ -98,29 +106,67 @@ system30 = powerSystem(path * "case30test.m")
         testEstimation(system14, device, pf)
     end
 
-    @testset "IEEE 14: From-Branch Polar PMU Measurements" begin
+    @testset "IEEE 14: PMU From-Branch Polar Measurements" begin
         device = measurement()
 
+        @pmu(varianceMagnitudeFrom = 1e-2, varianceAngleFrom = 1e-2)
         addPmu!(system14, device, pf; statusBus = -1, statusTo = -1, polar = true)
         addPmuBus(system14, device, pf)
-
-        device.pmu.magnitude.status[[5, 7, 15, 19, 20]] .= 0
-        device.pmu.angle.status[[5, 7, 15, 19, 20]] .= 0
+        device.pmu.magnitude.status[[2, 14, 18]] .= 0
+        device.pmu.angle.status[[14, 18]] .= 0
 
         testEstimation(system14, device, pf)
     end
 
-    # @testset "IEEE 14: To-Branch Polar PMU Measurements" begin
-    #     device = measurement()
+    @testset "IEEE 14: PMU From-Branch Polar Squared Measurements" begin
+        device = measurement()
 
-    #     addPmu!(system14, device, pf; statusBus = -1, statusFrom = -1, polar = true)
-    #     addPmuBus(system14, device, pf)
+        @pmu(varianceMagnitudeFrom = 1e-2, varianceAngleFrom = 1e-2)
+        addPmu!(system14, device, pf; statusBus = -1, statusTo = -1, polar = true, square = true)
+        addPmuBus(system14, device, pf)
+        device.pmu.magnitude.status[[14, 18]] .= 0
+        device.pmu.angle.status[[14, 18]] .= 0
 
-    #     device.pmu.magnitude.status[[2, 3, 4, 6, 8, 11, 12, 16, 18, 20]] .= 0
-    #     device.pmu.angle.status[[2, 3, 4, 6, 8, 11, 12, 16, 18, 20]] .= 0
+        testEstimation(system14, device, pf)
+    end
 
-    #     testEstimation(system14, device, pf; warm = true)
-    # end
+    @testset "IEEE 14: PMU To-Branch Polar Measurements" begin
+        device = measurement()
+
+        @pmu(varianceMagnitudeTo = 1e-2, varianceAngleTo = 1e-2)
+        addPmu!(system14, device, pf; statusBus = -1, statusFrom = -1, statusTo = 0, polar = true)
+        addPmuBus(system14, device, pf)
+
+        device.pmu.magnitude.status[4] = 1
+        device.pmu.magnitude.status[8] = 1
+        device.pmu.magnitude.status[12] = 1
+        device.pmu.magnitude.status[16] = 1
+        device.pmu.magnitude.status[18] = 1
+
+        device.pmu.angle.status[3] = 1
+        device.pmu.angle.status[5] = 1
+        device.pmu.angle.status[8] = 1
+        device.pmu.angle.status[13] = 1
+        device.pmu.angle.status[18] = 1
+
+        testEstimation(system14, device, pf)
+    end
+
+    @testset "IEEE 14: PMU To-Branch Polar Squared Measurements" begin
+        device = measurement()
+
+        @pmu(varianceMagnitudeTo = 1e-2, varianceAngleTo = 1e-2)
+        addPmu!(system14, device, pf; statusBus = -1, statusFrom = -1, statusTo = 0, polar = true, square = true)
+        addPmuBus(system14, device, pf)
+
+        device.pmu.magnitude.status[4] = 1
+        device.pmu.magnitude.status[8] = 1
+        device.pmu.magnitude.status[12] = 1
+        device.pmu.magnitude.status[16] = 1
+        device.pmu.magnitude.status[18] = 1
+
+        testEstimation(system14, device, pf)
+    end
 
     device = measurement()
     @testset "IEEE 14: All Measurements" begin
@@ -165,7 +211,7 @@ system30 = powerSystem(path * "case30test.m")
     @testset "IEEE 30: Wattmeter Measurements" begin
         meter = deepcopy(device)
 
-        addWattmeter!(system30, meter, pf)
+        addWattmeter!(system30, meter, pf; varianceBus = 1e-2, varianceFrom = 1e-2, varianceTo = 1e-2)
         testEstimation(system30, meter, pf)
     end
 

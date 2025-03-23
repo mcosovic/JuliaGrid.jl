@@ -72,7 +72,7 @@ function measurement()
         Ammeter(
             OrderedDict{template.config.device, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
-            AmmeterLayout(Int64[], Int64[], Bool[], 0),
+            AmmeterLayout(Int64[], Int64[], Bool[], Bool[], 0),
             0
         ),
         Wattmeter(
@@ -91,7 +91,7 @@ function measurement()
             OrderedDict{template.config.device, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             GaussMeter(Float64[], Float64[], Int8[]),
-            PmuLayout(Int64[], Bool[], Bool[], Bool[], Bool[], Bool[], 0),
+            PmuLayout(Int64[], Bool[], Bool[], Bool[], Bool[], Bool[], Bool[], 0),
             0
         )
     )
@@ -149,6 +149,7 @@ function loadAmmeter(device::Measurement, hdf5::File)
         ammeter.layout.index = readHDF5(layout, "index", ammeter.number)
         ammeter.layout.from = readHDF5(layout, "from", ammeter.number)
         ammeter.layout.to = readHDF5(layout, "to", ammeter.number)
+        ammeter.layout.square = readHDF5(layout, "square", ammeter.number)
     end
 end
 
@@ -197,5 +198,6 @@ function loadPmu(device::Measurement, hdf5::File)
         pmu.layout.to = readHDF5(layout, "to", pmu.number)
         pmu.layout.correlated = readHDF5(layout, "correlated", pmu.number)
         pmu.layout.polar = readHDF5(layout, "polar", pmu.number)
+        pmu.layout.square = readHDF5(layout, "square", pmu.number)
     end
 end

@@ -285,6 +285,7 @@ mutable struct AmmeterLayout
     index::Vector{Int64}
     from::Vector{Bool}
     to::Vector{Bool}
+    square::Vector{Bool}
     label::Int64
 end
 
@@ -303,6 +304,7 @@ mutable struct PmuLayout
     to::Vector{Bool}
     correlated::Vector{Bool}
     polar::Vector{Bool}
+    square::Vector{Bool}
     label::Int64
 end
 

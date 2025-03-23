@@ -1,12 +1,12 @@
 """
     @base(system::PowerSystem, power, voltage)
 
-By default, the units for base power and base voltages are set to volt-ampere (VA) and volt
-(V), but you can modify the prefixes using the macro.
+By default, the units for base power and base voltages are set to volt-ampere (VA) and volt (V), but
+users can modify the prefixes using the macro.
 
 Prefixes must be specified according to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
-and should be included with the unit of `power` (VA) or unit of `voltage` (V). Keep in mind
-that the macro must be used after creating the type `PowerSystem`.
+and should be included with the unit of `power` (VA) or unit of `voltage` (V). Keep in mind that the
+macro must be used after creating the type `PowerSystem`.
 
 # Example
 ```jldoctest
@@ -41,18 +41,17 @@ end
 """
     @power(active, reactive, [apparent])
 
-JuliaGrid stores all data related with powers in per-units, and these cannot be altered.
-However, the power units of the built-in functions used to add or modified power system
-elements can be modified using the macro.
+JuliaGrid stores all data related with powers in per-units, and these cannot be altered. However, the
+power units of the built-in functions used to add or modified power system elements can be modified
+using the macro.
 
-Prefixes must be specified according to the
-[SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be included with
-the unit of `active` power (W), `reactive` power (VAr), or `apparent` power (VA). Also, it
-is a possible to combine SI units with/without prefixes with per-units (pu).
+Prefixes must be specified according to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
+and should be included with the unit of `active` power (W), `reactive` power (VAr), or `apparent` power
+(VA). Also, it is a possible to combine SI units with/without prefixes with per-units (pu).
 
 Changing the unit of `active` power is reflected in the following quantities:
 * [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
-  `active`, `conductance`;
+`active`, `conductance`;
 * [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!),
   [`@branch`](@ref @branch): if `type = 2`: `minFromBus`, `maxFromBus`, `minToBus`, `maxToBus`;
 * [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!),
@@ -102,14 +101,14 @@ end
 """
     @voltage(magnitude, angle, [base])
 
-JuliaGrid stores all data related with voltages in per-units and radians, and these cannot
-be altered. However, the voltage magnitude and angle units of the built-in functions used
-to add or modified power system elements can be modified using the macro.
+JuliaGrid stores all data related with voltages in per-units and radians, and these cannot be altered.
+However, the voltage magnitude and angle units of the built-in functions used to add or modified power
+system elements can be modified using the macro.
 
-The prefixes must adhere to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
-and should be specified along with the unit of voltage, either `magnitude` (V) or `base` (V).
-Alternatively, the unit of voltage `magnitude` can be expressed in per-unit (pu). The unit of
-voltage `angle` should be in radians (rad) or degrees (deg).
+The prefixes must adhere to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and
+should be specified along with the unit of voltage, either `magnitude` (V) or `base` (V).
+Alternatively, the unit of voltage `magnitude` can be expressed in per-unit (pu). The unit of voltage
+`angle` should be in radians (rad) or degrees (deg).
 
 Changing the unit of voltage `magnitude` is reflected in the following quantities:
 * [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
@@ -156,14 +155,14 @@ end
 """
     @current(magnitude, angle)
 
-JuliaGrid stores all data related with currents in per-units and radians, and these cannot
-be altered. However, the current magnitude and angle units of the built-in functions used
-to add or modified measurement devices can be modified using the macro.
+JuliaGrid stores all data related with currents in per-units and radians, and these cannot be altered.
+However, the current magnitude and angle units of the built-in functions used to add or modified
+measurement devices can be modified using the macro.
 
-The prefixes must adhere to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
-and should be specified along with the unit of current `magnitude` (V).
-Alternatively, the unit of current `magnitude` can be expressed in per-unit (pu). The unit
-of current angle should be in radians (rad) or degrees (deg).
+The prefixes must adhere to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and
+should be specified along with the unit of current `magnitude` (V). Alternatively, the unit of current
+`magnitude` can be expressed in per-unit (pu). The unit of current angle should be in radians (rad)
+or degrees (deg).
 
 Changing the unit of current `magnitude` is reflected in the following quantities:
 * [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!),
@@ -200,21 +199,18 @@ end
 """
     @parameter(impedance, admittance)
 
-JuliaGrid stores all data related with impedances and admittancies in per-units, and these
-cannot be altered. However, units of impedance and admittance of the built-in functions
-used to add or modified power system elements can be modified using the macro.
+JuliaGrid stores all data related with impedances and admittancies in per-units, and these cannot be
+altered. However, units of impedance and admittance of the built-in functions used to add or modified
+power system elements can be modified using the macro.
 
-Prefixes must be specified according to the
-[SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and should be
-included with the unit of `impedance` (Ω) or unit of `admittance` (S). The second option
+Prefixes must be specified according to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
+and should be included with the unit of `impedance` (Ω) or unit of `admittance` (S). The second option
 is to define the units in per-unit (pu).
 
-In the case where impedance and admittance are being used in SI units (Ω and S) and these
-units are related to the transformer, the assignment must be based on the primary side of
-the transformer.
+In the case where impedance and admittance are being used in SI units (Ω and S) and these units are
+related to the transformer, the assignment must be based on the primary side of the transformer.
 
-Changing the units of `impedance` is reflected in the following quantities in specific
-functions:
+Changing the units of `impedance` is reflected in the following quantities in specific functions:
 * [`addBranch!`](@ref addBranch!), [`updateBranch!`](@ref updateBranch!),
   [`@branch`](@ref @branch): `resistance`, `reactance`.
 
@@ -244,9 +240,8 @@ end
 
 The macro defines general configuration settings for JuliaGrid.
 
-By default, JuliaGrid stores all labels as strings in ordered dictionaries. However, users
-can choose to store labels as integers, which can be a more efficient option for large-scale
-systems.
+By default, JuliaGrid stores all labels as strings in ordered dictionaries. However, users can choose
+to store labels as integers, which can be a more efficient option for large-scale systems.
 
 Users can also adjust the level of printed information for the algorithms used in JuliaGrid.
 The `verbose` setting is multilevel and can take the following values:
@@ -292,7 +287,6 @@ macro config(kwargs...)
 end
 
 ##### Parse Suffix (Unit) #####
-
 function parseSuffix(input::String, unitList, type::String)
     suffix = ""
     @inbounds for i in unitList
@@ -510,6 +504,7 @@ macro default(mode::Symbol)
             template.ammeter.statusTo = Int8(1)
 
             template.ammeter.label = "?"
+            template.ammeter.square = false
             template.ammeter.noise = false
         end
 
@@ -569,6 +564,7 @@ macro default(mode::Symbol)
             template.pmu.noise = false
             template.pmu.correlated = false
             template.pmu.polar = false
+            template.pmu.square = false
         end
 
         if mode == :template

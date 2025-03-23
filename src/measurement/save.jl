@@ -63,6 +63,7 @@ function saveAmmeter(ammeter::Ammeter, file::File)
         saveLayout(ammeter.layout.index, file; fid = "ammeter/layout/index")
         saveLayout(ammeter.layout.from, file; fid = "ammeter/layout/from")
         saveLayout(ammeter.layout.to, file; fid = "ammeter/layout/to")
+        saveLayout(ammeter.layout.square, file; fid = "ammeter/layout/square")
     end
 end
 
@@ -102,6 +103,7 @@ function savePmu(pmu::PMU, file::File)
         saveLayout(pmu.layout.to, file; fid = "pmu/layout/to")
         saveLayout(pmu.layout.correlated, file; fid = "pmu/layout/correlated")
         saveLayout(pmu.layout.polar, file; fid = "pmu/layout/polar")
+        saveLayout(pmu.layout.square, file; fid = "pmu/layout/square")
     end
 end
 

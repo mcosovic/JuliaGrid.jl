@@ -154,16 +154,13 @@ function testDevice(meter, fully, idx::Int64, status::Int64)
     @test meter.status[end] == status
 end
 
-function testEstimation(system::PowerSystem, device::Measurement, analysis::ACPowerFlow; warm = false)
+function testEstimation(system::PowerSystem, device::Measurement, analysis::ACPowerFlow)
     gn = gaussNewton(system, device)
-    if warm
-       setInitialPoint!(analysis, gn)
-    end
     stateEstimation!(system, gn; iteration = 200, tolerance = 1e-12)
     compstruct(gn.voltage, analysis.voltage; atol = 1e-10)
 
     lav = acLavStateEstimation(system, device, Ipopt.Optimizer)
-    solve!(system, lav)
+    stateEstimation!(system, lav)
     compstruct(lav.voltage, analysis.voltage; atol = 1e-8)
 end
 
@@ -183,7 +180,7 @@ function testDCEstimation(system::PowerSystem, device::Measurement, analysis::DC
     @test dc.voltage.angle ≈ analysis.voltage.angle
 
     lav = dcLavStateEstimation(system, device, Ipopt.Optimizer)
-    solve!(system, lav)
+    stateEstimation!(system, lav)
     @test lav.voltage.angle ≈ analysis.voltage.angle
 end
 

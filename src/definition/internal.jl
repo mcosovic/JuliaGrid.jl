@@ -158,6 +158,7 @@ Base.@kwdef mutable struct AmmeterTemplate
     statusFrom::Int8 = Int8(1)
     statusTo::Int8 = Int8(1)
     label::String = "?"
+    square::Bool = false
     noise::Bool = false
 end
 
@@ -196,6 +197,7 @@ Base.@kwdef mutable struct PmuTemplate
     label::String = "?"
     correlated::Bool = false
     polar::Bool = false
+    square::Bool = false
     noise::Bool = false
 end
 

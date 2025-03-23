@@ -287,7 +287,7 @@ function updateVoltmeter!(
 
     if volt.magnitude.status[idx] == 1
         add!(se, idx)
-        addConstrLav!(se, se.state.V[idxBus], volt.magnitude.mean[idx], idx)
+        addConstrLav!(se, se.state.magnitude[idxBus], volt.magnitude.mean[idx], idx)
     else
         remove!(se, idx)
     end

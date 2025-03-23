@@ -668,8 +668,8 @@ The variances can be calculated as follows:
 The functions defining the current phasor measurement at the to-bus end are:
 ```math
   \begin{aligned}
-    h_{\Re(\bar{I}_{ji})}(\mathbf x) &= (A_{\psi_{ji}} \cos\theta_j - B_{\psi_{ji}} \sin\theta_j)V_j - [C_{\psi_{ji}} \cos(\theta_i - \phi_{ij}) - D_{\psi_{ji}} \sin (\theta_i + \phi_{ij})]V_i\\
-    h_{\Im(\bar{I}_{ji})}(\mathbf x) &= (A_{\psi_{ji}} \sin\theta_j + B_{\psi_{ji}} \cos\theta_j)V_j - [C_{\psi_{ji}} \sin(\theta_i + \phi_{ij}) + D_{\psi_{ji}} \cos (\theta_i + \phi_{ij})]V_i.
+    h_{\Re(\bar{I}_{ji})}(\mathbf x) &= (A_{\psi_{ji}} \cos\theta_j - B_{\psi_{ji}} \sin\theta_j)V_j - [C_{\psi_{ji}} \cos(\theta_i - \phi_{ij}) - D_{\psi_{ji}} \sin (\theta_i - \phi_{ij})]V_i\\
+    h_{\Im(\bar{I}_{ji})}(\mathbf x) &= (A_{\psi_{ji}} \sin\theta_j + B_{\psi_{ji}} \cos\theta_j)V_j - [C_{\psi_{ji}} \sin(\theta_i - \phi_{ij}) + D_{\psi_{ji}} \cos (\theta_i - \phi_{ij})]V_i.
   \end{aligned}
 ```
 

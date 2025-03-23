@@ -124,8 +124,7 @@ function printTop(
         amp = count(x -> x == 0, type[range[2]:range[3] - 1])
         wat = count(x -> x == 0, type[range[3]:range[4] - 1])
         var = count(x -> x == 0, type[range[4]:range[5] - 1])
-        pmu = Int64(count(x -> x == 0, type[range[5]:range[6] - 1]) / 2)
-
+        pmu = Int64(floor(eps() + count(x -> x == 0, type[range[5]:range[6] - 1]) / 2))
         printTopData(range, vol, amp, wat, var, pmu, verbose)
     end
 end
@@ -133,14 +132,14 @@ end
 function printTop(analysis::ACStateEstimation{LAV}, verbose::Int64)
     if verbose == 3
         range = analysis.method.range
-        type = is_fixed.(analysis.method.residualx)
+        type = is_fixed.(analysis.method.deviation.positive)
 
         vol = count(x -> x == 1, type[range[1]:range[2] - 1])
         amp = count(x -> x == 1, type[range[2]:range[3] - 1])
         wat = count(x -> x == 1, type[range[3]:range[4] - 1])
         var = count(x -> x == 1, type[range[4]:range[5] - 1])
-        pmu = Int64(count(x -> x == 1, type[range[5]:range[6] - 1]) / 2)
-
+        display(count(x -> x == 1, type[range[5]:range[6] - 1]) / 2)
+        pmu = Int64(floor(eps() + count(x -> x == 1, type[range[5]:range[6] - 1]) / 2))
         printTopData(range, vol, amp, wat, var, pmu, verbose)
     end
 end

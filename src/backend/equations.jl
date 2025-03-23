@@ -296,6 +296,26 @@ function IijVj(p::PiModel, e::StateModel, Iinv::Float64)
     Iinv * (p.B * e.Vj - (p.C * e.cosθij - p.D * e.sinθij) * e.Vi)
 end
 
+function Iij2(p::PiModel, e::StateModel)
+    p.A * e.Vi^2 + p.B * e.Vj^2 - 2 * e.Vi * e.Vj * (p.C * e.cosθij - p.D * e.sinθij)
+end
+
+function Iij2θi(p::PiModel, e::StateModel)
+    2 * (p.C * e.sinθij + p.D * e.cosθij) * e.Vi * e.Vj
+end
+
+function Iij2Vi(p::PiModel, e::StateModel)
+    2 * (p.A * e.Vi - (p.C * e.cosθij - p.D * e.sinθij) * e.Vj)
+end
+
+function Iij2θj(p::PiModel, e::StateModel)
+    -Iij2θi(p, e)
+end
+
+function Iij2Vj(p::PiModel, e::StateModel)
+    2 * (p.B * e.Vj - (p.C * e.cosθij - p.D * e.sinθij) * e.Vi)
+end
+
 ##### To-Bus End Current Magnitude #####
 function IjiCoefficient(branch::Branch, ac::ACModel, idx::Int64)
     gij, bij = reim(ac.admittance[idx])
@@ -330,6 +350,26 @@ end
 
 function IjiVj(p::PiModel, e::StateModel, Iinv::Float64)
     Iinv * (p.B * e.Vj - (p.C * e.cosθij + p.D * e.sinθij) * e.Vi)
+end
+
+function Iji2(p::PiModel, e::StateModel)
+    p.A * e.Vi^2 + p.B * e.Vj^2 - 2 * e.Vi * e.Vj * (p.C * e.cosθij + p.D * e.sinθij)
+end
+
+function Iji2θi(p::PiModel, e::StateModel)
+    2 * (p.C * e.sinθij - p.D * e.cosθij) * e.Vi * e.Vj
+end
+
+function Iji2Vi(p::PiModel, e::StateModel)
+    2 * (p.A * e.Vi - (p.C * e.cosθij + p.D * e.sinθij) * e.Vj)
+end
+
+function Iji2θj(p::PiModel, e::StateModel)
+    -Iji2θi(p, e)
+end
+
+function Iji2Vj(p::PiModel, e::StateModel)
+    2 * (p.B * e.Vj - (p.C * e.cosθij + p.D * e.sinθij) * e.Vi)
 end
 
 ##### From-Bus End Current Angle #####
@@ -383,9 +423,7 @@ function ψjiCoefficient(branch::Branch, ac::ACModel, idx::Int64)
 end
 
 function ψji(p::PiModel, e::StateModel)
-    ReIij = (p.A * e.cosθj - p.B * e.sinθj) * e.Vj - (p.C * e.cosθi - p.D * e.sinθi) * e.Vi
-    ImIij = (p.A * e.sinθj + p.B * e.cosθj) * e.Vj - (p.C * e.sinθi + p.D * e.cosθi) * e.Vi
-    Iij = complex(ReIij, ImIij)
+    Iij = complex(ReIji(p, e), ImIji(p, e))
 
     return 1 / (abs(Iij))^2, Iij
 end

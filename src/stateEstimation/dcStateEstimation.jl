@@ -188,7 +188,7 @@ end
 
 """
     dcLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
-        iteration, tolerance, bridge, name, verbose)
+        iteration, tolerance, bridge, name, angle, positive, negative, verbose)
 
 The function establishes the LAV model for DC state estimation, where the vector of state
 variables contains only bus voltage angles.
@@ -207,8 +207,12 @@ The function accepts the following keywords:
 * `iteration`: Specifies the maximum number of iterations.
 * `tolerance`: Specifies the allowed deviation from the optimal solution.
 * `bridge`: Controls the bridging mechanism (default: `false`).
-* `name`: Handles the creation of string names (default: `false`).
+* `name`: Handles the creation of string names (default: `true`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
+
+Additionally, users can modify variable names used for printing and writing through the
+keywords `angle`, `positive`, and `negative`. For instance, users can choose `angle = "θ"`,
+`positive = "u"`, and `negative = "v"` to display equations in a more readable format.
 
 # Updates
 If the DC model was not created, the function will automatically initiate an update of the
@@ -240,7 +244,10 @@ function dcLavStateEstimation(
     iteration::IntMiss = missing,
     tolerance::FltIntMiss = missing,
     bridge::Bool = false,
-    name::Bool = false,
+    name::Bool = true,
+    angle::String = "angle",
+    positive::String = "positive",
+    negative::String = "negative",
     verbose::Int64 = template.config.verbose
 )
     bus = system.bus
@@ -266,28 +273,29 @@ function dcLavStateEstimation(
         end
     end
 
-    se = LAV(
+    lav = LAV(
         jump,
-        nothing,
-        @variable(jump, 0 <= statex[i = 1:bus.number]),
-        @variable(jump, 0 <= statey[i = 1:bus.number]),
-        @variable(jump, 0 <= residualx[i = 1:total]),
-        @variable(jump, 0 <= residualy[i = 1:total]),
+        DCState(
+            @variable(jump, angle[i = 1:bus.number], base_name = angle)
+        ),
+        Deviation(
+            @variable(jump, 0 <= positive[i = 1:total], base_name = positive),
+            @variable(jump, 0 <= negative[i = 1:total], base_name = negative)
+        ),
         Dict{Int64, ConstraintRef}(),
         pmuIdx,
         fill(1, 3),
         total
     )
-    objective = @expression(se.jump, AffExpr())
+    objective = @expression(lav.jump, AffExpr())
 
-    fix(se.statex[bus.layout.slack], 0.0; force = true)
-    fix(se.statey[bus.layout.slack], 0.0; force = true)
+    fix(lav.state.angle[bus.layout.slack], 0.0; force = true)
 
     @inbounds for (i, k) in enumerate(wattmeter.layout.index)
         if device.wattmeter.active.status[i] == 1
             if wattmeter.layout.bus[i]
                 mean = meanPi(bus, dc, wattmeter, i, k)
-                expr = Pi(dc, se, k)
+                expr = Pi(dc, lav, k)
             else
                 if wattmeter.layout.from[i]
                     admittance = dc.admittance[k]
@@ -296,32 +304,31 @@ function dcLavStateEstimation(
                 end
 
                 mean = meanPij(branch, wattmeter, admittance, i, k)
-                expr = Pij(system, se, admittance, k)
+                expr = Pij(system, lav.state, admittance, k)
             end
-            addConstrLav!(se, expr, mean, i)
-            addObjectLav!(se, objective, i)
+            addConstrLav!(lav, expr, mean, i)
+            addObjectLav!(lav, objective, i)
         else
-            fix(se.residualx[i], 0.0; force = true)
-            fix(se.residualy[i], 0.0; force = true)
+            fix(lav.deviation.positive[i], 0.0; force = true)
+            fix(lav.deviation.negative[i], 0.0; force = true)
         end
     end
-    se.range[2] = wattmeter.number + 1
+    lav.range[2] = wattmeter.number + 1
 
-    @inbounds for (i, k) in se.index
+    @inbounds for (i, k) in lav.index
         if pmu.angle.status[i] == 1
-            expr = θi(se, pmu.layout.index[i])
             mean = meanθi(pmu, bus, i)
 
-            addConstrLav!(se, expr, mean, k)
-            addObjectLav!(se, objective, k)
+            addConstrLav!(lav, lav.state.angle[pmu.layout.index[i]], mean, k)
+            addObjectLav!(lav, objective, k)
         else
-            fix(se.residualx[k], 0.0; force = true)
-            fix(se.residualy[k], 0.0; force = true)
+            fix(lav.deviation.positive[k], 0.0; force = true)
+            fix(lav.deviation.negative[k], 0.0; force = true)
         end
     end
-    se.range[3] = total + 1
+    lav.range[3] = total + 1
 
-    @objective(se.jump, Min, objective)
+    @objective(lav.jump, Min, objective)
 
     DCStateEstimation(
         PolarAngle(
@@ -334,7 +341,7 @@ function dcLavStateEstimation(
             CartesianReal(Float64[]),
             CartesianReal(Float64[])
         ),
-        se
+        lav
     )
 end
 
@@ -438,24 +445,23 @@ function solve!(
     system::PowerSystem,
     analysis::DCStateEstimation{LAV};
 )
-    se = analysis.method
-    verbose = se.jump.ext[:verbose]
+    lav = analysis.method
+    verbose = lav.jump.ext[:verbose]
     slackAngle = system.bus.voltage.angle[system.bus.layout.slack]
 
-    silentJump(se.jump, verbose)
+    silentJump(lav.jump, verbose)
 
     @inbounds for i = 1:system.bus.number
-        set_start_value(se.statex[i]::VariableRef, analysis.voltage.angle[i] - slackAngle)
+        set_start_value(lav.state.angle[i]::VariableRef, analysis.voltage.angle[i] - slackAngle)
     end
 
-    optimize!(se.jump)
+    optimize!(lav.jump)
 
     @inbounds for i = 1:system.bus.number
-        analysis.voltage.angle[i] =
-            value(se.statex[i]::VariableRef) - value(se.statey[i]::VariableRef) + slackAngle
+        analysis.voltage.angle[i] = value(lav.state.angle[i]::VariableRef) + slackAngle
     end
 
-    printExit(se.jump, verbose)
+    printExit(lav.jump, verbose)
 end
 
 ##### Indices of the Coefficient Matrix #####

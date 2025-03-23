@@ -6,7 +6,8 @@ estimation model, where the vector of state variables is given in polar coordina
 Gauss-Newton method throughout iterations provided WLS estimator.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` types to establish the WLS state estimation framework.
+This function requires the `PowerSystem` and `Measurement` types to establish the WLS state
+estimation framework.
 
 Moreover, the presence of the `method` parameter is not mandatory. To address the WLS
 state estimation method, users can opt to utilize factorization techniques to decompose
@@ -181,9 +182,15 @@ function acWLS(system::PowerSystem, device::Measurement)
     @inbounds for (i, k) in enumerate(amp.layout.index)
         status = amp.magnitude.status[i]
 
-        mean[jcb.idx] = status * amp.magnitude.mean[i]
-        precision!(pcs, amp.magnitude.variance[i])
-        fourIndices!(jcb, type, idx, status, amp.layout.from[i], system, k, 2, 3)
+        sq = if2(amp.layout.square[i])
+        mean[jcb.idx] = status * (amp.magnitude.mean[i]^sq)
+        precision!(pcs, sq * amp.magnitude.variance[i])
+
+        if amp.layout.square[i]
+            fourIndices!(jcb, type, idx, status, amp.layout.from[i], system, k, 4, 5)
+        else
+            fourIndices!(jcb, type, idx, status, amp.layout.from[i], system, k, 2, 3)
+        end
     end
     range[3] = jcb.idx
 
@@ -194,9 +201,9 @@ function acWLS(system::PowerSystem, device::Measurement)
         precision!(pcs, watt.active.variance[i])
 
         if watt.layout.bus[i]
-            nthIndices!(jcb, type, idx, status, system, k, 4)
+            nthIndices!(jcb, type, idx, status, system, k, 6)
         else
-            fourIndices!(jcb, type, idx, status, watt.layout.from[i], system, k, 5, 6)
+            fourIndices!(jcb, type, idx, status, watt.layout.from[i], system, k, 7, 8)
         end
     end
     range[4] = jcb.idx
@@ -208,9 +215,9 @@ function acWLS(system::PowerSystem, device::Measurement)
         precision!(pcs, var.reactive.variance[i])
 
         if var.layout.bus[i]
-            nthIndices!(jcb, type, idx, status, system, k, 7)
+            nthIndices!(jcb, type, idx, status, system, k, 9)
         else
-            fourIndices!(jcb, type, idx, status, var.layout.from[i], system, k, 8, 9)
+            fourIndices!(jcb, type, idx, status, var.layout.from[i], system, k, 10, 11)
         end
     end
     range[5] = jcb.idx
@@ -220,18 +227,23 @@ function acWLS(system::PowerSystem, device::Measurement)
         statusAng = pmu.angle.status[i]
 
         if pmu.layout.polar[i]
-            mean[jcb.idx] = statusMag * pmu.magnitude.mean[i]
-            mean[jcb.idx + 1] = statusAng * pmu.angle.mean[i]
+            sq = if2(pmu.layout.square[i])
+            mean[jcb.idx] = statusMag * (pmu.magnitude.mean[i]^sq)
+            precision!(pcs, sq * pmu.magnitude.variance[i])
 
-            precision!(pcs, pmu.magnitude.variance[i])
+            mean[jcb.idx + 1] = statusAng * pmu.angle.mean[i]
             precision!(pcs, pmu.angle.variance[i])
 
             if pmu.layout.bus[i]
-                oneIndices!(jcb, type, idx, statusMag, k + bus.number, k, 10)
-                oneIndices!(jcb, type, idx, statusAng, k, k, 11)
+                oneIndices!(jcb, type, idx, statusMag, k + bus.number, k, 12)
+                oneIndices!(jcb, type, idx, statusAng, k, k, 13)
             else
-                fourIndices!(jcb, type, idx, statusMag, pmu.layout.from[i], system, k, 2, 3)
-                fourIndices!(jcb, type, idx, statusAng, pmu.layout.from[i], system, k, 12, 13)
+                if pmu.layout.square[i]
+                    fourIndices!(jcb, type, idx, statusMag, pmu.layout.from[i], system, k, 4, 5)
+                else
+                    fourIndices!(jcb, type, idx, statusMag, pmu.layout.from[i], system, k, 2, 3)
+                end
+                fourIndices!(jcb, type, idx, statusAng, pmu.layout.from[i], system, k, 14, 15)
             end
         else
             sinθ, cosθ = sincos(pmu.angle.mean[i])
@@ -249,11 +261,11 @@ function acWLS(system::PowerSystem, device::Measurement)
             end
 
             if pmu.layout.bus[i]
-                twoIndices!(jcb, type, idx, status, bus.number, k, 14)
-                twoIndices!(jcb, type, idx, status, bus.number, k, 15)
+                twoIndices!(jcb, type, idx, status, bus.number, k, 16)
+                twoIndices!(jcb, type, idx, status, bus.number, k, 17)
             else
-                fourIndices!(jcb, type, idx, status, pmu.layout.from[i], system, k, 16, 17)
                 fourIndices!(jcb, type, idx, status, pmu.layout.from[i], system, k, 18, 19)
+                fourIndices!(jcb, type, idx, status, pmu.layout.from[i], system, k, 20, 21)
             end
         end
     end
@@ -302,7 +314,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                 continue
             end
 
-            if se.type[row] == 4 # Pi
+            if se.type[row] == 6 # Pi
                 if col == se.index[row]
                     I = [0.0; 0.0]
                     for q in ac.nodalMatrix.colptr[col]:(ac.nodalMatrix.colptr[col + 1] - 1)
@@ -325,7 +337,37 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                     jcb[row, cok] = PiVj(voltage, Gij, Bij, sinθij, cosθij, idx)
                 end
 
-            elseif se.type[row] == 7 # Qi
+            elseif se.type[row] == 7 # Pij
+                model = PijCoefficient(branch, ac, idx)
+                state = ViVjθijState(system, voltage, idx)
+
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - Pij(model, state)
+                    seobjective(analysis, row)
+
+                    jcb[row, col] = Pijθi(model, state)
+                    jcb[row, cok] = PijVi(model, state)
+                else
+                    jcb[row, col] = Pijθj(model, state)
+                    jcb[row, cok] = PijVj(model, state)
+                end
+
+            elseif se.type[row] == 8 # Pji
+                model = PjiCoefficient(branch, ac, idx)
+                state = ViVjθijState(system, voltage, idx)
+
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - Pji(model, state)
+                    seobjective(analysis, row)
+
+                    jcb[row, col] = Pjiθi(model, state)
+                    jcb[row, cok] = PjiVi(model, state)
+                else
+                    jcb[row, col] = Pjiθj(model, state)
+                    jcb[row, cok] = PjiVj(model, state)
+                end
+
+            elseif se.type[row] == 9 # Qi
                 if col == se.index[row]
                     I = [0.0; 0.0]
                     for q in ac.nodalMatrix.colptr[col]:(ac.nodalMatrix.colptr[col + 1] - 1)
@@ -348,210 +390,210 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
                     jcb[row, cok] = QiVj(voltage, Gij, Bij, sinθij, cosθij, idx)
                 end
 
-            elseif se.type[row] == 14 # Re(Vi)
+            elseif se.type[row] == 10 # Qij
+                model = QijCoefficient(branch, ac, idx)
+                state = ViVjθijState(system, voltage, idx)
+
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - Qij(model, state)
+                    seobjective(analysis, row)
+
+                    jcb[row, col] = Qijθi(model, state)
+                    jcb[row, cok] = QijVi(model, state)
+                else
+                    jcb[row, col] = Qijθj(model, state)
+                    jcb[row, cok] = QijVj(model, state)
+                end
+
+            elseif se.type[row] == 11 # Qji
+                model = QjiCoefficient(branch, ac, idx)
+                state = ViVjθijState(system, voltage, idx)
+
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - Qji(model, state)
+                    seobjective(analysis, row)
+
+                    jcb[row, col] = Qjiθi(model, state)
+                    jcb[row, cok] = QjiVi(model, state)
+                else
+                    jcb[row, col] = Qjiθj(model, state)
+                    jcb[row, cok] = QjiVj(model, state)
+                end
+
+            elseif se.type[row] == 2 # Iij
+                model = IijCoefficient(branch, ac, idx)
+                state = ViVjθijState(system, voltage, idx)
+                Iinv = Iijinv(model, state)
+
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - (1 / Iinv)
+                    seobjective(analysis, row)
+
+                    jcb[row, col] = Iijθi(model, state, Iinv)
+                    jcb[row, cok] = IijVi(model, state, Iinv)
+                else
+                    jcb[row, col] = Iijθj(model, state, Iinv)
+                    jcb[row, cok] = IijVj(model, state, Iinv)
+                end
+
+            elseif se.type[row] == 4 # Iij2
+                model = IijCoefficient(branch, ac, idx)
+                state = ViVjθijState(system, voltage, idx)
+                Iij = Iij2(model, state)
+
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - Iij
+                    seobjective(analysis, row)
+
+                    jcb[row, col] = Iij2θi(model, state)
+                    jcb[row, cok] = Iij2Vi(model, state)
+                else
+                    jcb[row, col] = Iij2θj(model, state)
+                    jcb[row, cok] = Iij2Vj(model, state)
+                end
+
+            elseif se.type[row] == 3 # Iji
+                model = IjiCoefficient(branch, ac, idx)
+                state = ViVjθijState(system, voltage, idx)
+                Iinv = Ijiinv(model, state)
+
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - (1 / Iinv)
+                    seobjective(analysis, row)
+
+                    jcb[row, col] = Ijiθi(model, state, Iinv)
+                    jcb[row, cok] = IjiVi(model, state, Iinv)
+                else
+                    jcb[row, col] = Ijiθj(model, state, Iinv)
+                    jcb[row, cok] = IjiVj(model, state, Iinv)
+                end
+
+            elseif se.type[row] == 5 # Iji2
+                model = IjiCoefficient(branch, ac, idx)
+                state = ViVjθijState(system, voltage, idx)
+                Iji = Iji2(model, state)
+
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - Iji
+                    seobjective(analysis, row)
+
+                    jcb[row, col] = Iji2θi(model, state)
+                    jcb[row, cok] = Iji2Vi(model, state)
+                else
+                    jcb[row, col] = Iji2θj(model, state)
+                    jcb[row, cok] = Iji2Vj(model, state)
+                end
+
+            elseif se.type[row] == 16 # Re(Vi)
                 se.residual[row] = se.mean[row] - ReVi(voltage, idx)
                 seobjective(analysis, row)
 
                 jcb[row, col] = ReViθi(voltage, idx)
                 jcb[row, cok] = ReViVi(voltage, idx)
 
-            elseif se.type[row] == 15 # Im(Vi)
+            elseif se.type[row] == 17 # Im(Vi)
                 se.residual[row] = se.mean[row] - ImVi(voltage, idx)
                 seobjective(analysis, row, row - 1)
 
                 jcb[row, col] = ImViθi(voltage, idx)
                 jcb[row, cok] = ImViVi(voltage, idx)
-            else
-                if se.type[row] == 5 # Pij
-                    model = PijCoefficient(branch, ac, idx)
-                    state = ViVjθijState(system, voltage, idx)
 
-                    if col == branch.layout.from[idx]
-                        se.residual[row] = se.mean[row] - Pij(model, state)
-                        seobjective(analysis, row)
+            elseif se.type[row] == 14 # ψij
+                model = ψijCoefficient(branch, ac, idx)
+                state = ViVjθiθjState(system, voltage, idx)
+                Iinv2, Iij = ψij(model, state)
 
-                        jcb[row, col] = Pijθi(model, state)
-                        jcb[row, cok] = PijVi(model, state)
-                    else
-                        jcb[row, col] = Pijθj(model, state)
-                        jcb[row, cok] = PijVj(model, state)
-                    end
+                model = IijCoefficient(branch, ac, idx)
+                state = ViVjθijState(system, voltage, idx)
 
-                elseif se.type[row] == 6 # Pji
-                    model = PjiCoefficient(branch, ac, idx)
-                    state = ViVjθijState(system, voltage, idx)
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - angle(Iij)
+                    seobjective(analysis, row)
 
-                    if col == branch.layout.from[idx]
-                        se.residual[row] = se.mean[row] - Pji(model, state)
-                        seobjective(analysis, row)
+                    jcb[row, col] = ψijθi(model, state, Iinv2)
+                    jcb[row, cok] = ψijVi(model, state, Iinv2)
+                else
+                    jcb[row, col] = ψijθj(model, state, Iinv2)
+                    jcb[row, cok] = ψijVj(model, state, Iinv2)
+                end
 
-                        jcb[row, col] = Pjiθi(model, state)
-                        jcb[row, cok] = PjiVi(model, state)
-                    else
-                        jcb[row, col] = Pjiθj(model, state)
-                        jcb[row, cok] = PjiVj(model, state)
-                    end
+            elseif se.type[row] == 15 # ψji
+                model = ψjiCoefficient(branch, ac, idx)
+                state = VjViθjθiState(system, voltage, idx)
+                Iinv2, Iji = ψji(model, state)
 
-                elseif se.type[row] == 8 # Qij
-                    model = QijCoefficient(branch, ac, idx)
-                    state = ViVjθijState(system, voltage, idx)
+                model = IjiCoefficient(branch, ac, idx)
+                state = ViVjθijState(system, voltage, idx)
 
-                    if col == branch.layout.from[idx]
-                        se.residual[row] = se.mean[row] - Qij(model, state)
-                        seobjective(analysis, row)
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - angle(Iji)
+                    seobjective(analysis, row)
 
-                        jcb[row, col] = Qijθi(model, state)
-                        jcb[row, cok] = QijVi(model, state)
-                    else
-                        jcb[row, col] = Qijθj(model, state)
-                        jcb[row, cok] = QijVj(model, state)
-                    end
+                    jcb[row, col] = ψjiθi(model, state, Iinv2)
+                    jcb[row, cok] = ψjiVi(model, state, Iinv2)
+                else
+                    jcb[row, col] = ψjiθj(model, state, Iinv2)
+                    jcb[row, cok] = ψjiVj(model, state, Iinv2)
+                end
 
-                elseif se.type[row] == 9 # Qji
-                    model = QjiCoefficient(branch, ac, idx)
-                    state = ViVjθijState(system, voltage, idx)
+            elseif se.type[row] == 18 # Re(Iij)
+                model = ψijCoefficient(branch, ac, idx)
+                state = ViVjθiθjState(system, voltage, idx)
 
-                    if col == branch.layout.from[idx]
-                        se.residual[row] = se.mean[row] - Qji(model, state)
-                        seobjective(analysis, row)
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - ReIij(model, state)
+                    seobjective(analysis, row)
 
-                        jcb[row, col] = Qjiθi(model, state)
-                        jcb[row, cok] = QjiVi(model, state)
-                    else
-                        jcb[row, col] = Qjiθj(model, state)
-                        jcb[row, cok] = QjiVj(model, state)
-                    end
+                    jcb[row, col] = ReIijθi(model, state)
+                    jcb[row, cok] = ReIijVi(model, state)
+                else
+                    jcb[row, col] = ReIijθj(model, state)
+                    jcb[row, cok] = ReIijVj(model, state)
+                end
 
-                elseif se.type[row] == 2 # Iij
-                    model = IijCoefficient(branch, ac, idx)
-                    state = ViVjθijState(system, voltage, idx)
-                    Iinv = Iijinv(model, state)
+            elseif se.type[row] == 20 # Im(Iij)
+                model = ψijCoefficient(branch, ac, idx)
+                state = ViVjθiθjState(system, voltage, idx)
 
-                    if col == branch.layout.from[idx]
-                        se.residual[row] = se.mean[row] - (1 / Iinv)
-                        seobjective(analysis, row)
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - ImIij(model, state)
+                    seobjective(analysis, row, row - 1)
 
-                        jcb[row, col] = Iijθi(model, state, Iinv)
-                        jcb[row, cok] = IijVi(model, state, Iinv)
-                    else
-                        jcb[row, col] = Iijθj(model, state, Iinv)
-                        jcb[row, cok] = IijVj(model, state, Iinv)
-                    end
+                    jcb[row, col] = ImIijθi(model, state)
+                    jcb[row, cok] = ImIijVi(model, state)
+                else
+                    jcb[row, col] = ImIijθj(model, state)
+                    jcb[row, cok] = ImIijVj(model, state)
+                end
 
-                elseif se.type[row] == 3 # Iji
-                    model = IjiCoefficient(branch, ac, idx)
-                    state = ViVjθijState(system, voltage, idx)
-                    Iinv = Ijiinv(model, state)
+            elseif se.type[row] == 19 # Re(Iji)
+                model = ψjiCoefficient(branch, ac, idx)
+                state = VjViθjθiState(system, voltage, idx)
 
-                    if col == branch.layout.from[idx]
-                        se.residual[row] = se.mean[row] - (1 / Iinv)
-                        seobjective(analysis, row)
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - ReIji(model, state)
+                    seobjective(analysis, row)
 
-                        jcb[row, col] = Ijiθi(model, state, Iinv)
-                        jcb[row, cok] = IjiVi(model, state, Iinv)
-                    else
-                        jcb[row, col] = Ijiθj(model, state, Iinv)
-                        jcb[row, cok] = IjiVj(model, state, Iinv)
-                    end
+                    jcb[row, col] = ReIjiθi(model, state)
+                    jcb[row, cok] = ReIjiVi(model, state)
+                else
+                    jcb[row, col] = ReIjiθj(model, state)
+                    jcb[row, cok] = ReIjiVj(model, state)
+                end
 
-                elseif se.type[row] == 12 # ψij
-                    model = ψijCoefficient(branch, ac, idx)
-                    state = ViVjθiθjState(system, voltage, idx)
-                    Iinv2, Iij = ψij(model, state)
+            elseif se.type[row] == 21 # Im(Iji)
+                model = ψjiCoefficient(branch, ac, idx)
+                state = VjViθjθiState(system, voltage, idx)
 
-                    model = IijCoefficient(branch, ac, idx)
-                    state = ViVjθijState(system, voltage, idx)
+                if col == branch.layout.from[idx]
+                    se.residual[row] = se.mean[row] - ImIji(model, state)
+                    seobjective(analysis, row, row - 1)
 
-                    if col == branch.layout.from[idx]
-                        se.residual[row] = se.mean[row] - angle(Iij)
-                        seobjective(analysis, row)
-
-                        jcb[row, col] = ψijθi(model, state, Iinv2)
-                        jcb[row, cok] = ψijVi(model, state, Iinv2)
-                    else
-                        jcb[row, col] = ψijθj(model, state, Iinv2)
-                        jcb[row, cok] = ψijVj(model, state, Iinv2)
-                    end
-
-                elseif se.type[row] == 13 # ψji
-                    model = ψjiCoefficient(branch, ac, idx)
-                    state = VjViθjθiState(system, voltage, idx)
-                    Iinv2, Iji = ψji(model, state)
-
-                    model = IjiCoefficient(branch, ac, idx)
-                    state = ViVjθijState(system, voltage, idx)
-
-                    if col == branch.layout.from[idx]
-                        se.residual[row] = se.mean[row] - angle(Iji)
-                        seobjective(analysis, row)
-
-                        jcb[row, col] = ψjiθi(model, state, Iinv2)
-                        jcb[row, cok] = ψjiVi(model, state, Iinv2)
-                    else
-                        jcb[row, col] = ψjiθj(model, state, Iinv2)
-                        jcb[row, cok] = ψjiVj(model, state, Iinv2)
-                    end
-
-                elseif se.type[row] == 16 # Re(Iij)
-                    model = ψijCoefficient(branch, ac, idx)
-                    state = ViVjθiθjState(system, voltage, idx)
-
-                    if col == branch.layout.from[idx]
-                        se.residual[row] = se.mean[row] - ReIij(model, state)
-                        seobjective(analysis, row)
-
-                        jcb[row, col] = ReIijθi(model, state)
-                        jcb[row, cok] = ReIijVi(model, state)
-                    else
-                        jcb[row, col] = ReIijθj(model, state)
-                        jcb[row, cok] = ReIijVj(model, state)
-                    end
-
-                elseif se.type[row] == 18 # Im(Iij)
-                    model = ψijCoefficient(branch, ac, idx)
-                    state = ViVjθiθjState(system, voltage, idx)
-
-                    if col == branch.layout.from[idx]
-                        se.residual[row] = se.mean[row] - ImIij(model, state)
-                        seobjective(analysis, row, row - 1)
-
-                        jcb[row, col] = ImIijθi(model, state)
-                        jcb[row, cok] = ImIijVi(model, state)
-                    else
-                        jcb[row, col] = ImIijθj(model, state)
-                        jcb[row, cok] = ImIijVj(model, state)
-                    end
-
-                elseif se.type[row] == 17 # Re(Iji)
-                    model = ψjiCoefficient(branch, ac, idx)
-                    state = VjViθjθiState(system, voltage, idx)
-
-                    if col == branch.layout.from[idx]
-                        se.residual[row] = se.mean[row] - ReIji(model, state)
-                        seobjective(analysis, row)
-
-                        jcb[row, col] = ReIjiθi(model, state)
-                        jcb[row, cok] = ReIjiVi(model, state)
-                    else
-                        jcb[row, col] = ReIjiθj(model, state)
-                        jcb[row, cok] = ReIjiVj(model, state)
-                    end
-
-                elseif se.type[row] == 19 # Im(Iji)
-                    model = ψjiCoefficient(branch, ac, idx)
-                    state = VjViθjθiState(system, voltage, idx)
-
-                    if col == branch.layout.from[idx]
-                        se.residual[row] = se.mean[row] - ImIji(model, state)
-                        seobjective(analysis, row, row - 1)
-
-                        jcb[row, col] = ImIjiθi(model, state)
-                        jcb[row, cok] = ImIjiVi(model, state)
-                    else
-                        jcb[row, col] = ImIjiθj(model, state)
-                        jcb[row, cok] = ImIjiVj(model, state)
-                    end
-
+                    jcb[row, col] = ImIjiθi(model, state)
+                    jcb[row, cok] = ImIjiVi(model, state)
+                else
+                    jcb[row, col] = ImIjiθj(model, state)
+                    jcb[row, cok] = ImIjiVj(model, state)
                 end
             end
         end
@@ -565,10 +607,10 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
     end
 
     @inbounds for row = se.range[5]:(se.range[6] - 1)
-        if se.type[row] == 10 # Vi
+        if se.type[row] == 12 # Vi
             se.residual[row] = se.mean[row] - voltage.magnitude[se.index[row]]
             seobjective(analysis, row)
-        elseif se.type[row] == 11 # Ti
+        elseif se.type[row] == 13 # Ti
             se.residual[row] = se.mean[row] - voltage.angle[se.index[row]]
             seobjective(analysis, row)
         end
@@ -577,7 +619,7 @@ end
 
 """
     acLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
-        iteration, tolerance, bridge, name, verbose)
+        iteration, tolerance, bridge, name, magnitude, angle, positive, negative, verbose)
 
 The function sets up the LAV method to solve the nonlinear or AC state estimation
 model, where the vector of state variables is given in polar coordinates.
@@ -598,6 +640,11 @@ The function accepts the following keywords:
 * `bridge`: Controls the bridging mechanism (default: `false`).
 * `name`: Handles the creation of string names (default: `false`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
+
+Additionally, users can modify variable names used for printing and writing through the
+keywords `magnitude`, `angle`, `positive`, and `negative`. For instance, users can choose
+`magnitude = "V"`, `angle = "θ"`, `positive = "u"`, and `negative = "v"` to display equations
+in a more readable format.
 
 # Updates
 If the AC model has not been created, the function will automatically trigger an update of
@@ -628,6 +675,10 @@ function acLavStateEstimation(
     tolerance::FltIntMiss = missing,
     bridge::Bool = false,
     name::Bool = false,
+    magnitude::String = "magnitude",
+    angle::String = "angle",
+    positive::String = "positive",
+    negative::String = "negative",
     verbose::Int64 = template.config.verbose
 )
     ac = system.model.ac
@@ -649,177 +700,175 @@ function acLavStateEstimation(
     set_string_names_on_creation(jump, name)
     setAttribute(jump, iteration, tolerance, verbose)
 
-    method = LAV(
+    lav = LAV(
         jump,
-        StateAC(
-            Vector{AffExpr}(undef, bus.number),
+        ACState(
+            @variable(jump, magnitude[i = 1:bus.number], base_name = magnitude),
+            @variable(jump, angle[i = 1:bus.number], base_name = angle),
             Dict{Int64, NonlinearExpr}(),
             Dict{Int64, NonlinearExpr}(),
             Dict{Int64, NonlinearExpr}(),
             Dict{Int64, NonlinearExpr}(),
             Dict{Tuple{Int64, Int64}, Int64}()
         ),
-        @variable(jump, 0 <= statex[i = 1:(2 * bus.number)]),
-        @variable(jump, 0 <= statey[i = 1:(2 * bus.number)]),
-        @variable(jump, 0 <= residualx[i = 1:total]),
-        @variable(jump, 0 <= residualy[i = 1:total]),
+        Deviation(
+            @variable(jump, 0 <= positive[i = 1:total], base_name = positive),
+            @variable(jump, 0 <= negative[i = 1:total], base_name = negative)
+        ),
         Dict{Int64, ConstraintRef}(),
         OrderedDict{Int64, Int64}(),
         fill(1, 6),
         total
     )
-    objective = @expression(method.jump, AffExpr())
+    objective = @expression(lav.jump, AffExpr())
 
-    @inbounds for i = 1:bus.number
-        idx = i + bus.number
-        method.state.V[i] = @expression(method.jump, method.statex[idx] - method.statey[idx])
-    end
     @inbounds for i = 1:branch.number
-        method.state.incidence[(fromto(system, i))] = i
+        lav.state.incidence[(fromto(system, i))] = i
     end
 
-    fix(method.statex[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
-    fix(method.statey[bus.layout.slack], 0.0; force = true)
+    fix(lav.state.angle[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
 
     @inbounds for (k, idx) in enumerate(volt.layout.index)
         if volt.magnitude.status[k] == 1
-            addConstrLav!(method, method.state.V[idx], volt.magnitude.mean[k], k)
-            addObjectLav!(method, objective, k)
+            addConstrLav!(lav, lav.state.magnitude[idx], volt.magnitude.mean[k], k)
+            addObjectLav!(lav, objective, k)
         else
-            fix!(method.residualx, method.residualy, k)
+            fix!(lav.deviation.positive, lav.deviation.negative, k)
         end
     end
-    method.range[2] = volt.number + 1
+    lav.range[2] = volt.number + 1
 
     cnt = volt.number + 1
     @inbounds for (k, idx) in enumerate(amp.layout.index)
         if amp.magnitude.status[k] == 1
             if amp.layout.from[k]
-                expr = Iij(system, method, idx)
+                expr = Iij(system, lav, amp.layout.square[k], idx)
             else
-                expr = Iji(system, method, idx)
+                expr = Iji(system, lav, amp.layout.square[k], idx)
             end
 
-            addConstrLav!(method, expr, amp.magnitude.mean[k], cnt)
-            addObjectLav!(method, objective, cnt)
+            sq = if2(amp.layout.square[k])
+            addConstrLav!(lav, expr, amp.magnitude.mean[k]^sq, cnt)
+            addObjectLav!(lav, objective, cnt)
         else
-            fix!(method.residualx, method.residualy, cnt)
+            fix!(lav.deviation.positive, lav.deviation.negative, cnt)
         end
         cnt += 1
     end
-    method.range[3] = cnt
+    lav.range[3] = cnt
 
     @inbounds for (k, idx) in enumerate(watt.layout.index)
         if watt.active.status[k] == 1
             if watt.layout.bus[k]
-                expr = Pi(system, method, idx)
+                expr = Pi(system, lav, idx)
             else
                 if watt.layout.from[k]
-                    expr = Pij(system, method, idx)
+                    expr = Pij(system, lav, idx)
                 else
-                    expr = Pji(system, method, idx)
+                    expr = Pji(system, lav, idx)
                 end
             end
-            addConstrLav!(method, expr, watt.active.mean[k], cnt)
-            addObjectLav!(method, objective, cnt)
+            addConstrLav!(lav, expr, watt.active.mean[k], cnt)
+            addObjectLav!(lav, objective, cnt)
         else
-            fix!(method.residualx, method.residualy, cnt)
+            fix!(lav.deviation.positive, lav.deviation.negative, cnt)
         end
         cnt += 1
     end
-    method.range[4] = cnt
+    lav.range[4] = cnt
 
     @inbounds for (k, idx) in enumerate(var.layout.index)
         if var.reactive.status[k] == 1
             if var.layout.bus[k]
-                expr = Qi(system, method, idx)
+                expr = Qi(system, lav, idx)
             else
                 if var.layout.from[k]
-                    expr = Qij(system, method, idx)
+                    expr = Qij(system, lav, idx)
                 else
-                    expr = Qji(system, method, idx)
+                    expr = Qji(system, lav, idx)
                 end
             end
-            addConstrLav!(method, expr, var.reactive.mean[k], cnt)
-            addObjectLav!(method, objective, cnt)
+            addConstrLav!(lav, expr, var.reactive.mean[k], cnt)
+            addObjectLav!(lav, objective, cnt)
         else
-            fix!(method.residualx, method.residualy, cnt)
+            fix!(lav.deviation.positive, lav.deviation.negative, cnt)
         end
         cnt += 1
     end
-    method.range[5] = cnt
+    lav.range[5] = cnt
 
     @inbounds for (k, idx) in enumerate(pmu.layout.index)
         if pmu.layout.polar[k]
             if pmu.layout.bus[k]
                 if pmu.magnitude.status[k] == 1
-                    addConstrLav!(method, method.state.V[idx], pmu.magnitude.mean[k], cnt)
-                    addObjectLav!(method, objective, cnt)
+                    addConstrLav!(lav, lav.state.magnitude[idx], pmu.magnitude.mean[k], cnt)
+                    addObjectLav!(lav, objective, cnt)
                 else
-                    fix!(method.residualx, method.residualy, cnt)
+                    fix!(lav.deviation.positive, lav.deviation.negative, cnt)
                 end
 
                 if pmu.angle.status[k] == 1
-                    expr = @expression(method.jump, method.statex[idx] - method.statey[idx])
-                    addConstrLav!(method, expr, pmu.angle.mean[k], cnt + 1)
-                    addObjectLav!(method, objective, cnt + 1)
+                    addConstrLav!(lav, lav.state.angle[idx], pmu.angle.mean[k], cnt + 1)
+                    addObjectLav!(lav, objective, cnt + 1)
                 else
-                    fix!(method.residualx, method.residualy, cnt + 1)
+                    fix!(lav.deviation.positive, lav.deviation.negative, cnt + 1)
                 end
             else
                 if pmu.magnitude.status[k] == 1
                     if pmu.layout.from[k]
-                        expr = Iij(system, method, idx)
+                        expr = Iij(system, lav, pmu.layout.square[k], idx)
                     else
-                        expr = Iji(system, method, idx)
+                        expr = Iji(system, lav, pmu.layout.square[k], idx)
                     end
-                    addConstrLav!(method, expr, pmu.magnitude.mean[k], cnt)
-                    addObjectLav!(method, objective, cnt)
+
+                    sq = if2(pmu.layout.square[k])
+                    addConstrLav!(lav, expr, pmu.magnitude.mean[k]^sq, cnt)
+                    addObjectLav!(lav, objective, cnt)
                 else
-                    fix!(method.residualx, method.residualy, cnt)
+                    fix!(lav.deviation.positive, lav.deviation.negative, cnt)
                 end
 
                 if pmu.angle.status[k] == 1
                     if pmu.layout.from[k]
-                        expr = ψij(system, method, idx)
+                        expr = ψij(system, lav, idx)
                     else
-                        expr = ψji(system, method, idx)
+                        expr = ψji(system, lav, idx)
                     end
-                    addConstrLav!(method, expr, pmu.angle.mean[k], cnt + 1)
-                    addObjectLav!(method, objective, cnt + 1)
+                    addConstrLav!(lav, expr, pmu.angle.mean[k], cnt + 1)
+                    addObjectLav!(lav, objective, cnt + 1)
                 else
-                    fix!(method.residualx, method.residualy, cnt + 1)
+                    fix!(lav.deviation.positive, lav.deviation.negative, cnt + 1)
                 end
             end
         else
             if pmu.magnitude.status[k] == 1 && pmu.angle.status[k] == 1
                 if pmu.layout.bus[k]
-                    ReExpr, ImExpr = ReImVi(method, idx)
+                    ReExpr, ImExpr = ReImVi(lav, idx)
                 else
                     if pmu.layout.from[k]
-                        ReExpr, ImExpr = ReImIij(system, method, idx)
+                        ReExpr, ImExpr = ReImIij(system, lav, idx)
                     else
-                        ReExpr, ImExpr = ReImIji(system, method, idx)
+                        ReExpr, ImExpr = ReImIji(system, lav, idx)
                     end
                 end
                 ReMean = pmu.magnitude.mean[k] * cos(pmu.angle.mean[k])
                 ImMean = pmu.magnitude.mean[k] * sin(pmu.angle.mean[k])
 
-                addConstrLav!(method, ReExpr, ReMean, cnt)
-                addObjectLav!(method, objective, cnt)
+                addConstrLav!(lav, ReExpr, ReMean, cnt)
+                addObjectLav!(lav, objective, cnt)
 
-                addConstrLav!(method, ImExpr, ImMean, cnt + 1)
-                addObjectLav!(method, objective, cnt + 1)
+                addConstrLav!(lav, ImExpr, ImMean, cnt + 1)
+                addObjectLav!(lav, objective, cnt + 1)
             else
-                fix!(method.residualx, method.residualy, cnt)
-                fix!(method.residualx, method.residualy, cnt + 1)
+                fix!(lav.deviation.positive, lav.deviation.negative, cnt)
+                fix!(lav.deviation.positive, lav.deviation.negative, cnt + 1)
             end
         end
         cnt += 2
     end
-    method.range[6] = cnt
+    lav.range[6] = cnt
 
-    @objective(method.jump, Min, objective)
+    @objective(lav.jump, Min, objective)
 
     ACStateEstimation(
         Polar(
@@ -842,7 +891,7 @@ function acLavStateEstimation(
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        method
+        lav
     )
 end
 
@@ -1007,25 +1056,25 @@ function solve!(
     analysis::ACStateEstimation{LAV};
 )
     bus = system.bus
-    se = analysis.method
+    lav = analysis.method
     volt = analysis.voltage
-    verbose = se.jump.ext[:verbose]
+    verbose = lav.jump.ext[:verbose]
 
-    silentJump(se.jump, verbose)
-
-    @inbounds for i = 1:bus.number
-        set_start_value(se.statex[i]::VariableRef, bus.voltage.angle[i])
-        set_start_value(se.statex[i + bus.number]::VariableRef, bus.voltage.magnitude[i])
-    end
-
-    optimize!(se.jump)
+    silentJump(lav.jump, verbose)
 
     @inbounds for i = 1:bus.number
-        volt.angle[i] = value(se.statex[i]::VariableRef) - value(se.statey[i]::VariableRef)
-        volt.magnitude[i] = value(se.state.V[i])
+        set_start_value(lav.state.angle[i]::VariableRef, bus.voltage.angle[i])
+        set_start_value(lav.state.magnitude[i]::VariableRef, bus.voltage.magnitude[i])
     end
 
-    printExit(se.jump, verbose)
+    optimize!(lav.jump)
+
+    @inbounds for i = 1:bus.number
+        volt.angle[i] = value(lav.state.angle[i]::VariableRef)
+        volt.magnitude[i] = value(lav.state.magnitude[i]::VariableRef)
+    end
+
+    printExit(lav.jump, verbose)
 end
 
 """
@@ -1194,6 +1243,14 @@ function fourIndices!(
     return jcb, type, idx
 end
 
+function if2(square::Bool)
+    if square
+        return 2
+    else
+        return 1
+    end
+end
+
 function nthIndices!(
     jcb::SparseModel,
     type::Vector{Int8},
@@ -1229,6 +1286,9 @@ The function serves as a wrapper for solving AC state estimation and includes th
 * [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})),
 * [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
 * [`current!`](@ref current!(::PowerSystem, ::AC)).
+
+Additionally, for the WLS model, it includes:
+* [`increment!`](@ref increment!).
 
 It computes bus voltage magnitudes and angles using the WLS or LAV model with the option
 to compute powers and currents.

@@ -3,10 +3,7 @@ function θijState!(system::PowerSystem, method::LAV, idxBrch::Int64)
     if !haskey(method.state.sinθij, idxBrch)
         i = system.branch.layout.from[idxBrch]
         j = system.branch.layout.to[idxBrch]
-        θij = @expression(
-            method.jump, method.statex[i] - method.statey[i] -
-            method.statex[j] + method.statey[j]
-        )
+        θij = @expression(method.jump, method.state.angle[i] - method.state.angle[j])
         method.state.sinθij[idxBrch] = sin(θij)
         method.state.cosθij[idxBrch] = cos(θij)
     end
@@ -15,9 +12,8 @@ end
 function θiState!(method::LAV, idxBus::Int64...)
     for i in idxBus
         if !haskey(method.state.sinθ, i)
-            θ = method.statex[i] - method.statey[i]
-            method.state.sinθ[i] = sin(θ)
-            method.state.cosθ[i] = cos(θ)
+            method.state.sinθ[i] = sin(method.state.angle[i])
+            method.state.cosθ[i] = cos(method.state.angle[i])
         end
     end
 end
@@ -47,16 +43,13 @@ function GijBijθij(ac::ACModel, angle::Vector{VariableRef}, i::Int64, j::Int64,
     return Gij, Bij, sinθij, cosθij
 end
 
-function θi(se::LAV, i::Int64)
-    se.statex[i] - se.statey[i]
-end
-
 ##### Active Power Injection #####
 function Pi(system::PowerSystem, method::LAV, i::Int64)
     ac = system.model.ac
     s = method.state
+    V = method.state.magnitude
 
-    expr = @expression(method.jump, real(ac.nodalMatrixTranspose[i, i]) * s.V[i])
+    expr = @expression(method.jump, real(ac.nodalMatrixTranspose[i, i]) * V[i])
 
     @inbounds for ptr in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
         j = ac.nodalMatrix.rowval[ptr]
@@ -65,11 +58,11 @@ function Pi(system::PowerSystem, method::LAV, i::Int64)
             k, Bij = idxBijGij(method, Bij, i, j)
             θijState!(system, method, k)
 
-            expr += (Gij * s.cosθij[k] + Bij * s.sinθij[k]) * s.V[j]
+            expr += (Gij * s.cosθij[k] + Bij * s.sinθij[k]) * V[j]
         end
     end
 
-    s.V[i] * expr
+    V[i] * expr
 end
 
 function Pi(dc::DCModel, se::LAV, k::Int64)
@@ -78,7 +71,7 @@ function Pi(dc::DCModel, se::LAV, k::Int64)
     expr = @expression(se.jump, AffExpr())
     @inbounds for ptr in nodal.colptr[k]:(nodal.colptr[k + 1] - 1)
         j = nodal.rowval[ptr]
-        add_to_expression!(expr, nodal.nzval[ptr] * (se.statex[j] - se.statey[j]))
+        add_to_expression!(expr, nodal.nzval[ptr] * se.state.angle[j])
     end
 
     return expr
@@ -87,6 +80,7 @@ end
 ##### From-Bus End Active Power Flow #####
 function Pij(system::PowerSystem, method::LAV, idx::Int64)
     s = method.state
+    V = method.state.magnitude
 
     i, j = fromto(system, idx)
     p = PijCoefficient(system.branch, system.model.ac, idx)
@@ -94,7 +88,7 @@ function Pij(system::PowerSystem, method::LAV, idx::Int64)
     θijState!(system, method, idx)
     k1, k2 = plusΦ(p.B, p.C, system.branch.parameter.shiftAngle[idx])
 
-    p.A * s.V[i]^2 - s.V[i] * s.V[j] * (k1 * s.cosθij[idx] + k2 * s.sinθij[idx])
+    p.A * V[i]^2 - V[i] * V[j] * (k1 * s.cosθij[idx] + k2 * s.sinθij[idx])
 end
 
 function Pij(system::PowerSystem,
@@ -109,20 +103,16 @@ function Pij(system::PowerSystem,
     p.A * Vi^2 - Vi * Vj * (p.B * cosθij + p.C * sinθij)
 end
 
-function Pij(system::PowerSystem, se::LAV, admittance::Float64, idx::Int64)
+function Pij(system::PowerSystem, state::DCState, admittance::Float64, idx::Int64)
     i, j = fromto(system, idx)
 
-    AffExpr(0.0,
-        se.statex[i] => admittance,
-        se.statey[i] => -admittance,
-        se.statex[j] => -admittance,
-        se.statey[j]=> admittance,
-    )
+    admittance * state.angle[i] - admittance * state.angle[j]
 end
 
 ##### To-Bus End Active Power Flow #####
 function Pji(system::PowerSystem, method::LAV, idx::Int64)
     s = method.state
+    V = method.state.magnitude
 
     i, j = fromto(system, idx)
     p = PjiCoefficient(system.branch, system.model.ac, idx)
@@ -130,7 +120,7 @@ function Pji(system::PowerSystem, method::LAV, idx::Int64)
     θijState!(system, method, idx)
     k1, k2 = minusΦ(p.B, p.C, system.branch.parameter.shiftAngle[idx])
 
-    p.A * s.V[j]^2 - s.V[i] * s.V[j] * (k1 * s.cosθij[idx] - k2 * s.sinθij[idx])
+    p.A * V[j]^2 - V[i] * V[j] * (k1 * s.cosθij[idx] - k2 * s.sinθij[idx])
 end
 
 function Pji(system::PowerSystem,
@@ -149,8 +139,9 @@ end
 function Qi(system::PowerSystem, method::LAV, i::Int64)
     ac = system.model.ac
     s = method.state
+    V = method.state.magnitude
 
-    expr = @expression(method.jump, -imag(ac.nodalMatrixTranspose[i, i]) * s.V[i])
+    expr = @expression(method.jump, -imag(ac.nodalMatrixTranspose[i, i]) * V[i])
 
     @inbounds for ptr in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
         j = ac.nodalMatrix.rowval[ptr]
@@ -159,16 +150,17 @@ function Qi(system::PowerSystem, method::LAV, i::Int64)
             k, Gij = idxBijGij(method, Gij, i, j)
             θijState!(system, method, k)
 
-            expr += (Gij * s.sinθij[k] - Bij * s.cosθij[k]) * s.V[j]
+            expr += (Gij * s.sinθij[k] - Bij * s.cosθij[k]) * V[j]
         end
     end
 
-    s.V[i] * expr
+    V[i] * expr
 end
 
 ##### From-Bus End Reactive Power Flow #####
 function Qij(system::PowerSystem, method::LAV, idx::Int64)
     s = method.state
+    V = method.state.magnitude
 
     i, j = fromto(system, idx)
     p = QijCoefficient(system.branch, system.model.ac, idx)
@@ -176,12 +168,13 @@ function Qij(system::PowerSystem, method::LAV, idx::Int64)
     θijState!(system, method, idx)
     k1, k2 = minusΦ(p.C, p.B, system.branch.parameter.shiftAngle[idx])
 
-    -p.A * s.V[i]^2 + s.V[i] * s.V[j] * (k1 * s.cosθij[idx] - k2 * s.sinθij[idx])
+    -p.A * V[i]^2 + V[i] * V[j] * (k1 * s.cosθij[idx] - k2 * s.sinθij[idx])
 end
 
 ##### To-Bus End Reactive Power Flow #####
 function Qji(system::PowerSystem, method::LAV, idx::Int64)
     s = method.state
+    V = method.state.magnitude
 
     i, j = fromto(system, idx)
     p = QjiCoefficient(system.branch, system.model.ac, idx)
@@ -189,11 +182,12 @@ function Qji(system::PowerSystem, method::LAV, idx::Int64)
     θijState!(system, method, idx)
     k1, k2 = plusΦ(p.C, p.B, system.branch.parameter.shiftAngle[idx])
 
-    -p.A * s.V[j]^2 + s.V[i] * s.V[j] * (k1 * s.cosθij[idx] + k2 * s.sinθij[idx])
+    -p.A * V[j]^2 + V[i] * V[j] * (k1 * s.cosθij[idx] + k2 * s.sinθij[idx])
 end
 
 ##### From-Bus End Current Magnitude #####
-function Iij(system::PowerSystem, method::LAV, idx::Int64)
+function Iij(system::PowerSystem, method::LAV, square::Bool, idx::Int64)
+    V = method.state.magnitude
     s = method.state
 
     i, j = fromto(system, idx)
@@ -202,10 +196,17 @@ function Iij(system::PowerSystem, method::LAV, idx::Int64)
     θijState!(system, method, idx)
     k1, k2 = minusΦ(p.C, p.D, system.branch.parameter.shiftAngle[idx])
 
-    @expression(
-        method.jump, sqrt(p.A * s.V[i]^2 + p.B * s.V[j]^2 -
-        2 * s.V[i] * s.V[j] * (k1 * s.cosθij[idx] - k2 * s.sinθij[idx]))
-    )
+    if square
+        @expression(
+            method.jump, p.A * V[i]^2 + p.B * V[j]^2 -
+            2 * V[i] * V[j] * (k1 * s.cosθij[idx] - k2 * s.sinθij[idx])
+        )
+    else
+        @expression(
+            method.jump, sqrt(p.A * V[i]^2 + p.B * V[j]^2 -
+            2 * V[i] * V[j] * (k1 * s.cosθij[idx] - k2 * s.sinθij[idx]))
+        )
+    end
 end
 
 function Iij(
@@ -235,7 +236,8 @@ function Iij2(
 end
 
 ##### To-Bus End Current Magnitude #####
-function Iji(system::PowerSystem, method::LAV, idx::Int64)
+function Iji(system::PowerSystem, method::LAV, square::Bool, idx::Int64)
+    V = method.state.magnitude
     s = method.state
 
     i, j = fromto(system, idx)
@@ -244,10 +246,17 @@ function Iji(system::PowerSystem, method::LAV, idx::Int64)
     θijState!(system, method, idx)
     k1, k2 = plusΦ(p.C, p.D, system.branch.parameter.shiftAngle[idx])
 
-    @expression(
-        method.jump, sqrt(p.A * s.V[i]^2 + p.B * s.V[j]^2 -
-        2 * s.V[i] * s.V[j] * (k1 * s.cosθij[idx] + k2 * s.sinθij[idx]))
-    )
+    if square
+        @expression(
+            method.jump, p.A * V[i]^2 + p.B * V[j]^2 -
+            2 * V[i] * V[j] * (k1 * s.cosθij[idx] + k2 * s.sinθij[idx])
+        )
+    else
+        @expression(
+            method.jump, sqrt(p.A * V[i]^2 + p.B * V[j]^2 -
+            2 * V[i] * V[j] * (k1 * s.cosθij[idx] + k2 * s.sinθij[idx]))
+        )
+    end
 end
 
 function Iji(
@@ -346,19 +355,20 @@ end
 
 ##### Real and Imaginary Components of Bus Voltage Phasor #####
 function ReImVi(method::LAV, idx::Int64)
+    V = method.state.magnitude
     s = method.state
     θiState!(method, idx)
 
-    return s.V[idx] * s.cosθ[idx], s.V[idx] * s.sinθ[idx]
+    return V[idx] * s.cosθ[idx], V[idx] * s.sinθ[idx]
 end
 
 function ReImVi(method::LAV, i::Int64, j::Int64)
-    return @expression(method.jump, method.statex[i] - method.statey[i]),
-    @expression(method.jump, method.statex[i + j] - method.statey[i + j])
+    method.magnitude[i], method.angle[i]
 end
 
 ##### Real and Imaginary Components of From-Bus End Current Phasor #####
 function ReImIij(system::PowerSystem, method::LAV, idx::Int64)
+    V = method.state.magnitude
     s = method.state
 
     i, j = fromto(system, idx)
@@ -368,8 +378,8 @@ function ReImIij(system::PowerSystem, method::LAV, idx::Int64)
     k1, k2 = minusΦ(p.C, p.D, -system.branch.parameter.shiftAngle[idx])
     k3, k4 = plusΦ(p.D, p.C, -system.branch.parameter.shiftAngle[idx])
 
-    IijRe = (p.A * s.cosθ[i] - p.B * s.sinθ[i]) * s.V[i] - (k1 * s.cosθ[j] - k2 * s.sinθ[j]) * s.V[j]
-    IijIm = (p.A * s.sinθ[i] + p.B * s.cosθ[i]) * s.V[i] - (k3 * s.cosθ[j] + k4 * s.sinθ[j]) * s.V[j]
+    IijRe = (p.A * s.cosθ[i] - p.B * s.sinθ[i]) * V[i] - (k1 * s.cosθ[j] - k2 * s.sinθ[j]) * V[j]
+    IijIm = (p.A * s.sinθ[i] + p.B * s.cosθ[i]) * V[i] - (k3 * s.cosθ[j] + k4 * s.sinθ[j]) * V[j]
 
     return IijRe, IijIm
 end
@@ -394,32 +404,46 @@ function ReImIij(
     idx::Int64
 )
     i, j = fromto(system, idx)
-    k = system.bus.number
 
     return AffExpr(0.0,
-        method.statex[i] => p.A,
-        method.statey[i] => -p.A,
-        method.statex[i + k] => p.B,
-        method.statey[i + k]=> -p.B,
-        method.statex[j] => p.C,
-        method.statey[j]=> -p.C,
-        method.statex[j + k]=> p.D,
-        method.statey[j + k]=> -p.D,
+        method.angle[i] => p.A,
+        method.magnitude[i] => p.B,
+        method.angle[j] => p.C,
+        method.magnitude[j]=> p.D,
     ),
     AffExpr(0.0,
-        method.statex[i] => -p.B,
-        method.statey[i] => p.B,
-        method.statex[i + k] => p.A,
-        method.statey[i + k]=> -p.A,
-        method.statex[j] => -p.D,
-        method.statey[j]=> p.D,
-        method.statex[j + k]=> p.C,
-        method.statey[j + k]=> -p.C,
+        method.angle[i] => -p.B,
+        method.magnitude[i] => p.A,
+        method.angle[j] => -p.D,
+        method.magnitude[j]=> p.C,
+    )
+end
+
+function ReImIij(
+    system::PowerSystem,
+    state::PMUState,
+    p::PiModel,
+    idx::Int64
+)
+    i, j = fromto(system, idx)
+
+    return AffExpr(0.0,
+        state.realpart[i] => p.A,
+        state.imagpart[i] => p.B,
+        state.realpart[j] => p.C,
+        state.imagpart[j]=> p.D,
+    ),
+    AffExpr(0.0,
+        state.realpart[i] => -p.B,
+        state.imagpart[i] => p.A,
+        state.realpart[j] => -p.D,
+        state.imagpart[j]=> p.C,
     )
 end
 
 ##### Real and Imaginary Components of To-Bus End Current Phasor #####
 function ReImIji(system::PowerSystem, method::LAV, idx::Int64)
+    V = method.state.magnitude
     s = method.state
 
     i, j = fromto(system, idx)
@@ -429,8 +453,8 @@ function ReImIji(system::PowerSystem, method::LAV, idx::Int64)
     k1, k2 = minusΦ(p.C, p.D, system.branch.parameter.shiftAngle[idx])
     k3, k4 = plusΦ(p.D, p.C, system.branch.parameter.shiftAngle[idx])
 
-    IjiRe = (p.A * s.cosθ[j] - p.B * s.sinθ[j]) * s.V[j] - (k1 * s.cosθ[i] - k2 * s.sinθ[i]) * s.V[i]
-    IjiIm = (p.A * s.sinθ[j] + p.B * s.cosθ[j]) * s.V[j] - (k3 * s.cosθ[i] + k4 * s.sinθ[i]) * s.V[i]
+    IjiRe = (p.A * s.cosθ[j] - p.B * s.sinθ[j]) * V[j] - (k1 * s.cosθ[i] - k2 * s.sinθ[i]) * V[i]
+    IjiIm = (p.A * s.sinθ[j] + p.B * s.cosθ[j]) * V[j] - (k3 * s.cosθ[i] + k4 * s.sinθ[i]) * V[i]
 
     return IjiRe, IjiIm
 end
@@ -451,19 +475,25 @@ end
 ##### Add Constraints #####
 function addConstrLav!(method::LAV, expr::AffExpr, z::Float64, idx::Int64)
     method.residual[idx] = @constraint(
-        method.jump, expr + method.residualx[idx] - method.residualy[idx] == z
+        method.jump, expr + method.deviation.positive[idx] - method.deviation.negative[idx] == z
+    )
+end
+
+function addConstrLav!(method::LAV, var::VariableRef, z::Float64, idx::Int64)
+    method.residual[idx] = @constraint(
+        method.jump, var + method.deviation.positive[idx] - method.deviation.negative[idx] == z
     )
 end
 
 function addConstrLav!(method::LAV, expr::NonlinearExpr, z::Float64, idx::Int64)
     method.residual[idx] = @constraint(
-        method.jump, expr + method.residualx[idx] - method.residualy[idx] == z
+        method.jump, expr + method.deviation.positive[idx] - method.deviation.negative[idx] == z
     )
 end
 
 ##### Add Objective #####
 function addObjectLav!(method::LAV, objective::AffExpr, idx::Int64)
-    add_to_expression!(objective, method.residualx[idx] + method.residualy[idx])
+    add_to_expression!(objective, method.deviation.positive[idx] + method.deviation.negative[idx])
 end
 
 ##### Fix Values #####

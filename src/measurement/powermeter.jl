@@ -586,11 +586,11 @@ function updateWattmeter!(
 
     if watt.active.status[idxWatt] == 1
         if watt.layout.bus[idxWatt]
-            se.type[idx] = 4
-        elseif watt.layout.from[idxWatt]
-            se.type[idx] = 5
-        else
             se.type[idx] = 6
+        elseif watt.layout.from[idxWatt]
+            se.type[idx] = 7
+        else
+            se.type[idx] = 8
         end
         se.mean[idx] = watt.active.mean[idxWatt]
     else
@@ -769,7 +769,7 @@ function updateWattmeter!(
                     admittance = -dc.admittance[idxBrch]
                 end
                 mean = meanPij(branch, watt, admittance, idxWatt, idxBrch)
-                expr = Pij(system, se, admittance, idxBrch)
+                expr = Pij(system, se.state, admittance, idxBrch)
                 addConstrLav!(se, expr, mean, idxWatt)
             else
                 remove!(se, idxWatt)
@@ -863,11 +863,11 @@ function updateVarmeter!(
 
     if var.reactive.status[idxVar] == 1
         if var.layout.bus[idxVar]
-            se.type[idx] = 7
-        elseif var.layout.from[idxVar]
-            se.type[idx] = 8
-        else
             se.type[idx] = 9
+        elseif var.layout.from[idxVar]
+            se.type[idx] = 10
+        else
+            se.type[idx] = 11
         end
         se.mean[idx] = var.reactive.mean[idxVar]
     else

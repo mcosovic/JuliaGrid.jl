@@ -158,7 +158,7 @@ mutable struct GaussSeidel
 end
 
 """
-    ACPowerFlow{T} <: AC where T <: Union{NewtonRaphson, FastNewtonRaphson, GaussSeidel}
+    ACPowerFlow{T <: Union{NewtonRaphson, FastNewtonRaphson, GaussSeidel}} <: AC
 
 A composite type representing an AC power flow model, where the type parameter `T` specifies
 the numerical method used to solve the power flow. Supported methods include
@@ -171,7 +171,7 @@ the numerical method used to solve the power flow. Supported methods include
 - `current::ACCurrent`: Currents at the buses and branches.
 - `method::T`: Vectors and matrices associated with the method used to solve the AC power flow.
 """
-struct ACPowerFlow{T} <: AC where T <: Union{NewtonRaphson, FastNewtonRaphson, GaussSeidel}
+struct ACPowerFlow{T <: Union{NewtonRaphson, FastNewtonRaphson, GaussSeidel}} <: AC
     voltage::Polar
     power::ACPower
     current::ACCurrent
@@ -423,8 +423,9 @@ mutable struct GaussNewton{T <: Union{Normal, Orthogonal}}
     pattern::Int64
 end
 
-struct StateAC
-    V::Vector{AffExpr}
+struct ACState
+    magnitude::Vector{VariableRef}
+    angle::Vector{VariableRef}
     sinθij::Dict{Int64, NonlinearExpr}
     cosθij::Dict{Int64, NonlinearExpr}
     sinθ::Dict{Int64, NonlinearExpr}
@@ -432,34 +433,106 @@ struct StateAC
     incidence::Dict{Tuple{Int64, Int64}, Int64}
 end
 
+struct PMUState
+    realpart::Vector{VariableRef}
+    imagpart::Vector{VariableRef}
+end
+
+struct DCState
+    angle::Vector{VariableRef}
+end
+
+struct Deviation
+    positive::Vector{VariableRef}
+    negative::Vector{VariableRef}
+end
+
 """
-    LAV
+    LAV{T <: Union{ACState, PMUState, DCState}}
 
 A composite type representing a least absolute value state estimation model.
 
 # Fields
-- `jump::JuMP.Model`: The JuMP model.
-- `state::Union{StateAC, Nothing}`: State variables data.
-- `statex::Vector{VariableRef}`: References to optimization variables for bus voltages.
-- `statey::Vector{VariableRef}`: References to optimization variables for bus voltages.
-- `residualx::Vector{VariableRef}`: References to optimization variables for residuals.
-- `residualy::Vector{VariableRef}`: References to optimization variables for residuals.
-- `residual::Dict{Int64, ConstraintRef}`: References to the residual constraints.
-- `index::OrderedDict{Int64, Int64}`: Indices if needed.
+- `jump::JuMP.Model`: The JuMP optimization model.
+- `state::State`: References to data related to state variables.
+- `deviation::Deviation`: References to variables for positive and negative deviations.
+- `residual::Dict{Int64, ConstraintRef}`: References to residual constraints.
+- `index::OrderedDict{Int64, Int64}`: Mapping of indices, if needed.
 - `range::Vector{Int64}`: Range of measurement devices.
-- `number::Int64`: Number of measurement devices.
+- `number::Int64`: Total number of measurement devices.
 """
 mutable struct LAV
     jump::JuMP.Model
-    state::Union{StateAC, Nothing}
-    statex::Vector{VariableRef}
-    statey::Vector{VariableRef}
-    residualx::Vector{VariableRef}
-    residualy::Vector{VariableRef}
+    state::Union{ACState, PMUState, DCState}
+    deviation::Deviation
     residual::Dict{Int64, ConstraintRef}
     index::OrderedDict{Int64, Int64}
     range::Vector{Int64}
     number::Int64
+end
+
+"""
+    DCStateEstimation{T <: Union{WLS, LAV}} <: DC
+
+A composite type representing a DC state estimation model, where the type parameter `T`
+specifies the estimation method. Supported methods include [`WLS`](@ref WLS) and
+[`LAV`](@ref LAV). The model is constructed using either the
+[`dcStateEstimation`](@ref dcStateEstimation) or
+[`dcLavStateEstimation`](@ref dcLavStateEstimation) function.
+
+# Fields
+- `voltage::PolarAngle`: Bus voltage angles.
+- `power::DCPower`: Active powers at the buses and generators.
+- `method::T`: The estimation model associated with the method used to solve the DC state estimation.
+"""
+struct DCStateEstimation{T <: Union{WLS, LAV}} <: DC
+    voltage::PolarAngle
+    power::DCPower
+    method::T
+end
+
+"""
+    PMUStateEstimation{T <: Union{WLS, LAV}} <: AC
+
+A composite type representing a PMU state estimation model, where the type parameter `T`
+specifies the estimation method. Supported methods include [`WLS`](@ref WLS) and
+[`LAV`](@ref LAV). The model is constructed using either the
+[`pmuStateEstimation`](@ref pmuStateEstimation) or
+[`pmuLavStateEstimation`](@ref pmuLavStateEstimation) function.
+
+# Fields
+- `voltage::Polar`: Bus voltages represented in polar form.
+- `power::ACPower`: Active and reactive powers at the buses and branches.
+- `current::ACCurrent`: Currents at the buses and branches.
+- `method::T`: The estimation model associated with the method used to solve the PMU state estimation.
+"""
+struct PMUStateEstimation{T <: Union{WLS, LAV}} <: AC
+    voltage::Polar
+    power::ACPower
+    current::ACCurrent
+    method::T
+end
+
+"""
+    ACStateEstimation{T <: Union{GaussNewton, LAV}} <: AC
+
+A composite type representing an AC state estimation model, where the type parameter `T`
+specifies the estimation method. Supported methods include [`GaussNewton`](@ref GaussNewton)
+and [`LAV`](@ref LAV). The model is constructed using either the
+[`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation)
+function.
+
+# Fields
+- `voltage::Polar`: Bus voltages represented in polar form.
+- `power::ACPower`: Active and reactive powers at the buses and branches.
+- `current::ACCurrent`: Currents at the buses and branches.
+- `method::T`: The estimation model associated with the method used to solve the AC state estimation.
+"""
+struct ACStateEstimation{T <: Union{GaussNewton, LAV}} <: AC
+    voltage::Polar
+    power::ACPower
+    current::ACCurrent
+    method::T
 end
 
 mutable struct TieData
@@ -487,48 +560,6 @@ mutable struct Island
 end
 
 """
-    DCStateEstimation{T} <: DC where T <: Union{WLS, LAV}
-
-A composite type representing a DC state estimation model, where the type parameter `T`
-specifies the estimation method. Supported methods include [`WLS`](@ref WLS) and
-[`LAV`](@ref LAV). The model is constructed using either the
-[`dcStateEstimation`](@ref dcStateEstimation) or
-[`dcLavStateEstimation`](@ref dcLavStateEstimation) function.
-
-# Fields
-- `voltage::PolarAngle`: Bus voltage angles.
-- `power::DCPower`: Active powers at the buses and generators.
-- `method::T`: The estimation model associated with the method used to solve the DC state estimation.
-"""
-struct DCStateEstimation{T} <: DC where T <: Union{WLS, LAV}
-    voltage::PolarAngle
-    power::DCPower
-    method::T
-end
-
-"""
-    PMUStateEstimation{T} <: AC where T <: Union{WLS, LAV}
-
-A composite type representing a PMU state estimation model, where the type parameter `T`
-specifies the estimation method. Supported methods include [`WLS`](@ref WLS) and
-[`LAV`](@ref LAV). The model is constructed using either the
-[`pmuStateEstimation`](@ref pmuStateEstimation) or
-[`pmuLavStateEstimation`](@ref pmuLavStateEstimation) function.
-
-# Fields
-- `voltage::Polar`: Bus voltages represented in polar form.
-- `power::ACPower`: Active and reactive powers at the buses and branches.
-- `current::ACCurrent`: Currents at the buses and branches.
-- `method::T`: The estimation model associated with the method used to solve the PMU state estimation.
-"""
-struct PMUStateEstimation{T} <: AC where T <: Union{WLS, LAV}
-    voltage::Polar
-    power::ACPower
-    current::ACCurrent
-    method::T
-end
-
-"""
     PMUPlacement
 
 A composite type built using the [`pmuPlacement`](@ref pmuPlacement) function, which
@@ -543,28 +574,6 @@ mutable struct PMUPlacement
     bus::LabelDict
     from::LabelDict
     to::LabelDict
-end
-
-"""
-    ACStateEstimation{T} <: AC where T <: Union{GaussNewton, LAV}
-
-A composite type representing an AC state estimation model, where the type parameter `T`
-specifies the estimation method. Supported methods include [`GaussNewton`](@ref GaussNewton)
-and [`LAV`](@ref LAV). The model is constructed using either the
-[`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation)
-function.
-
-# Fields
-- `voltage::Polar`: Bus voltages represented in polar form.
-- `power::ACPower`: Active and reactive powers at the buses and branches.
-- `current::ACCurrent`: Currents at the buses and branches.
-- `method::T`: The estimation model associated with the method used to solve the AC state estimation.
-"""
-struct ACStateEstimation{T} <: AC where T <: Union{GaussNewton, LAV}
-    voltage::Polar
-    power::ACPower
-    current::ACCurrent
-    method::T
 end
 
 """

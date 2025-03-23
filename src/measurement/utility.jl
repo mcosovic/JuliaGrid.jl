@@ -122,14 +122,14 @@ end
 function add!(method::LAV, idx::Int64)
     remove!(method.jump, method.residual, idx)
 
-    if is_fixed(method.residualx[idx])
-        unfix(method.residualx[idx])
-        unfix(method.residualy[idx])
-        set_lower_bound(method.residualx[idx], 0.0)
-        set_lower_bound(method.residualy[idx], 0.0)
+    if is_fixed(method.deviation.positive[idx])
+        unfix(method.deviation.positive[idx])
+        unfix(method.deviation.negative[idx])
+        set_lower_bound(method.deviation.positive[idx], 0.0)
+        set_lower_bound(method.deviation.negative[idx], 0.0)
 
-        set_objective_coefficient(method.jump, method.residualx[idx], 1)
-        set_objective_coefficient(method.jump, method.residualy[idx], 1)
+        set_objective_coefficient(method.jump, method.deviation.positive[idx], 1)
+        set_objective_coefficient(method.jump, method.deviation.negative[idx], 1)
     end
 end
 
@@ -137,11 +137,11 @@ end
 function remove!(method::LAV, idx::Int64)
     remove!(method.jump, method.residual, idx)
 
-    if !is_fixed(method.residualx[idx])
-        fix(method.residualx[idx], 0.0; force = true)
-        fix(method.residualy[idx], 0.0; force = true)
+    if !is_fixed(method.deviation.positive[idx])
+        fix(method.deviation.positive[idx], 0.0; force = true)
+        fix(method.deviation.negative[idx], 0.0; force = true)
 
-        set_objective_coefficient(method.jump, method.residualx[idx], 0)
-        set_objective_coefficient(method.jump, method.residualy[idx], 0)
+        set_objective_coefficient(method.jump, method.deviation.positive[idx], 0)
+        set_objective_coefficient(method.jump, method.deviation.negative[idx], 0)
     end
 end

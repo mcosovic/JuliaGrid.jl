@@ -213,7 +213,7 @@ end
 
 """
     pmuLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
-        iteration, tolerance, bridge, name, verbose)
+        iteration, tolerance, bridge, name, realpart, imagpart, positive, negative, verbose)
 
 The function establishes the LAV model for state estimation with PMUs only. In this
 model, the vector of state variables contains bus voltages, given in rectangular
@@ -224,6 +224,10 @@ This function requires the `PowerSystem` and `Measurement` types to establish th
 estimation model. The LAV method offers increased robustness compared to WLS, ensuring
 unbiasedness even in the presence of various measurement errors and outliers.
 
+Users can employ the LAV method to find an estimator by choosing one of the available
+[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
+`Ipopt` suffices for most scenarios.
+
 # Keywords
 The function accepts the following keywords:
 * `iteration`: Specifies the maximum number of iterations.
@@ -232,9 +236,10 @@ The function accepts the following keywords:
 * `name`: Handles the creation of string names (default: `false`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
-Users can employ the LAV method to find an estimator by choosing one of the available
-[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
-`Ipopt` suffices for most scenarios.
+Additionally, users can modify variable names used for printing and writing through the
+keywords `realpart`, `imagpart`, `positive`, and `negative`. For instance, users can choose
+`realpart = "Vr"`, `imagpart = "Vi"`, `positive = "u"`, and `negative = "v"` to display equations
+in a more readable format.
 
 # Updates
 If the AC model has not been created, the function will automatically trigger an update of
@@ -265,6 +270,10 @@ function pmuLavStateEstimation(
     tolerance::FltIntMiss = missing,
     bridge::Bool = false,
     name::Bool = false,
+    realpart::String = "realpart",
+    imagpart::String = "imagpart",
+    positive::String = "positive",
+    negative::String = "negative",
     verbose::Int64 = template.config.verbose
 )
     bus = system.bus
@@ -281,19 +290,22 @@ function pmuLavStateEstimation(
     set_string_names_on_creation(jump, name)
     setAttribute(jump, iteration, tolerance, verbose)
 
-    method = LAV(
+    lav = LAV(
         jump,
-        nothing,
-        @variable(jump, 0 <= statex[i = 1:2 * bus.number]),
-        @variable(jump, 0 <= statey[i = 1:2 * bus.number]),
-        @variable(jump, 0 <= residualx[i = 1:total]),
-        @variable(jump, 0 <= residualy[i = 1:total]),
+        PMUState(
+            @variable(jump, realpart[i = 1:bus.number], base_name = realpart),
+            @variable(jump, imagpart[i = 1:bus.number], base_name = imagpart)
+        ),
+        Deviation(
+            @variable(jump, 0 <= positive[i = 1:total], base_name = positive),
+            @variable(jump, 0 <= negative[i = 1:total], base_name = negative)
+        ),
         Dict{Int64, ConstraintRef}(),
         OrderedDict{Int64, Int64}(),
         fill(1, 1),
         pmu.number
     )
-    objective = @expression(method.jump, AffExpr())
+    objective = @expression(lav.jump, AffExpr())
 
     cnt = 1
     @inbounds for (i, k) in enumerate(pmu.layout.index)
@@ -303,29 +315,30 @@ function pmuLavStateEstimation(
             imMean = pmu.magnitude.mean[i] * sinθ
 
             if pmu.layout.bus[i]
-                reExpr, imExpr = ReImVi(method, pmu.layout.index[i], bus.number)
+                reExpr = lav.state.realpart[pmu.layout.index[i]]
+                imExpr = lav.state.imagpart[pmu.layout.index[i]]
             else
                 if pmu.layout.from[i]
-                    state = ReImIijCoefficient(branch, ac, k)
+                    piModel = ReImIijCoefficient(branch, ac, k)
                 else
-                    state = ReImIjiCoefficient(branch, ac, k)
+                    piModel = ReImIjiCoefficient(branch, ac, k)
                 end
-                reExpr, imExpr = ReImIij(system, method, state, k)
+                reExpr, imExpr = ReImIij(system, lav.state, piModel, k)
             end
 
-            addConstrLav!(method, reExpr, reMean, cnt)
-            addObjectLav!(method, objective, cnt)
+            addConstrLav!(lav, reExpr, reMean, cnt)
+            addObjectLav!(lav, objective, cnt)
 
-            addConstrLav!(method, imExpr, imMean, cnt + 1)
-            addObjectLav!(method, objective, cnt + 1)
+            addConstrLav!(lav, imExpr, imMean, cnt + 1)
+            addObjectLav!(lav, objective, cnt + 1)
         else
-            fix!(method.residualx, method.residualy, cnt)
-            fix!(method.residualx, method.residualy, cnt + 1)
+            fix!(lav.deviation.positive, lav.deviation.negative, cnt)
+            fix!(lav.deviation.positive, lav.deviation.negative, cnt + 1)
         end
         cnt += 2
     end
 
-    @objective(method.jump, Min, objective)
+    @objective(lav.jump, Min, objective)
 
     PMUStateEstimation(
         Polar(
@@ -348,7 +361,7 @@ function pmuLavStateEstimation(
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        method
+        lav
     )
 end
 
@@ -445,24 +458,24 @@ function solve!(
     system::PowerSystem,
     analysis::PMUStateEstimation{LAV}
 )
-    se = analysis.method
+    lav = analysis.method
     bus = system.bus
-    verbose = se.jump.ext[:verbose]
+    verbose = lav.jump.ext[:verbose]
 
-    silentJump(se.jump, verbose)
+    silentJump(lav.jump, verbose)
 
     @inbounds for i = 1:system.bus.number
         set_start_value(
-            se.statex[i]::VariableRef,
+            lav.state.realpart[i]::VariableRef,
             analysis.voltage.magnitude[i] * cos(analysis.voltage.angle[i])
         )
         set_start_value(
-            se.statex[i + bus.number]::VariableRef,
+            lav.state.imagpart[i]::VariableRef,
             analysis.voltage.magnitude[i] * sin(analysis.voltage.angle[i])
         )
     end
 
-    optimize!(se.jump)
+    optimize!(lav.jump)
 
     if isempty(analysis.voltage.magnitude)
         analysis.voltage.magnitude = fill(0.0, bus.number)
@@ -470,16 +483,15 @@ function solve!(
     end
 
     @inbounds for i = 1:bus.number
-        j = i + bus.number
-        ReVi = value(se.statex[i]::VariableRef) - value(se.statey[i]::VariableRef)
-        ImVi = value(se.statex[j]::VariableRef) - value(se.statey[j]::VariableRef)
+        realpart = value(lav.state.realpart[i]::VariableRef)
+        imagpart = value(lav.state.imagpart[i]::VariableRef)
 
-        voltage = complex(ReVi, ImVi)
+        voltage = complex(realpart, imagpart)
         analysis.voltage.magnitude[i] = abs(voltage)
         analysis.voltage.angle[i] = angle(voltage)
     end
 
-    printExit(se.jump, verbose)
+    printExit(lav.jump, verbose)
 end
 
 ##### Indices of the Coefficient Matrix #####
