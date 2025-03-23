@@ -44,9 +44,9 @@ addVoltmeter!(system, device, powerFlow; variance = 1e-4, noise = true)</code></
 |         | Measurement | Variance | Status |
 |         |        [pu] |     [pu] |        |
 |---------|-------------|----------|--------|
-| Meter 1 |      0.9977 | 1.00e-04 |      1 |
-| Meter 2 |      0.9459 | 1.00e-04 |      1 |
-| Meter 3 |      0.9339 | 1.00e-04 |      1 |
+| Meter 1 |      0.9778 | 1.00e-04 |      1 |
+| Meter 2 |      0.9398 | 1.00e-04 |      1 |
+| Meter 3 |      0.9635 | 1.00e-04 |      1 |
 |-------------------------------------------|</code></pre><hr/><h5 id="Active-and-Reactive-Power-Measurements"><a class="docs-heading-anchor" href="#Active-and-Reactive-Power-Measurements">Active and Reactive Power Measurements</a><a id="Active-and-Reactive-Power-Measurements-1"></a><a class="docs-heading-anchor-permalink" href="#Active-and-Reactive-Power-Measurements" title="Permalink"></a></h5><p>Active and reactive power injection measurements can be created using the same method as for voltage magnitude measurements, where we first utilize the function <a href="../../api/analysis/#JuliaGrid.power!-Tuple{PowerSystem, ACPowerFlow}"><code>power!</code></a>. However, in this case, we take a different approach, adding measurements one by one to <code>Meter 1</code>, <code>Meter 2</code>, and <code>Meter 3</code> using data from AC power flow:</p><pre><code class="language-julia hljs">@wattmeter(label = &quot;Meter ?&quot;)
 @varmeter(label = &quot;Meter ?&quot;)
 
@@ -68,9 +68,9 @@ addVarmeter!(system, device; label = &quot;Meter 5&quot;, to = &quot;Branch 1&qu
 |         | Measurement | Variance | Status |
 |         |        [pu] |     [pu] |        |
 |---------|-------------|----------|--------|
-| Meter 1 |      3.6310 | 1.00e-03 |      1 |
-| Meter 2 |     -1.0617 | 1.00e-03 |      1 |
-| Meter 3 |     -2.2901 | 1.00e-03 |      1 |
+| Meter 1 |      3.6581 | 1.00e-03 |      1 |
+| Meter 2 |     -1.1112 | 1.00e-03 |      1 |
+| Meter 3 |     -2.2840 | 1.00e-03 |      1 |
 | Meter 4 |      2.2734 | 1.00e-04 |      1 |
 | Meter 5 |     -2.1610 | 1.00e-04 |      1 |
 |-------------------------------------------|</code></pre><p>The set of reactive power measurements can be viewed as follows:</p><pre><code class="language-julia hljs">printVarmeterData(system, device)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|-------------------------------------------|
@@ -81,9 +81,9 @@ addVarmeter!(system, device; label = &quot;Meter 5&quot;, to = &quot;Branch 1&qu
 |         | Measurement | Variance | Status |
 |         |        [pu] |     [pu] |        |
 |---------|-------------|----------|--------|
-| Meter 1 |      0.7279 | 1.00e-04 |      1 |
-| Meter 2 |     -0.2922 | 1.00e-04 |      1 |
-| Meter 3 |     -0.2112 | 1.00e-04 |      1 |
+| Meter 1 |      0.7301 | 1.00e-04 |      1 |
+| Meter 2 |     -0.2932 | 1.00e-04 |      1 |
+| Meter 3 |     -0.2075 | 1.00e-04 |      1 |
 | Meter 4 |      0.6706 | 1.00e-04 |      1 |
 | Meter 5 |     -0.5021 | 1.00e-04 |      1 |
 |-------------------------------------------|</code></pre><hr/><h5 id="Current-Magnitude-Measurements"><a class="docs-heading-anchor" href="#Current-Magnitude-Measurements">Current Magnitude Measurements</a><a id="Current-Magnitude-Measurements-1"></a><a class="docs-heading-anchor-permalink" href="#Current-Magnitude-Measurements" title="Permalink"></a></h5><p>Finally, current magnitude measurements need to be defined at <code>Branch 1</code> for both the from-bus and to-bus ends. Here, we assume these values are known in advance and provide them directly to the functions:</p><pre><code class="language-julia hljs">@ammeter(statusFrom = 0, statusTo = 0)
@@ -109,14 +109,14 @@ Number of branches:                 3
 -----------------------------------------------
 Iteration   Objective Value   Max Abs Increment
 -----------------------------------------------
-        0    1.28754368e+04      1.37653599e-02
-        1    4.05312404e+00      1.71351720e-03
-        2    3.78671782e+00      2.48443496e-06
-        3    3.78671049e+00      1.34426709e-09
+        0    1.28252312e+04      1.46182392e-02
+        1    1.46865477e+01      1.62658968e-03
+        2    1.44265039e+01      1.71212870e-06
+        3    1.44264955e+01      2.65391203e-09
 
                     Measurement   Maximum Value
-Absolute Residual:            6      3.1337e-02
-Objective Value:              2      1.0957e+00
+Absolute Residual:            6      3.4773e-02
+Objective Value:              1      6.9561e+00
 
 EXIT: The solution was found using the Gauss-Newton method in 3 iterations.</code></pre><p>This allows users to observe estimated bus voltages along with power values associated with buses:</p><pre><code class="language-julia hljs">printBusData(system, analysis; show)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|-------------------------------------------------------------------------------------------|
 | Bus Data                                                                                  |
@@ -126,9 +126,9 @@ EXIT: The solution was found using the Gauss-Newton method in 3 iterations.</cod
 |   Bus | Magnitude |   Angle |  Active | Reactive | Active | Reactive |  Active | Reactive |
 |       |      [pu] |   [rad] |    [pu] |     [pu] |   [pu] |     [pu] |    [pu] |     [pu] |
 |-------|-----------|---------|---------|----------|--------|----------|---------|----------|
-| Bus 1 |    1.0024 |  0.0000 |  3.5997 |   0.7254 | 0.0000 |   0.0000 |  3.5997 |   0.7254 |
-| Bus 2 |    0.9355 | -0.0397 |  0.0146 |   0.0079 | 1.1000 |   0.3000 | -1.0854 |  -0.2921 |
-| Bus 3 |    0.9385 | -0.0582 | -0.0098 |  -0.0090 | 2.3000 |   0.2000 | -2.3098 |  -0.2090 |
+| Bus 1 |    1.0042 |  0.0000 |  3.6233 |   0.7262 | 0.0000 |   0.0000 |  3.6233 |   0.7262 |
+| Bus 2 |    0.9362 | -0.0402 | -0.0296 |   0.0054 | 1.1000 |   0.3000 | -1.1296 |  -0.2946 |
+| Bus 3 |    0.9404 | -0.0580 |  0.0129 |  -0.0064 | 2.3000 |   0.2000 | -2.2871 |  -0.2064 |
 |-------------------------------------------------------------------------------------------|</code></pre><p>Power flows at branches can also be examined:</p><pre><code class="language-julia hljs">printBranchData(system, analysis; show)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|-------------------------------------------------------------------------------------------|
 | Branch Data                                                                               |
 |-------------------------------------------------------------------------------------------|
@@ -137,9 +137,9 @@ EXIT: The solution was found using the Gauss-Newton method in 3 iterations.</cod
 |   Branch | From-Bus | To-Bus | Active | Reactive |  Active | Reactive | Active | Reactive |
 |          |          |        |   [pu] |     [pu] |    [pu] |     [pu] |   [pu] |     [pu] |
 |----------|----------|--------|--------|----------|---------|----------|--------|----------|
-| Branch 1 | Bus 1    | Bus 3  | 2.2739 |   0.6735 | -2.1619 |  -0.5056 | 0.1119 |   0.1679 |
-| Branch 2 | Bus 1    | Bus 2  | 1.3258 |   0.0519 | -1.2382 |   0.0007 | 0.0876 |   0.0526 |
-| Branch 3 | Bus 2    | Bus 3  | 0.1529 |  -0.2928 | -0.1479 |   0.2966 | 0.0050 |   0.0037 |
+| Branch 1 | Bus 1    | Bus 3  | 2.2748 |   0.6732 | -2.1632 |  -0.5058 | 0.1116 |   0.1674 |
+| Branch 2 | Bus 1    | Bus 2  | 1.3485 |   0.0530 | -1.2582 |   0.0012 | 0.0903 |   0.0542 |
+| Branch 3 | Bus 2    | Bus 3  | 0.1286 |  -0.2958 | -0.1238 |   0.2993 | 0.0047 |   0.0036 |
 |-------------------------------------------------------------------------------------------|</code></pre><p>Additionally, users can retrieve results related to measurement devices. For instance, estimated values and corresponding residuals for wattmeters can be displayed:</p><pre><code class="language-julia hljs">printWattmeterData(system, device, analysis)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|-----------------------------------------------------------------|
 | Wattmeter Data                                                  |
 |-----------------------------------------------------------------|
@@ -148,14 +148,14 @@ EXIT: The solution was found using the Gauss-Newton method in 3 iterations.</cod
 |         | Measurement | Variance | Estimate | Residual | Status |
 |         |        [pu] |     [pu] |     [pu] |     [pu] |        |
 |---------|-------------|----------|----------|----------|--------|
-| Meter 1 |      3.6310 | 1.00e-03 |   3.5997 |   0.0313 |      1 |
-| Meter 2 |     -1.0617 | 1.00e-03 |  -1.0854 |   0.0237 |      1 |
-| Meter 3 |     -2.2901 | 1.00e-03 |  -2.3098 |   0.0197 |      1 |
-| Meter 4 |      2.2734 | 1.00e-04 |   2.2739 |  -0.0005 |      1 |
-| Meter 5 |     -2.1610 | 1.00e-04 |  -2.1619 |   0.0009 |      1 |
+| Meter 1 |      3.6581 | 1.00e-03 |   3.6233 |   0.0348 |      1 |
+| Meter 2 |     -1.1112 | 1.00e-03 |  -1.1296 |   0.0184 |      1 |
+| Meter 3 |     -2.2840 | 1.00e-03 |  -2.2871 |   0.0031 |      1 |
+| Meter 4 |      2.2734 | 1.00e-04 |   2.2748 |  -0.0015 |      1 |
+| Meter 5 |     -2.1610 | 1.00e-04 |  -2.1632 |   0.0022 |      1 |
 |-----------------------------------------------------------------|</code></pre><hr/><h2 id="Modifying-Measurement-Data"><a class="docs-heading-anchor" href="#Modifying-Measurement-Data">Modifying Measurement Data</a><a id="Modifying-Measurement-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Modifying-Measurement-Data" title="Permalink"></a></h2><p>Measurement values and variances will now be updated. Instead of recreating the measurement set and the Gauss-Newton method from the beginning, both models will be modified simultaneously:</p><pre><code class="language-julia hljs">updateVoltmeter!(system, device, analysis; label = &quot;Meter 1&quot;, magnitude = 1.0, noise = false)
 updateWattmeter!(system, device, analysis; label = &quot;Meter 2&quot;, active = -1.1, variance = 1e-6)
-updateVarmeter!(system, device, analysis; label = &quot;Meter 3&quot;, variance = 1e-1)</code></pre><p>These updates demonstrate the flexibility of JuliaGrid in modifying measurements. For the voltmeter, we now generate a measurement without adding noise, for the wattmeter, we change both the value and variance, while the varmeter retains its previous value with only a variance adjustment.</p><p>Next, AC state estimation is run again to compute the new estimate without recreating the Gauss-Newton model. Additionally, this step initializes the iterative algorithm with a warm start, as the initial voltage magnitudes and angles correspond to the solution from the base case analysis:</p><pre><code class="language-julia hljs">stateEstimation!(system, analysis; power = true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">EXIT: The solution was found using the Gauss-Newton method in 2 iterations.</code></pre><p>Bus-related data can now be examined:</p><pre><code class="language-julia hljs">printBusData(system, analysis; show)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|-------------------------------------------------------------------------------------------|
+updateVarmeter!(system, device, analysis; label = &quot;Meter 3&quot;, variance = 1e-1)</code></pre><p>These updates demonstrate the flexibility of JuliaGrid in modifying measurements. For the voltmeter, we now generate a measurement without adding noise, for the wattmeter, we change both the value and variance, while the varmeter retains its previous value with only a variance adjustment.</p><p>Next, AC state estimation is run again to compute the new estimate without recreating the Gauss-Newton model. Additionally, this step initializes the iterative algorithm with a warm start, as the initial voltage magnitudes and angles correspond to the solution from the base case analysis:</p><pre><code class="language-julia hljs">stateEstimation!(system, analysis; power = true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">EXIT: The solution was found using the Gauss-Newton method in 3 iterations.</code></pre><p>Bus-related data can now be examined:</p><pre><code class="language-julia hljs">printBusData(system, analysis; show)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|-------------------------------------------------------------------------------------------|
 | Bus Data                                                                                  |
 |-------------------------------------------------------------------------------------------|
 | Label |       Voltage       |  Power Generation  |   Power Demand    |  Power Injection   |
@@ -163,9 +163,9 @@ updateVarmeter!(system, device, analysis; label = &quot;Meter 3&quot;, variance 
 |   Bus | Magnitude |   Angle |  Active | Reactive | Active | Reactive |  Active | Reactive |
 |       |      [pu] |   [rad] |    [pu] |     [pu] |   [pu] |     [pu] |    [pu] |     [pu] |
 |-------|-----------|---------|---------|----------|--------|----------|---------|----------|
-| Bus 1 |    1.0031 |  0.0000 |  3.6071 |   0.7247 | 0.0000 |   0.0000 |  3.6071 |   0.7247 |
-| Bus 2 |    0.9359 | -0.0398 | -0.0000 |   0.0064 | 1.1000 |   0.3000 | -1.1000 |  -0.2936 |
-| Bus 3 |    0.9393 | -0.0582 | -0.0020 |  -0.0067 | 2.3000 |   0.2000 | -2.3020 |  -0.2067 |
+| Bus 1 |    1.0102 |  0.0000 |  3.6073 |   0.7252 | 0.0000 |   0.0000 |  3.6073 |   0.7252 |
+| Bus 2 |    0.9434 | -0.0392 | -0.0000 |   0.0042 | 1.1000 |   0.3000 | -1.1000 |  -0.2958 |
+| Bus 3 |    0.9468 | -0.0573 | -0.0050 |  -0.0081 | 2.3000 |   0.2000 | -2.3050 |  -0.2081 |
 |-------------------------------------------------------------------------------------------|</code></pre><hr/><h2 id="Modifying-Measurement-Set"><a class="docs-heading-anchor" href="#Modifying-Measurement-Set">Modifying Measurement Set</a><a id="Modifying-Measurement-Set-1"></a><a class="docs-heading-anchor-permalink" href="#Modifying-Measurement-Set" title="Permalink"></a></h2><p>Now, we modify the measurement set by including current magnitude measurements:</p><pre><code class="language-julia hljs">updateAmmeter!(system, device, analysis; label = &quot;Meter 4&quot;, status = 1)
 updateAmmeter!(system, device, analysis; label = &quot;Meter 5&quot;, status = 1)</code></pre><p>We then solve the AC state estimation again:</p><pre><code class="language-julia hljs">stateEstimation!(system, analysis; power = true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">EXIT: The solution was found using the Gauss-Newton method in 7 iterations.</code></pre><p>Bus-related data can now be examined:</p><pre><code class="language-julia hljs">printBusData(system, analysis; show)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|-------------------------------------------------------------------------------------------|
 | Bus Data                                                                                  |
@@ -175,10 +175,10 @@ updateAmmeter!(system, device, analysis; label = &quot;Meter 5&quot;, status = 1
 |   Bus | Magnitude |   Angle |  Active | Reactive | Active | Reactive |  Active | Reactive |
 |       |      [pu] |   [rad] |    [pu] |     [pu] |   [pu] |     [pu] |    [pu] |     [pu] |
 |-------|-----------|---------|---------|----------|--------|----------|---------|----------|
-| Bus 1 |    1.1373 |  0.0000 |  3.4567 |   0.6959 | 0.0000 |   0.0000 |  3.4567 |   0.6959 |
-| Bus 2 |    1.0797 | -0.0292 | -0.0001 |  -0.0098 | 1.1000 |   0.3000 | -1.1001 |  -0.3098 |
-| Bus 3 |    1.0833 | -0.0424 |  0.0902 |  -0.0263 | 2.3000 |   0.2000 | -2.2098 |  -0.2263 |
-|-------------------------------------------------------------------------------------------|</code></pre><p>The bus voltage estimates appear suspicious, indicating the presence of bad data among the newly added ammeter measurements. To address this, we perform bad data analysis:</p><pre><code class="language-julia hljs">outlier = residualTest!(system, device, analysis; threshold = 4.0)</code></pre><p>An outlier with a significantly high normalized residual is detected, specifically related to the current magnitude measurements in <code>Meter 4</code>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; outlier.detect</code><code class="nohighlight hljs ansi" style="display:block;">true</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; outlier.maxNormalizedResidual</code><code class="nohighlight hljs ansi" style="display:block;">78.75507201926129</code></pre><p>The bad data analysis function automatically removes the detected outlier. Before repeating the AC state estimation, using a warm start is not advisable, as the previous state was obtained in the presence of bad data. Instead, it is useful to reset the initial point, for example, by using the values defined within the power system data:</p><pre><code class="language-julia hljs">setInitialPoint!(system, analysis)
+| Bus 1 |    1.1408 |  0.0000 |  3.4613 |   0.6974 | 0.0000 |   0.0000 |  3.4613 |   0.6974 |
+| Bus 2 |    1.0833 | -0.0290 | -0.0001 |  -0.0114 | 1.1000 |   0.3000 | -1.1001 |  -0.3114 |
+| Bus 3 |    1.0869 | -0.0422 |  0.0851 |  -0.0267 | 2.3000 |   0.2000 | -2.2149 |  -0.2267 |
+|-------------------------------------------------------------------------------------------|</code></pre><p>The bus voltage estimates appear suspicious, indicating the presence of bad data among the newly added ammeter measurements. To address this, we perform bad data analysis:</p><pre><code class="language-julia hljs">outlier = residualTest!(system, device, analysis; threshold = 4.0)</code></pre><p>An outlier with a significantly high normalized residual is detected, specifically related to the current magnitude measurements in <code>Meter 4</code>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; outlier.detect</code><code class="nohighlight hljs ansi" style="display:block;">true</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; outlier.maxNormalizedResidual</code><code class="nohighlight hljs ansi" style="display:block;">78.33327372637035</code></pre><p>The bad data analysis function automatically removes the detected outlier. Before repeating the AC state estimation, using a warm start is not advisable, as the previous state was obtained in the presence of bad data. Instead, it is useful to reset the initial point, for example, by using the values defined within the power system data:</p><pre><code class="language-julia hljs">setInitialPoint!(system, analysis)
 stateEstimation!(system, analysis; power = true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">EXIT: The solution was found using the Gauss-Newton method in 4 iterations.</code></pre><p>Observing the bus-related data, we can confirm that the results now align with expectations, as the measurement set is free from bad data:</p><pre><code class="language-julia hljs">printBusData(system, analysis; show)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|-------------------------------------------------------------------------------------------|
 | Bus Data                                                                                  |
 |-------------------------------------------------------------------------------------------|
@@ -187,7 +187,7 @@ stateEstimation!(system, analysis; power = true)</code></pre><pre class="documen
 |   Bus | Magnitude |   Angle |  Active | Reactive | Active | Reactive |  Active | Reactive |
 |       |      [pu] |   [rad] |    [pu] |     [pu] |   [pu] |     [pu] |    [pu] |     [pu] |
 |-------|-----------|---------|---------|----------|--------|----------|---------|----------|
-| Bus 1 |    1.0018 |  0.0000 |  3.6085 |   0.7250 | 0.0000 |   0.0000 |  3.6085 |   0.7250 |
-| Bus 2 |    0.9344 | -0.0400 | -0.0000 |   0.0066 | 1.1000 |   0.3000 | -1.1000 |  -0.2934 |
-| Bus 3 |    0.9378 | -0.0584 | -0.0027 |  -0.0064 | 2.3000 |   0.2000 | -2.3027 |  -0.2064 |
-|-------------------------------------------------------------------------------------------|</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../observabilityAnalysis/">« Observability Analysis</a><a class="docs-footer-nextpage" href="../pmuStateEstimation/">PMU State Estimation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.9.0 on <span class="colophon-date" title="Friday 21 March 2025 10:12">Friday 21 March 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+| Bus 1 |    1.0052 |  0.0000 |  3.6125 |   0.7263 | 0.0000 |   0.0000 |  3.6125 |   0.7263 |
+| Bus 2 |    0.9380 | -0.0397 | -0.0000 |   0.0049 | 1.1000 |   0.3000 | -1.1000 |  -0.2951 |
+| Bus 3 |    0.9414 | -0.0580 | -0.0075 |  -0.0070 | 2.3000 |   0.2000 | -2.3075 |  -0.2070 |
+|-------------------------------------------------------------------------------------------|</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../observabilityAnalysis/">« Observability Analysis</a><a class="docs-footer-nextpage" href="../pmuStateEstimation/">PMU State Estimation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.9.0 on <span class="colophon-date" title="Sunday 23 March 2025 12:00">Sunday 23 March 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
