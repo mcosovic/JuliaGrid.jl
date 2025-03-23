@@ -101,6 +101,10 @@ nothing # hide
 
 ## Base Case Analysis
 First, we create the AC optimal power flow model and select the `Ipopt` solver. Next, we solve the model to determine bus voltage magnitudes and angles, along with the active and reactive power outputs of the generators. Afterward, we compute the remaining power values for buses and branches:
+```@setup 4bus
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+powerFlow!(system, analysis)
+```
 ```@example 4bus
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 powerFlow!(system, analysis, power = true, verbose = 1)
