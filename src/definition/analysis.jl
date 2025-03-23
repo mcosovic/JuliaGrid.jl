@@ -448,7 +448,7 @@ struct Deviation
 end
 
 """
-    LAV{T <: Union{ACState, PMUState, DCState}}
+    LAV
 
 A composite type representing a least absolute value state estimation model.
 
