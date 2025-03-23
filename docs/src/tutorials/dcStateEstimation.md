@@ -325,7 +325,7 @@ To explicitly handle absolute values, we introduce two nonnegative variables ``u
   \begin{aligned}
     \text{minimize}& \;\;\; \sum_{i \in \mathcal M} (u_i + v_i) \\
     \text{subject\;to}  & \;\;\; z_i - h_i(\bm {\Theta}) = u_i - v_i, \;\;\; \forall i \in \mathcal M \\
-                        & \;\;\; u_i \geq  0, \; v_i \geq  0, \;\;\; \forall i \in \mathcal M \\
+                        & \;\;\; u_i \geq  0, \; v_i \geq  0, \;\;\; \forall i \in \mathcal M.
   \end{aligned}
 ```
 
