@@ -366,7 +366,7 @@ function printSolver(analysis::ACPowerFlow, delP::Float64, delQ::Float64, verbos
     if verbose == 2 || verbose == 3
         if analysis.method.iteration % 10 == 0
             println("-"^63)
-            println("Iteration   Max Abs Active Mismatch   Max Abs Reactive Mismatch")
+            println("Iteration   Maximum Active Mismatch   Maximum Reactive Mismatch")
             println("-"^63)
         end
         print(format(Format("%*i "), 9, analysis.method.iteration))
@@ -403,20 +403,20 @@ function printSolver(::PowerSystem, ::ACPowerFlow{GaussSeidel}, verbose::Int64)
 end
 
 function minmaxIncrement(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
-    extrema(analysis.method.increment[1:(system.bus.number - 1)]),
-    extrema(analysis.method.increment[system.bus.number:end])
+    extrema(abs, analysis.method.increment[1:(system.bus.number - 1)]),
+    extrema(abs, analysis.method.increment[system.bus.number:end])
 end
 
 function minmaxIncrement(::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
-    extrema(analysis.method.active.increment),
-    extrema(analysis.method.reactive.increment)
+    extrema(abs, analysis.method.active.increment),
+    extrema(abs, analysis.method.reactive.increment)
 end
 
 function printSolver(analysis::ACStateEstimation, inc::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if analysis.method.iteration % 10 == 0
             println("-"^47)
-            println("Iteration   Objective Value   Max Abs Increment")
+            println("Iteration   Objective Value   Maximum Increment")
             println("-"^47)
         end
 
