@@ -311,56 +311,21 @@ It can be demonstrated that the problem can be expressed as a linear programming
   \mathbf{z}=\mathbf{h}(\bm {\Theta})+\mathbf{u}.
 ```
 
-Subsequently, the LAV state estimator is derived as the solution to the optimization problem:
+The LAV state estimator is then formulated as the solution to the following optimization problem:
 ```math
   \begin{aligned}
-    \text{minimize}& \;\;\; \mathbf a^T |\mathbf r|\\
-    \text{subject\;to}& \;\;\; \mathbf{z} - \mathbf{H}\bm {\Theta} - \mathbf{c} =\mathbf r.
+    \text{minimize}& \;\;\; \sum_{i \in \mathcal M} |r_i|\\
+    \text{subject\;to}& \;\;\; z_i - h_i(\bm {\Theta}) =  r_i, \;\;\; \forall i \in \mathcal M,
   \end{aligned}
 ```
-Here, ``\mathbf a \in \mathbb {R}^{k}`` is the vector with all entries equal to one, and ``\mathbf r`` represents the vector of measurement residuals. Let ``\bm \eta`` be defined in a manner that ensures:
-```math
-  |\mathbf r| \preceq \bm \eta,
-```
-and replace the above inequality with two equalities using the introduction of two non-negative slack variables ``\mathbf q \in \mathbb {R}_{\ge 0}^{k}`` and ``\mathbf w \in \mathbb {R}_{\ge 0}^{k}``:
-```math
-  \begin{aligned}
-    \mathbf r - \mathbf q &= -\bm \eta \\
-    \mathbf r + \mathbf w &= \bm \eta.
-  \end{aligned}
-```
+where ``r_i`` denotes the residual of the ``i``-th measurement.
 
-Let us now define four additional non-negative variables:
-```math
-    \bm {\Theta}_x \in \mathbb {R}_{\ge 0}^{n}; \;\;\; \bm {\Theta}_y  \in \mathbb {R}_{\ge 0}^{n}; \;\;\;
-    \mathbf {r}_x \in \mathbb {R}_{\ge 0}^{k}; \;\;\; \mathbf {r}_y \in \mathbb {R}_{\ge 0}^{k},
-```
-where:
-```math
-    \bm {\Theta} = \bm {\Theta}_x - \bm {\Theta}_y; \;\;\; \mathbf r = \mathbf {r}_x - \mathbf {r}_y\\
-    \mathbf {r}_x = \cfrac{1}{2} \mathbf q; \;\;\;  \mathbf {r}_y = \cfrac{1}{2} \mathbf w.
-```
-Then, the above two equalities become:
+To explicitly handle absolute values, we introduce two nonnegative variables ``u_i \ge 0`` and ``v_i \ge 0``, referred to as positive and negative deviations. This allows the optimization problem to be rewritten as:
 ```math
   \begin{aligned}
-    \mathbf r - 2\mathbf {r}_x &= -2\bm \eta \\
-    \mathbf r + 2 \mathbf {r}_y &= 2\bm \eta,
-  \end{aligned}
-```
-that is:
-```math
-  \begin{aligned}
-    \mathbf {r}_x + \mathbf {r}_y = \bm \eta; \;\;\; \mathbf r = \mathbf {r}_x - \mathbf {r}_y.
-  \end{aligned}
-```
-
-Hence, the optimization problem can be written:
-```math
-  \begin{aligned}
-    \text{minimize}& \;\;\; \mathbf a^T (\mathbf {r}_x + \mathbf {r}_y)\\
-    \text{subject\;to}& \;\;\; \mathbf{H}(\bm {\Theta}_x - \bm {\Theta}_y) + \mathbf {r}_x - \mathbf {r}_y = \mathbf{z} - \mathbf{c}   \\
-                       & \;\;\; \bm {\Theta}_x \succeq \mathbf 0, \; \bm {\Theta}_y \succeq \mathbf 0 \\
-                       & \;\;\; \mathbf {r}_x \succeq \mathbf 0, \; \mathbf {r}_y \succeq \mathbf 0.
+    \text{minimize}& \;\;\; \sum_{i \in \mathcal M} (u_i + v_i) \\
+    \text{subject\;to}  & \;\;\; z_i - h_i(\bm {\Theta}) = u_i - v_i, \;\;\; \forall i \in \mathcal M \\
+                        & \;\;\; u_i \geq  0, \; v_i \geq  0, \;\;\; \forall i \in \mathcal M \\
   \end{aligned}
 ```
 
@@ -378,10 +343,6 @@ Then the user can solve the optimization problem by:
 JuMP.set_silent(analysis.method.jump) # hide
 solve!(system, analysis)
 nothing # hide
-```
-As a result, we obtain optimal values for the four additional non-negative variables, while the state estimator is obtained by:
-```math
-    \hat{\bm {\Theta}} = \bm {\Theta}_x - \bm {\Theta}_y.
 ```
 
 Users can retrieve the estimated bus voltage angles ``\hat{\bm {\Theta}} = [\hat{\theta}_i]``, ``i \in \mathcal{N}``, using the variable:

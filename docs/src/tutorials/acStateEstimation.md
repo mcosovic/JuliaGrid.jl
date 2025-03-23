@@ -1006,60 +1006,21 @@ This section outlines the method as described in [aburbook; Sec. 6.5](@cite). He
   \mathbf{z}=\mathbf{h}(\mathbf x)+\mathbf{u}.
 ```
 
-Subsequently, the LAV state estimator is derived as the solution to the optimization problem:
+The LAV state estimator is then formulated as the solution to the following optimization problem:
 ```math
   \begin{aligned}
     \text{minimize}& \;\;\; \sum_{i \in \mathcal M} |r_i|\\
     \text{subject\;to}& \;\;\; z_i - h_i(\mathbf x) =  r_i, \;\;\; \forall i \in \mathcal M,
   \end{aligned}
 ```
-where ``r_i`` represents the ``i``-th measurement residual. Let ``\eta_i`` be defined in a manner that ensures:
-```math
-  |r_i| \leq \eta_i,
-```
-and replace the above inequality with two equalities using two non-negative slack variables ``q_i`` and ``w_i``:
-```math
-  \begin{aligned}
-    r_i - q_i &= -\eta_i \\
-    r_i + w_i &= \eta_i.
-  \end{aligned}
-```
+where ``r_i`` denotes the residual of the ``i``-th measurement.
 
-Let us now define two additional non-negative variables ``\overline{r}_i`` and ``\underline{r}_i``, which satisfy the following relationships:
+To explicitly handle absolute values, we introduce two nonnegative variables ``u_i \ge 0`` and ``v_i \ge 0``, referred to as positive and negative deviations. This allows the optimization problem to be rewritten as:
 ```math
   \begin{aligned}
-    r_i &= \overline{r}_i - \underline{r}_i\\
-    \overline{r}_i &= \cfrac{1}{2} q_i \\
-    \underline{r}_i &= \cfrac{1}{2} w_i.
-  \end{aligned}
-```
-
-Then, the above two equalities become:
-```math
-  \begin{aligned}
-    r_i - 2\overline{r}_i &= -2 \eta_i \\
-    r_i + 2 \underline{r}_i &= 2 \eta_i,
-  \end{aligned}
-```
-that is:
-```math
-  \begin{aligned}
-    \overline{r}_i + \underline{r}_i = \eta_i.
-  \end{aligned}
-```
-
-Next, we define a vector of state variables according to two additional nonnegative vectors ``\overline{\mathbf x} \in \mathbb {R}_{\ge 0}^s`` and ``\underline{\mathbf x} \in \mathbb {R}_{\ge 0}^s``, which satisfy the following relationships:
-```math
-    \mathbf x = \overline{\mathbf x} - \underline{\mathbf x}
-```
-
-Hence, the optimization problem can be written:
-```math
-  \begin{aligned}
-    \text{minimize}& \;\;\; \sum_{i \in \mathcal M} (\overline{r}_i + \underline{r}_i) \\
-    \text{subject\;to}  & \;\;\; h_i(\overline{\mathbf x} - \underline{\mathbf x}) + \overline{r}_i - \underline{r}_i = z_i, \;\;\; \forall i \in \mathcal M \\
-                        & \;\;\; \overline{r}_i \geq  0, \; \underline{r}_i \geq  0, \;\;\; \forall i \in \mathcal M \\
-                        & \;\;\; \overline{\mathbf x} \succeq \mathbf 0, \; \underline{\mathbf x} \succeq \mathbf 0.
+    \text{minimize}& \;\;\; \sum_{i \in \mathcal M} (u_i + v_i) \\
+    \text{subject\;to}  & \;\;\; z_i - h_i(\mathbf x) = u_i - v_i, \;\;\; \forall i \in \mathcal M \\
+                        & \;\;\; u_i \geq  0, \; v_i \geq  0, \;\;\; \forall i \in \mathcal M \\
   \end{aligned}
 ```
 
@@ -1077,10 +1038,6 @@ Then the user can solve the optimization problem by:
 JuMP.set_silent(analysis.method.jump) # hide
 solve!(system, analysis)
 nothing # hide
-```
-As a result, we obtain optimal values for the four non-negative variables, while the state estimator is obtained by:
-```math
-    \hat{\mathbf x} = \overline{\mathbf x} - \underline{\mathbf x}.
 ```
 
 Users can retrieve the estimated bus voltage magnitudes ``\hat{\mathbf V} = [\hat{V}_i]`` and angles ``\hat{\bm \Theta} = [\hat{\theta}_i]``, ``i \in \mathcal N``, using:
