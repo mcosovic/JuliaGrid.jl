@@ -154,6 +154,21 @@ Jacobian expressions corresponding to the measurement function ``h_{I_{ij}}(\mat
 	\end{aligned}
 ```
 
+The next option is to introduce this measurement in squared form. In this case, the measurement function and value will be squared, while the variance will be doubled:
+```math
+    \mathbf{z}_\mathcal{I} = [z_{I_{ij}}^2], \;\;\; \mathbf{v}_\mathcal{I} = [2v_{I_{ij}}], \;\;\; \mathbf{h}_\mathcal{I}(\mathbf x) = [h_{I_{ij}}^2(\mathbf x)].
+```
+
+For example:
+```@example ACSETutorial
+addAmmeter!(
+  system, device; label = "I²₁₂", from = 1, magnitude = 0.3, variance = 1e-2, square = true
+)
+nothing # hide
+```
+
+This approach improves numerical robustness when integrating current magnitude measurements into the AC state estimation model. The resulting model includes a measurement function where the square root disappears, while the Jacobian expressions are doubled, and the denominator is eliminated.
+
 ---
 
 ##### [To-Bus Current Magnitude Measurements](@id ToCurrentMagnitudeMeasurements)
@@ -194,6 +209,21 @@ Jacobian expressions corresponding to the measurement function ``h_{I_{ji}}(\mat
     \cfrac{B_{I_{ji}}V_j - [C_{I_{ji}}\cos(\theta_{ij} - \phi_{ij}) + D_{I_{ji}}\sin(\theta_{ij} - \phi_{ij})]V_i}{h_{I_{ji}}(\mathbf x)} .
 	\end{aligned}
 ```
+
+As explained for the current magnitude measurement from the bus, we can also introduce this measurement in squared form:
+```math
+    \mathbf{z}_\mathcal{I} = [z_{I_{ji}}^2], \;\;\; \mathbf{v}_\mathcal{I} = [2v_{I_{ji}}], \;\;\; \mathbf{h}_\mathcal{I}(\mathbf x) = [h_{I_{ji}}^2(\mathbf x)].
+```
+
+For example:
+```@example ACSETutorial
+addAmmeter!(
+  system, device; label = "I²₂₁", to = 1, magnitude = 0.3, variance = 1e-3, square = true
+)
+nothing # hide
+```
+
+To recall, the resulting model includes a measurement function where the square root disappears, while the Jacobian expressions are doubled, and the denominator is eliminated.
 
 ---
 
@@ -388,6 +418,39 @@ with the following Jacobian expressions:
 
 ---
 
+##### Polar Bus Voltage Phasor Measurements
+To include phasor measurement ``(V_i, \theta_i) \in \bar{\mathcal P}`` at bus ``i \in \mathcal N`` in polar coordinates in the AC state estimation model, users will specify the measurement values, variances, and measurement functions as vectors:
+```math
+    \mathbf{z}_{\bar{\mathcal P}} = [z_{V_i}, z_{\theta_i}], \;\;\; \mathbf{v}_{\bar{\mathcal P}} = [v_{V_i}, v_{\theta_i}], \;\;\;
+    \mathbf{h}_{\bar{\mathcal P}}(\mathbf x) = [h_{V_{i}}(\mathbf x), h_{\theta_{i}}(\mathbf x)].
+```
+
+For example:
+```@example ACSETutorial
+addPmu!(
+  system, device; label = "V₁, θ₁", bus = 1, magnitude = 1.0, angle = 0,
+  varianceMagnitude = 1e-5, varianceAngle = 1e-6, polar = true
+)
+nothing # hide
+```
+
+Here, the functions defining the bus voltage phasor measurement are straightforward:
+```math
+  \begin{aligned}
+    h_{V_i}(\mathbf x) = V_i\\
+    h_{\theta_i}(\mathbf x) = \theta_i,
+  \end{aligned}
+```
+with the following Jacobian expressions:
+```math
+  \begin{aligned}
+   	\cfrac{\mathrm \partial{{h_{V_i}(\mathbf x)}}}{\mathrm \partial V_i} = 1, \;\;\;
+    \cfrac{\mathrm \partial{{h_{\theta_i}(\mathbf x)}}}{\mathrm \partial \theta_i} = 1.
+    \end{aligned}
+```
+
+---
+
 ##### Rectangular Bus Voltage Phasor Measurements
 When a PMU ``(V_i, \theta_i) \in \bar{\mathcal P}`` is introduced at bus ``i \in \mathcal N``, it will be incorporated into the AC state estimation model using rectangular coordinates by default. It will define the measurement values, variances, and measurement functions of vectors:
 ```math
@@ -398,8 +461,10 @@ When a PMU ``(V_i, \theta_i) \in \bar{\mathcal P}`` is introduced at bus ``i \in
 
 For example:
 ```@example ACSETutorial
-addPmu!(system, device; label = "V₂, θ₂", bus = 2, magnitude = 0.9, angle = -0.1,
-varianceMagnitude = 1e-5, varianceAngle = 1e-5)
+addPmu!(
+  system, device; label = "V₂, θ₂", bus = 2, magnitude = 0.9, angle = -0.1,
+  varianceMagnitude = 1e-5, varianceAngle = 1e-5
+)
 nothing # hide
 ```
 
@@ -453,8 +518,10 @@ In the previous example, the user neglects the covariances between the real and 
     \mathbf{w}_{\bar{\mathcal P}} = [w_{\Re(\bar{V}_i)}, w_{\Im(\bar{V}_i)}].
 ```
 ```@example ACSETutorial
-addPmu!(system, device; label = "V₃, θ₃", bus = 3, magnitude = 0.9, angle = -0.2,
-varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true)
+addPmu!(
+  system, device; label = "V₃, θ₃", bus = 3, magnitude = 0.9, angle = -0.2,
+  varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true
+  )
 nothing # hide
 ```
 
@@ -473,33 +540,51 @@ which results in the solution:
 
 ---
 
-##### Polar Bus Voltage Phasor Measurements
-If the user chooses to include phasor measurement ``(V_i, \theta_i) \in \bar{\mathcal P}`` in polar coordinates in the AC state estimation model, the user will specify the measurement values, variances, and measurement functions of vectors:
+##### Polar From-Bus Current Phasor Measurements
+To include phasor measurement ``(I_{ij}, \psi_{ij}) \in \bar{\mathcal P}`` at branch ``(i,j) \in \mathcal E`` in polar coordinates in the AC state estimation model, users will specify the measurement values, variances, and measurement functions as vectors:
 ```math
-    \mathbf{z}_{\bar{\mathcal P}} = [z_{V_i}, z_{\theta_i}], \;\;\; \mathbf{v}_{\bar{\mathcal P}} = [v_{V_i}, v_{\theta_i}], \;\;\;
-    \mathbf{h}_{\bar{\mathcal P}}(\mathbf x) = [h_{V_{i}}(\mathbf x), h_{\theta_{i}}(\mathbf x)].
+    \mathbf{z}_{\bar{\mathcal P}} = [z_{I_{ij}}, z_{\psi_{ij}}], \;\;\;
+    \mathbf{v}_{\bar{\mathcal P}} = [v_{I_{ij}}, v_{\psi_{ij}}], \;\;\;
+    \mathbf{h}_{\bar{\mathcal P}}(\mathbf x) = [h_{I_{ij}}(\mathbf x), h_{\psi_{ij}}(\mathbf x)].
 ```
 
 For example:
 ```@example ACSETutorial
-addPmu!(system, device; label = "V₁, θ₁", bus = 1, magnitude = 1.0, angle = 0,
-varianceMagnitude = 1e-5, varianceAngle = 1e-6, polar = true)
+addPmu!(
+  system, device; label = "I₁₂, ψ₁₂", from = 1, magnitude = 0.3, angle = -0.7,
+  varianceMagnitude = 1e-5, varianceAngle = 1e-4, polar = true
+)
 nothing # hide
 ```
 
-Here, the functions defining the bus voltage phasor measurement are straightforward:
+Here, the function and corresponding Jacobian expressions associated with the branch current magnitude at the from-bus end remains identical to the one provided in [From-Bus Current Magnitude Measurements](@ref FromCurrentMagnitudeMeasurements). Additionally, by using `square = true`, the current magnitude measurement can also be incorporated in squared form into the state estimation model.
+
+However, the function defining the branch current angle measurement is expressed as:
 ```math
-  \begin{aligned}
-    h_{V_i}(\mathbf x) = V_i\\
-    h_{\theta_i}(\mathbf x) = \theta_i,
-  \end{aligned}
+    h_{\psi_{ij}}(\mathbf x) = \mathrm{atan} \Bigg[
+    \cfrac{(A_{\psi_{ij}} \sin\theta_i + B_{\psi_{ij}} \cos\theta_i)V_i - [C_{\psi_{ij}} \sin(\theta_j + \phi_{ij}) + D_{\psi_{ij}}\cos(\theta_j + \phi_{ij})]V_j}
+    {(A_{\psi_{ij}} \cos\theta_i - B_{\psi_{ij}} \sin\theta_i)V_i - [C_{\psi_{ij}} \cos(\theta_j + \phi_{ij}) - D_{\psi_{ij}} \sin(\theta_j + \phi_{ij})]V_j} \Bigg],
 ```
-with the following Jacobian expressions:
+where:
+```math
+    A_{\psi_{ij}} = \cfrac{g_{ij} + g_{\mathrm{s}i}}{\tau_{ij}^2}, \;\;\;
+    B_{\psi_{ij}} = \cfrac{b_{ij}+b_{\mathrm{s}i}}{\tau_{ij}^2}, \;\;\;
+    C_{\psi_{ij}} = \cfrac{g_{ij}}{\tau_{ij}}, \;\;\;
+    D_{\psi_{ij}} = \cfrac{b_{ij}}{\tau_{ij}}.
+```
+
+Jacobian expressions corresponding to the measurement function ``h_{\psi_{ij}}(\mathbf x)`` are defined as follows:
 ```math
   \begin{aligned}
-   	\cfrac{\mathrm \partial{{h_{V_i}(\mathbf x)}}}{\mathrm \partial V_i} = 1, \;\;\;
-    \cfrac{\mathrm \partial{{h_{\theta_i}(\mathbf x)}}}{\mathrm \partial \theta_i} = 1.
-    \end{aligned}
+    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial \theta_i} &=
+    \cfrac{A_{I_{ij}} V_i^2- [C_{I_{ij}} \cos(\theta_{ij}- \phi_{ij}) - D_{I_{ij}} \sin (\theta_{ij} - \phi_{ij})]V_iV_j}{h_{{I}_{ij}}^2(\mathbf x)} \\
+    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial \theta_j} &=
+    \cfrac{B_{I_{ij}} V_j^2 - [C_{I_{ij}} \cos (\theta_{ij} - \phi_{ij}) - D_{I_{ij}} \sin(\theta_{ij}- \phi_{ij})]V_iV_j}{h_{{I}_{ij}}^2(\mathbf x)} \\
+    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial V_i} &= -
+    \cfrac{[C_{I_{ij}} \sin (\theta_{ij} - \phi_{ij}) + D_{I_{ij}} \cos(\theta_{ij}- \phi_{ij})]V_j }{h_{{I}_{ij}}^2(\mathbf x)}\\
+    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial V_j} &=
+    \cfrac{[C_{I_{ij}} \sin (\theta_{ij} - \phi_{ij}) + D_{I_{ij}} \cos(\theta_{ij}- \phi_{ij})]V_i }{h_{{I}_{ij}}^2(\mathbf x)}.
+  \end{aligned}
 ```
 
 ---
@@ -516,8 +601,10 @@ Therefore, here we specify the measurement values, variances, and measurement fu
 
 For example:
 ```@example ACSETutorial
-addPmu!(system, device; label = "I₂₃, ψ₂₃", from = 3, magnitude = 0.3, angle = 0.4,
-varianceMagnitude = 1e-5, varianceAngle = 1e-4)
+addPmu!(
+  system, device; label = "I₂₃, ψ₂₃", from = 3, magnitude = 0.3, angle = 0.4,
+  varianceMagnitude = 1e-5, varianceAngle = 1e-4
+)
 nothing # hide
 ```
 
@@ -577,8 +664,10 @@ In the previous example, the user neglects the covariances between the real and 
     \mathbf{w}_{\bar{\mathcal{P}}} = [w_{\Re(\bar{I}_{ij})}, w_{\Im(\bar{I}_{ij})}].
 ```
 ```@example ACSETutorial
-addPmu!(system, device; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, angle = -0.5,
-varianceMagnitude = 1e-4, varianceAngle = 1e-5, correlated = true)
+addPmu!(
+  system, device; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, angle = -0.5,
+  varianceMagnitude = 1e-4, varianceAngle = 1e-5, correlated = true
+)
 nothing # hide
 ```
 
@@ -589,46 +678,50 @@ Then, the covariances are obtained as follows:
 
 ---
 
-##### Polar From-Bus Current Phasor Measurements
-If the user chooses to include phasor measurement ``(I_{ij}, \psi_{ij}) \in \bar{\mathcal P}`` in polar coordinates in the AC state estimation model, the user will specify the measurement values, variances, and measurement functions of vectors:
+##### Polar To-Bus Current Phasor Measurements
+To include phasor measurement ``(I_{ji}, \psi_{ji}) \in \bar{\mathcal P}`` at branch ``(i,j) \in \mathcal E`` in polar coordinates in the AC state estimation model, users will specify the measurement values, variances, and measurement functions as vectors:
 ```math
-    \mathbf{z}_{\bar{\mathcal P}} = [z_{I_{ij}}, z_{\psi_{ij}}], \;\;\;
-    \mathbf{v}_{\bar{\mathcal P}} = [v_{I_{ij}}, v_{\psi_{ij}}], \;\;\;
-    \mathbf{h}_{\bar{\mathcal P}}(\mathbf x) = [h_{I_{ij}}(\mathbf x), h_{\psi_{ij}}(\mathbf x)].
+    \mathbf{z}_{\bar{\mathcal P}} = [z_{I_{ji}}, z_{\psi_{ji}}], \;\;\;
+    \mathbf{v}_{\bar{\mathcal P}} = [v_{I_{ji}}, v_{\psi_{ji}}], \;\;\;
+    \mathbf{h}_{\bar{\mathcal P}}(\mathbf x) = [h_{I_{ji}}(\mathbf x), h_{\psi_{ji}}(\mathbf x)].
 ```
 
 For example:
 ```@example ACSETutorial
-addPmu!(system, device; label = "I₁₂, ψ₁₂", from = 1, magnitude = 0.3, angle = -0.7,
-varianceMagnitude = 1e-5, varianceAngle = 1e-4, polar = true)
+addPmu!(
+  system, device; label = "I₂₁, ψ₂₁", to = 1, magnitude = 0.3, angle = 2.3,
+  varianceMagnitude = 1e-2, varianceAngle = 1e-3, polar = true
+)
 nothing # hide
 ```
 
-Here, the function associated with the branch current magnitude at the from-bus end remains identical to the one provided in [From-Bus Current Magnitude Measurements](@ref FromCurrentMagnitudeMeasurements). However, the function defining the branch current angle measurement is expressed as:
+Here, the function and corresponding Jacobian expressions associated with the branch current magnitude at the to-bus end remains identical to the one provided in [To-Bus Current Magnitude Measurements](@ref ToCurrentMagnitudeMeasurements). Additionally, by using `square = true`, the current magnitude measurement can also be incorporated in squared form into the state estimation model.
+
+However, the function defining the branch current angle measurement is expressed as:
 ```math
-    h_{\psi_{ij}}(\mathbf x) = \mathrm{atan} \Bigg[
-    \cfrac{(A_{\psi_{ij}} \sin\theta_i + B_{\psi_{ij}} \cos\theta_i)V_i - [C_{\psi_{ij}} \sin(\theta_j + \phi_{ij}) + D_{\psi_{ij}}\cos(\theta_j + \phi_{ij})]V_j}
-    {(A_{\psi_{ij}} \cos\theta_i - B_{\psi_{ij}} \sin\theta_i)V_i - [C_{\psi_{ij}} \cos(\theta_j + \phi_{ij}) - D_{\psi_{ij}} \sin(\theta_j + \phi_{ij})]V_j} \Bigg],
+    h_{\psi_{ji}}(\mathbf {x}) = \mathrm{atan}\Bigg[
+    \cfrac{(A_{\psi_{ji}} \sin\theta_j + B_{\psi_{ji}} \cos\theta_j)V_j - [C_{\psi_{ji}} \sin(\theta_i - \phi_{ij}) + D_{\psi_{ji}}\cos(\theta_i - \phi_{ij})]V_i}
+    {(A_{\psi_{ji}} \cos\theta_j - B_{\psi_{ji}} \sin\theta_j)V_j - [C_{\psi_{ji}} \cos(\theta_i - \phi_{ij}) - D_{\psi_{ji}} \sin(\theta_i - \phi_{ij})]V_i} \Bigg],
 ```
 where:
 ```math
-    A_{\psi_{ij}} = \cfrac{g_{ij} + g_{\mathrm{s}i}}{\tau_{ij}^2}, \;\;\;
-    B_{\psi_{ij}} = \cfrac{b_{ij}+b_{\mathrm{s}i}}{\tau_{ij}^2}, \;\;\;
-    C_{\psi_{ij}} = \cfrac{g_{ij}}{\tau_{ij}}, \;\;\;
-    D_{\psi_{ij}} = \cfrac{b_{ij}}{\tau_{ij}}.
+    A_{\psi_{ji}} = g_{ij} + g_{\mathrm{s}i}, \;\;\;
+    B_{\psi_{ji}} = b_{ij} + b_{\mathrm{s}i}, \;\;\;
+    C_{\psi_{ji}} = \cfrac{g_{ij}}{\tau_{ij}}, \;\;\;
+    D_{\psi_{ji}} = \cfrac{b_{ij}}{\tau_{ij}}.
 ```
 
-Jacobian expressions associated with the branch current magnitude function ``h_{I_{ij}}(\mathbf x)`` remains identical to the one provided in [From-Bus Current Magnitude Measurements](@ref FromCurrentMagnitudeMeasurements). Further, Jacobian expressions corresponding to the measurement function ``h_{\psi_{ij}}(\mathbf x)`` are defined as follows:
+Jacobian expressions corresponding to the measurement function ``h_{\psi_{ji}}(\mathbf x)`` are defined as follows:
 ```math
   \begin{aligned}
-    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial \theta_i} &=
-    \cfrac{A_{I_{ij}} V_i^2- [C_{I_{ij}} \cos(\theta_{ij}- \phi_{ij}) - D_{I_{ij}} \sin (\theta_{ij} - \phi_{ij})]V_iV_j}{h_{{I}_{ij}}^2(\mathbf x)} \\
-    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial \theta_j} &=
-    \cfrac{B_{I_{ij}} V_j^2 - [C_{I_{ij}} \cos (\theta_{ij} - \phi_{ij}) - D_{I_{ij}} \sin(\theta_{ij}- \phi_{ij})]V_iV_j}{h_{{I}_{ij}}^2(\mathbf x)} \\
-    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial V_i} &= -
-    \cfrac{[C_{I_{ij}} \sin (\theta_{ij} - \phi_{ij}) + D_{I_{ij}} \cos(\theta_{ij}- \phi_{ij})]V_j }{h_{{I}_{ij}}^2(\mathbf x)}\\
-    \cfrac{\mathrm \partial{h_{\psi_{ij}}(\mathbf x)}}{\mathrm \partial V_j} &=
-    \cfrac{[C_{I_{ij}} \sin (\theta_{ij} - \phi_{ij}) + D_{I_{ij}} \cos(\theta_{ij}- \phi_{ij})]V_i }{h_{{I}_{ij}}^2(\mathbf x)}.
+    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial \theta_i} &=
+    \cfrac{A_{I_{ji}} V_i^2- [C_{I_{ji}} \cos(\theta_{ij}- \phi_{ij}) + D_{I_{ji}} \sin (\theta_{ij} - \phi_{ij}) ]V_iV_j}{h_{{I}_{ji}}^2(\mathbf x)} \\
+    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial \theta_j} &=
+    \cfrac{B_{I_{ji}} V_j^2 - [C_{I_{ji}} \cos (\theta_{ij} - \phi_{ij}) + D_{I_{ji}} \sin(\theta_{ij}- \phi_{ij})]V_iV_j}{h_{{I}_{ji}}^2(\mathbf x)} \\
+    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial V_i} &=
+    -\cfrac{[C_{I_{ji}} \sin (\theta_{ij} - \phi_{ij}) - D_{I_{ji}} \cos(\theta_{ij}- \phi_{ij})]V_j }{h_{{I}_{ji}}^2(\mathbf x)}\\
+    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial V_j} &=
+    \cfrac{[C_{I_{ji}} \sin (\theta_{ij} - \phi_{ij}) - D_{I_{ji}} \cos(\theta_{ij}- \phi_{ij})]V_i }{h_{{I}_{ji}}^2(\mathbf x)}.
   \end{aligned}
 ```
 
@@ -644,8 +737,10 @@ When introducing a PMU at branch ``(i,j) \in \mathcal E``, it can be placed at t
 
 For example:
 ```@example ACSETutorial
-addPmu!(system, device; label = "I₃₂, ψ₃₂", to = 3, magnitude = 0.3, angle = -2.9,
-varianceMagnitude = 1e-5, varianceAngle = 1e-5)
+addPmu!(
+  system, device; label = "I₃₂, ψ₃₂", to = 3, magnitude = 0.3, angle = -2.9,
+  varianceMagnitude = 1e-5, varianceAngle = 1e-5
+)
 nothing # hide
 ```
 
@@ -705,59 +800,16 @@ As before, we are neglecting the covariances between the real and imaginary part
     \mathbf{w}_{\bar{\mathcal{P}}} = [w_{\Re(\bar{I}_{ji})}, w_{\Im(\bar{I}_{ji})}].
 ```
 ```@example ACSETutorial
-addPmu!(system, device; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, angle = 2.5,
-varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true)
+addPmu!(
+  system, device; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, angle = 2.5,
+  varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true
+)
 nothing # hide
 ```
 
 Then, the covariances are obtained as follows:
 ```math
    w_{\Re(\bar{I}_{ji})} = w_{\Im(\bar{I}_{ji})} = \sin z_{\psi_{ji}} \cos z_{\psi_{ji}}(v_{I_{ji}} - v_{\psi_{ji}} z_{I_{ji}}^2).
-```
-
----
-
-##### Polar To-Bus Current Phasor Measurements
-If the user chooses to include phasor measurement ``(I_{ji}, \psi_{ji}) \in \bar{\mathcal P}`` in polar coordinates in the AC state estimation model, the user will specify the measurement values, variances, and measurement functions of vectors:
-```math
-    \mathbf{z}_{\bar{\mathcal P}} = [z_{I_{ji}}, z_{\psi_{ji}}], \;\;\;
-    \mathbf{v}_{\bar{\mathcal P}} = [v_{I_{ji}}, v_{\psi_{ji}}], \;\;\;
-    \mathbf{h}_{\bar{\mathcal P}}(\mathbf x) = [h_{I_{ji}}(\mathbf x), h_{\psi_{ji}}(\mathbf x)].
-```
-
-For example:
-```@example ACSETutorial
-addPmu!(system, device; label = "I₂₁, ψ₂₁", to = 1, magnitude = 0.3, angle = 2.3,
-varianceMagnitude = 1e-2, varianceAngle = 1e-3, polar = true)
-nothing # hide
-```
-
-Here, the function associated with the branch current magnitude at the to-bus end remains identical to the one provided in [To-Bus Current Magnitude Measurements](@ref ToCurrentMagnitudeMeasurements). However, the function defining the branch current angle measurement is expressed as:
-```math
-    h_{\psi_{ji}}(\mathbf {x}) = \mathrm{atan}\Bigg[
-    \cfrac{(A_{\psi_{ji}} \sin\theta_j + B_{\psi_{ji}} \cos\theta_j)V_j - [C_{\psi_{ji}} \sin(\theta_i - \phi_{ij}) + D_{\psi_{ji}}\cos(\theta_i - \phi_{ij})]V_i}
-    {(A_{\psi_{ji}} \cos\theta_j - B_{\psi_{ji}} \sin\theta_j)V_j - [C_{\psi_{ji}} \cos(\theta_i - \phi_{ij}) - D_{\psi_{ji}} \sin(\theta_i - \phi_{ij})]V_i} \Bigg],
-```
-where:
-```math
-    A_{\psi_{ji}} = g_{ij} + g_{\mathrm{s}i}, \;\;\;
-    B_{\psi_{ji}} = b_{ij} + b_{\mathrm{s}i}, \;\;\;
-    C_{\psi_{ji}} = \cfrac{g_{ij}}{\tau_{ij}}, \;\;\;
-    D_{\psi_{ji}} = \cfrac{b_{ij}}{\tau_{ij}}.
-```
-
-Jacobian expressions associated with the branch current magnitude function ``h_{I_{ji}}(\mathbf x)`` remains identical to the one provided in [To-Bus Current Magnitude Measurements](@ref ToCurrentMagnitudeMeasurements). Further, Jacobian expressions corresponding to the measurement function ``h_{\psi_{ji}}(\mathbf x)`` are defined as follows:
-```math
-  \begin{aligned}
-    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial \theta_i} &=
-    \cfrac{A_{I_{ji}} V_i^2- [C_{I_{ji}} \cos(\theta_{ij}- \phi_{ij}) + D_{I_{ji}} \sin (\theta_{ij} - \phi_{ij}) ]V_iV_j}{h_{{I}_{ji}}^2(\mathbf x)} \\
-    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial \theta_j} &=
-    \cfrac{B_{I_{ji}} V_j^2 - [C_{I_{ji}} \cos (\theta_{ij} - \phi_{ij}) + D_{I_{ji}} \sin(\theta_{ij}- \phi_{ij})]V_iV_j}{h_{{I}_{ji}}^2(\mathbf x)} \\
-    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial V_i} &=
-    -\cfrac{[C_{I_{ji}} \sin (\theta_{ij} - \phi_{ij}) - D_{I_{ji}} \cos(\theta_{ij}- \phi_{ij})]V_j }{h_{{I}_{ji}}^2(\mathbf x)}\\
-    \cfrac{\mathrm \partial{h_{\psi_{ji}}(\mathbf x)}}{\mathrm \partial V_j} &=
-    \cfrac{[C_{I_{ji}} \sin (\theta_{ij} - \phi_{ij}) - D_{I_{ji}} \cos(\theta_{ij}- \phi_{ij})]V_i }{h_{{I}_{ji}}^2(\mathbf x)}.
-  \end{aligned}
 ```
 
 ---
