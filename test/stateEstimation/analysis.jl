@@ -508,7 +508,7 @@ end
         printPmuData(system, device, analysis; label = "From 4", footer = true)
         printPmuData(system, device, analysis; style = false)
         printPmuData(system, device, analysis; label = "From 1", style = false)
-        printPmuData(system, device, analysis; label = 41, style = false)
+        printPmuData(system, device, analysis; label = 10, style = false)
     end
 
     ########## Print DC Data ##########
@@ -524,8 +524,8 @@ end
 
     @suppress @testset "Print PMU DC Data" begin
         printPmuData(system, device, analysis; repeat = 10)
-        printPmuData(system, device, analysis; label = 41, header = true)
-        printPmuData(system, device, analysis; label = 42, footer = true)
+        printPmuData(system, device, analysis; label = 10, header = true)
+        printPmuData(system, device, analysis; label = 12, footer = true)
         printPmuData(system, device, analysis; style = false)
     end
 end
@@ -567,7 +567,7 @@ end
     @suppress @testset "Print PMU AC Data" begin
         printPmuData(system, device, analysis)
         printPmuData(system, device, analysis; label = "From 1")
-        printPmuData(system, device, analysis; label = 41)
+        printPmuData(system, device, analysis; label = 9)
     end
 
     ########## Print DC Data ##########
@@ -581,6 +581,6 @@ end
 
     @suppress @testset "Print PMU DC Data" begin
         printPmuData(system, device, analysis)
-        printPmuData(system, device, analysis; label = 41)
+        printPmuData(system, device, analysis; label = 9)
     end
 end
