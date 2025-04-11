@@ -456,7 +456,7 @@ system30 = powerSystem(path * "case30test.m")
 end
 
 @testset "Print Data in Per-Units" begin
-    system, monitoring = ems(path * "case14test.m", "measurement14.h5")
+    system, monitoring = ems(path * "case14test.m", "monitoring.h5")
 
     addPmu!(monitoring; bus = 1, magnitude = 1.0, angle = 0.0)
     addPmu!(monitoring; bus = 3, magnitude = 1.1, angle = -0.3)
@@ -533,7 +533,7 @@ end
 end
 
 @testset "Print Data in SI Units" begin
-    system, monitoring = ems(path * "case14test.m", "measurement14.h5")
+    system, monitoring = ems(path * "case14test.m", "monitoring.h5")
 
     addPmu!(monitoring; bus = 1, magnitude = 1.0, angle = 0.0)
     addPmu!(monitoring; bus = 3, magnitude = 1.1, angle = -0.3)
