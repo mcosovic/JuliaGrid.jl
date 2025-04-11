@@ -42,46 +42,46 @@ fmt3 = Dict("Power Output" => "%.2f")
 
 ##### Base Case Analysis #####
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis, power = true, verbose = 1)
 
-printBusData(system, analysis; show = show1, fmt = fmt1)
-printGeneratorData(system, analysis; fmt = fmt3)
-printGeneratorConstraint(system, analysis; show = show3)
-printBranchData(system, analysis; show = show2, fmt = fmt2)
+printBusData(analysis; show = show1, fmt = fmt1)
+printGeneratorData(analysis; fmt = fmt3)
+printGeneratorConstraint(analysis; show = show3)
+printBranchData(analysis; show = show2, fmt = fmt2)
 
 ##### Modifying Demands #####
-updateBus!(system, analysis; label = "Bus 2", active = 25.2, reactive = 13.5)
-updateBus!(system, analysis; label = "Bus 4", active = 43.3, reactive = 18.6)
+updateBus!(analysis; label = "Bus 2", active = 25.2, reactive = 13.5)
+updateBus!(analysis; label = "Bus 4", active = 43.3, reactive = 18.6)
 
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis, power = true, verbose = 1)
 
-printGeneratorData(system, analysis; fmt = fmt3)
-printBranchData(system, analysis; show = show2, fmt = fmt2)
+printGeneratorData(analysis; fmt = fmt3)
+printBranchData(analysis; show = show2, fmt = fmt2)
 
 ##### Modifying Generator Costs #####
-cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [2.0; 20.0; 0.0])
-cost!(system, analysis; generator = "Generator 2", active = 2, polynomial = [0.8; 20.0; 0.0])
-cost!(system, analysis; generator = "Generator 3", active = 2, polynomial = [0.8; 20.0; 0.0])
+cost!(analysis; generator = "Generator 1", active = 2, polynomial = [2.0; 20.0; 0.0])
+cost!(analysis; generator = "Generator 2", active = 2, polynomial = [0.8; 20.0; 0.0])
+cost!(analysis; generator = "Generator 3", active = 2, polynomial = [0.8; 20.0; 0.0])
 
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis, power = true, verbose = 1)
 
-printGeneratorData(system, analysis; fmt = fmt3)
-printBranchData(system, analysis; show = show2, fmt = fmt2)
+printGeneratorData(analysis; fmt = fmt3)
+printBranchData(analysis; show = show2, fmt = fmt2)
 
 ##### Adding Branch Flow Constraints #####
-updateBranch!(system, analysis; label = "Branch 2", type = 1, maxFromBus = 15.0)
-updateBranch!(system, analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
+updateBranch!(analysis; label = "Branch 2", type = 1, maxFromBus = 15.0)
+updateBranch!(analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
 
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis; power = true, verbose = 1)
 
-printGeneratorData(system, analysis; fmt = fmt3)
-printBranchConstraint(system, analysis)
-printBranchData(system, analysis; show = show2, fmt = fmt2)
+printGeneratorData(analysis; fmt = fmt3)
+printBranchConstraint(analysis)
+printBranchData(analysis; show = show2, fmt = fmt2)
 
 ##### Modifying Network Topology #####
-updateBranch!(system, analysis; label = "Branch 2", status = 0)
+updateBranch!(analysis; label = "Branch 2", status = 0)
 
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis, power = true, verbose = 1)
 
-printGeneratorData(system, analysis; fmt = fmt3)
-printBranchData(system, analysis; show = show2, fmt = fmt2)
+printGeneratorData(analysis; fmt = fmt3)
+printBranchData(analysis; show = show2, fmt = fmt2)

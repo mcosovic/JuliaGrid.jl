@@ -31,45 +31,47 @@ cost!(system; generator = "Generator 2", active = 2, polynomial = [1500.0; 700.0
 dcModel!(system)
 
 ##### Measurement Model #####
-device = measurement()
+monitoring = measurement(system)
 
 powerFlow = dcOptimalPowerFlow(system, Ipopt.Optimizer)
-powerFlow!(system, powerFlow; power = true, verbose = 1)
+powerFlow!(powerFlow; power = true, verbose = 1)
 
-printBusData(system, powerFlow)
+printBusData(powerFlow)
+
 @wattmeter(label = "Wattmeter ?")
 for (label, idx) in system.bus.label
     Pᵢ = powerFlow.power.injection.active[idx]
-    addWattmeter!(system, device; bus = label, active = Pᵢ, variance = 1e-4, noise = true)
+    addWattmeter!(monitoring; bus = label, active = Pᵢ, variance = 1e-4, noise = true)
 end
 
-printBranchData(system, powerFlow)
-addWattmeter!(system, device; from = "Branch 1", active = powerFlow.power.from.active[1])
-addWattmeter!(system, device; from = "Branch 4", active = powerFlow.power.from.active[4])
+printBranchData(powerFlow)
 
-printWattmeterData(system, device)
+addWattmeter!(monitoring; from = "Branch 1", active = powerFlow.power.from.active[1])
+addWattmeter!(monitoring; from = "Branch 4", active = powerFlow.power.from.active[4])
+
+printWattmeterData(monitoring)
 
 ##### Base Case Analysis #####
-analysis = dcStateEstimation(system, device)
-stateEstimation!(system, analysis; power = true, verbose = 1)
+analysis = dcStateEstimation(monitoring)
+stateEstimation!(analysis; power = true, verbose = 1)
 
-printBusData(system, analysis)
-printWattmeterData(system, device, analysis)
+printBusData(analysis)
+printWattmeterData(analysis)
 
 ##### Modifying Measurement Data #####
-updateWattmeter!(system, device, analysis; label = "Wattmeter 7", active = 1.1)
-updateWattmeter!(system, device, analysis; label = "Wattmeter 8", active = 1.6)
+updateWattmeter!(analysis; label = "Wattmeter 7", active = 1.1)
+updateWattmeter!(analysis; label = "Wattmeter 8", active = 1.6)
 
-stateEstimation!(system, analysis; power = true, verbose = 1)
-printBusData(system, analysis)
+stateEstimation!(analysis; power = true, verbose = 1)
+printBusData(analysis)
 
-analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
-stateEstimation!(system, analysis; power = true, verbose = 1)
-printBusData(system, analysis)
+analysis = dcLavStateEstimation(monitoring, Ipopt.Optimizer)
+stateEstimation!(analysis; power = true, verbose = 1)
+printBusData(analysis)
 
 ##### Modifying Measurement Set #####
-updateWattmeter!(system, device, analysis; label = "Wattmeter 1", status = 0)
-updateWattmeter!(system, device, analysis; label = "Wattmeter 5", status = 0)
+updateWattmeter!(analysis; label = "Wattmeter 1", status = 0)
+updateWattmeter!(analysis; label = "Wattmeter 5", status = 0)
 
-stateEstimation!(system, analysis; power = true, verbose = 1)
-printBusData(system, analysis)
+stateEstimation!(analysis; power = true, verbose = 1)
+printBusData(analysis)

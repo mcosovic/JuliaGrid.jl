@@ -20,7 +20,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1")
 show = Dict("Shunt Power" => false, "Status" => false)
 
 ##### Measurement Model #####
-device = measurement()
+monitoring = measurement(system)
 
 updateBus!(system; label = "Bus 2", type = 1, active = 1.1, reactive = 0.3)
 updateBus!(system; label = "Bus 3", type = 1, active = 2.3, reactive = 0.2)
@@ -30,65 +30,65 @@ updateGenerator!(system; label = "Generator 1", active = 3.3, reactive = 2.1)
 acModel!(system)
 
 powerFlow = newtonRaphson(system)
-powerFlow!(system, powerFlow)
+powerFlow!(powerFlow)
 
-printBusData(system, powerFlow)
+printBusData(powerFlow)
 
 @voltmeter(label = "Meter ?")
-addVoltmeter!(system, device, powerFlow; variance = 1e-4, noise = true)
+addVoltmeter!(monitoring, powerFlow; variance = 1e-4, noise = true)
 
-printVoltmeterData(system, device)
+printVoltmeterData(monitoring)
 
 @wattmeter(label = "Meter ?")
 @varmeter(label = "Meter ?")
 for (label, idx) in system.bus.label
-    Pᵢ, Qᵢ = injectionPower(system, powerFlow; label)
-    addWattmeter!(system, device; bus = label, active = Pᵢ, variance = 1e-3, noise = true)
-    addVarmeter!(system, device; bus = label, reactive = Qᵢ, variance = 1e-4, noise = true)
+    Pᵢ, Qᵢ = injectionPower(powerFlow; label)
+    addWattmeter!(monitoring; bus = label, active = Pᵢ, variance = 1e-3, noise = true)
+    addVarmeter!(monitoring; bus = label, reactive = Qᵢ, variance = 1e-4, noise = true)
 end
 
-Pᵢⱼ, Qᵢⱼ = fromPower(system, powerFlow; label = "Branch 1")
-addWattmeter!(system, device; label = "Meter 4", from = "Branch 1", active = Pᵢⱼ)
-addVarmeter!(system, device; label = "Meter 4", from = "Branch 1", reactive = Qᵢⱼ)
+Pᵢⱼ, Qᵢⱼ = fromPower(powerFlow; label = "Branch 1")
+addWattmeter!(monitoring; label = "Meter 4", from = "Branch 1", active = Pᵢⱼ)
+addVarmeter!(monitoring; label = "Meter 4", from = "Branch 1", reactive = Qᵢⱼ)
 
-Pⱼᵢ, Qⱼᵢ = toPower(system, powerFlow; label = "Branch 1")
-addWattmeter!(system, device; label = "Meter 5", to = "Branch 1", active = Pⱼᵢ)
-addVarmeter!(system, device; label = "Meter 5", to = "Branch 1", reactive = Qⱼᵢ)
+Pⱼᵢ, Qⱼᵢ = toPower(powerFlow; label = "Branch 1")
+addWattmeter!(monitoring; label = "Meter 5", to = "Branch 1", active = Pⱼᵢ)
+addVarmeter!(monitoring; label = "Meter 5", to = "Branch 1", reactive = Qⱼᵢ)
 
-printWattmeterData(system, device)
-printVarmeterData(system, device)
+printWattmeterData(monitoring)
+printVarmeterData(monitoring)
 
 @ammeter(statusFrom = 0, statusTo = 0)
-addAmmeter!(system, device; label = "Meter 4", from = "Branch 1", magnitude = 1.36)
-addAmmeter!(system, device; label = "Meter 5", to = "Branch 1", magnitude = 2.37)
+addAmmeter!(monitoring; label = "Meter 4", from = "Branch 1", magnitude = 1.36)
+addAmmeter!(monitoring; label = "Meter 5", to = "Branch 1", magnitude = 2.37)
 
-printAmmeterData(system, device)
+printAmmeterData(monitoring)
 
 ##### Base Case Analysis #####
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; power = true, verbose = 2)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis; power = true, verbose = 2)
 
-printBusData(system, analysis; show)
-printBranchData(system, analysis; show)
-printWattmeterData(system, device, analysis)
+printBusData(analysis; show)
+printBranchData(analysis; show)
+printWattmeterData(analysis)
 
 ##### Modifying Measurement Data #####
-updateVoltmeter!(system, device, analysis; label = "Meter 1", magnitude = 1.0, noise = false)
-updateWattmeter!(system, device, analysis; label = "Meter 2", active = -1.1, variance = 1e-6)
-updateVarmeter!(system, device, analysis; label = "Meter 3", variance = 1e-1)
+updateVoltmeter!(analysis; label = "Meter 1", magnitude = 1.0, noise = false)
+updateWattmeter!(analysis; label = "Meter 2", active = -1.1, variance = 1e-6)
+updateVarmeter!(analysis; label = "Meter 3", variance = 1e-1)
 
-stateEstimation!(system, analysis; power = true)
-printBusData(system, analysis; show)
+stateEstimation!(analysis; power = true)
+printBusData(analysis; show)
 
 ##### Modifying Measurement Set #####
-updateAmmeter!(system, device, analysis; label = "Meter 4", status = 1)
-updateAmmeter!(system, device, analysis; label = "Meter 5", status = 1)
+updateAmmeter!(analysis; label = "Meter 4", status = 1)
+updateAmmeter!(analysis; label = "Meter 5", status = 1)
 
-stateEstimation!(system, analysis; power = true)
-printBusData(system, analysis; show)
+stateEstimation!(analysis; power = true)
+printBusData(analysis; show)
 
-outlier = residualTest!(system, device, analysis; threshold = 4.0)
+outlier = residualTest!(analysis; threshold = 4.0)
 
-setInitialPoint!(system, analysis)
-stateEstimation!(system, analysis; power = true)
-printBusData(system, analysis; show)
+setInitialPoint!(analysis)
+stateEstimation!(analysis; power = true)
+printBusData(analysis; show)

@@ -36,27 +36,27 @@ fmt2 = Dict("From-Bus Power" => "%.2f", "To-Bus Power" => "%.2f", "Series Power"
 
 ##### Base Case Analysis #####
 fnr = fastNewtonRaphsonXB(system)
-powerFlow!(system, fnr; power = true, verbose = 2)
+powerFlow!(fnr; power = true, verbose = 2)
 
-printBusData(system, fnr; show = show1, fmt = fmt1)
-printBranchData(system, fnr; show = show2, fmt = fmt2)
+printBusData(fnr; show = show1, fmt = fmt1)
+printBranchData(fnr; show = show2, fmt = fmt2)
 
 ##### Modifying Supplies and Demands #####
-updateBus!(system, fnr; label = "Bus 2", active = 25.5, reactive = 15.0)
-updateBus!(system, fnr; label = "Bus 4", active = 42.0, reactive = 20.0)
+updateBus!(fnr; label = "Bus 2", active = 25.5, reactive = 15.0)
+updateBus!(fnr; label = "Bus 4", active = 42.0, reactive = 20.0)
 
-updateGenerator!(system, fnr; label = "Generator 1", active = 58.0, reactive = 20.0)
-updateGenerator!(system, fnr; label = "Generator 2", active = 23.1, reactive = 20.0)
+updateGenerator!(fnr; label = "Generator 1", active = 58.0, reactive = 20.0)
+updateGenerator!(fnr; label = "Generator 2", active = 23.1, reactive = 20.0)
 
-powerFlow!(system, fnr; power = true)
+powerFlow!(fnr; power = true)
 
-printBranchData(system, fnr; show = show2, fmt = fmt2)
+printBranchData(fnr; show = show2, fmt = fmt2)
 
 ##### Modifying Network Topology #####
 updateBranch!(system; label = "Branch 3", status = 0)
 
 nr = newtonRaphson(system)
 setInitialPoint!(fnr, nr)
-powerFlow!(system, nr; power = true)
+powerFlow!(nr; power = true)
 
-printBranchData(system, nr; show = show2, fmt = fmt2)
+printBranchData(nr; show = show2, fmt = fmt2)
