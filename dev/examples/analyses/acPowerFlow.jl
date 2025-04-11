@@ -56,7 +56,7 @@ printBranchData(fnr; show = show2, fmt = fmt2)
 updateBranch!(system; label = "Branch 3", status = 0)
 
 nr = newtonRaphson(system)
-setInitialPoint!(fnr, nr)
+setInitialPoint!(nr, fnr)
 powerFlow!(nr; power = true)
 
 printBranchData(nr; show = show2, fmt = fmt2)
