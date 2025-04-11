@@ -450,10 +450,10 @@ function solve!(analysis::DcStateEstimation{LAV})
 end
 
 function setInitialPoint!(analysis::DcStateEstimation{LAV})
-    errorTransfer(system.bus.voltage.angle, analysis.voltage.angle)
+    errorTransfer(analysis.system.bus.voltage.angle, analysis.voltage.angle)
 
-    @inbounds for i = 1:system.bus.number
-        analysis.voltage.angle[i] = system.bus.voltage.angle[i]
+    @inbounds for i = 1:analysis.system.bus.number
+        analysis.voltage.angle[i] = analysis.system.bus.voltage.angle[i]
     end
 end
 

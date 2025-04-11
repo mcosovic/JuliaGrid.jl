@@ -1081,12 +1081,12 @@ stateEstimation!(analysis)
 ```
 """
 function setInitialPoint!(analysis::AcStateEstimation)
-    errorTransfer(system.bus.voltage.magnitude, analysis.voltage.magnitude)
-    errorTransfer(system.bus.voltage.angle, analysis.voltage.angle)
+    errorTransfer(analysis.system.bus.voltage.magnitude, analysis.voltage.magnitude)
+    errorTransfer(analysis.system.bus.voltage.angle, analysis.voltage.angle)
 
-    @inbounds for i = 1:system.bus.number
-        analysis.voltage.magnitude[i] = system.bus.voltage.magnitude[i]
-        analysis.voltage.angle[i] = system.bus.voltage.angle[i]
+    @inbounds for i = 1:analysis.system.bus.number
+        analysis.voltage.magnitude[i] = analysis.system.bus.voltage.magnitude[i]
+        analysis.voltage.angle[i] = analysis.system.bus.voltage.angle[i]
     end
 end
 
