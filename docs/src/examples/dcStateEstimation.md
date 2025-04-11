@@ -160,8 +160,8 @@ nothing # hide
 ## Modifying Measurement Data
 Let us now modify the measurement values. Instead of recreating the measurement set and the DC state estimation model from scratch, both are updated simultaneously:
 ```@example dcStateEstimation
-updateWattmeter!(monitoring, analysis; label = "Wattmeter 7", active = 1.1)
-updateWattmeter!(monitoring, analysis; label = "Wattmeter 8", active = 1.6)
+updateWattmeter!(analysis; label = "Wattmeter 7", active = 1.1)
+updateWattmeter!(analysis; label = "Wattmeter 8", active = 1.6)
 nothing # hide
 ```
 By changing these measurement values, two outliers are introduced into the dataset, which affects the estimates.

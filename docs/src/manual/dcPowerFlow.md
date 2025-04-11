@@ -103,7 +103,7 @@ nothing # hide
 
 To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!(::DcPowerFlow)) function as follows:
 ```@example DCPowerFlowSolution
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -122,15 +122,15 @@ nothing # hide
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example DCPowerFlowSolution
 @voltage(pu, deg)
-printBusData(system, analysis)
+printBusData(analysis)
 nothing # hide
 ```
 
 Next, users can easily customize the print results for specific buses, for example:
 ```julia
-printBusData(system, analysis; label = "Bus 1", header = true)
-printBusData(system, analysis; label = "Bus 2")
-printBusData(system, analysis; label = "Bus 3", footer = true)
+printBusData(analysis; label = "Bus 1", header = true)
+printBusData(analysis; label = "Bus 2")
+printBusData(analysis; label = "Bus 3", footer = true)
 ```
 
 ---
@@ -139,7 +139,7 @@ printBusData(system, analysis; label = "Bus 3", footer = true)
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
 ```julia
 open("bus.txt", "w") do file
-    printBusData(system, analysis, file)
+    printBusData(analysis, file)
 end
 ```
 
@@ -151,7 +151,7 @@ For CSV output, users should first generate a simple table with `style = false`,
 using CSV
 
 io = IOBuffer()
-printBusData(system, analysis, io; style = false)
+printBusData(analysis, io; style = false)
 CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ```
 
@@ -177,7 +177,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
 dcModel!(system)
 analysis = dcPowerFlow(system) # <- Build DcPowerFlow for the defined power system
-solve!(system, analysis)
+solve!(analysis)
 
 updateBus!(system; label = "Bus 2", active = 0.4)
 
@@ -188,7 +188,7 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.5)
 updateGenerator!(system; label = "Generator 1", active = 1.9)
 
 analysis = dcPowerFlow(system) # <- Build DcPowerFlow for the updated power system
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -219,18 +219,18 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
 dcModel!(system)
 analysis = dcPowerFlow(system) # <- Build DcPowerFlow for the defined power system
-solve!(system, analysis)
+solve!(analysis)
 
-updateBus!(system, analysis; label = "Bus 2", active = 0.4)
+updateBus!(analysis; label = "Bus 2", active = 0.4)
 
-addBranch!(system, analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
-updateBranch!(system, analysis; label = "Branch 1", status = 0)
+addBranch!(analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
+updateBranch!(analysis; label = "Branch 1", status = 0)
 
-addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 2", active = 1.5)
-updateGenerator!(system, analysis; label = "Generator 1", active = 1.9)
+addGenerator!(analysis; label = "Generator 2", bus = "Bus 2", active = 1.5)
+updateGenerator!(analysis; label = "Generator 1", active = 1.9)
 
 # <- No need for re-build; we have already updated the existing DcPowerFlow instance
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -243,11 +243,11 @@ nothing # hide
 Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the active power demand at `Bus 2`, introducing a new generator at `Bus 2`, and fine-tuning the output power of `Generator 1`. It is important to note that these adjustments do not impact the branches, leaving the nodal matrix unchanged. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::DcPowerFlow)) function:
 ```@example DCPowerFlowSolution
 
-updateBus!(system, analysis; label = "Bus 2", active = 0.2)
-addGenerator!(system, analysis; label = "Generator 3", bus = "Bus 2", active = 0.3)
-updateGenerator!(system, analysis; label = "Generator 1", active = 2.1)
+updateBus!(analysis; label = "Bus 2", active = 0.2)
+addGenerator!(analysis; label = "Generator 3", bus = "Bus 2", active = 0.3)
+updateGenerator!(analysis; label = "Generator 1", active = 2.1)
 
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -261,7 +261,7 @@ The [`dcPowerFlow`](@ref dcPowerFlow) function oversees bus type validations, as
 
 In these instances, JuliaGrid will raise an error:
 ```@repl DCPowerFlowSolution
-updateGenerator!(system, analysis; label = "Generator 1", status = 0)
+updateGenerator!(analysis; label = "Generator 1", status = 0)
 ```
 
 Now, the user must execute the [`dcPowerFlow`](@ref dcPowerFlow) function instead of attempting to reuse the `DcPowerFlow` type:
@@ -269,7 +269,7 @@ Now, the user must execute the [`dcPowerFlow`](@ref dcPowerFlow) function instea
 updateGenerator!(system; label = "Generator 1", status = 0)
 
 analysis = dcPowerFlow(system)
-solve!(system, analysis)
+solve!(analysis)
 ```
 
 !!! note "Info"
@@ -297,13 +297,13 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
 analysis = dcPowerFlow(system)
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
 Now we can calculate the active powers using the following function:
 ```@example ComputationPowersCurrentsLosses
-power!(system, analysis)
+power!(analysis)
 nothing # hide
 ```
 
@@ -328,7 +328,7 @@ print(system.branch.label, system.base.power.value * analysis.power.from.active)
 Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, users have the option to print the results in the REPL using any units that have been configured:
 ```@example ComputationPowersCurrentsLosses
 @power(MW, pu)
-printBranchData(system, analysis)
+printBranchData(analysis)
 @default(unit) # hide
 nothing # hide
 ```
@@ -338,7 +338,7 @@ nothing # hide
 ##### Active Power Injection
 To calculate active power injection associated with a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-active = injectionPower(system, analysis; label = "Bus 1")
+active = injectionPower(analysis; label = "Bus 1")
 ```
 
 ---
@@ -346,7 +346,7 @@ active = injectionPower(system, analysis; label = "Bus 1")
 ##### Active Power Injection from Generators
 To calculate active power injection from the generators at a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-active = supplyPower(system, analysis; label = "Bus 1")
+active = supplyPower(analysis; label = "Bus 1")
 ```
 
 ---
@@ -354,8 +354,8 @@ active = supplyPower(system, analysis; label = "Bus 1")
 ##### Active Power Flow
 Similarly, we can compute the active power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
 ```@repl ComputationPowersCurrentsLosses
-active = fromPower(system, analysis; label = "Branch 2")
-active = toPower(system, analysis; label = "Branch 2")
+active = fromPower(analysis; label = "Branch 2")
+active = toPower(analysis; label = "Branch 2")
 ```
 
 ---
@@ -363,7 +363,7 @@ active = toPower(system, analysis; label = "Branch 2")
 ##### Generator Active Power Output
 Finally, we can compute the active power output of a particular generator using the function:
 ```@repl ComputationPowersCurrentsLosses
-active = generatorPower(system, analysis; label = "Generator 1")
+active = generatorPower(analysis; label = "Generator 1")
 @voltage(pu, pu, V) # hide
 @power(pu, pu, pu) # hide
 ```

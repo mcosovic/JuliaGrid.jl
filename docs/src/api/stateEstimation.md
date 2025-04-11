@@ -26,7 +26,7 @@ using JuliaGrid, Ipopt, HiGHS
 ###### PMU State Estimation
 * [`pmuStateEstimation`](@ref pmuStateEstimation)
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation)
-* [`solve!`](@ref solve!(:::PmuStateEstimation{WLS{Normal}}))
+* [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}}))
 * [`stateEstimation!`](@ref stateEstimation!(::PmuStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal})
 
 ###### DC State Estimation
@@ -59,6 +59,7 @@ acLavStateEstimation
 increment!
 solve!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
 setInitialPoint!(::AcStateEstimation)
+setInitialPoint!(::AC, ::AcStateEstimation)
 stateEstimation!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
 ```
 

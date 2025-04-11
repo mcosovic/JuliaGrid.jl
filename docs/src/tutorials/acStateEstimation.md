@@ -161,7 +161,9 @@ The next option is to introduce this measurement in squared form. In this case, 
 
 For example:
 ```@example ACSETutorial
-addAmmeter!(monitoring; label = "I²₁₂", from = 1, magnitude = 0.3, variance = 1e-2, square = true)
+addAmmeter!(
+  monitoring; label = "I²₁₂", from = 1, magnitude = 0.3, variance = 1e-2, square = true
+)
 nothing # hide
 ```
 

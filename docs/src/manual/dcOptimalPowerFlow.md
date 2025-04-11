@@ -21,7 +21,7 @@ Users can also access specialized functions for computing specific types of [pow
 
 ## [Optimal Power Flow Model](@id DCOptimalPowerFlowModelManual)
 To set up the DC optimal power flow, we begin by creating the model. To illustrate this, consider the following:
-```@example DcOptimalPowerFlow
+```@example dcopf
 using JuliaGrid # hide
 using JuMP, HiGHS
 
@@ -255,7 +255,7 @@ print(system.generator.label, analysis.method.constraint.capability.active)
 ##### Add User-Defined Constraints
 Users also have the option to include their custom constraints within the established DC optimal power flow model by employing the [`@constraint`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@constraint) macro. For example, the addition of a new constraint can be achieved as follows:
 ```@example dcopf
-JuMP.@constraint(analysis.method.jump, 0.0 <= analysis.method.variable.power.active[4] <= 0.3)
+JuMP.@constraint(analysis.method.jump, 0 <= analysis.method.variable.power.active[4] <= 0.3)
 nothing # hide
 ```
 
@@ -303,7 +303,7 @@ analysis.method.objective
 ##### User-Defined Objective Function
 Users can modify the objective function using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_objective_function) function from the JuMP package. This operation is considered destructive because it is independent of power system data; however, in certain scenarios, it may be more straightforward than using the [`cost!`](@ref cost!) function for updates. Moreover, using this methodology, users can combine a defined function with a newly defined expression. Here is an example of how it can be achieved:
 ```@example dcopf
-expr = 100.2 * analysis.method.variable.power.active[1] * analysis.method.variable.power.active[1] + 123
+expr = 100.2 * analysis.method.variable.power.active[1]^2 + 123
 JuMP.set_objective_function(analysis.method.jump, analysis.method.objective - expr)
 ```
 

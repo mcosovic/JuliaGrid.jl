@@ -75,8 +75,10 @@ When a PMU ``(V_i, \theta_i) \in \bar{\mathcal P}`` is introduced at bus ``i \in
 
 For example:
 ```@example PMUSETutorial
-addPmu!(monitoring; label = "V₂, θ₂", bus = 2, magnitude = 0.9, angle = -0.1,
-varianceMagnitude = 1e-5, varianceAngle = 1e-5)
+addPmu!(
+  monitoring; label = "V₂, θ₂", bus = 2, magnitude = 0.9, angle = -0.1,
+  varianceMagnitude = 1e-5, varianceAngle = 1e-5
+)
 nothing # hide
 ```
 
@@ -121,8 +123,10 @@ In the previous example, the user neglected the covariances between the real and
   \mathbf w = [w_{\Re(\bar{V}_i)}, w_{\Im(\bar{V}_i)}].
 ```
 ```@example PMUSETutorial
-addPmu!(monitoring; label = "V₃, θ₃", bus = 3, magnitude = 0.9, angle = -0.2,
-varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true)
+addPmu!(
+  monitoring; label = "V₃, θ₃", bus = 3, magnitude = 0.9, angle = -0.2,
+  varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true
+)
 nothing # hide
 ```
 
@@ -151,8 +155,10 @@ If the user chooses to include phasor measurement ``(I_{ij}, \psi_{ij}) \in \bar
 
 For example:
 ```@example PMUSETutorial
-addPmu!(monitoring; label = "I₂₃, ψ₂₃", from = 3, magnitude = 0.3, angle = 0.4,
-varianceMagnitude = 1e-3, varianceAngle = 1e-4)
+addPmu!(
+  monitoring; label = "I₂₃, ψ₂₃", from = 3, magnitude = 0.3, angle = 0.4,
+  varianceMagnitude = 1e-3, varianceAngle = 1e-4
+)
 nothing # hide
 ```
 
@@ -206,8 +212,10 @@ In the previous example, the user neglects the covariances between the real and 
   \mathbf w = [w_{\Re(\bar{I}_{ij})}, w_{\Im(\bar{I}_{ij})}].
 ```
 ```@example PMUSETutorial
-addPmu!(monitoring; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, angle = -0.5,
-varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true)
+addPmu!(
+  monitoring; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, angle = -0.5,
+  varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true
+)
 nothing # hide
 ```
 
@@ -228,8 +236,10 @@ If the user chooses to include phasor measurement ``(I_{ji}, \psi_{ji}) \in \bar
 
 For example:
 ```@example PMUSETutorial
-addPmu!(monitoring; label = "I₃₂, ψ₃₂", to = 3, magnitude = 0.3, angle = -2.9,
-varianceMagnitude = 1e-5, varianceAngle = 1e-5)
+addPmu!(
+  monitoring; label = "I₃₂, ψ₃₂", to = 3, magnitude = 0.3, angle = -2.9,
+  varianceMagnitude = 1e-5, varianceAngle = 1e-5
+)
 nothing # hide
 ```
 
@@ -276,8 +286,10 @@ As before, we are neglecting the covariances between the real and imaginary part
     \mathbf w = [w_{\Re(\bar{I}_{ji})}, w_{\Im(\bar{I}_{ji})}].
 ```
 ```@example PMUSETutorial
-addPmu!(monitoring; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, angle = 2.5,
-varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true)
+addPmu!(
+  monitoring; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, angle = 2.5,
+  varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true
+)
 nothing # hide
 ```
 
@@ -364,7 +376,7 @@ Next, the WLS equation is solved to obtain the estimate of state variables:
 
 This process is executed using the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function:
 ```@example PMUSETutorial
-solve!(system, analysis)
+solve!(analysis)
 ```
 
 The initial step involves the LU factorization of the gain matrix:
@@ -592,7 +604,7 @@ The vectors of [active and reactive power flows](@ref BranchNetworkEquationsTuto
 ## [Current Analysis](@id PMUCurrentAnalysisTutorials)
 JuliaGrid offers the [`current!`](@ref current!(::AcPowerFlow)) function, which enables the calculation of currents associated with buses and branches. Here is an example code snippet demonstrating its usage:
 ```@example PMUSETutorial
-current!(system, analysis)
+current!(analysis)
 nothing # hide
 ```
 

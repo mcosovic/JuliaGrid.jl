@@ -307,7 +307,7 @@ print(system.generator.label, analysis.method.constraint.capability.active)
 ##### Add User-Defined Constraints
 Users also have the option to include their custom constraints within the established AC optimal power flow model by employing the [`@constraint`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@constraint) macro. For example, the addition of a new constraint can be achieved as follows:
 ```@example acopf
-JuMP.@constraint(analysis.method.jump, 0.0 <= analysis.method.variable.power.active[3] <= 0.3)
+JuMP.@constraint(analysis.method.jump, 0 <= analysis.method.variable.power.active[3] <= 0.3)
 nothing # hide
 ```
 
@@ -358,7 +358,7 @@ Users can modify the objective function using the [`set_objective_function`](htt
 
 In this context, we can utilize the saved objective function within the `objective` field of the `AcOptimalPowerFlow` type. For example, we can easily eliminate nonlinear parts and alter the quadratic component of the objective:
 ```@example acopf
-expr = 5.0 * analysis.method.variable.power.active[1] * analysis.method.variable.power.active[1]
+expr = 5.0 * analysis.method.variable.power.active[1]^2
 JuMP.set_objective_function(analysis.method.jump, analysis.method.objective.quadratic - expr)
 ```
 
@@ -503,6 +503,7 @@ print(system.generator.label, analysis.method.dual.capability.reactive)
 Now, let us introduce changes to the power system from the previous example:
 ```@example acopf
 updateGenerator!(analysis; label = "Generator 2", maxActive = 0.08)
+nothing # hide
 ```
 
 Next, we want to solve this modified optimal power flow problem. If we use [`solve!`](@ref solve!(::AcOptimalPowerFlow)) at this point, the primal and dual initial values will be set to the previously obtained values:

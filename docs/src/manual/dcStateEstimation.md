@@ -255,7 +255,7 @@ using JuliaGrid # hide
 
 updateWattmeter!(analysis; label = "Wattmeter 2", active = 0.091)
 
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 

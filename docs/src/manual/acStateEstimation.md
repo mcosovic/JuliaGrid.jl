@@ -390,7 +390,7 @@ addVarmeter!(monitoring; to = "Branch 3", reactive = -0.037, variance = 1e-5, st
 @pmu(label = "PMU ? (!)")
 addPmu!(monitoring; bus = "Bus 2", magnitude = 0.8552, angle = -0.1693)
 
-analysis = gaussNewton(analysis) # <- Build AcStateEstimation for the defined model
+analysis = gaussNewton(monitoring) # <- Build AcStateEstimation for the defined model
 stateEstimation!(analysis)
 
 updateWattmeter!(analysis; label = "Wattmeter 3 (From Branch 3)", status = 1)

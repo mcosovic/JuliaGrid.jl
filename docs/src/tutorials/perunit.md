@@ -183,14 +183,7 @@ print(system.generator.label, output.active, output.reactive)
 For example, we can perform AC power flow analysis on our defined power system:
 ```@example power
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(analysis)
-end
-power!(analysis)
+powerFlow!(analysis; power = true)
 nothing # hide
 ```
 
@@ -294,14 +287,7 @@ print(system.generator.label, output.active, output.reactive)
 As before, we can perform AC power flow analysis on our defined power system:
 ```@example power
 analysis = newtonRaphson(system)
-for i = 1:10
-    stopping = mismatch!(analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(analysis)
-end
-power!(analysis)
+powerFlow!(analysis; power = true)
 nothing # hide
 ```
 

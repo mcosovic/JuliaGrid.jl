@@ -157,7 +157,8 @@ For example:
 ```@example DCSETutorial
 addPmu!(
   monitoring; label = "V₁, θ₁", bus = 1, magnitude = 1.0, angle = 0,
-  varianceMagnitude = 1e-5, varianceAngle = 1e-6)
+  varianceMagnitude = 1e-5, varianceAngle = 1e-6
+)
 nothing # hide
 ```
 
@@ -227,7 +228,7 @@ Once the model is established, we solve the WLS equation to derive the estimate 
 
 This process is executed using the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function:
 ```@example DCSETutorial
-solve!(system, analysis)
+solve!(analysis)
 ```
 
 The initial step involves the LU factorization of the gain matrix:

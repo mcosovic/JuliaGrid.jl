@@ -110,7 +110,7 @@ using JuliaGrid
 system, monitoring = ems("case14.h5", "monitoring.h5") # Build the energy management system
 
 analysis = gaussNewton(monitoring)                     # Build the state estimation model
-stateEstimation!(analysis; power = true, verbose = 3)  # Compute estimate of voltages and powers
+stateEstimation!(analysis; power = true, verbose = 3)  # Estimate voltages and powers
 
 printWattmeterData(analysis)                           # Print wattmeter data
 ```
@@ -123,7 +123,7 @@ using JuliaGrid
 system, monitoring = ems("case14.h5", "monitoring.h5") # Build the energy management system
 
 analysis = pmuStateEstimation(monitoring)              # Build the state estimation model
-stateEstimation!(analysis)                             # Compute estimate of voltages
+stateEstimation!(analysis)                             # Estimate voltages
 
 printPmuData(analysis)                                 # Print PMU data
 ```
@@ -137,7 +137,7 @@ using JuliaGrid
 system, monitoring = ems("case14.h5", "monitoring.h5") # Build the energy management system
 
 analysis = dcStateEstimation(monitoring)               # Build the state estimation model
-stateEstimation!(analysis)                             # Compute estimate of voltage angles
+stateEstimation!(analysis)                             # Estimate voltage angles
 
 residualTest!(analysis)                                # Perform bad data analysis
 stateEstimation!(analysis)                             # Recompute voltage angles

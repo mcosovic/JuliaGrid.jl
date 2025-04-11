@@ -42,7 +42,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 2.1)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 nothing # hide
 ```
 
@@ -140,7 +140,7 @@ analysis.method.precision
 
 Subsequently, we can address this new scenario and observe the solution:
 ```@repl PMUOptimalPlacement
-solve!(system, analysis)
+solve!(analysis)
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
@@ -158,7 +158,7 @@ nothing # hide
 Subsequently, by specifying the `Orthogonal` argument in the [`pmuStateEstimation`](@ref pmuStateEstimation) function, JuliaGrid implements a more robust approach to obtain the WLS estimator, which proves particularly beneficial when substantial differences exist among measurement variances:
 ```@example PMUOptimalPlacement
 analysis = pmuStateEstimation(monitoring, Orthogonal)
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -263,14 +263,14 @@ addPmu!(monitoring; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
 addPmu!(monitoring; from = "Branch 2", magnitude = 0.5, angle = -0.05)
 
 analysis = pmuStateEstimation(monitoring) # <- Build PmuStateEstimation for the model
-solve!(system, analysis)
+solve!(analysis)
 
 addPmu!(monitoring; to = "Branch 2", magnitude = 0.5, angle = 3.1)
 updatePmu!(monitoring; label = "PMU 1", varianceMagnitude = 1e-8)
 updatePmu!(monitoring; label = "PMU 3", status = 0)
 
 analysis = pmuStateEstimation(monitoring) # <- Build PmuStateEstimation for new model
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 

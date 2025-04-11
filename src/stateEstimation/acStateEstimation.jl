@@ -1244,7 +1244,8 @@ function nthIndices!(
 end
 
 """
-    stateEstimation!(analysis::AcStateEstimation; iteration, tolerance, power, current, verbose)
+    stateEstimation!(analysis::AcStateEstimation;
+        iteration, tolerance, power, current, verbose)
 
 The function serves as a wrapper for solving AC state estimation and includes the functions:
 * [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{Normal}})),

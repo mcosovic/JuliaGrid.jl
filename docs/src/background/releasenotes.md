@@ -1,7 +1,10 @@
 # [Release Notes](@id ReleaseNotes)
 
+---
 
-## Version 0.4.0 (April 11, 2025)
+## Version 0.4.0
+
+Release Date: April 11, 2025
 
 #### Breaking
   * Introduced references to `PowerSystem` and `Measurement` types, allowing functions to be used with only the parent arguments.
@@ -15,7 +18,7 @@
     * [`ems`](@ref ems).
 
 #### Fixed
-  * Update analysis functions now correctly apply updates, even when changes are made regardless of the specific type.
+  * Update analysis functions now correctly apply updates, even changes are made regardless of the specific type.
   * Adjusted tables and figures in the documentation for better compatibility with dark themes.
 
 #### Other
@@ -24,7 +27,9 @@
 
 ---
 
-## Version 0.3.0 (March 10, 2025)
+## Version 0.3.0
+
+Release Date: March 10, 2025
 
 #### Breaking
   * Allowing macros to execute at the code line where they are called.
@@ -41,7 +46,9 @@
 
 ---
 
-## Version 0.2.0 (October 17, 2024)
+## Version 0.2.0
+
+Release Date: October 17, 2024
 
 ### Added
   * Power system printing functions:
@@ -62,6 +69,9 @@
 
 ---
 
-## Version 0.1.0 (April 19, 2024)
+## Version 0.1.0
 
+Release Date: April 19, 2024
+
+#### Breaking
   * Initial stable public release.
