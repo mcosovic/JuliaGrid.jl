@@ -27,7 +27,7 @@ using JuliaGrid, Ipopt
 acOptimalPowerFlow
 solve!(::AcOptimalPowerFlow)
 setInitialPoint!(::AcOptimalPowerFlow)
-setInitialPoint!(::AC, ::AcOptimalPowerFlow)
+setInitialPoint!(::AcOptimalPowerFlow, ::AC)
 powerFlow!(::AcOptimalPowerFlow)
 ```
 
@@ -38,6 +38,6 @@ powerFlow!(::AcOptimalPowerFlow)
 dcOptimalPowerFlow
 solve!(::DcOptimalPowerFlow)
 setInitialPoint!(::DcOptimalPowerFlow)
-setInitialPoint!(::DC, ::DcOptimalPowerFlow)
+setInitialPoint!(::DcOptimalPowerFlow, ::DC)
 powerFlow!(::DcOptimalPowerFlow)
 ```

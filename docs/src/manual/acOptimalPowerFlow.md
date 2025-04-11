@@ -394,7 +394,7 @@ powerFlow!(flow; power = true)
 
 After obtaining the solution, we can use the active and reactive power outputs of the generators, along with bus voltage magnitudes and angles, to set the initial values:
 ```@example acopf
-setInitialPoint!(flow, analysis)
+setInitialPoint!(analysis, flow)
 ```
 
 ---

@@ -369,7 +369,7 @@ function setInitialPoint!(analysis::DcOptimalPowerFlow)
 end
 
 """
-    setInitialPoint!(source::Analysis, target::DcOptimalPowerFlow)
+    setInitialPoint!(target::DcOptimalPowerFlow, source::Analysis)
 
 The function initializes the DC optimal power flow based on results from the `Analysis` type, whether
 from an AC or DC analysis.
@@ -394,11 +394,11 @@ solve!(source)
 
 target = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 
-setInitialPoint!(source, target)
+setInitialPoint!(target, source)
 solve!(target)
 ```
 """
-function setInitialPoint!(source::DC, target::DcOptimalPowerFlow)
+function setInitialPoint!(target::DcOptimalPowerFlow, source::DC)
     if !isempty(source.voltage.angle)
         errorTransfer(source.voltage.angle, target.voltage.angle)
 
@@ -436,7 +436,7 @@ function setInitialPoint!(source::DC, target::DcOptimalPowerFlow)
     end
 end
 
-function setInitialPoint!(source::AC, target::DcOptimalPowerFlow)
+function setInitialPoint!(target::DcOptimalPowerFlow, source::AC)
     if !isempty(source.voltage.angle)
         errorTransfer(source.voltage.angle, target.voltage.angle)
         @inbounds for i = 1:length(source.voltage.angle)

@@ -293,7 +293,7 @@ Next, we can initialize the Newton-Raphson method with the voltages obtained fro
 ```@example ACPowerFlowSolution
 analysis = newtonRaphson(system)
 
-setInitialPoint!(gs, analysis)
+setInitialPoint!(analysis, gs)
 powerFlow!(analysis; verbose = 1)
 ```
 

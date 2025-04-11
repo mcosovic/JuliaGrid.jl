@@ -59,6 +59,33 @@ system14 = powerSystem(path * "case14optimal.m")
         testVoltage(matpwr14, analysis; atol = 1e-6)
         testGenPower(matpwr14, analysis; atol = 1e-6)
     end
+
+    @testset "IEEE 14: Set Initial Point" begin
+        pf = newtonRaphson(system14)
+        powerFlow!(pf; power = true)
+        setInitialPoint!(analysis, pf)
+        teststruct(analysis.voltage, pf.voltage)
+        teststruct(analysis.power.generator, pf.power.generator)
+
+        pf = dcPowerFlow(system14)
+        powerFlow!(pf; power = true)
+        setInitialPoint!(analysis, pf)
+        @test analysis.voltage.angle == pf.voltage.angle
+        @test analysis.power.generator.active == pf.power.generator.active
+
+        opf = acOptimalPowerFlow(system14, Ipopt.Optimizer)
+        powerFlow!(opf; power = true)
+        setInitialPoint!(analysis, opf)
+        teststruct(analysis.voltage, opf.voltage)
+        teststruct(analysis.power.generator, opf.power.generator)
+        teststruct(analysis.method.dual, opf.method.dual)
+
+        opf = dcOptimalPowerFlow(system14, Ipopt.Optimizer)
+        powerFlow!(opf; power = true)
+        setInitialPoint!(analysis, opf)
+        @test analysis.voltage.angle == opf.voltage.angle
+        @test analysis.power.generator.active == opf.power.generator.active
+    end
 end
 
 system14 = powerSystem(path * "case14test.m")
@@ -96,6 +123,33 @@ system30 = powerSystem(path * "case30test.m")
         testBus(analysis)
         testBranch(analysis)
         testGenerator(analysis)
+    end
+
+    @testset "IEEE 30: Set Initial Point" begin
+        pf = newtonRaphson(system30)
+        powerFlow!(pf; power = true)
+        setInitialPoint!(analysis, pf)
+        @test analysis.voltage.angle == pf.voltage.angle
+        @test analysis.power.generator.active == pf.power.generator.active
+
+        pf = dcPowerFlow(system30)
+        powerFlow!(pf; power = true)
+        setInitialPoint!(analysis, pf)
+        @test analysis.voltage.angle == pf.voltage.angle
+        @test analysis.power.generator.active == pf.power.generator.active
+
+        opf = acOptimalPowerFlow(system30, Ipopt.Optimizer)
+        powerFlow!(opf; power = true)
+        setInitialPoint!(analysis, opf)
+        @test analysis.voltage.angle == opf.voltage.angle
+        @test analysis.power.generator.active == opf.power.generator.active
+
+        opf = dcOptimalPowerFlow(system30, Ipopt.Optimizer)
+        powerFlow!(opf; power = true)
+        setInitialPoint!(analysis, opf)
+        teststruct(analysis.voltage, opf.voltage)
+        teststruct(analysis.power.generator, opf.power.generator)
+        teststruct(analysis.method.dual, opf.method.dual)
     end
 end
 

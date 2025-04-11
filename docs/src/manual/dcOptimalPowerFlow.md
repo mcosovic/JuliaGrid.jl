@@ -338,7 +338,7 @@ powerFlow!(flow; power = true)
 
 After obtaining the solution, we can use the active power outputs of the generators, along with bus voltage angles, to set the initial values:
 ```@example dcopf
-setInitialPoint!(flow, analysis)
+setInitialPoint!(analysis, flow)
 ```
 
 ---

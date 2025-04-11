@@ -1091,7 +1091,7 @@ function setInitialPoint!(analysis::AcStateEstimation)
 end
 
 """
-    setInitialPoint!(source::Analysis, target::AcStateEstimation)
+    setInitialPoint!(target::AcStateEstimation, source::Analysis)
 
 The function initializes the AC state estimation based on results from the `Analysis` type, whether
 from an AC or DC analysis.
@@ -1111,11 +1111,11 @@ powerFlow!(source)
 
 target = gaussNewton(monitoring)
 
-setInitialPoint!(source, target)
+setInitialPoint!(target, source)
 stateEstimation!(analysis)
 ```
 """
-function setInitialPoint!(source::AC, target::AcStateEstimation)
+function setInitialPoint!(target::AcStateEstimation, source::AC)
     errorTransfer(source.voltage.magnitude, target.voltage.magnitude)
     errorTransfer(source.voltage.angle, target.voltage.angle)
 
@@ -1125,7 +1125,7 @@ function setInitialPoint!(source::AC, target::AcStateEstimation)
     end
 end
 
-function setInitialPoint!(source::DC, target::AcStateEstimation)
+function setInitialPoint!(target::AcStateEstimation, source::DC)
     errorTransfer(source.voltage.angle, target.voltage.angle)
 
     @inbounds for i = 1:length(source.voltage.angle)

@@ -59,7 +59,7 @@ acLavStateEstimation
 increment!
 solve!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
 setInitialPoint!(::AcStateEstimation)
-setInitialPoint!(::AC, ::AcStateEstimation)
+setInitialPoint!(::AcStateEstimation, ::AC)
 stateEstimation!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
 ```
 

@@ -92,7 +92,7 @@ for iteration = 1:10
     solve!(powerFlow)
 end
 
-setInitialPoint!(powerFlow, analysis)
+setInitialPoint!(analysis, powerFlow)
 nothing # hide
 ```
 

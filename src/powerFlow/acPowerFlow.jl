@@ -1069,7 +1069,7 @@ function setInitialPoint!(analysis::AcPowerFlow)
 end
 
 """
-    setInitialPoint!(source::Analysis, target::AcPowerFlow)
+    setInitialPoint!(target::AcPowerFlow, source::Analysis)
 
 The function initializes the AC power flow based on results from the `Analysis` type, whether
 from an AC or DC analysis.
@@ -1094,11 +1094,11 @@ powerFlow!(source; iteration = 10)
 
 target = newtonRaphson(system)
 
-setInitialPoint!(source, target)
+setInitialPoint!(target, source)
 powerFlow!(target; tolerance = 1e-10)
 ```
 """
-function setInitialPoint!(source::AC, target::AcPowerFlow)
+function setInitialPoint!(target::AcPowerFlow, source::AC)
     errorTransfer(source.voltage.magnitude, target.voltage.magnitude)
     errorTransfer(source.voltage.angle, target.voltage.angle)
 
@@ -1112,7 +1112,7 @@ function setInitialPoint!(source::AC, target::AcPowerFlow)
     end
 end
 
-function setInitialPoint!(source::DC, target::AcPowerFlow)
+function setInitialPoint!(target::AcPowerFlow, source::DC)
     errorTransfer(source.voltage.angle, target.voltage.angle)
 
     @inbounds for i = 1:length(source.voltage.angle)

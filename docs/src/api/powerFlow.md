@@ -36,7 +36,7 @@ gaussSeidel
 mismatch!(::AcPowerFlow{NewtonRaphson})
 solve!(::AcPowerFlow{NewtonRaphson})
 setInitialPoint!(::AcPowerFlow)
-setInitialPoint!(::AC, ::AcPowerFlow)
+setInitialPoint!(::AcPowerFlow, ::AC)
 reactiveLimit!
 adjustAngle!
 powerFlow!(::AcPowerFlow)
