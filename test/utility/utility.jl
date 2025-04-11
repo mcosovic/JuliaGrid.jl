@@ -385,7 +385,6 @@ function testConstraint(lav, wls, idx::Int64)
 
         @test is_valid(lav.method.jump, lav.method.residual[idx]) == true
     end
-
 end
 
 ##### Test Reusing PMU State Estimation #####

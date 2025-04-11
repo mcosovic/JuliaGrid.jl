@@ -626,11 +626,11 @@ function updateWattmeter!(
         add!(lav, idx)
 
         if watt.layout.bus[idxWatt]
-            expr = Pi(system, lav.variable.voltage, idxBusBrch)
+            expr = Pi(analysis.system, lav.variable.voltage, idxBusBrch)
         elseif watt.layout.from[idxWatt]
-            expr = Pij(system, lav.variable.voltage, idxBusBrch)
+            expr = Pij(analysis.system, lav.variable.voltage, idxBusBrch)
         else
-            expr = Pji(system, lav.variable.voltage, idxBusBrch)
+            expr = Pji(analysis.system, lav.variable.voltage, idxBusBrch)
         end
 
         addConstrLav!(lav, expr, watt.active.mean[idxWatt], idx)
