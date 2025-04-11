@@ -1112,7 +1112,7 @@ powerFlow!(source)
 target = gaussNewton(monitoring)
 
 setInitialPoint!(target, source)
-stateEstimation!(analysis)
+stateEstimation!(target)
 ```
 """
 function setInitialPoint!(target::AcStateEstimation, source::AC)

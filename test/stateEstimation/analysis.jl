@@ -463,7 +463,7 @@ end
 
     ########## Print AC Data ##########
     analysis = gaussNewton(monitoring)
-    stateEstimation!(analysis; power = true, current = true)
+    @suppress stateEstimation!(analysis; power = true, current = true, verbose = 3)
 
     @suppress @testset "Print Voltmeter AC Data" begin
         width = Dict("Voltage Magnitude Residual" => 10)
@@ -515,7 +515,7 @@ end
 
     ########## Print DC Data ##########
     analysis = dcStateEstimation(monitoring)
-    stateEstimation!(analysis; power = true)
+    @suppress stateEstimation!(analysis; power = true, verbose = 3)
 
     @suppress @testset "Print Wattmeter DC Data" begin
         printWattmeterData(analysis; repeat = 10)
