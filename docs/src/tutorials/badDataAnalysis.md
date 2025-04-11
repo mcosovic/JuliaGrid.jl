@@ -30,17 +30,17 @@ nothing # hide
 
 Following that, we introduce the `Measurement` type, which represents a set of measurement devices ``\mathcal M``:
 ```@example BadData
-device = measurement()
+monitoring = measurement(system)
 
-addWattmeter!(system, device; label = "Watmeter 1", bus = 3, active = -0.5)
-addWattmeter!(system, device; label = "Watmeter 2", from = 1, active = 0.2)
-addWattmeter!(system, device; label = "Watmeter 3", bus = 3, active = 3.1)
+addWattmeter!(monitoring; label = "Watmeter 1", bus = 3, active = -0.5)
+addWattmeter!(monitoring; label = "Watmeter 2", from = 1, active = 0.2)
+addWattmeter!(monitoring; label = "Watmeter 3", bus = 3, active = 3.1)
 
-addVarmeter!(system, device; label = "Varmeter 1", bus = 2, reactive = -0.3)
-addVarmeter!(system, device; label = "Varmeter 3", from = 1, reactive = 0.2)
+addVarmeter!(monitoring; label = "Varmeter 1", bus = 2, reactive = -0.3)
+addVarmeter!(monitoring; label = "Varmeter 3", from = 1, reactive = 0.2)
 
-addPmu!(system, device; label = "PMU 1", bus = 1, magnitude = 1.0, angle = 0.0)
-addPmu!(system, device; label = "PMU 2", bus = 3, magnitude = 0.9, angle = -0.2)
+addPmu!(monitoring; label = "PMU 1", bus = 1, magnitude = 1.0, angle = 0.0)
+addPmu!(monitoring; label = "PMU 2", bus = 3, magnitude = 0.9, angle = -0.2)
 nothing # hide
 ```
 
@@ -48,8 +48,8 @@ nothing # hide
 
 Let the WLS estimator ``\hat {\mathbf x}`` be obtained by solving the AC state estimation:
 ```@example BadData
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis)
 ```
 
 ---
@@ -57,7 +57,7 @@ stateEstimation!(system, analysis)
 ## [Chi-Squared Test](@id ChiTestTutorials)
 Next, we perform the chi-squared test to check for the presence of outliers:
 ```@example BadData
-chi = chiTest(system, device, analysis; confidence = 0.96)
+chi = chiTest(analysis; confidence = 0.96)
 nothing # hide
 ```
 
@@ -91,7 +91,7 @@ chi.detect
 ## [Largest Normalized Residual Test](@id ResidualTestTutorials)
 As observed from the Chi-squared test, bad data is present in the measurement set. We then perform the largest normalized residual test to identify the outlier and remove it from the measurements:
 ```@example BadData
-outlier = residualTest!(system, device, analysis; threshold = 4.0)
+outlier = residualTest!(analysis; threshold = 4.0)
 
 nothing # hide
 ```
@@ -135,14 +135,14 @@ is removed from the measurement set and marked as out-of-service.
 
 Subsequently, we can solve the system again, but this time without the removed measurement:
 ```@example BadData
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis)
 nothing # hide
 ```
 
 Following that, we check for outliers once more:
 ```@example BadData
-outlier = residualTest!(system, device, analysis; threshold = 4.0)
+outlier = residualTest!(analysis; threshold = 4.0)
 nothing # hide
 ```
 

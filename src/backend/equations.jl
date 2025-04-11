@@ -54,14 +54,14 @@ function VjViθjθiState(system::PowerSystem, V::Polar, idx::Int64)
     )
 end
 
-function GijBijθij(ac::ACModel, V::Polar, i::Int64, j::Int64, q::Int64)
+function GijBijθij(ac::AcModel, V::Polar, i::Int64, j::Int64, q::Int64)
     Gij, Bij = reim(ac.nodalMatrixTranspose.nzval[q])
     sinθij, cosθij = sincos(V.angle[i] - V.angle[j])
 
     return Gij, Bij, sinθij, cosθij
 end
 
-function GijBijθij(ac::ACModel, V::Polar, i::Int64, j::Int64)
+function GijBijθij(ac::AcModel, V::Polar, i::Int64, j::Int64)
     Gij, Bij = reim(ac.nodalMatrix[i, j])
     sinθij, cosθij = sincos(V.angle[i] - V.angle[j])
 
@@ -103,7 +103,7 @@ function PiVj(V::Polar, Gij::Float64, Bij::Float64, sinθij::Float64, cosθij::F
     V.magnitude[i] * (Gij * cosθij + Bij * sinθij)
 end
 
-function meanPi(bus::Bus, dc::DCModel, watt::Wattmeter, i::Int64, j::Int64)
+function meanPi(bus::Bus, dc::DcModel, watt::Wattmeter, i::Int64, j::Int64)
     watt.active.mean[i] - dc.shiftPower[j] - bus.shunt.conductance[j]
 end
 
@@ -129,7 +129,7 @@ function QiVj(V::Polar, Gij::Float64, Bij::Float64, sinθij::Float64, cosθij::F
 end
 
 ##### From-Bus End Active Power Flow #####
-function PijCoefficient(branch::Branch, ac::ACModel, idx::Int64)
+function PijCoefficient(branch::Branch, ac::AcModel, idx::Int64)
     gij, bij = reim(ac.admittance[idx])
     τinv = 1 / branch.parameter.turnsRatio[idx]
 
@@ -165,7 +165,7 @@ function meanPij(branch::Branch, watt::Wattmeter, admittance::Float64, i::Int64,
 end
 
 ##### To-Bus End Active Power Flow #####
-function PjiCoefficient(branch::Branch, ac::ACModel, idx::Int64)
+function PjiCoefficient(branch::Branch, ac::AcModel, idx::Int64)
     gij, bij = reim(ac.admittance[idx])
     τinv = 1 / branch.parameter.turnsRatio[idx]
 
@@ -197,7 +197,7 @@ function PjiVj(p::PiModel, e::StateModel)
 end
 
 ##### From-Bus End Reactive Power Flow #####
-function QijCoefficient(branch::Branch, ac::ACModel, idx::Int64)
+function QijCoefficient(branch::Branch, ac::AcModel, idx::Int64)
     gij, bij = reim(ac.admittance[idx])
     τinv = 1 / branch.parameter.turnsRatio[idx]
 
@@ -229,7 +229,7 @@ function QijVj(p::PiModel, e::StateModel)
 end
 
 ##### To-Bus End Reactive Power Flow #####
-function QjiCoefficient(branch::Branch, ac::ACModel, idx::Int64)
+function QjiCoefficient(branch::Branch, ac::AcModel, idx::Int64)
     gij, bij = reim(ac.admittance[idx])
     τinv = 1 / branch.parameter.turnsRatio[idx]
 
@@ -261,7 +261,7 @@ function QjiVj(p::PiModel, e::StateModel)
 end
 
 ##### From-Bus End Current Magnitude #####
-function IijCoefficient(branch::Branch, ac::ACModel, idx::Int64)
+function IijCoefficient(branch::Branch, ac::AcModel, idx::Int64)
     gij, bij = reim(ac.admittance[idx])
     gsi = 0.5 * branch.parameter.conductance[idx]
     bsi = 0.5 * branch.parameter.susceptance[idx]
@@ -276,8 +276,7 @@ function IijCoefficient(branch::Branch, ac::ACModel, idx::Int64)
 end
 
 function Iijinv(p::PiModel, e::StateModel)
-    1 / (sqrt(p.A * e.Vi^2 + p.B * e.Vj^2 -
-        2 * e.Vi * e.Vj * (p.C * e.cosθij - p.D * e.sinθij)))
+    1 / (sqrt(p.A * e.Vi^2 + p.B * e.Vj^2 - 2 * e.Vi * e.Vj * (p.C * e.cosθij - p.D * e.sinθij)))
 end
 
 function Iijθi(p::PiModel, e::StateModel, Iinv::Float64)
@@ -317,7 +316,7 @@ function Iij2Vj(p::PiModel, e::StateModel)
 end
 
 ##### To-Bus End Current Magnitude #####
-function IjiCoefficient(branch::Branch, ac::ACModel, idx::Int64)
+function IjiCoefficient(branch::Branch, ac::AcModel, idx::Int64)
     gij, bij = reim(ac.admittance[idx])
     gsi = 0.5 * branch.parameter.conductance[idx]
     bsi = 0.5 * branch.parameter.susceptance[idx]
@@ -332,8 +331,7 @@ function IjiCoefficient(branch::Branch, ac::ACModel, idx::Int64)
 end
 
 function Ijiinv(p::PiModel, e::StateModel)
-    1 / sqrt(p.A * e.Vi^2 + p.B * e.Vj^2 -
-        2 * e.Vi * e.Vj * (p.C * e.cosθij + p.D * e.sinθij))
+    1 / sqrt(p.A * e.Vi^2 + p.B * e.Vj^2 - 2 * e.Vi * e.Vj * (p.C * e.cosθij + p.D * e.sinθij))
 end
 
 function Ijiθi(p::PiModel, e::StateModel, Iinv::Float64)
@@ -373,7 +371,7 @@ function Iji2Vj(p::PiModel, e::StateModel)
 end
 
 ##### From-Bus End Current Angle #####
-function ψijCoefficient(branch::Branch, ac::ACModel, idx::Int64)
+function ψijCoefficient(branch::Branch, ac::AcModel, idx::Int64)
     gij, bij = reim(ac.admittance[idx])
     τinv = 1 / branch.parameter.turnsRatio[idx]
 
@@ -410,7 +408,7 @@ function ψijVj(p::PiModel, e::StateModel, Iinv2::Float64)
 end
 
 ##### To-Bus End Current Angle #####
-function ψjiCoefficient(branch::Branch, ac::ACModel, idx::Int64)
+function ψjiCoefficient(branch::Branch, ac::AcModel, idx::Int64)
     gij, bij = reim(ac.admittance[idx])
     τinv = 1 / branch.parameter.turnsRatio[idx]
 
@@ -665,12 +663,12 @@ function baseVoltageEnd(
 end
 
 ##### WLS AC State Estimation Objective Value #####
-function seobjective(analysis::ACStateEstimation, idx::Int64)
+function seobjective(analysis::AcStateEstimation, idx::Int64)
     se = analysis.method
     se.objective += se.residual[idx]^2 * se.precision[idx, idx]
 end
 
-function seobjective(analysis::ACStateEstimation, idx1::Int64, idx2::Int64)
+function seobjective(analysis::AcStateEstimation, idx1::Int64, idx2::Int64)
     se = analysis.method
     se.objective += se.residual[idx1]^2 * se.precision[idx1, idx1] +
         2 * se.residual[idx1] * se.residual[idx2] * se.precision[idx1, idx2]

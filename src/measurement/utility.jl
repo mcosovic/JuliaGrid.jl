@@ -49,7 +49,7 @@ end
 
 ##### Set Mean, Variance, and Status #####
 function setMeter(
-    device::GaussMeter,
+    meter::GaussMeter,
     mean::FltIntMiss,
     variance::FltIntMiss,
     status::IntMiss,
@@ -59,21 +59,21 @@ function setMeter(
     pfxLive::Float64,
     baseInv::Float64
 )
-    add!(device.variance, variance, defVariance, pfxLive, baseInv)
+    add!(meter.variance, variance, defVariance, pfxLive, baseInv)
 
     measure = topu(mean, pfxLive, baseInv)
     if noise
-        measure += device.variance[end]^(1/2) * randn(1)[1]
+        measure += meter.variance[end]^(1/2) * randn(1)[1]
     end
-    push!(device.mean, measure)
+    push!(meter.mean, measure)
 
-    add!(device.status, status, defStatus)
-    checkStatus(device.status[end])
+    add!(meter.status, status, defStatus)
+    checkStatus(meter.status[end])
 end
 
 ##### Update Mean, Variance, and Status #####
 function updateMeter(
-    device::GaussMeter,
+    meter::GaussMeter,
     idx::Int64,
     mean::FltIntMiss,
     variance::FltIntMiss,
@@ -82,19 +82,19 @@ function updateMeter(
     pfxLive::Float64,
     baseInv::Float64
 )
-    update!(device.variance, variance, pfxLive, baseInv, idx)
+    update!(meter.variance, variance, pfxLive, baseInv, idx)
 
     if isset(mean)
-        device.mean[idx] = topu(mean, pfxLive, baseInv)
+        meter.mean[idx] = topu(mean, pfxLive, baseInv)
         if noise
-            device.mean[idx] += device.variance[idx]^(1/2) * randn(1)[1]
+            meter.mean[idx] += meter.variance[idx]^(1/2) * randn(1)[1]
         end
     end
 
     if isset(status)
-        checkStatus(status)
-        device.status[idx] = status
+        meter.status[idx] = status
     end
+    checkStatus(meter.status[idx])
 end
 
 ##### Add Meter #####
@@ -119,29 +119,48 @@ function add!(
     end
 end
 
-function add!(method::LAV, idx::Int64)
-    remove!(method.jump, method.residual, idx)
+function add!(lav::LAV, idx::Int64)
+    deviation = lav.variable.deviation
+    remove!(lav.jump, lav.residual, idx)
 
-    if is_fixed(method.deviation.positive[idx])
-        unfix(method.deviation.positive[idx])
-        unfix(method.deviation.negative[idx])
-        set_lower_bound(method.deviation.positive[idx], 0.0)
-        set_lower_bound(method.deviation.negative[idx], 0.0)
+    if is_fixed(deviation.positive[idx])
+        unfix(deviation.positive[idx])
+        unfix(deviation.negative[idx])
+        set_lower_bound(deviation.positive[idx], 0.0)
+        set_lower_bound(deviation.negative[idx], 0.0)
 
-        set_objective_coefficient(method.jump, method.deviation.positive[idx], 1)
-        set_objective_coefficient(method.jump, method.deviation.negative[idx], 1)
+        set_objective_coefficient(lav.jump, deviation.positive[idx], 1)
+        set_objective_coefficient(lav.jump, deviation.negative[idx], 1)
     end
 end
 
 ##### Delete Meter #####
-function remove!(method::LAV, idx::Int64)
-    remove!(method.jump, method.residual, idx)
+function remove!(lav::LAV, idx::Int64)
+    deviation = lav.variable.deviation
+    remove!(lav.jump, lav.residual, idx)
 
-    if !is_fixed(method.deviation.positive[idx])
-        fix(method.deviation.positive[idx], 0.0; force = true)
-        fix(method.deviation.negative[idx], 0.0; force = true)
+    if !is_fixed(deviation.positive[idx])
+        fix(deviation.positive[idx], 0.0; force = true)
+        fix(deviation.negative[idx], 0.0; force = true)
 
-        set_objective_coefficient(method.jump, method.deviation.positive[idx], 0)
-        set_objective_coefficient(method.jump, method.deviation.negative[idx], 0)
+        set_objective_coefficient(lav.jump, deviation.positive[idx], 0)
+        set_objective_coefficient(lav.jump, deviation.negative[idx], 0)
+    end
+end
+
+##### Squared Current Magnitude #####
+function if2exp(square::Bool)
+    if square
+        return 2
+    else
+        return 1
+    end
+end
+
+function if2type(square::Bool)
+    if square
+        return 2
+    else
+        return 0
     end
 end

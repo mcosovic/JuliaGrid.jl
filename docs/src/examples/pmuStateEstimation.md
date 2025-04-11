@@ -91,7 +91,7 @@ Finally, phasor measurements need to be defined. The question is how to obtain m
 ## Measurement Model
 To begin, let us initialize the measurement variable:
 ```@example pmuStateEstimation
-device = measurement()
+monitoring = measurement(system)
 nothing # hide
 ```
 
@@ -117,7 +117,6 @@ updateBus!(system; label = "Bus 6", type = 1, active = 0.295, reactive = 0.166)
 
 updateGenerator!(system; label = "Generator 1", active = 2.324, reactive = -0.169)
 addGenerator!(system; label = "Generator 2", bus = "Bus 4", active = 0.412, reactive = 0.234)
-
 nothing # hide
 ```
 
@@ -126,7 +125,7 @@ Next, AC power flow analysis is performed to obtain bus voltages:
 acModel!(system)
 
 powerFlow = newtonRaphson(system)
-powerFlow!(system, powerFlow; verbose = 1)
+powerFlow!(powerFlow; verbose = 1)
 nothing # hide
 ```
 
@@ -138,7 +137,7 @@ To obtain bus voltage phasor measurements, the exact values and optimal PMU plac
 @pmu(label = "!")
 for (bus, idx) in placement.bus
     Vᵢ, θᵢ = powerFlow.voltage.magnitude[idx], powerFlow.voltage.angle[idx]
-    addPmu!(system, device; bus = bus, magnitude = Vᵢ, angle = θᵢ, noise = true)
+    addPmu!(monitoring; bus = bus, magnitude = Vᵢ, angle = θᵢ, noise = true)
 end
 nothing # hide
 ```
@@ -149,16 +148,16 @@ nothing # hide
 To add branch current phasor measurements, the current magnitudes and angles are first computed. These values are then used to form measurements, where the exact values are used as the `noise` keyword is ignored:
 ```@example pmuStateEstimation
 for branch in keys(placement.from)
-    Iᵢⱼ, ψᵢⱼ = fromCurrent(system, powerFlow; label = branch)
-    addPmu!(system, device; from = branch, magnitude = Iᵢⱼ, angle = ψᵢⱼ)
+    Iᵢⱼ, ψᵢⱼ = fromCurrent(powerFlow; label = branch)
+    addPmu!(monitoring; from = branch, magnitude = Iᵢⱼ, angle = ψᵢⱼ)
 end
 for branch in keys(placement.to)
-    Iⱼᵢ, ψⱼᵢ = toCurrent(system, powerFlow; label = branch)
-    addPmu!(system, device; to = branch, magnitude = Iⱼᵢ, angle = ψⱼᵢ)
+    Iⱼᵢ, ψⱼᵢ = toCurrent(powerFlow; label = branch)
+    addPmu!(monitoring; to = branch, magnitude = Iⱼᵢ, angle = ψⱼᵢ)
 end
 nothing # hide
 ```
-Current phasor measurements can also be generated in the same way as voltage phasors by invoking the [`current!`](@ref current!(::PowerSystem, ::AC)) function after AC state estimation has converged.
+Current phasor measurements can also be generated in the same way as voltage phasors by invoking the [`current!`](@ref current!(::AC)) function after AC state estimation has converged.
 
 Note that the formation of bus voltage and branch current measurements can be performed by calling the [pmuPlacement!](@ref pmuPlacement!) function, as demonstrated in the [PMU State Estimation](@ref PhasorMeasurementsManual) manual.
 
@@ -167,7 +166,7 @@ Note that the formation of bus voltage and branch current measurements can be pe
 ##### Phasor Measurements
 Finally, the complete set of phasor measurements is observed, as illustrated in Figure 2:
 ```@example pmuStateEstimation
-printPmuData(system, device; width = Dict("Label" => 15))
+printPmuData(monitoring; width = Dict("Label" => 15))
 ```
 
 ---
@@ -175,32 +174,32 @@ printPmuData(system, device; width = Dict("Label" => 15))
 ## Base Case Analysis
 Once the measurements are obtained, the state estimation model is created:
 ```@example pmuStateEstimation
-analysis = pmuStateEstimation(system, device)
+analysis = pmuStateEstimation(monitoring)
 nothing # hide
 ```
 
 Next, the model is solved to obtain the WLS estimator for bus voltages, and the results are used to compute powers:
 ```@example pmuStateEstimation
-stateEstimation!(system, analysis; power = true, verbose = 1)
+stateEstimation!(analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
 This enables users to observe the estimated bus voltages along with the corresponding power values:
 ```@example pmuStateEstimation
-printBusData(system, analysis; show)
+printBusData(analysis; show)
 nothing # hide
 ```
 
 Users can also compare these results with those obtained from AC power flow:
 ```@example pmuStateEstimation
-power!(system, powerFlow)
-printBusData(system, powerFlow; show)
+power!(powerFlow)
+printBusData(powerFlow; show)
 nothing # hide
 ```
 
 Additionally, estimated power flows at branches can be examined:
 ```@example pmuStateEstimation
-printBranchData(system, analysis; show)
+printBranchData(analysis; show)
 nothing # hide
 ```
 
@@ -209,8 +208,8 @@ nothing # hide
 ## Modifying Measurement Data
 Measurement values and variances are now updated. Instead of recreating the measurement set and the PMU state estimation model from the beginning, both are modified simultaneously:
 ```@example pmuStateEstimation
-updatePmu!(system, device, analysis; label = "From Branch 8", magnitude = 1.1)
-updatePmu!(system, device, analysis; label = "From Branch 2", angle = 0.2, noise = true)
+updatePmu!(analysis; label = "From Branch 8", magnitude = 1.1)
+updatePmu!(analysis; label = "From Branch 2", angle = 0.2, noise = true)
 
 nothing # hide
 ```
@@ -218,13 +217,13 @@ These updates demonstrate the flexibility of JuliaGrid in modifying measurements
 
 Next, the PMU state estimation is solved again to compute the new estimate:
 ```@example pmuStateEstimation
-stateEstimation!(system, analysis; power = true, verbose = 1)
+stateEstimation!(analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
 Bus-related data can now be examined:
 ```@example pmuStateEstimation
-printBusData(system, analysis; show)
+printBusData(analysis; show)
 nothing # hide
 ```
 With the updated measurement values, the estimated results deviate more significantly from the exact values obtained through AC power flow, as the modified measurements no longer align with them.
@@ -234,25 +233,25 @@ With the updated measurement values, the estimated results deviate more signific
 ## Modifying Measurement Set
 Excluding phasor measurements from the set, when obtained using optimal placement, should be done with caution, as it can easily render the system unobservable. In this example, two measurements will be taken out-of-service, and two additional measurements will be immediately included to maintain observability:
 ```@example pmuStateEstimation
-updatePmu!(system, device; label = "From Branch 2", status = 0)
-updatePmu!(system, device; label = "From Branch 8", status = 0)
+updatePmu!(monitoring; label = "From Branch 2", status = 0)
+updatePmu!(monitoring; label = "From Branch 8", status = 0)
 
-addPmu!(system, device; to = "Branch 2", magnitude = 0.2282, angle = -2.9587)
-addPmu!(system, device; to = "Branch 8", magnitude = 0.0414, angle = -0.2424)
+addPmu!(monitoring; to = "Branch 2", magnitude = 0.2282, angle = -2.9587)
+addPmu!(monitoring; to = "Branch 8", magnitude = 0.0414, angle = -0.2424)
 nothing # hide
 ```
 Since new measurements are being added, `analysis` is not passed to these functions. Directly modifying the existing PMU state estimation model is not possible in this case. To achieve this, users should define the new measurements beforehand with `status = 0` and then activate them by setting `status = 1`.
 
 Next, the PMU state estimation model is created and solved:
 ```@example pmuStateEstimation
-analysis = pmuStateEstimation(system, device)
-stateEstimation!(system, analysis; power = true, verbose = 1)
+analysis = pmuStateEstimation(monitoring)
+stateEstimation!(analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
 Bus-related data can now be examined:
 ```@example pmuStateEstimation
-printBusData(system, analysis; show)
+printBusData(analysis; show)
 nothing # hide
 ```
 By taking certain measurements out-of-service, the estimation was affected. Adding more precise measurements while maintaining observability led to an estimation that more accurately reflects the exact power system state.

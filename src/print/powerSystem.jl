@@ -1,9 +1,9 @@
 """
-    printBusData(system::PowerSystem, analysis::Analysis, [io::IO];
+    printBusData(analysis::Analysis, [io::IO];
         label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
-The function prints voltages, powers, and currents related to buses. Optionally, an `IO`
-may be passed as the last argument to redirect the output.
+The function prints voltages, powers, and currents related to buses. Optionally, an `IO` may be
+passed as the last argument to redirect the output.
 
 # Keywords
 The following keywords control the printed data:
@@ -19,7 +19,7 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Examples
 Print data for all buses:
@@ -27,12 +27,12 @@ Print data for all buses:
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
 fmt = Dict("Power Demand" => "%.2f", "Voltage Magnitude" => "%.2f", "Label" => "%s")
 show = Dict("Power Injection" => false, "Power Generation Reactive" => false)
 
-printBusData(system, analysis; fmt, show, repeat = 10)
+printBusData(analysis; fmt, show, repeat = 10)
 ```
 
 Print data for specific buses:
@@ -40,24 +40,24 @@ Print data for specific buses:
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
 delimiter = " "
 width = Dict("Voltage" => 9, "Power Injection Active" => 9)
 
-printBusData(system, analysis; label = 2, delimiter, width, title = true, header = true)
-printBusData(system, analysis; label = 10, delimiter, width)
-printBusData(system, analysis; label = 12, delimiter, width, footer = true)
+printBusData(analysis; label = 2, delimiter, width, title = true, header = true)
+printBusData(analysis; label = 10, delimiter, width)
+printBusData(analysis; label = 12, delimiter, width, footer = true)
 ```
 """
 function printBusData(
-    system::PowerSystem,
     analysis::AC,
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = system.bus.number + 1,
+    repeat::Int64 = analysis.system.bus.number + 1,
     kwargs...
 )
+    system = analysis.system
     bus = system.bus
 
     scale = scalePrint(system, pfx)
@@ -305,14 +305,14 @@ function busData(
 end
 
 function printBusData(
-    system::PowerSystem,
     analysis::DC,
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = system.bus.number + 1,
+    repeat::Int64 = analysis.system.bus.number + 1,
     kwargs...
 )
-bus = system.bus
+    system = analysis.system
+    bus = system.bus
 
     scale = scalePrint(system, pfx)
     prt = busData(system, analysis, unitList, scale, label, repeat; kwargs...)
@@ -451,11 +451,11 @@ function busData(
 end
 
 """
-    printBranchData(system::PowerSystem, analysis::Analysis, [io::IO];
+    printBranchData(analysis::Analysis, [io::IO];
         label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
-The function prints powers and currents related to branches. Optionally, an `IO` may be
-passed as the last argument to redirect the output.
+The function prints powers and currents related to branches. Optionally, an `IO` may be passed as the
+last argument to redirect the output.
 
 # Keywords
 The following keywords control the printed data:
@@ -471,7 +471,7 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printBranchData`](@ref printBranchData) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Examples
 Print data for all branches:
@@ -479,12 +479,12 @@ Print data for all branches:
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
 fmt = Dict("Shunt Power" => "%.2f", "Series Power Reactive" => "%.2f")
 show = Dict("From-Bus Power" => false, "To-Bus Power Reactive" => false)
 
-printBranchData(system, analysis; fmt, show, repeat = 11, title = false)
+printBranchData(analysis; fmt, show, repeat = 11, title = false)
 ```
 
 Print data for specific branches:
@@ -492,24 +492,24 @@ Print data for specific branches:
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
 delimiter = " "
 width = Dict("From-Bus Power" => 9, "To-Bus Power Active" => 9)
 
-printBranchData(system, analysis; label = 2, delimiter, width, header = true)
-printBranchData(system, analysis; label = 12, delimiter, width)
-printBranchData(system, analysis; label = 14, delimiter, width, footer = true)
+printBranchData(analysis; label = 2, delimiter, width, header = true)
+printBranchData(analysis; label = 12, delimiter, width)
+printBranchData(analysis; label = 14, delimiter, width, footer = true)
 ```
 """
 function printBranchData(
-    system::PowerSystem,
     analysis::AC,
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = system.branch.number + 1,
+    repeat::Int64 = analysis.system.branch.number + 1,
     kwargs...
 )
+    system = analysis.system
     brch = system.branch
 
     scale = scalePrint(system, pfx)
@@ -800,13 +800,13 @@ function branchData(
 end
 
 function printBranchData(
-    system::PowerSystem,
     analysis::DC,
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = system.branch.number + 1,
+    repeat::Int64 = analysis.system.branch.number + 1,
     kwargs...
 )
+    system = analysis.system
     brch = system.branch
 
     scale = scalePrint(system, pfx)
@@ -949,11 +949,11 @@ function branchData(
 end
 
 """
-    printGeneratorData(system::PowerSystem, analysis::Analysis, [io::IO];
+    printGeneratorData(analysis::Analysis, [io::IO];
         label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
-The function prints powers related to generators. Optionally, an `IO` may be passed as the
-last argument to redirect the output.
+The function prints powers related to generators. Optionally, an `IO` may be passed as the last
+argument to redirect the output.
 
 # Keywords
 The following keywords control the printed data:
@@ -969,7 +969,7 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printGeneratorData`](@ref printGeneratorData) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Examples
 Print data for all generators:
@@ -977,12 +977,12 @@ Print data for all generators:
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
 fmt = Dict("Power Output Active" => "%.2f")
 show = Dict("Power Output Reactive" => false)
 
-printGeneratorData(system, analysis; fmt, show, title = false)
+printGeneratorData(analysis; fmt, show, title = false)
 ```
 
 Print data for specific generators:
@@ -990,24 +990,24 @@ Print data for specific generators:
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
 delimiter = " "
 width = Dict("Power Output Active" => 7)
 
-printGeneratorData(system, analysis; label = 1, delimiter, width, header = true)
-printGeneratorData(system, analysis; label = 4, delimiter, width)
-printGeneratorData(system, analysis; label = 5, delimiter, width, footer = true)
+printGeneratorData(analysis; label = 1, delimiter, width, header = true)
+printGeneratorData(analysis; label = 4, delimiter, width)
+printGeneratorData(analysis; label = 5, delimiter, width, footer = true)
 ```
 """
 function printGeneratorData(
-    system::PowerSystem,
     analysis::AC,
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = system.generator.number + 1,
+    repeat::Int64 = analysis.system.generator.number + 1,
     kwargs...
 )
+    system = analysis.system
     gen = system.generator
 
     scale = scalePrint(system, pfx)
@@ -1137,13 +1137,13 @@ function genData(
 end
 
 function printGeneratorData(
-    system::PowerSystem,
     analysis::DC,
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = system.generator.number + 1,
+    repeat::Int64 = analysis.system.generator.number + 1,
     kwargs...
 )
+    system = analysis.system
     gen = system.generator
 
     scale = scalePrint(system, pfx)
@@ -1264,11 +1264,11 @@ function genData(
 end
 
 """
-    printBusSummary(system::PowerSystem, analysis::Analysis, [io::IO];
+    printBusSummary(analysis::Analysis, [io::IO];
         fmt, width, show, delimiter, title, header, footer, style)
 
-The function prints a summary of the electrical quantities related to buses. Optionally,
-an `IO` may be passed as the last argument to redirect the output.
+The function prints a summary of the electrical quantities related to buses. Optionally, an `IO` may
+be passed as the last argument to redirect the output.
 
 # Keywords
 The following keywords control the printed data:
@@ -1282,26 +1282,26 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printBusSummary`](@ref printBusSummary) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
 show = Dict("In-Use" => false)
 
-printBusSummary(system, analysis; show, delimiter = " ", title = false)
+printBusSummary(analysis; show, delimiter = " ", title = false)
 ```
 """
 function printBusSummary(
-    system::PowerSystem,
     analysis::Union{AC, DC},
     io::IO = stdout;
     kwargs...
 )
+    system = analysis.system
     errorVoltage(analysis.voltage.angle)
 
     scale = scalePrint(system, pfx)
@@ -1504,11 +1504,11 @@ function busSummary(
 end
 
 """
-    printBranchSummary(system::PowerSystem, analysis::Analysis, [io::IO];
+    printBranchSummary(analysis::Analysis, [io::IO];
         fmt, width, show, delimiter, title, header, footer, style))
 
-The function prints a summary of the electrical quantities related to branches. Optionally,
-an `IO` may be passed as the last argument to redirect the output.
+The function prints a summary of the electrical quantities related to branches. Optionally, an `IO`
+may be passed as the last argument to redirect the output.
 
 # Keywords
 The following keywords control the printed data:
@@ -1522,26 +1522,26 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printBranchSummary`](@ref printBranchSummary) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
 show = Dict("Total" => false)
 
-printBranchSummary(system, analysis; show, delimiter = " ", title = false)
+printBranchSummary(analysis; show, delimiter = " ", title = false)
 ```
 """
 function printBranchSummary(
-    system::PowerSystem,
     analysis::Union{AC, DC},
     io::IO = stdout;
     kwargs...
 )
+    system = analysis.system
     errorVoltage(analysis.voltage.angle)
 
 
@@ -1783,11 +1783,11 @@ function branchSummary(
 end
 
 """
-    printGeneratorSummary(system::PowerSystem, analysis::Analysis, [io::IO];
+    printGeneratorSummary(analysis::Analysis, [io::IO];
         fmt, width, show, delimiter, title, header, footer, style)
 
-The function prints a summary of the electrical quantities related to generators.
-Optionally, an `IO` may be passed as the last argument to redirect the output.
+The function prints a summary of the electrical quantities related to generators. Optionally, an `IO`
+may be passed as the last argument to redirect the output.
 
 # Keywords
 The following keywords control the printed data:
@@ -1801,26 +1801,26 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printGeneratorSummary`](@ref printGeneratorSummary) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Example
 ```jldoctest
 system = powerSystem("case14.h5")
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
 show = Dict("Minimum" => false)
 
-printGeneratorSummary(system, analysis; show, delimiter = " ", title = false)
+printGeneratorSummary(analysis; show, delimiter = " ", title = false)
 ```
 """
 function printGeneratorSummary(
-    system::PowerSystem,
     analysis::Union{AC, DC},
     io::IO = stdout;
     kwargs...
 )
+    system = analysis.system
     errorVoltage(analysis.voltage.angle)
 
     scale = scalePrint(system, pfx)

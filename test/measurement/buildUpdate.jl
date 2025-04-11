@@ -3,11 +3,11 @@
     @default(unit)
 
     system = powerSystem(path * "case14test.m")
-    device = measurement()
-    fully = measurement()
+    monitoring = measurement(system)
+    fully = measurement(system)
 
     pf = newtonRaphson(system)
-    powerFlow!(system, pf; power = true, current = true)
+    powerFlow!(pf; power = true, current = true)
 
     @voltmeter(label = "?", variance = 1e-60)
     @ammeter(label = "Amm ?", varianceFrom = 1e-2, varianceTo = 1e-3, statusFrom = 0)
@@ -18,30 +18,30 @@
     @pmu(varianceMagnitudeTo = 1e-2, varianceAngleTo = 1e-3)
 
     ########## Generate Measurements from AC Power Flow ##########
-    addVoltmeter!(system, fully, pf; noise = true)
-    addAmmeter!(system, fully, pf)
-    addWattmeter!(system, fully, pf)
-    addVarmeter!(system, fully, pf)
-    addPmu!(system, fully, pf)
+    addVoltmeter!(fully, pf; noise = true)
+    addAmmeter!(fully, pf)
+    addWattmeter!(fully, pf)
+    addVarmeter!(fully, pf)
+    addPmu!(fully, pf)
 
-    volt = device.voltmeter
-    amp = device.ammeter
-    watt = device.wattmeter
-    var = device.varmeter
-    pmu = device.pmu
+    volt = monitoring.voltmeter
+    amp = monitoring.ammeter
+    watt = monitoring.wattmeter
+    var = monitoring.varmeter
+    pmu = monitoring.pmu
 
     @testset "Bus Measurements" begin
         for (key, idx) in system.bus.label
-            addVoltmeter!(system, device; bus = key, magnitude = pf.voltage.magnitude[idx])
+            addVoltmeter!(monitoring; bus = key, magnitude = pf.voltage.magnitude[idx])
             testDevice(volt.magnitude, fully.voltmeter.magnitude, idx, 1)
 
-            addWattmeter!(system, device; bus = key, active = pf.power.injection.active[idx])
+            addWattmeter!(monitoring; bus = key, active = pf.power.injection.active[idx])
             testDevice(watt.active, fully.wattmeter.active, idx, 0)
 
-            addVarmeter!(system, device; bus = key, reactive = pf.power.injection.reactive[idx])
+            addVarmeter!(monitoring; bus = key, reactive = pf.power.injection.reactive[idx])
             testDevice(var.reactive, fully.varmeter.reactive, idx, 1)
 
-            addPmu!(system, device; bus = key, magnitude = pf.voltage.magnitude[idx], angle = pf.voltage.angle[idx])
+            addPmu!(monitoring; bus = key, magnitude = pf.voltage.magnitude[idx], angle = pf.voltage.angle[idx])
             testDevice(pmu.magnitude, fully.pmu.magnitude, idx, 1)
             testDevice(pmu.angle, fully.pmu.angle, idx, 1)
         end
@@ -55,33 +55,33 @@
             end
             cnt1 = system.bus.number + cnt
 
-            addAmmeter!(system, device; from = key, magnitude = pf.current.from.magnitude[idx])
+            addAmmeter!(monitoring; from = key, magnitude = pf.current.from.magnitude[idx])
             testDevice(amp.magnitude, fully.ammeter.magnitude, cnt, 0)
 
-            addAmmeter!(system, device; to = key, magnitude = pf.current.to.magnitude[idx])
+            addAmmeter!(monitoring; to = key, magnitude = pf.current.to.magnitude[idx])
             testDevice(amp.magnitude, fully.ammeter.magnitude, cnt + 1, 1)
 
-            addWattmeter!(system, device; from = key, active = pf.power.from.active[idx])
+            addWattmeter!(monitoring; from = key, active = pf.power.from.active[idx])
             testDevice(watt.active, fully.wattmeter.active, cnt1, 1)
 
-            addWattmeter!(system, device; from = key, active = pf.power.to.active[idx])
+            addWattmeter!(monitoring; from = key, active = pf.power.to.active[idx])
             testDevice(watt.active, fully.wattmeter.active, cnt1 + 1, 1)
 
-            addVarmeter!(system, device; from = key, reactive = pf.power.from.reactive[idx])
+            addVarmeter!(monitoring; from = key, reactive = pf.power.from.reactive[idx])
             testDevice(var.reactive, fully.varmeter.reactive, cnt1, 1)
 
-            addVarmeter!(system, device; to = key, reactive = pf.power.to.reactive[idx])
+            addVarmeter!(monitoring; to = key, reactive = pf.power.to.reactive[idx])
             testDevice(var.reactive, fully.varmeter.reactive, cnt1 + 1, 0)
 
             addPmu!(
-                system, device; from = key,
+                monitoring; from = key,
                 magnitude = pf.current.from.magnitude[idx], angle = pf.current.from.angle[idx]
             )
             testDevice(pmu.magnitude, fully.pmu.magnitude, cnt1, 0)
             testDevice(pmu.angle, fully.pmu.angle, cnt1, 0)
 
             addPmu!(
-                system, device; to = key,
+                monitoring; to = key,
                 magnitude = pf.current.to.magnitude[idx], angle = pf.current.to.angle[idx]
             )
             testDevice(pmu.magnitude, fully.pmu.magnitude, cnt1 + 1, 1)
@@ -92,95 +92,95 @@
     end
 
     @testset "Update Voltmeters" begin
-        updateVoltmeter!(system, device; label = "3", magnitude = 0.2, status = 0)
-        updateVoltmeter!(system, device; label = "3", variance = 1e-6)
+        updateVoltmeter!(monitoring; label = "3", magnitude = 0.2, status = 0)
+        updateVoltmeter!(monitoring; label = "3", variance = 1e-6)
 
-        @test device.voltmeter.magnitude.mean[3] == 0.2
-        @test device.voltmeter.magnitude.variance[3] == 1e-6
-        @test device.voltmeter.magnitude.status[3] == 0
+        @test monitoring.voltmeter.magnitude.mean[3] == 0.2
+        @test monitoring.voltmeter.magnitude.variance[3] == 1e-6
+        @test monitoring.voltmeter.magnitude.status[3] == 0
 
-        updateVoltmeter!(system, device; label = "5", magnitude = 0.3, variance = 1e-10, noise = true)
-        updateVoltmeter!(system, device; label = "5", status = 1)
+        updateVoltmeter!(monitoring; label = "5", magnitude = 0.3, variance = 1e-10, noise = true)
+        updateVoltmeter!(monitoring; label = "5", status = 1)
 
-        @test device.voltmeter.magnitude.mean[5] ≈ 0.3 atol = 1e-2
-        @test device.voltmeter.magnitude.mean[5] != 0.3
-        @test device.voltmeter.magnitude.variance[5] == 1e-10
-        @test device.voltmeter.magnitude.status[5] == 1
+        @test monitoring.voltmeter.magnitude.mean[5] ≈ 0.3 atol = 1e-2
+        @test monitoring.voltmeter.magnitude.mean[5] != 0.3
+        @test monitoring.voltmeter.magnitude.variance[5] == 1e-10
+        @test monitoring.voltmeter.magnitude.status[5] == 1
     end
 
     @testset "Update Ammeters" begin
-        updateAmmeter!(system, device; label = "Amm 3", magnitude = 0.4, variance = 1e-8)
-        updateAmmeter!(system, device; label = "Amm 3", status = 0)
+        updateAmmeter!(monitoring; label = "Amm 3", magnitude = 0.4, variance = 1e-8)
+        updateAmmeter!(monitoring; label = "Amm 3", status = 0)
 
-        @test device.ammeter.magnitude.mean[3] == 0.4
-        @test device.ammeter.magnitude.variance[3] == 1e-8
-        @test device.ammeter.magnitude.status[3] == 0
+        @test monitoring.ammeter.magnitude.mean[3] == 0.4
+        @test monitoring.ammeter.magnitude.variance[3] == 1e-8
+        @test monitoring.ammeter.magnitude.status[3] == 0
 
-        updateAmmeter!(system, device; label = "Amm 8", magnitude = 0.6, variance = 1e-10, noise = true)
-        updateAmmeter!(system, device; label = "Amm 8", status = 1)
+        updateAmmeter!(monitoring; label = "Amm 8", magnitude = 0.6, variance = 1e-10, noise = true)
+        updateAmmeter!(monitoring; label = "Amm 8", status = 1)
 
-        @test device.ammeter.magnitude.mean[8] ≈ 0.6 atol = 1e-2
-        @test device.ammeter.magnitude.mean[8] != 0.6
-        @test device.ammeter.magnitude.variance[8] == 1e-10
-        @test device.ammeter.magnitude.status[8] == 1
+        @test monitoring.ammeter.magnitude.mean[8] ≈ 0.6 atol = 1e-2
+        @test monitoring.ammeter.magnitude.mean[8] != 0.6
+        @test monitoring.ammeter.magnitude.variance[8] == 1e-10
+        @test monitoring.ammeter.magnitude.status[8] == 1
     end
 
     @testset "Update Wattmeters" begin
-        updateWattmeter!(system, device; label = "4", active = 0.5, variance = 1e-2, status = 0)
+        updateWattmeter!(monitoring; label = "4", active = 0.5, variance = 1e-2, status = 0)
 
-        @test device.wattmeter.active.mean[4] == 0.5
-        @test device.wattmeter.active.variance[4] == 1e-2
-        @test device.wattmeter.active.status[4] == 0
+        @test monitoring.wattmeter.active.mean[4] == 0.5
+        @test monitoring.wattmeter.active.variance[4] == 1e-2
+        @test monitoring.wattmeter.active.status[4] == 0
 
-        updateWattmeter!(system, device; label = "14", active = 0.1, variance = 1e-10, noise = true)
-        updateWattmeter!(system, device;label = "14", status = 1)
+        updateWattmeter!(monitoring; label = "14", active = 0.1, variance = 1e-10, noise = true)
+        updateWattmeter!(monitoring;label = "14", status = 1)
 
-        @test device.wattmeter.active.mean[14] ≈ 0.1 atol = 1e-2
-        @test device.wattmeter.active.mean[14] != 0.1
-        @test device.wattmeter.active.variance[14] == 1e-10
-        @test device.wattmeter.active.status[14] == 1
+        @test monitoring.wattmeter.active.mean[14] ≈ 0.1 atol = 1e-2
+        @test monitoring.wattmeter.active.mean[14] != 0.1
+        @test monitoring.wattmeter.active.variance[14] == 1e-10
+        @test monitoring.wattmeter.active.status[14] == 1
     end
 
     @testset "Update Varmeters" begin
-        updateVarmeter!(system, device; label = "5", reactive = 1.5, variance = 1e-1, status = 0)
+        updateVarmeter!(monitoring; label = "5", reactive = 1.5, variance = 1e-1, status = 0)
 
-        @test device.varmeter.reactive.mean[5] == 1.5
-        @test device.varmeter.reactive.variance[5] == 1e-1
-        @test device.varmeter.reactive.status[5] == 0
+        @test monitoring.varmeter.reactive.mean[5] == 1.5
+        @test monitoring.varmeter.reactive.variance[5] == 1e-1
+        @test monitoring.varmeter.reactive.status[5] == 0
 
-        updateVarmeter!(system, device; label = "16", reactive = 0.9, variance = 1e-10, noise = true)
-        updateVarmeter!(system, device; label = "16", status = 1)
+        updateVarmeter!(monitoring; label = "16", reactive = 0.9, variance = 1e-10, noise = true)
+        updateVarmeter!(monitoring; label = "16", status = 1)
 
-        @test device.varmeter.reactive.mean[16] ≈ 0.9 atol = 1e-2
-        @test device.varmeter.reactive.mean[16] != 0.9
-        @test device.varmeter.reactive.variance[16] == 1e-10
-        @test device.varmeter.reactive.status[16] == 1
+        @test monitoring.varmeter.reactive.mean[16] ≈ 0.9 atol = 1e-2
+        @test monitoring.varmeter.reactive.mean[16] != 0.9
+        @test monitoring.varmeter.reactive.variance[16] == 1e-10
+        @test monitoring.varmeter.reactive.status[16] == 1
     end
 
     @testset "Update PMUs" begin
-        updatePmu!(system, device; label = "4 PMU", magnitude = 0.1, angle = 0.2)
-        updatePmu!(system, device; label = "4 PMU", varianceMagnitude = 1e-6, varianceAngle = 1e-7)
-        updatePmu!(system, device; label = "4 PMU", status = 1)
+        updatePmu!(monitoring; label = "4 PMU", magnitude = 0.1, angle = 0.2)
+        updatePmu!(monitoring; label = "4 PMU", varianceMagnitude = 1e-6, varianceAngle = 1e-7)
+        updatePmu!(monitoring; label = "4 PMU", status = 1)
 
-        @test device.pmu.magnitude.mean[4] == 0.1
-        @test device.pmu.magnitude.variance[4] == 1e-6
-        @test device.pmu.magnitude.status[4] == 1
-        @test device.pmu.angle.mean[4] == 0.2
-        @test device.pmu.angle.variance[4] == 1e-7
-        @test device.pmu.angle.status[4] == 1
+        @test monitoring.pmu.magnitude.mean[4] == 0.1
+        @test monitoring.pmu.magnitude.variance[4] == 1e-6
+        @test monitoring.pmu.magnitude.status[4] == 1
+        @test monitoring.pmu.angle.mean[4] == 0.2
+        @test monitoring.pmu.angle.variance[4] == 1e-7
+        @test monitoring.pmu.angle.status[4] == 1
 
-        updatePmu!(system, device; label = "5 PMU", magnitude = 0.3, varianceMagnitude = 1e-10, noise = true)
-        updatePmu!(system, device; label = "5 PMU", angle = 0.4, varianceAngle = 1e-11, noise = true)
-        updatePmu!(system, device; label = "5 PMU", status = 0)
+        updatePmu!(monitoring; label = "5 PMU", magnitude = 0.3, varianceMagnitude = 1e-10, noise = true)
+        updatePmu!(monitoring; label = "5 PMU", angle = 0.4, varianceAngle = 1e-11, noise = true)
+        updatePmu!(monitoring; label = "5 PMU", status = 0)
 
-        @test device.pmu.magnitude.mean[5] ≈ 0.3 atol = 1e-2
-        @test device.pmu.magnitude.mean[5] != 0.3
-        @test device.pmu.magnitude.variance[5] == 1e-10
-        @test device.pmu.magnitude.status[5] == 0
-        @test device.pmu.angle.mean[5] ≈ 0.4 atol = 1e-2
-        @test device.pmu.magnitude.mean[5] != 0.4
-        @test device.pmu.angle.variance[5] == 1e-11
-        @test device.pmu.angle.status[5] == 0
+        @test monitoring.pmu.magnitude.mean[5] ≈ 0.3 atol = 1e-2
+        @test monitoring.pmu.magnitude.mean[5] != 0.3
+        @test monitoring.pmu.magnitude.variance[5] == 1e-10
+        @test monitoring.pmu.magnitude.status[5] == 0
+        @test monitoring.pmu.angle.mean[5] ≈ 0.4 atol = 1e-2
+        @test monitoring.pmu.magnitude.mean[5] != 0.4
+        @test monitoring.pmu.angle.variance[5] == 1e-11
+        @test monitoring.pmu.angle.status[5] == 0
     end
 end
 
@@ -193,7 +193,7 @@ end
     @current(A, rad)
 
     system = powerSystem()
-    device = measurement()
+    monitoring = measurement(system)
     @base(system, MVA, kV)
     fn = sqrt(3)
 
@@ -207,111 +207,111 @@ end
     baseCurrent = system.base.power.value * system.base.power.prefix / (fn * 0.23 * 10^6)
 
     @testset "Voltmeter Data" begin
-        addVoltmeter!(system, device; bus = 1, magnitude = 126.5 / fn, variance = 126.5 / fn)
-        addVoltmeter!(system, device; bus = 1, magnitude = 126.5 / fn, variance = 1e-60 / fn, noise = true)
+        addVoltmeter!(monitoring; bus = 1, magnitude = 126.5 / fn, variance = 126.5 / fn)
+        addVoltmeter!(monitoring; bus = 1, magnitude = 126.5 / fn, variance = 1e-60 / fn, noise = true)
 
-        @test device.voltmeter.magnitude.mean[1] == system.bus.voltage.magnitude[1]
-        @test device.voltmeter.magnitude.variance[1] == system.bus.voltage.magnitude[1]
-        @test device.voltmeter.magnitude.mean[2] == system.bus.voltage.magnitude[1]
+        @test monitoring.voltmeter.magnitude.mean[1] == system.bus.voltage.magnitude[1]
+        @test monitoring.voltmeter.magnitude.variance[1] == system.bus.voltage.magnitude[1]
+        @test monitoring.voltmeter.magnitude.mean[2] == system.bus.voltage.magnitude[1]
     end
 
     @testset "Ammeter Data" begin
-        addAmmeter!(system, device; from = 1, magnitude = 102.5, variance = 102.5)
-        addAmmeter!(system, device; from = 1, magnitude = 102.5, variance = 1e-60, noise = true)
+        addAmmeter!(monitoring; from = 1, magnitude = 102.5, variance = 102.5)
+        addAmmeter!(monitoring; from = 1, magnitude = 102.5, variance = 1e-60, noise = true)
 
-        @test device.ammeter.magnitude.mean[1] ≈ (102.5 / baseCurrent) atol = 1e-15
-        @test device.ammeter.magnitude.variance[1] ≈ (102.5 / baseCurrent) atol = 1e-15
-        @test device.ammeter.magnitude.mean[2] ≈ (102.5 / baseCurrent) atol = 1e-15
+        @test monitoring.ammeter.magnitude.mean[1] ≈ (102.5 / baseCurrent) atol = 1e-15
+        @test monitoring.ammeter.magnitude.variance[1] ≈ (102.5 / baseCurrent) atol = 1e-15
+        @test monitoring.ammeter.magnitude.mean[2] ≈ (102.5 / baseCurrent) atol = 1e-15
 
-        addAmmeter!(system, device; to = 1, magnitude = 20, variance = 20)
-        addAmmeter!(system, device; to = 1, magnitude = 20, variance = 1e-60, noise = true)
+        addAmmeter!(monitoring; to = 1, magnitude = 20, variance = 20)
+        addAmmeter!(monitoring; to = 1, magnitude = 20, variance = 1e-60, noise = true)
 
-        @test device.ammeter.magnitude.mean[3] ≈ (20 / baseCurrent) atol = 1e-15
-        @test device.ammeter.magnitude.variance[3] ≈ (20 / baseCurrent) atol = 1e-15
-        @test device.ammeter.magnitude.mean[4] ≈ (20 / baseCurrent) atol = 1e-15
+        @test monitoring.ammeter.magnitude.mean[3] ≈ (20 / baseCurrent) atol = 1e-15
+        @test monitoring.ammeter.magnitude.variance[3] ≈ (20 / baseCurrent) atol = 1e-15
+        @test monitoring.ammeter.magnitude.mean[4] ≈ (20 / baseCurrent) atol = 1e-15
     end
 
     @testset "Wattmeter Data" begin
-        addWattmeter!(system, device; bus = 1, active = 20.5, variance = 20.5)
-        addWattmeter!(system, device; bus = 1, active = 20.5, variance = 1e-60, noise = true)
+        addWattmeter!(monitoring; bus = 1, active = 20.5, variance = 20.5)
+        addWattmeter!(monitoring; bus = 1, active = 20.5, variance = 1e-60, noise = true)
 
-        @test device.wattmeter.active.mean[1] == system.bus.demand.active[1]
-        @test device.wattmeter.active.variance[1] == system.bus.demand.active[1]
-        @test device.wattmeter.active.mean[2] == system.bus.demand.active[1]
+        @test monitoring.wattmeter.active.mean[1] == system.bus.demand.active[1]
+        @test monitoring.wattmeter.active.variance[1] == system.bus.demand.active[1]
+        @test monitoring.wattmeter.active.mean[2] == system.bus.demand.active[1]
 
-        addWattmeter!(system, device; from = 1, active = 20.5, variance = 20.5, noise = false)
-        addWattmeter!(system, device; from = 1, active = 20.5, variance = 1e-60, noise = true)
+        addWattmeter!(monitoring; from = 1, active = 20.5, variance = 20.5, noise = false)
+        addWattmeter!(monitoring; from = 1, active = 20.5, variance = 1e-60, noise = true)
 
-        @test device.wattmeter.active.mean[3] == system.bus.demand.active[1]
-        @test device.wattmeter.active.variance[3] == system.bus.demand.active[1]
-        @test device.wattmeter.active.mean[4] == system.bus.demand.active[1]
+        @test monitoring.wattmeter.active.mean[3] == system.bus.demand.active[1]
+        @test monitoring.wattmeter.active.variance[3] == system.bus.demand.active[1]
+        @test monitoring.wattmeter.active.mean[4] == system.bus.demand.active[1]
 
-        addWattmeter!(system, device; to = 1, active = 20.5, variance = 20.5, noise = false)
-        addWattmeter!(system, device; to = 1, active = 20.5, variance = 1e-60, noise = true)
+        addWattmeter!(monitoring; to = 1, active = 20.5, variance = 20.5, noise = false)
+        addWattmeter!(monitoring; to = 1, active = 20.5, variance = 1e-60, noise = true)
 
-        @test device.wattmeter.active.mean[5] == system.bus.demand.active[1]
-        @test device.wattmeter.active.variance[5] == system.bus.demand.active[1]
-        @test device.wattmeter.active.mean[6] == system.bus.demand.active[1]
+        @test monitoring.wattmeter.active.mean[5] == system.bus.demand.active[1]
+        @test monitoring.wattmeter.active.variance[5] == system.bus.demand.active[1]
+        @test monitoring.wattmeter.active.mean[6] == system.bus.demand.active[1]
     end
 
     @testset "Varmeter Data" begin
-        addVarmeter!(system, device; bus = 1, reactive = 11.2, variance = 11.2, noise = false)
-        addVarmeter!(system, device; bus = 1, reactive = 11.2, variance = 1e-60, noise = true)
+        addVarmeter!(monitoring; bus = 1, reactive = 11.2, variance = 11.2, noise = false)
+        addVarmeter!(monitoring; bus = 1, reactive = 11.2, variance = 1e-60, noise = true)
 
-        @test device.varmeter.reactive.mean[1] == system.bus.demand.reactive[1]
-        @test device.varmeter.reactive.variance[1] == system.bus.demand.reactive[1]
-        @test device.varmeter.reactive.mean[2] == system.bus.demand.reactive[1]
+        @test monitoring.varmeter.reactive.mean[1] == system.bus.demand.reactive[1]
+        @test monitoring.varmeter.reactive.variance[1] == system.bus.demand.reactive[1]
+        @test monitoring.varmeter.reactive.mean[2] == system.bus.demand.reactive[1]
 
-        addVarmeter!(system, device; from = 1, reactive = 11.2, variance = 11.2, noise = false)
-        addVarmeter!(system, device; from = 1,reactive = 11.2, variance = 1e-60,  noise = true)
+        addVarmeter!(monitoring; from = 1, reactive = 11.2, variance = 11.2, noise = false)
+        addVarmeter!(monitoring; from = 1,reactive = 11.2, variance = 1e-60,  noise = true)
 
-        @test device.varmeter.reactive.mean[3] == system.bus.demand.reactive[1]
-        @test device.varmeter.reactive.variance[3] == system.bus.demand.reactive[1]
-        @test device.varmeter.reactive.mean[4] == system.bus.demand.reactive[1]
+        @test monitoring.varmeter.reactive.mean[3] == system.bus.demand.reactive[1]
+        @test monitoring.varmeter.reactive.variance[3] == system.bus.demand.reactive[1]
+        @test monitoring.varmeter.reactive.mean[4] == system.bus.demand.reactive[1]
 
-        addVarmeter!(system, device; to = 1, reactive = 11.2, variance = 11.2)
-        addVarmeter!(system, device; to = 1, reactive = 11.2, variance = 1e-60, noise = true)
+        addVarmeter!(monitoring; to = 1, reactive = 11.2, variance = 11.2)
+        addVarmeter!(monitoring; to = 1, reactive = 11.2, variance = 1e-60, noise = true)
 
-        @test device.varmeter.reactive.mean[5] == system.bus.demand.reactive[1]
-        @test device.varmeter.reactive.variance[5] == system.bus.demand.reactive[1]
-        @test device.varmeter.reactive.mean[6] == system.bus.demand.reactive[1]
+        @test monitoring.varmeter.reactive.mean[5] == system.bus.demand.reactive[1]
+        @test monitoring.varmeter.reactive.variance[5] == system.bus.demand.reactive[1]
+        @test monitoring.varmeter.reactive.mean[6] == system.bus.demand.reactive[1]
     end
 
     @testset "PMU Data" begin
-        addPmu!(system, device; bus = 2, magnitude = 95 / fn, angle = 2.4)
-        updatePmu!(system, device; label = 1, varianceMagnitude = 95 / fn, varianceAngle = 2.4)
+        addPmu!(monitoring; bus = 2, magnitude = 95 / fn, angle = 2.4)
+        updatePmu!(monitoring; label = 1, varianceMagnitude = 95 / fn, varianceAngle = 2.4)
 
-        @test device.pmu.magnitude.mean[1] == system.bus.voltage.magnitude[2]
-        @test device.pmu.magnitude.variance[1] == system.bus.voltage.magnitude[2]
-        @test device.pmu.angle.mean[1] == system.bus.voltage.angle[2]
-        @test device.pmu.angle.variance[1] == system.bus.voltage.angle[2]
+        @test monitoring.pmu.magnitude.mean[1] == system.bus.voltage.magnitude[2]
+        @test monitoring.pmu.magnitude.variance[1] == system.bus.voltage.magnitude[2]
+        @test monitoring.pmu.angle.mean[1] == system.bus.voltage.angle[2]
+        @test monitoring.pmu.angle.variance[1] == system.bus.voltage.angle[2]
 
-        addPmu!(system, device; from = 1, magnitude = 40, angle = 0.1)
-        updatePmu!(system, device; label = 2, varianceMagnitude = 40, varianceAngle = 0.1)
+        addPmu!(monitoring; from = 1, magnitude = 40, angle = 0.1)
+        updatePmu!(monitoring; label = 2, varianceMagnitude = 40, varianceAngle = 0.1)
 
-        @test device.pmu.magnitude.mean[2] ≈ (40 / baseCurrent) atol = 1e-15
-        @test device.pmu.magnitude.variance[2] ≈ (40 / baseCurrent) atol = 1e-15
-        @test device.pmu.angle.mean[2] == 0.1
-        @test device.pmu.angle.variance[2] == 0.1
+        @test monitoring.pmu.magnitude.mean[2] ≈ (40 / baseCurrent) atol = 1e-15
+        @test monitoring.pmu.magnitude.variance[2] ≈ (40 / baseCurrent) atol = 1e-15
+        @test monitoring.pmu.angle.mean[2] == 0.1
+        @test monitoring.pmu.angle.variance[2] == 0.1
 
-        addPmu!(system, device; to = 1, magnitude = 60, angle = 3)
-        updatePmu!(system, device; label = 3, varianceMagnitude = 60, varianceAngle = 3)
+        addPmu!(monitoring; to = 1, magnitude = 60, angle = 3)
+        updatePmu!(monitoring; label = 3, varianceMagnitude = 60, varianceAngle = 3)
 
-        @test device.pmu.magnitude.mean[3] ≈ (60 / baseCurrent) atol = 1e-15
-        @test device.pmu.magnitude.variance[3] ≈ (60 / baseCurrent) atol = 1e-15
-        @test device.pmu.angle.mean[3] == 3
-        @test device.pmu.angle.variance[3] == 3
+        @test monitoring.pmu.magnitude.mean[3] ≈ (60 / baseCurrent) atol = 1e-15
+        @test monitoring.pmu.magnitude.variance[3] ≈ (60 / baseCurrent) atol = 1e-15
+        @test monitoring.pmu.angle.mean[3] == 3
+        @test monitoring.pmu.angle.variance[3] == 3
     end
 
     @testset "Multiple Labels" begin
-        device = measurement()
+        monitoring = measurement(system)
 
         @voltmeter(label = "!")
-        addVoltmeter!(system, device; bus = 1, magnitude = 1)
-        addVoltmeter!(system, device; bus = 1, magnitude = 1)
-        addVoltmeter!(system, device; bus = 1, magnitude = 1)
+        addVoltmeter!(monitoring; bus = 1, magnitude = 1)
+        addVoltmeter!(monitoring; bus = 1, magnitude = 1)
+        addVoltmeter!(monitoring; bus = 1, magnitude = 1)
 
-        labels = collect(keys(device.voltmeter.label))
+        labels = collect(keys(monitoring.voltmeter.label))
         @test labels[1] == "1"
         @test labels[2] == "1 (1)"
         @test labels[3] == "1 (2)"
@@ -323,164 +323,163 @@ end
     @config(label = Integer)
 
     ########## Generate Measurements from AC Power Flow ##########
-    system = powerSystem(path * "case14test.m")
-    device = measurement()
+    system, monitoring = ems(path * "case14test.m")
 
     analysis = newtonRaphson(system)
-    powerFlow!(system, analysis; power = true, current = true)
+    powerFlow!(analysis; power = true, current = true)
 
     stateVariable = 2 * system.bus.number - 1
 
     @testset "Set of Voltmeters" begin
-        addVoltmeter!(system, device, analysis)
+        addVoltmeter!(monitoring, analysis)
 
-        statusVoltmeter!(system, device; inservice = 10)
-        @test sum(device.voltmeter.magnitude.status) == 10
+        statusVoltmeter!(monitoring; inservice = 10)
+        @test sum(monitoring.voltmeter.magnitude.status) == 10
 
-        statusVoltmeter!(system, device; outservice = 5)
-        @test sum(device.voltmeter.magnitude.status) == 9
+        statusVoltmeter!(monitoring; outservice = 5)
+        @test sum(monitoring.voltmeter.magnitude.status) == 9
 
-        statusVoltmeter!(system, device; redundancy = 0.5)
-        @test sum(device.voltmeter.magnitude.status) == round(0.5 * stateVariable)
+        statusVoltmeter!(monitoring; redundancy = 0.5)
+        @test sum(monitoring.voltmeter.magnitude.status) == round(0.5 * stateVariable)
     end
 
     @testset "Set of Ammeters" begin
-        addAmmeter!(system, device, analysis; noise = true)
+        addAmmeter!(monitoring, analysis; noise = true)
 
-        statusAmmeter!(system, device; inservice = 18)
-        @test sum(device.ammeter.magnitude.status) == 18
+        statusAmmeter!(monitoring; inservice = 18)
+        @test sum(monitoring.ammeter.magnitude.status) == 18
 
-        statusAmmeter!(system, device; outservice = 4)
-        @test sum(device.ammeter.magnitude.status) == 32
+        statusAmmeter!(monitoring; outservice = 4)
+        @test sum(monitoring.ammeter.magnitude.status) == 32
 
-        statusAmmeter!(system, device; redundancy = 1.1)
-        @test sum(device.ammeter.magnitude.status) == round(1.1 * stateVariable)
+        statusAmmeter!(monitoring; redundancy = 1.1)
+        @test sum(monitoring.ammeter.magnitude.status) == round(1.1 * stateVariable)
 
-        layout = device.ammeter.layout
-        statusAmmeter!(system, device; inserviceFrom = 10, inserviceTo = 4)
-        @test sum(device.ammeter.magnitude.status[layout.from]) == 10
-        @test sum(device.ammeter.magnitude.status[layout.to]) == 4
+        layout = monitoring.ammeter.layout
+        statusAmmeter!(monitoring; inserviceFrom = 10, inserviceTo = 4)
+        @test sum(monitoring.ammeter.magnitude.status[layout.from]) == 10
+        @test sum(monitoring.ammeter.magnitude.status[layout.to]) == 4
 
-        statusAmmeter!(system, device; outserviceFrom = 5, outserviceTo = 3)
-        @test sum(device.ammeter.magnitude.status[layout.from]) == 13
-        @test sum(device.ammeter.magnitude.status[layout.to]) == 15
+        statusAmmeter!(monitoring; outserviceFrom = 5, outserviceTo = 3)
+        @test sum(monitoring.ammeter.magnitude.status[layout.from]) == 13
+        @test sum(monitoring.ammeter.magnitude.status[layout.to]) == 15
 
-        statusAmmeter!(system, device; redundancyFrom = 0.5, redundancyTo = 0.2)
-        @test sum(device.ammeter.magnitude.status[layout.from]) == round(0.5 * stateVariable)
-        @test sum(device.ammeter.magnitude.status[layout.to]) == round(0.2 * stateVariable)
+        statusAmmeter!(monitoring; redundancyFrom = 0.5, redundancyTo = 0.2)
+        @test sum(monitoring.ammeter.magnitude.status[layout.from]) == round(0.5 * stateVariable)
+        @test sum(monitoring.ammeter.magnitude.status[layout.to]) == round(0.2 * stateVariable)
     end
 
     @testset "Set of Wattmeters" begin
-        addWattmeter!(system, device, analysis; noise = true)
+        addWattmeter!(monitoring, analysis; noise = true)
 
-        statusWattmeter!(system, device; inservice = 14)
-        @test sum(device.wattmeter.active.status) == 14
+        statusWattmeter!(monitoring; inservice = 14)
+        @test sum(monitoring.wattmeter.active.status) == 14
 
-        statusWattmeter!(system, device; outservice = 40)
-        @test sum(device.wattmeter.active.status) == 10
+        statusWattmeter!(monitoring; outservice = 40)
+        @test sum(monitoring.wattmeter.active.status) == 10
 
-        statusWattmeter!(system, device; redundancy = 1.8)
-        @test sum(device.wattmeter.active.status) == round(1.8 * stateVariable)
+        statusWattmeter!(monitoring; redundancy = 1.8)
+        @test sum(monitoring.wattmeter.active.status) == round(1.8 * stateVariable)
 
-        layout = device.wattmeter.layout
-        statusWattmeter!(system, device; inserviceBus = 10, inserviceFrom = 12, inserviceTo = 8)
-        @test sum(device.wattmeter.active.status[layout.bus]) == 10
-        @test sum(device.wattmeter.active.status[layout.from]) == 12
-        @test sum(device.wattmeter.active.status[layout.to]) == 8
+        layout = monitoring.wattmeter.layout
+        statusWattmeter!(monitoring; inserviceBus = 10, inserviceFrom = 12, inserviceTo = 8)
+        @test sum(monitoring.wattmeter.active.status[layout.bus]) == 10
+        @test sum(monitoring.wattmeter.active.status[layout.from]) == 12
+        @test sum(monitoring.wattmeter.active.status[layout.to]) == 8
 
-        statusWattmeter!(system, device; outserviceBus = 14, outserviceFrom = 15, outserviceTo = 17)
-        @test sum(device.wattmeter.active.status[layout.bus]) == 0
-        @test sum(device.wattmeter.active.status[layout.from]) == 3
-        @test sum(device.wattmeter.active.status[layout.to]) == 1
+        statusWattmeter!(monitoring; outserviceBus = 14, outserviceFrom = 15, outserviceTo = 17)
+        @test sum(monitoring.wattmeter.active.status[layout.bus]) == 0
+        @test sum(monitoring.wattmeter.active.status[layout.from]) == 3
+        @test sum(monitoring.wattmeter.active.status[layout.to]) == 1
 
-        statusWattmeter!(system, device; redundancyBus = 0.1, redundancyFrom = 0.3, redundancyTo = 0.4)
-        @test sum(device.wattmeter.active.status[layout.bus]) == round(0.1 * stateVariable)
-        @test sum(device.wattmeter.active.status[layout.from]) == round(0.3 * stateVariable)
-        @test sum(device.wattmeter.active.status[layout.to]) == round(0.4 * stateVariable)
+        statusWattmeter!(monitoring; redundancyBus = 0.1, redundancyFrom = 0.3, redundancyTo = 0.4)
+        @test sum(monitoring.wattmeter.active.status[layout.bus]) == round(0.1 * stateVariable)
+        @test sum(monitoring.wattmeter.active.status[layout.from]) == round(0.3 * stateVariable)
+        @test sum(monitoring.wattmeter.active.status[layout.to]) == round(0.4 * stateVariable)
     end
 
     @testset "Set of Varmeters" begin
-        addVarmeter!(system, device, analysis; noise = true)
+        addVarmeter!(monitoring, analysis; noise = true)
 
-        statusVarmeter!(system, device; inservice = 1)
-        @test sum(device.varmeter.reactive.status) == 1
+        statusVarmeter!(monitoring; inservice = 1)
+        @test sum(monitoring.varmeter.reactive.status) == 1
 
-        statusVarmeter!(system, device; outservice = 30)
-        @test sum(device.varmeter.reactive.status) == 20
+        statusVarmeter!(monitoring; outservice = 30)
+        @test sum(monitoring.varmeter.reactive.status) == 20
 
-        statusVarmeter!(system, device; redundancy = 1.2)
-        @test sum(device.varmeter.reactive.status) == round(1.2 * stateVariable)
+        statusVarmeter!(monitoring; redundancy = 1.2)
+        @test sum(monitoring.varmeter.reactive.status) == round(1.2 * stateVariable)
 
-        layout = device.varmeter.layout
-        statusVarmeter!(system, device; inserviceBus = 0, inserviceFrom = 18, inserviceTo = 4)
-        @test sum(device.varmeter.reactive.status[layout.bus]) == 0
-        @test sum(device.varmeter.reactive.status[layout.from]) == 18
-        @test sum(device.varmeter.reactive.status[layout.to]) == 4
+        layout = monitoring.varmeter.layout
+        statusVarmeter!(monitoring; inserviceBus = 0, inserviceFrom = 18, inserviceTo = 4)
+        @test sum(monitoring.varmeter.reactive.status[layout.bus]) == 0
+        @test sum(monitoring.varmeter.reactive.status[layout.from]) == 18
+        @test sum(monitoring.varmeter.reactive.status[layout.to]) == 4
 
-        statusVarmeter!(system, device; outserviceBus = 0, outserviceFrom = 10, outserviceTo = 2)
-        @test sum(device.varmeter.reactive.status[layout.bus]) == 14
-        @test sum(device.varmeter.reactive.status[layout.from]) == 8
-        @test sum(device.varmeter.reactive.status[layout.to]) == 16
+        statusVarmeter!(monitoring; outserviceBus = 0, outserviceFrom = 10, outserviceTo = 2)
+        @test sum(monitoring.varmeter.reactive.status[layout.bus]) == 14
+        @test sum(monitoring.varmeter.reactive.status[layout.from]) == 8
+        @test sum(monitoring.varmeter.reactive.status[layout.to]) == 16
 
-        statusVarmeter!(system, device; redundancyBus = 0.2, redundancyFrom = 0.1, redundancyTo = 0.3)
-        @test sum(device.varmeter.reactive.status[layout.bus]) == round(0.2 * stateVariable)
-        @test sum(device.varmeter.reactive.status[layout.from]) == round(0.1 * stateVariable)
-        @test sum(device.varmeter.reactive.status[layout.to]) == round(0.3 * stateVariable)
+        statusVarmeter!(monitoring; redundancyBus = 0.2, redundancyFrom = 0.1, redundancyTo = 0.3)
+        @test sum(monitoring.varmeter.reactive.status[layout.bus]) == round(0.2 * stateVariable)
+        @test sum(monitoring.varmeter.reactive.status[layout.from]) == round(0.1 * stateVariable)
+        @test sum(monitoring.varmeter.reactive.status[layout.to]) == round(0.3 * stateVariable)
     end
 
     @testset "Set of PMUs" begin
-        addPmu!(system, device, analysis; noise = true)
+        addPmu!(monitoring, analysis; noise = true)
 
-        statusPmu!(system, device; inservice = 10)
-        @test device.pmu.magnitude.status == device.pmu.angle.status
-        @test sum(device.pmu.magnitude.status) == 10
+        statusPmu!(monitoring; inservice = 10)
+        @test monitoring.pmu.magnitude.status == monitoring.pmu.angle.status
+        @test sum(monitoring.pmu.magnitude.status) == 10
 
-        statusPmu!(system, device; outservice = 40)
-        @test device.pmu.magnitude.status == device.pmu.angle.status
-        @test sum(device.pmu.magnitude.status) == 10
+        statusPmu!(monitoring; outservice = 40)
+        @test monitoring.pmu.magnitude.status == monitoring.pmu.angle.status
+        @test sum(monitoring.pmu.magnitude.status) == 10
 
-        statusPmu!(system, device; redundancy = 0.2)
-        @test device.pmu.magnitude.status == device.pmu.angle.status
-        @test sum(device.pmu.magnitude.status) == round(0.2 * stateVariable)
+        statusPmu!(monitoring; redundancy = 0.2)
+        @test monitoring.pmu.magnitude.status == monitoring.pmu.angle.status
+        @test sum(monitoring.pmu.magnitude.status) == round(0.2 * stateVariable)
 
-        layout = device.pmu.layout
-        statusPmu!(system, device; inserviceBus = 10, inserviceFrom = 15, inserviceTo = 16)
-        @test device.pmu.magnitude.status == device.pmu.angle.status
-        @test sum(device.pmu.magnitude.status[layout.bus]) == 10
-        @test sum(device.pmu.magnitude.status[layout.from]) == 15
-        @test sum(device.pmu.magnitude.status[layout.to]) == 16
+        layout = monitoring.pmu.layout
+        statusPmu!(monitoring; inserviceBus = 10, inserviceFrom = 15, inserviceTo = 16)
+        @test monitoring.pmu.magnitude.status == monitoring.pmu.angle.status
+        @test sum(monitoring.pmu.magnitude.status[layout.bus]) == 10
+        @test sum(monitoring.pmu.magnitude.status[layout.from]) == 15
+        @test sum(monitoring.pmu.magnitude.status[layout.to]) == 16
 
-        statusPmu!(system, device; outserviceBus = 6, outserviceFrom = 10, outserviceTo = 15)
-        @test device.pmu.magnitude.status == device.pmu.angle.status
-        @test sum(device.pmu.magnitude.status[layout.bus]) == 8
-        @test sum(device.pmu.magnitude.status[layout.from]) == 8
-        @test sum(device.pmu.magnitude.status[layout.to]) == 3
+        statusPmu!(monitoring; outserviceBus = 6, outserviceFrom = 10, outserviceTo = 15)
+        @test monitoring.pmu.magnitude.status == monitoring.pmu.angle.status
+        @test sum(monitoring.pmu.magnitude.status[layout.bus]) == 8
+        @test sum(monitoring.pmu.magnitude.status[layout.from]) == 8
+        @test sum(monitoring.pmu.magnitude.status[layout.to]) == 3
 
-        statusPmu!(system, device; redundancyBus = 0.3, redundancyFrom = 0.2, redundancyTo = 0.4)
-        @test device.pmu.magnitude.status == device.pmu.angle.status
-        @test sum(device.pmu.magnitude.status[layout.bus]) == round(0.3 * stateVariable)
-        @test sum(device.pmu.magnitude.status[layout.from]) == round(0.2 * stateVariable)
-        @test sum(device.pmu.magnitude.status[layout.to]) == round(0.4 * stateVariable)
+        statusPmu!(monitoring; redundancyBus = 0.3, redundancyFrom = 0.2, redundancyTo = 0.4)
+        @test monitoring.pmu.magnitude.status == monitoring.pmu.angle.status
+        @test sum(monitoring.pmu.magnitude.status[layout.bus]) == round(0.3 * stateVariable)
+        @test sum(monitoring.pmu.magnitude.status[layout.from]) == round(0.2 * stateVariable)
+        @test sum(monitoring.pmu.magnitude.status[layout.to]) == round(0.4 * stateVariable)
     end
 
     @testset "Set of All Measurements" begin
-        status!(system, device; inservice = 40)
-        @test device.pmu.magnitude.status == device.pmu.angle.status
-        @test sum(device.voltmeter.magnitude.status) + sum(device.ammeter.magnitude.status) +
-            sum(device.wattmeter.active.status) + sum(device.varmeter.reactive.status) +
-            sum(device.pmu.magnitude.status) == 40
+        status!(monitoring; inservice = 40)
+        @test monitoring.pmu.magnitude.status == monitoring.pmu.angle.status
+        @test sum(monitoring.voltmeter.magnitude.status) + sum(monitoring.ammeter.magnitude.status) +
+            sum(monitoring.wattmeter.active.status) + sum(monitoring.varmeter.reactive.status) +
+            sum(monitoring.pmu.magnitude.status) == 40
 
-        status!(system, device; outservice = 100)
-        @test device.pmu.magnitude.status == device.pmu.angle.status
-        @test sum(device.voltmeter.magnitude.status) + sum(device.ammeter.magnitude.status) +
-            sum(device.wattmeter.active.status) + sum(device.varmeter.reactive.status) +
-            sum(device.pmu.magnitude.status) == 100
+        status!(monitoring; outservice = 100)
+        @test monitoring.pmu.magnitude.status == monitoring.pmu.angle.status
+        @test sum(monitoring.voltmeter.magnitude.status) + sum(monitoring.ammeter.magnitude.status) +
+            sum(monitoring.wattmeter.active.status) + sum(monitoring.varmeter.reactive.status) +
+            sum(monitoring.pmu.magnitude.status) == 100
 
-        status!(system, device; redundancy = 3.1)
-        @test device.pmu.magnitude.status == device.pmu.angle.status
-        @test sum(device.voltmeter.magnitude.status) + sum(device.ammeter.magnitude.status) +
-            sum(device.wattmeter.active.status) + sum(device.varmeter.reactive.status) +
-            sum(device.pmu.magnitude.status) == round(3.1 * stateVariable)
+        status!(monitoring; redundancy = 3.1)
+        @test monitoring.pmu.magnitude.status == monitoring.pmu.angle.status
+        @test sum(monitoring.voltmeter.magnitude.status) + sum(monitoring.ammeter.magnitude.status) +
+            sum(monitoring.wattmeter.active.status) + sum(monitoring.varmeter.reactive.status) +
+            sum(monitoring.pmu.magnitude.status) == round(3.1 * stateVariable)
     end
 end
 
@@ -489,7 +488,7 @@ end
     @default(unit)
 
     system = powerSystem()
-    device = measurement()
+    monitoring = measurement(system)
 
     addBus!(system; label = "Bus 1")
     addBus!(system; label = "Bus 2")
@@ -498,132 +497,132 @@ end
     @testset "Voltmeter Macro" begin
         @voltmeter(label = "Voltmeter ?", variance = 1e-2, status = 0, noise = true)
 
-        addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0)
-        @test device.voltmeter.label["Voltmeter 1"] == 1
-        @test device.voltmeter.magnitude.mean[1] != 1.0
-        @test device.voltmeter.magnitude.variance[1] == 1e-2
-        @test device.voltmeter.magnitude.status[1] == 0
+        addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 1.0)
+        @test monitoring.voltmeter.label["Voltmeter 1"] == 1
+        @test monitoring.voltmeter.magnitude.mean[1] != 1.0
+        @test monitoring.voltmeter.magnitude.variance[1] == 1e-2
+        @test monitoring.voltmeter.magnitude.status[1] == 0
 
-        addVoltmeter!(system, device; bus = "Bus 2", magnitude = 2.0, variance = 1e-3, noise = false)
-        @test device.voltmeter.label["Voltmeter 2"] == 2
-        @test device.voltmeter.magnitude.mean[2] == 2.0
-        @test device.voltmeter.magnitude.variance[2] == 1e-3
-        @test device.voltmeter.magnitude.status[2] == 0
+        addVoltmeter!(monitoring; bus = "Bus 2", magnitude = 2.0, variance = 1e-3, noise = false)
+        @test monitoring.voltmeter.label["Voltmeter 2"] == 2
+        @test monitoring.voltmeter.magnitude.mean[2] == 2.0
+        @test monitoring.voltmeter.magnitude.variance[2] == 1e-3
+        @test monitoring.voltmeter.magnitude.status[2] == 0
 
-        addVoltmeter!(system, device; bus = "Bus 2", magnitude = 2.0, status = 1)
-        @test device.voltmeter.label["Voltmeter 3"] == 3
-        @test device.voltmeter.magnitude.status[3] == 1
+        addVoltmeter!( monitoring; bus = "Bus 2", magnitude = 2.0, status = 1)
+        @test monitoring.voltmeter.label["Voltmeter 3"] == 3
+        @test monitoring.voltmeter.magnitude.status[3] == 1
     end
 
     @testset "Ammeter Macro" begin
         @ammeter(label = "Ammeter ?", varianceFrom = 1e-2, varianceTo = 1e-3)
         @ammeter(statusFrom = 1, statusTo = 0, noise = true)
 
-        addAmmeter!(system, device; from = "Branch 1", magnitude = 1.0, status = 0)
-        @test device.ammeter.label["Ammeter 1"] == 1
-        @test device.ammeter.magnitude.mean[1] != 1.0
-        @test device.ammeter.magnitude.variance[1] == 1e-2
-        @test device.ammeter.magnitude.status[1] == 0
+        addAmmeter!(monitoring; from = "Branch 1", magnitude = 1.0, status = 0)
+        @test monitoring.ammeter.label["Ammeter 1"] == 1
+        @test monitoring.ammeter.magnitude.mean[1] != 1.0
+        @test monitoring.ammeter.magnitude.variance[1] == 1e-2
+        @test monitoring.ammeter.magnitude.status[1] == 0
 
-        addAmmeter!(system, device; from = "Branch 1", magnitude = 3.0, variance = 1e-4, noise = false)
-        @test device.ammeter.label["Ammeter 2"] == 2
-        @test device.ammeter.magnitude.mean[2] == 3.0
-        @test device.ammeter.magnitude.variance[2] == 1e-4
-        @test device.ammeter.magnitude.status[2] == 1
+        addAmmeter!(monitoring; from = "Branch 1", magnitude = 3.0, variance = 1e-4, noise = false)
+        @test monitoring.ammeter.label["Ammeter 2"] == 2
+        @test monitoring.ammeter.magnitude.mean[2] == 3.0
+        @test monitoring.ammeter.magnitude.variance[2] == 1e-4
+        @test monitoring.ammeter.magnitude.status[2] == 1
 
-        addAmmeter!(system, device; to = "Branch 1", magnitude = 2.0, status = 1)
-        @test device.ammeter.label["Ammeter 3"] == 3
-        @test device.ammeter.magnitude.mean[3] != 2.0
-        @test device.ammeter.magnitude.variance[3] == 1e-3
-        @test device.ammeter.magnitude.status[3] == 1
+        addAmmeter!(monitoring; to = "Branch 1", magnitude = 2.0, status = 1)
+        @test monitoring.ammeter.label["Ammeter 3"] == 3
+        @test monitoring.ammeter.magnitude.mean[3] != 2.0
+        @test monitoring.ammeter.magnitude.variance[3] == 1e-3
+        @test monitoring.ammeter.magnitude.status[3] == 1
 
-        addAmmeter!(system, device;to = "Branch 1", magnitude = 4.0, variance = 1e-5, noise = false)
-        @test device.ammeter.label["Ammeter 4"] == 4
-        @test device.ammeter.magnitude.mean[4] == 4.0
-        @test device.ammeter.magnitude.variance[4] == 1e-5
-        @test device.ammeter.magnitude.status[4] == 0
+        addAmmeter!(monitoring; to = "Branch 1", magnitude = 4.0, variance = 1e-5, noise = false)
+        @test monitoring.ammeter.label["Ammeter 4"] == 4
+        @test monitoring.ammeter.magnitude.mean[4] == 4.0
+        @test monitoring.ammeter.magnitude.variance[4] == 1e-5
+        @test monitoring.ammeter.magnitude.status[4] == 0
     end
 
     @testset "Wattmeter Macro" begin
         @wattmeter(label = "Wattmeter ?", varianceBus = 1e-1, varianceFrom = 1e-2, varianceTo = 1e-3)
         @wattmeter(statusBus = 0, statusFrom = 1, statusTo = 0, noise = true)
 
-        addWattmeter!(system, device; bus = "Bus 1", active = 1.0, status = 1)
-        @test device.wattmeter.label["Wattmeter 1"] == 1
-        @test device.wattmeter.active.mean[1] != 1.0
-        @test device.wattmeter.active.variance[1] == 1e-1
-        @test device.wattmeter.active.status[1] == 1
+        addWattmeter!(monitoring; bus = "Bus 1", active = 1.0, status = 1)
+        @test monitoring.wattmeter.label["Wattmeter 1"] == 1
+        @test monitoring.wattmeter.active.mean[1] != 1.0
+        @test monitoring.wattmeter.active.variance[1] == 1e-1
+        @test monitoring.wattmeter.active.status[1] == 1
 
-        addWattmeter!(system, device; bus = "Bus 1", active = 2.0, variance = 1, noise = false)
-        @test device.wattmeter.label["Wattmeter 2"] == 2
-        @test device.wattmeter.active.mean[2] == 2.0
-        @test device.wattmeter.active.variance[2] == 1
-        @test device.wattmeter.active.status[2] == 0
+        addWattmeter!(monitoring; bus = "Bus 1", active = 2.0, variance = 1, noise = false)
+        @test monitoring.wattmeter.label["Wattmeter 2"] == 2
+        @test monitoring.wattmeter.active.mean[2] == 2.0
+        @test monitoring.wattmeter.active.variance[2] == 1
+        @test monitoring.wattmeter.active.status[2] == 0
 
-        addWattmeter!(system, device; from = "Branch 1", active = 5.0, status = 0)
-        @test device.wattmeter.label["Wattmeter 3"] == 3
-        @test device.wattmeter.active.mean[3] != 5.0
-        @test device.wattmeter.active.variance[3] == 1e-2
-        @test device.wattmeter.active.status[3] == 0
+        addWattmeter!(monitoring; from = "Branch 1", active = 5.0, status = 0)
+        @test monitoring.wattmeter.label["Wattmeter 3"] == 3
+        @test monitoring.wattmeter.active.mean[3] != 5.0
+        @test monitoring.wattmeter.active.variance[3] == 1e-2
+        @test monitoring.wattmeter.active.status[3] == 0
 
-        addWattmeter!(system, device; from = "Branch 1", active = 6.0, variance = 2, noise = false)
-        @test device.wattmeter.label["Wattmeter 4"] == 4
-        @test device.wattmeter.active.mean[4] == 6.0
-        @test device.wattmeter.active.variance[4] == 2
-        @test device.wattmeter.active.status[4] == 1
+        addWattmeter!(monitoring; from = "Branch 1", active = 6.0, variance = 2, noise = false)
+        @test monitoring.wattmeter.label["Wattmeter 4"] == 4
+        @test monitoring.wattmeter.active.mean[4] == 6.0
+        @test monitoring.wattmeter.active.variance[4] == 2
+        @test monitoring.wattmeter.active.status[4] == 1
 
-        addWattmeter!(system, device; to = "Branch 1", active = 6.0, status = 1)
-        @test device.wattmeter.label["Wattmeter 5"] == 5
-        @test device.wattmeter.active.mean[5] != 6.0
-        @test device.wattmeter.active.variance[5] == 1e-3
-        @test device.wattmeter.active.status[5] == 1
+        addWattmeter!(monitoring; to = "Branch 1", active = 6.0, status = 1)
+        @test monitoring.wattmeter.label["Wattmeter 5"] == 5
+        @test monitoring.wattmeter.active.mean[5] != 6.0
+        @test monitoring.wattmeter.active.variance[5] == 1e-3
+        @test monitoring.wattmeter.active.status[5] == 1
 
-        addWattmeter!(system, device; to = "Branch 1", active = 7.0, variance = 3, noise = false)
-        @test device.wattmeter.label["Wattmeter 6"] == 6
-        @test device.wattmeter.active.mean[6] == 7.0
-        @test device.wattmeter.active.variance[6] == 3
-        @test device.wattmeter.active.status[6] == 0
+        addWattmeter!(monitoring; to = "Branch 1", active = 7.0, variance = 3, noise = false)
+        @test monitoring.wattmeter.label["Wattmeter 6"] == 6
+        @test monitoring.wattmeter.active.mean[6] == 7.0
+        @test monitoring.wattmeter.active.variance[6] == 3
+        @test monitoring.wattmeter.active.status[6] == 0
     end
 
     @testset "Varmeter Macro" begin
         @varmeter(label = "Varmeter ?", varianceBus = 1, varianceFrom = 2)
         @varmeter(varianceTo = 3, statusBus = 1, statusFrom = 0, statusTo = 1, noise = true)
 
-        addVarmeter!(system, device; bus = "Bus 1", reactive = 1.1, status = 0)
-        @test device.varmeter.label["Varmeter 1"] == 1
-        @test device.varmeter.reactive.mean[1] != 1.1
-        @test device.varmeter.reactive.variance[1] == 1
-        @test device.varmeter.reactive.status[1] == 0
+        addVarmeter!(monitoring; bus = "Bus 1", reactive = 1.1, status = 0)
+        @test monitoring.varmeter.label["Varmeter 1"] == 1
+        @test monitoring.varmeter.reactive.mean[1] != 1.1
+        @test monitoring.varmeter.reactive.variance[1] == 1
+        @test monitoring.varmeter.reactive.status[1] == 0
 
-        addVarmeter!(system, device; bus = "Bus 1", reactive = 2.1, variance = 10, noise = false)
-        @test device.varmeter.label["Varmeter 2"] == 2
-        @test device.varmeter.reactive.mean[2] == 2.1
-        @test device.varmeter.reactive.variance[2] == 10
-        @test device.varmeter.reactive.status[2] == 1
+        addVarmeter!(monitoring; bus = "Bus 1", reactive = 2.1, variance = 10, noise = false)
+        @test monitoring.varmeter.label["Varmeter 2"] == 2
+        @test monitoring.varmeter.reactive.mean[2] == 2.1
+        @test monitoring.varmeter.reactive.variance[2] == 10
+        @test monitoring.varmeter.reactive.status[2] == 1
 
-        addVarmeter!(system, device; from = "Branch 1", reactive = 5.1, status = 1)
-        @test device.varmeter.label["Varmeter 3"] == 3
-        @test device.varmeter.reactive.mean[3] != 5.1
-        @test device.varmeter.reactive.variance[3] == 2
-        @test device.varmeter.reactive.status[3] == 1
+        addVarmeter!(monitoring; from = "Branch 1", reactive = 5.1, status = 1)
+        @test monitoring.varmeter.label["Varmeter 3"] == 3
+        @test monitoring.varmeter.reactive.mean[3] != 5.1
+        @test monitoring.varmeter.reactive.variance[3] == 2
+        @test monitoring.varmeter.reactive.status[3] == 1
 
-        addVarmeter!(system, device; from = "Branch 1", reactive = 6.1, variance = 20, noise = false)
-        @test device.varmeter.label["Varmeter 4"] == 4
-        @test device.varmeter.reactive.mean[4] == 6.1
-        @test device.varmeter.reactive.variance[4] == 20
-        @test device.varmeter.reactive.status[4] == 0
+        addVarmeter!(monitoring; from = "Branch 1", reactive = 6.1, variance = 20, noise = false)
+        @test monitoring.varmeter.label["Varmeter 4"] == 4
+        @test monitoring.varmeter.reactive.mean[4] == 6.1
+        @test monitoring.varmeter.reactive.variance[4] == 20
+        @test monitoring.varmeter.reactive.status[4] == 0
 
-        addVarmeter!(system, device; to = "Branch 1", reactive = 6.1, status = 0)
-        @test device.varmeter.label["Varmeter 5"] == 5
-        @test device.varmeter.reactive.mean[5] != 6.1
-        @test device.varmeter.reactive.variance[5] == 3
-        @test device.varmeter.reactive.status[5] == 0
+        addVarmeter!(monitoring; to = "Branch 1", reactive = 6.1, status = 0)
+        @test monitoring.varmeter.label["Varmeter 5"] == 5
+        @test monitoring.varmeter.reactive.mean[5] != 6.1
+        @test monitoring.varmeter.reactive.variance[5] == 3
+        @test monitoring.varmeter.reactive.status[5] == 0
 
-        addVarmeter!(system, device; to = "Branch 1", reactive = 7.1, variance = 30, noise = false)
-        @test device.varmeter.label["Varmeter 6"] == 6
-        @test device.varmeter.reactive.mean[6] == 7.1
-        @test device.varmeter.reactive.variance[6] == 30
-        @test device.varmeter.reactive.status[6] == 1
+        addVarmeter!(monitoring; to = "Branch 1", reactive = 7.1, variance = 30, noise = false)
+        @test monitoring.varmeter.label["Varmeter 6"] == 6
+        @test monitoring.varmeter.reactive.mean[6] == 7.1
+        @test monitoring.varmeter.reactive.variance[6] == 30
+        @test monitoring.varmeter.reactive.status[6] == 1
     end
 
     @testset "PMU Macro" begin
@@ -632,83 +631,81 @@ end
         @pmu(varianceMagnitudeFrom = 30, varianceAngleFrom = 40, statusFrom = 1)
         @pmu(varianceMagnitudeTo = 50, varianceAngleTo = 60, statusTo = 0)
 
-        addPmu!(system, device; bus = "Bus 1", magnitude = 2, angle = 1, status = 1)
-        @test device.pmu.label["PMU 1"] == 1
-        @test device.pmu.magnitude.mean[1] != 2
-        @test device.pmu.magnitude.variance[1] == 10
-        @test device.pmu.magnitude.status[1] == 1
-        @test device.pmu.angle.mean[1] != 1
-        @test device.pmu.angle.variance[1] == 20
-        @test device.pmu.angle.status[1] == 1
-        @test device.pmu.layout.polar[1] == true
-        @test device.pmu.layout.correlated[1] == true
+        addPmu!(monitoring; bus = "Bus 1", magnitude = 2, angle = 1, status = 1)
+        @test monitoring.pmu.label["PMU 1"] == 1
+        @test monitoring.pmu.magnitude.mean[1] != 2
+        @test monitoring.pmu.magnitude.variance[1] == 10
+        @test monitoring.pmu.magnitude.status[1] == 1
+        @test monitoring.pmu.angle.mean[1] != 1
+        @test monitoring.pmu.angle.variance[1] == 20
+        @test monitoring.pmu.angle.status[1] == 1
+        @test monitoring.pmu.layout.polar[1] == true
+        @test monitoring.pmu.layout.correlated[1] == true
 
         addPmu!(
-            system, device;
+            monitoring;
             bus = "Bus 1", noise = false, polar = false, correlated = false,
             magnitude = 3, varianceMagnitude = 1e-1, angle = 4, varianceAngle = 1e-2
         )
-        @test device.pmu.label["PMU 2"] == 2
-        @test device.pmu.magnitude.mean[2] == 3
-        @test device.pmu.magnitude.variance[2] == 1e-1
-        @test device.pmu.magnitude.status[2] == 0
-        @test device.pmu.angle.mean[2] == 4
-        @test device.pmu.angle.variance[2] == 1e-2
-        @test device.pmu.angle.status[2] == 0
-        @test device.pmu.layout.polar[2] == false
-        @test device.pmu.layout.correlated[2] == false
+        @test monitoring.pmu.label["PMU 2"] == 2
+        @test monitoring.pmu.magnitude.mean[2] == 3
+        @test monitoring.pmu.magnitude.variance[2] == 1e-1
+        @test monitoring.pmu.magnitude.status[2] == 0
+        @test monitoring.pmu.angle.mean[2] == 4
+        @test monitoring.pmu.angle.variance[2] == 1e-2
+        @test monitoring.pmu.angle.status[2] == 0
+        @test monitoring.pmu.layout.polar[2] == false
+        @test monitoring.pmu.layout.correlated[2] == false
 
-        addPmu!(system, device; from = "Branch 1", magnitude = 5, angle = 6, status = 0)
-        @test device.pmu.label["PMU 3"] == 3
-        @test device.pmu.magnitude.mean[3] != 5
-        @test device.pmu.magnitude.variance[3] == 30
-        @test device.pmu.magnitude.status[3] == 0
-        @test device.pmu.angle.mean[3] != 6
-        @test device.pmu.angle.variance[3] == 40
-        @test device.pmu.angle.status[3] == 0
-        @test device.pmu.layout.polar[3] == true
-        @test device.pmu.layout.correlated[3] == true
-
-        addPmu!(
-            system, device; from = "Branch 1", noise = false, polar = false,
-            correlated = false, magnitude = 7, varianceMagnitude = 2e-1,
-            angle = 8, varianceAngle = 2e-2
-        )
-        @test device.pmu.label["PMU 4"] == 4
-        @test device.pmu.magnitude.mean[4] == 7
-        @test device.pmu.magnitude.variance[4] == 2e-1
-        @test device.pmu.magnitude.status[4] == 1
-        @test device.pmu.angle.mean[4] == 8
-        @test device.pmu.angle.variance[4] == 2e-2
-        @test device.pmu.angle.status[4] == 1
-        @test device.pmu.layout.polar[4] == false
-        @test device.pmu.layout.correlated[4] == false
-
-        addPmu!(system, device; to = "Branch 1", magnitude = 500, angle = 600)
-        @test device.pmu.label["PMU 5"] == 5
-        @test device.pmu.magnitude.mean[5] != 500
-        @test device.pmu.magnitude.variance[5] == 50
-        @test device.pmu.magnitude.status[5] == 0
-        @test device.pmu.angle.mean[5] != 600
-        @test device.pmu.angle.variance[5] == 60
-        @test device.pmu.angle.status[5] == 0
-        @test device.pmu.layout.polar[5] == true
-        @test device.pmu.layout.correlated[5] == true
+        addPmu!(monitoring; from = "Branch 1", magnitude = 5, angle = 6, status = 0)
+        @test monitoring.pmu.label["PMU 3"] == 3
+        @test monitoring.pmu.magnitude.mean[3] != 5
+        @test monitoring.pmu.magnitude.variance[3] == 30
+        @test monitoring.pmu.magnitude.status[3] == 0
+        @test monitoring.pmu.angle.mean[3] != 6
+        @test monitoring.pmu.angle.variance[3] == 40
+        @test monitoring.pmu.angle.status[3] == 0
+        @test monitoring.pmu.layout.polar[3] == true
+        @test monitoring.pmu.layout.correlated[3] == true
 
         addPmu!(
-            system, device; to = "Branch 1", noise = false, polar = false,
-            correlated = false, magnitude = 9, varianceMagnitude = 3e-1,
-            angle = 10, varianceAngle = 3e-2, status = 1
+            monitoring; from = "Branch 1", noise = false, polar = false, correlated = false,
+            magnitude = 7, varianceMagnitude = 2e-1, angle = 8, varianceAngle = 2e-2
         )
-        @test device.pmu.label["PMU 6"] == 6
-        @test device.pmu.magnitude.mean[6] == 9
-        @test device.pmu.magnitude.variance[6] == 3e-1
-        @test device.pmu.magnitude.status[6] == 1
-        @test device.pmu.angle.mean[6] == 10
-        @test device.pmu.angle.variance[6] == 3e-2
-        @test device.pmu.angle.status[6] == 1
-        @test device.pmu.layout.polar[6] == false
-        @test device.pmu.layout.correlated[6] == false
+        @test monitoring.pmu.label["PMU 4"] == 4
+        @test monitoring.pmu.magnitude.mean[4] == 7
+        @test monitoring.pmu.magnitude.variance[4] == 2e-1
+        @test monitoring.pmu.magnitude.status[4] == 1
+        @test monitoring.pmu.angle.mean[4] == 8
+        @test monitoring.pmu.angle.variance[4] == 2e-2
+        @test monitoring.pmu.angle.status[4] == 1
+        @test monitoring.pmu.layout.polar[4] == false
+        @test monitoring.pmu.layout.correlated[4] == false
+
+        addPmu!(monitoring; to = "Branch 1", magnitude = 500, angle = 600)
+        @test monitoring.pmu.label["PMU 5"] == 5
+        @test monitoring.pmu.magnitude.mean[5] != 500
+        @test monitoring.pmu.magnitude.variance[5] == 50
+        @test monitoring.pmu.magnitude.status[5] == 0
+        @test monitoring.pmu.angle.mean[5] != 600
+        @test monitoring.pmu.angle.variance[5] == 60
+        @test monitoring.pmu.angle.status[5] == 0
+        @test monitoring.pmu.layout.polar[5] == true
+        @test monitoring.pmu.layout.correlated[5] == true
+
+        addPmu!(
+            monitoring; to = "Branch 1", noise = false, polar = false, correlated = false,
+            magnitude = 9, varianceMagnitude = 3e-1, angle = 10, varianceAngle = 3e-2, status = 1
+        )
+        @test monitoring.pmu.label["PMU 6"] == 6
+        @test monitoring.pmu.magnitude.mean[6] == 9
+        @test monitoring.pmu.magnitude.variance[6] == 3e-1
+        @test monitoring.pmu.magnitude.status[6] == 1
+        @test monitoring.pmu.angle.mean[6] == 10
+        @test monitoring.pmu.angle.variance[6] == 3e-2
+        @test monitoring.pmu.angle.status[6] == 1
+        @test monitoring.pmu.layout.polar[6] == false
+        @test monitoring.pmu.layout.correlated[6] == false
     end
 end
 
@@ -722,7 +719,7 @@ end
     @current(A, deg)
 
     system = powerSystem()
-    device = measurement()
+    monitoring = measurement(system)
     @base(system, MVA, kV)
 
     addBus!(system; label = "Bus 1", base = 100)
@@ -732,37 +729,34 @@ end
     @testset "Voltmeter Macro" begin
         @voltmeter(label = "Voltmeter ?", variance = 1 / sqrt(3))
 
-        addVoltmeter!(system, device; bus = "Bus 1", magnitude = 100 / sqrt(3))
-        @test device.voltmeter.magnitude.mean[1] ≈ 1.0
-        @test device.voltmeter.magnitude.variance[1] ≈ 1e-2
+        addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 100 / sqrt(3))
+        @test monitoring.voltmeter.magnitude.mean[1] ≈ 1.0
+        @test monitoring.voltmeter.magnitude.variance[1] ≈ 1e-2
     end
 
     @testset "Ammeter Macro" begin
         @ammeter(label = "Ammeter ?")
         @ammeter(varianceFrom = 1e-2 * ((100 * 10^6) / (sqrt(3) * 100 * 10^3)))
 
-        addAmmeter!(
-            system, device;
-            from = "Branch 1", magnitude = (100 * 10^6) / (sqrt(3) * 100 * 10^3)
-        )
-        @test device.ammeter.magnitude.mean[1] ≈ 1.0
-        @test device.ammeter.magnitude.variance[1] ≈ 1e-2
+        addAmmeter!(monitoring; from = "Branch 1", magnitude = (100 * 10^6) / (sqrt(3) * 100 * 10^3))
+        @test monitoring.ammeter.magnitude.mean[1] ≈ 1.0
+        @test monitoring.ammeter.magnitude.variance[1] ≈ 1e-2
     end
 
     @testset "Wattmeter Macro" begin
         @wattmeter(label = "Wattmeter ?", varianceBus = 10)
 
-        addWattmeter!(system, device; bus = "Bus 1", active = 100)
-        @test device.wattmeter.active.mean[1] == 1.0
-        @test device.wattmeter.active.variance[1] == 1e-1
+        addWattmeter!(monitoring; bus = "Bus 1", active = 100)
+        @test monitoring.wattmeter.active.mean[1] == 1.0
+        @test monitoring.wattmeter.active.variance[1] == 1e-1
     end
 
     @testset "Varmeter Macro" begin
         @varmeter(label = "Varmeter ?", varianceBus = 100)
 
-        addVarmeter!(system, device; bus = "Bus 1", reactive = 110)
-        @test device.varmeter.reactive.mean[1] == 1.1
-        @test device.varmeter.reactive.variance[1] == 1
+        addVarmeter!(monitoring; bus = "Bus 1", reactive = 110)
+        @test monitoring.varmeter.reactive.mean[1] == 1.1
+        @test monitoring.varmeter.reactive.variance[1] == 1
     end
 
     @testset "PMU Macro" begin
@@ -771,20 +765,20 @@ end
         @pmu(varianceMagnitudeFrom = 30 * ((100 * 10^6) / (sqrt(3) * 100 * 10^3)))
         @pmu(varianceAngleFrom = 40 * 180 / pi)
 
-        addPmu!(system, device; bus = "Bus 1", magnitude = 2e2 / sqrt(3), angle = 1 * 180 / pi)
-        @test device.pmu.magnitude.mean[1] ≈ 2
-        @test device.pmu.magnitude.variance[1] ≈ 10
-        @test device.pmu.angle.mean[1] == 1
-        @test device.pmu.angle.variance[1] == 20
+        addPmu!(monitoring; bus = "Bus 1", magnitude = 2e2 / sqrt(3), angle = 1 * 180 / pi)
+        @test monitoring.pmu.magnitude.mean[1] ≈ 2
+        @test monitoring.pmu.magnitude.variance[1] ≈ 10
+        @test monitoring.pmu.angle.mean[1] == 1
+        @test monitoring.pmu.angle.variance[1] == 20
 
         addPmu!(
-            system, device; from = "Branch 1",
+            monitoring; from = "Branch 1",
             magnitude = 5 * ((100 * 10^6) / (sqrt(3) * 100 * 10^3)), angle = 6 * 180 / pi
         )
-        @test device.pmu.magnitude.mean[2] ≈ 5
-        @test device.pmu.magnitude.variance[2] ≈ 30
-        @test device.pmu.angle.mean[2] ≈ 6
-        @test device.pmu.angle.variance[2] ≈ 40
+        @test monitoring.pmu.magnitude.mean[2] ≈ 5
+        @test monitoring.pmu.magnitude.variance[2] ≈ 30
+        @test monitoring.pmu.angle.mean[2] ≈ 6
+        @test monitoring.pmu.angle.variance[2] ≈ 40
     end
 end
 
@@ -792,7 +786,7 @@ end
     @default(unit)
     @default(template)
     system = powerSystem()
-    device = measurement()
+    monitoring = measurement(system)
 
     addBus!(system; label = "Bus 1", type = 3)
     addBus!(system; label = "Bus 2")
@@ -800,77 +794,77 @@ end
     addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.2)
 
     analysis = newtonRaphson(system)
-    powerFlow!(system, analysis)
+    powerFlow!(analysis)
 
-    addVoltmeter!(system, device; label = "Volt 1", bus = "Bus 1", magnitude = 1)
-    addAmmeter!(system, device; label = "Amm 1", from = "Branch 1", magnitude = 1)
-    addWattmeter!(system, device; label = "Watt 1", from = "Branch 1", active = 1)
-    addVarmeter!(system, device; label = "Var 1", from = "Branch 1", reactive = 1)
-    addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 1, angle = 1)
+    addVoltmeter!(monitoring; label = "Volt 1", bus = "Bus 1", magnitude = 1)
+    addAmmeter!(monitoring; label = "Amm 1", from = "Branch 1", magnitude = 1)
+    addWattmeter!(monitoring; label = "Watt 1", from = "Branch 1", active = 1)
+    addVarmeter!(monitoring; label = "Var 1", from = "Branch 1", reactive = 1)
+    addPmu!(monitoring; label = "PMU 1", bus = "Bus 1", magnitude = 1, angle = 1)
 
     @testset "Voltmeter Errors" begin
         err = ErrorException(
             "The status 2 is not allowed; it should be in-service (1) or out-of-service (0)."
         )
-        @test_throws err addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1, status = 2)
+        @test_throws err addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 1, status = 2)
 
         err = ErrorException("The label Volt 1 is not unique.")
-        @test_throws err addVoltmeter!(system, device; label = "Volt 1", bus = "Bus 1", magnitude = 1)
+        @test_throws err addVoltmeter!(monitoring; label = "Volt 1", bus = "Bus 1", magnitude = 1)
 
         @test_throws ErrorException @eval @voltmeter(label = "Voltmeter ?", means = 1)
     end
 
     @testset "Ammeter Errors" begin
         err = ErrorException("The label Amm 1 is not unique.")
-        @test_throws err addAmmeter!(system, device; label = "Amm 1", from = "Branch 1", magnitude = 1)
+        @test_throws err addAmmeter!(monitoring; label = "Amm 1", from = "Branch 1", magnitude = 1)
 
         err = ErrorException("At least one of the location keywords must be provided.")
-        @test_throws err addAmmeter!(system, device; label = "Ammeter 1", magnitude = 1)
+        @test_throws err addAmmeter!(monitoring; label = "Ammeter 1", magnitude = 1)
 
         err = ErrorException("Concurrent location keyword definition is not allowed.")
-        @test_throws err addAmmeter!(system, device; from = "Branch 1", to = "Branch 1", magnitude = 1)
+        @test_throws err addAmmeter!(monitoring; from = "Branch 1", to = "Branch 1", magnitude = 1)
 
         err = ErrorException("The current values are missing.")
-        @test_throws err addAmmeter!(system, device, analysis)
+        @test_throws err addAmmeter!(monitoring, analysis)
 
         @test_throws ErrorException @eval @ammeter(label = "Ammeter ?", means = 1)
     end
 
     @testset "Wattmeter Errors" begin
         err = ErrorException("The label Watt 1 is not unique.")
-        @test_throws err addWattmeter!(system, device; label = "Watt 1", from = "Branch 1", active = 1)
+        @test_throws err addWattmeter!(monitoring; label = "Watt 1", from = "Branch 1", active = 1)
 
         err = ErrorException("Concurrent location keyword definition is not allowed.")
-        @test_throws err addWattmeter!(system, device; from = "Branch 1", to = "Branch 1", active = 1)
+        @test_throws err addWattmeter!(monitoring; from = "Branch 1", to = "Branch 1", active = 1)
 
         err = ErrorException("At least one of the location keywords must be provided.")
-        @test_throws err addWattmeter!(system, device; label = "Wattmeter 1", active = 1)
+        @test_throws err addWattmeter!(monitoring; label = "Wattmeter 1", active = 1)
 
         err = ErrorException("The power values are missing.")
-        @test_throws err addWattmeter!(system, device, analysis)
+        @test_throws err addWattmeter!(monitoring, analysis)
 
         @test_throws ErrorException @eval @wattmeter(label = "Wattmeter ?", means = 1)
     end
 
     @testset "Varmeter Errors" begin
         err = ErrorException("The label Var 1 is not unique.")
-        @test_throws err addVarmeter!(system, device; label = "Var 1", from = "Branch 1", reactive = 1)
+        @test_throws err addVarmeter!(monitoring; label = "Var 1", from = "Branch 1", reactive = 1)
 
         err = ErrorException("Concurrent location keyword definition is not allowed.")
-        @test_throws err addVarmeter!(system, device; from = "Branch 1", to = "Branch 1", bus = "Bus 1", reactive = 1)
+        @test_throws err addVarmeter!(monitoring; from = "Branch 1", to = "Branch 1", bus = "Bus 1", reactive = 1)
 
         err = ErrorException("The power values are missing.")
-        @test_throws err addVarmeter!(system, device, analysis)
+        @test_throws err addVarmeter!(monitoring, analysis)
 
         @test_throws ErrorException @eval @varmeter(label = "Varmeter ?", means = 1)
     end
 
     @testset "PMU Errors" begin
         err = ErrorException("The label PMU 1 is not unique.")
-        @test_throws err addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 1, angle = 1)
+        @test_throws err addPmu!(monitoring; label = "PMU 1", bus = "Bus 1", magnitude = 1, angle = 1)
 
         err = ErrorException("The current values are missing.")
-        @test_throws err addPmu!(system, device, analysis)
+        @test_throws err addPmu!( monitoring, analysis)
 
         @test_throws ErrorException @eval @pmu(label = "PMU ?", means = 1)
     end
@@ -880,15 +874,15 @@ end
             "The total number of available devices is less than the " *
             "requested number for a status change."
         )
-        @test_throws err status!(system, device; inservice = 12)
-        @test_throws err statusVoltmeter!(system, device; inservice = 12)
-        @test_throws err statusPmu!(system, device; inservice = 12)
-        @test_throws err statusAmmeter!(system, device; inserviceFrom = 12)
-        @test_throws err statusPmu!(system, device; inserviceBus = 12)
+        @test_throws err status!(monitoring; inservice = 12)
+        @test_throws err statusVoltmeter!(monitoring; inservice = 12)
+        @test_throws err statusPmu!(monitoring; inservice = 12)
+        @test_throws err statusAmmeter!(monitoring; inserviceFrom = 12)
+        @test_throws err statusPmu!(monitoring; inserviceBus = 12)
     end
 
     @testset "Load Errors" begin
         err = DomainError(".m", "The extension .m is not supported.")
-        @test_throws err measurement("case14.m")
+        @test_throws err measurement(system, "case14.m")
     end
 end

@@ -3,136 +3,181 @@
     @default(template)
     @config(label = Integer)
 
-    ########## First Pass ##########
-    system1 = powerSystem(path * "case14optimal.m")
+    system = powerSystem(path * "case14optimal.m")
+    opf = acOptimalPowerFlow(system, Ipopt.Optimizer)
 
-    updateBus!(system1; label = 1, type = 1, active = 0.15, reactive = 0.2, conductance = 0.16)
-    updateBus!(system1; label = 1, angle = -0.1)
-    updateBus!(system1; label = 2, type = 3, angle = -0.01, magnitude = 0.99, minMagnitude = 0.98)
+    @testset "Buses" begin
+        updateBus!(opf; label = 1, active = 0.15, reactive = 0.2, conductance = 0.16)
+        testReusing(opf)
 
-    addBranch!(system1; label = 21, from = 5, to = 7, reactance = 0.25, turnsRatio = 0.98)
-    addBranch!(system1; label = 22, from = 4, to = 5, reactance = 0.25, type = 2)
+        updateBus!(opf; label = 1, type = 1, angle = -0.1)
+        updateBus!(opf; label = 2, type = 3, angle = -0.01, magnitude = 0.99, minMagnitude = 0.98)
+        testReusing(opf)
 
-    updateBranch!(system1; label = 21, shiftAngle = -0.1, status = 0)
-    updateBranch!(system1; label = 21, status = 1, reactance = 0.35, maxDiffAngle = 0.22)
-    updateBranch!(system1; label = 22, minToBus = -0.18, maxToBus = 0.18, maxDiffAngle = 0.15)
-    updateBranch!(system1; label = 22, minToBus = -0.18, maxToBus = 0.18, maxDiffAngle = 0.15)
-    updateBranch!(system1; label = 5, status = 0)
+        updateBus!(opf; label = 14, minMagnitude = 0.95)
+        testReusing(opf)
 
-    addGenerator!(system1; label = 9, bus = 3, active = 0.3, minActive = 0.0, maxActive = 0.5)
-    addGenerator!(system1; label = 10, bus = 3, active = 0.3, maxActive = 1.0, maxReactive = Inf)
+        updateBus!(opf; label = 1, conductance = 0.06, susceptance = 0.8, angle = -0.01)
+        testReusing(opf)
 
-    updateGenerator!(system1; label = 9, maxReactive = Inf, status = 0)
-    updateGenerator!(system1; label = 9, status = 1, maxActive = 0.8, maxReactive = 0.8)
-    updateGenerator!(system1; label = 10, status = 0, maxActive = 0.8)
-    updateGenerator!(system1; label = 9, status = 0)
-
-    cost!(system1; generator = 10, active = 2, polynomial = [452.2; 31; 18; 5])
-    cost!(system1; generator = 9, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system1; generator = 5, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system1; generator = 5, active = 2, polynomial = [452.2; 31; 18; 5])
-    cost!(system1; generator = 5, active = 2, polynomial = [452.2; 31; 18])
-    cost!(system1; generator = 5, active = 2, polynomial = [452.2; 31; 18; 6])
-    cost!(system1; generator = 4, reactive = 2, polynomial = [452.2; 31; 18; 5])
-    cost!(system1; generator = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-
-    acModel!(system1)
-    opf1 = acOptimalPowerFlow(system1, Ipopt.Optimizer)
-    powerFlow!(system1, opf1; power = true)
-
-    # Reuse AC Optimal Power Flow Model
-    system2 = powerSystem(path * "case14optimal.m")
-    acModel!(system2)
-    opf2 = acOptimalPowerFlow(system2, Ipopt.Optimizer)
-
-    updateBus!(system2, opf2; label = 1, type = 1, active = 0.15, reactive = 0.2, conductance = 0.16)
-    updateBus!(system2, opf2; label = 1, angle = -0.1)
-    updateBus!(system2, opf2; label = 2, type = 3, angle = -0.01, magnitude = 0.99, minMagnitude = 0.98)
-
-    addBranch!(system2, opf2; label = 21, from = 5, to = 7, reactance = 0.25, turnsRatio = 0.98)
-    addBranch!(system2, opf2; label = 22, from = 4, to = 5, reactance = 0.25, type = 2)
-
-    updateBranch!(system2, opf2; label = 21, shiftAngle = -0.1, status = 0)
-    updateBranch!(system2, opf2; label = 21, status = 1, reactance = 0.35, maxDiffAngle = 0.22)
-    updateBranch!(system2, opf2; label = 22, minToBus = -0.18, maxToBus = 0.18, maxDiffAngle = 0.15)
-    updateBranch!(system2, opf2; label = 22, minToBus = -0.18, maxToBus = 0.18, maxDiffAngle = 0.15)
-    updateBranch!(system2, opf2; label = 5, status = 0)
-
-    addGenerator!(system2, opf2; label = 9, bus = 3, active = 0.3, minActive = 0.0, maxActive = 0.5)
-    addGenerator!(system2, opf2; label = 10, bus = 3, active = 0.3, maxActive = 1.0, maxReactive = Inf)
-
-    updateGenerator!(system2, opf2; label = 9, maxReactive = Inf, status = 0)
-    updateGenerator!(system2, opf2; label = 9, status = 1, maxActive = 0.8, maxReactive = 0.8)
-    updateGenerator!(system2, opf2; label = 10, status = 0, maxActive = 0.8)
-    updateGenerator!(system2, opf2; label = 9, status = 0)
-
-    cost!(system2, opf2; generator = 5, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system2, opf2; generator = 10, active = 2, polynomial = [452.2; 31; 18; 5])
-    cost!(system2, opf2; generator = 5, active = 2, polynomial = [452.2; 31; 18; 5])
-    cost!(system2, opf2; generator = 5, active = 2, polynomial = [452.2; 31; 18])
-    cost!(system2, opf2; generator = 5, active = 2, polynomial = [452.2; 31; 18])
-    cost!(system2, opf2; generator = 5, active = 2, polynomial = [452.2; 31; 18; 6])
-    cost!(system2, opf2; generator = 4, reactive = 2, polynomial = [452.2; 31; 18; 5])
-    cost!(system2, opf2; generator = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-
-    powerFlow!(system2, opf2; power = true)
-
-    @testset "First Pass" begin
-        compstruct(opf1.voltage, opf2.voltage; atol = 1e-10)
-        compstruct(opf1.power, opf2.power; atol = 1e-10)
-        @test objective_value(opf1.method.jump) ≈ objective_value(opf2.method.jump)
-
-        for list in list_of_constraint_types(opf1.method.jump)
-            @test num_constraints(opf1.method.jump, list[1], list[2]) ==
-                num_constraints(opf2.method.jump, list[1], list[2])
-        end
+        updateBus!(opf; label = 1, type = 1)
+        updateBus!(opf; label = 2, type = 3)
+        testReusing(opf)
     end
 
-    ########## Second Pass ##########
-    updateBus!(system1; label = 1, type = 1, conductance = 0.06, susceptance = 0.8, angle = -0.01)
+    @testset "Branches" begin
+        addBranch!(opf; label = 21, from = 5, to = 7, reactance = 0.25, turnsRatio = 0.98)
+        testReusing(opf)
 
-    updateBranch!(system1; label = 22, reactance = 0.35, minFromBus = -0.22, maxFromBus = 0.22)
-    updateBranch!(system1; label = 22, minToBus = -0.22, maxToBus = 0.22)
-    updateBranch!(system1; label = 21, status = 0)
+        addBranch!(opf; label = 22, from = 4, to = 5, reactance = 0.25, type = 2)
+        testReusing(opf)
 
-    addGenerator!(system1; label = 11, bus = 14, active = 0.3, minActive = 0.0, maxActive = 0.5)
-    addGenerator!(system1; label = 12, bus = 14, active = 0.3, minActive = 0.0, maxActive = 0.5)
+        addBranch!(opf; label = 23, from = 2, to = 3, reactance = 0.25, status = 0)
+        testReusing(opf)
 
-    cost!(system1; generator = 11, active = 2, polynomial = [165.0])
-    cost!(system1; generator = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system1; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
+        addBranch!(opf; label = 24, from = 10, to = 11, reactance = 0.25, maxDiffAngle = 0.2)
+        testReusing(opf)
 
-    acModel!(system1)
-    analysis = acOptimalPowerFlow(system1, Ipopt.Optimizer)
-    opf1 = acOptimalPowerFlow(system1, Ipopt.Optimizer)
-    powerFlow!(system1, opf1; power = true)
+        updateBranch!(opf; label = 21, shiftAngle = -0.1, status = 0)
+        testReusing(opf)
 
-    # Reuse AC Optimal Power Flow Model
-    updateBus!(system2, opf2; label = 1, type = 1, conductance = 0.06, susceptance = 0.8, angle = -0.01)
+        updateBranch!(opf; label = 21, status = 1, reactance = 0.35, maxDiffAngle = 0.22)
+        testReusing(opf)
 
-    updateBranch!(system2, opf2; label = 22, reactance = 0.35, minFromBus = -0.22, maxFromBus = 0.22)
-    updateBranch!(system2, opf2; label = 22, minToBus = -0.22, maxToBus = 0.22)
-    updateBranch!(system2, opf2; label = 21, status = 0)
+        updateBranch!(opf; label = 22, minToBus = -0.18, maxToBus = 0.18, maxDiffAngle = 0.15)
+        testReusing(opf)
 
-    addGenerator!(system2, opf2; label = 11, bus = 14, active = 0.3, minActive = 0.0, maxActive = 0.5)
-    addGenerator!(system2, opf2; label = 12, bus = 14, active = 0.3, minActive = 0.0, maxActive = 0.5)
+        updateBranch!(opf; label = 22, minToBus = -0.18, maxToBus = 0.18, maxDiffAngle = 0.15)
+        testReusing(opf)
 
-    cost!(system2, opf2; generator = 11, active = 2, polynomial = [165.0])
-    cost!(system2, opf2; generator = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system2, opf2; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
+        updateBranch!(opf; label = 21, status = 0)
+        testReusing(opf)
 
-    setInitialPoint!(system2, opf2)
-    powerFlow!(system2, opf2; power = true)
+        updateBranch!(opf; label = 22, reactance = 0.35, minFromBus = -0.22, maxFromBus = 0.22)
+        testReusing(opf)
 
-    @testset "Second Pass" begin
-        compstruct(opf1.voltage, opf2.voltage; atol = 1e-10)
-        compstruct(opf1.power, opf2.power; atol = 1e-10)
-        @test objective_value(opf1.method.jump) ≈ objective_value(opf2.method.jump)
+        updateBranch!(opf; label = 22, minToBus = -0.22, maxToBus = 0.22)
+        testReusing(opf)
 
-        for list in list_of_constraint_types(opf1.method.jump)
-            @test num_constraints(opf1.method.jump, list[1], list[2]) ==
-                num_constraints(opf2.method.jump, list[1], list[2])
-        end
+        updateBranch!(opf; label = 24, reactance = 0.21, minDiffAngle = -0.2)
+        testReusing(opf)
+
+        addBranch!(system; label = 25, from = 1, to = 2, reactance = 0.45, minFromBus = 0.0)
+        updateBranch!(opf; label = 25, maxFromBus = 0.1, type = 1)
+        testReusing(opf)
+
+        updateBranch!(system; label = 25, maxFromBus = 0.4, type = 3)
+        updateBranch!(opf; label = 25)
+        testReusing(opf)
+    end
+
+    @testset "Generators" begin
+        addGenerator!(opf; label = 9, bus = 3, active = 0.3, minActive = 0.0, maxActive = 0.5)
+        cost!(opf; generator = 9, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 9, status = 1)
+        testReusing(opf)
+
+        cost!(opf; generator = 9, active = 2, polynomial = [800.0; 200.0; 80.0])
+        testReusing(opf)
+
+        cost!(opf; generator = 9, active = 2, polynomial = [800.0; 200.0; 80.0; 30.0])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 9, status = 0)
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 9, status = 1)
+        testReusing(opf)
+
+        addGenerator!(opf; label = 10, bus = 7, active = 0.3, maxActive = 1.0, maxReactive = Inf)
+        cost!(opf; generator = 10, active = 2, polynomial = [452.2; 31; 18])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 10, maxActive = 0.5, status = 1)
+        cost!(opf; generator = 10, active = 1, piecewise = [10 12.3; 14.7 16.8; 18.1 19.2])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 10, status = 0)
+        cost!(opf; generator = 10, active = 2, polynomial = [400.0; 300.0; 10.0; 5.0])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 10, status = 1)
+        testReusing(opf)
+
+        addGenerator!(opf; label = 11, bus = 6, active = 0.3, maxReactive = Inf, status = 0)
+        cost!(opf; generator = 11, active = 2, polynomial = [452.2; 31; 18; 5])
+        testReusing(opf)
+
+        cost!(opf; generator = 11, active = 1, piecewise = [10 12.3; 14.7 16.8])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 11, status = 0)
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 11, status = 1)
+        testReusing(opf)
+
+        addGenerator!(opf; label = 12, bus = 5, active = 0.2, maxReactive = Inf, status = 0)
+        cost!(opf; generator = 12, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 12, maxReactive = Inf, status = 1)
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 12, status = 0, maxActive = 0.8, maxReactive = 0.8)
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 12, status = 1, maxActive = 0.8)
+        testReusing(opf)
+
+        addGenerator!(system; label = 13, bus = 6, active = 0.3, minActive = 0.0, maxActive = 0.5)
+        cost!(system; generator = 13, active = 1, piecewise = [10 12.3; 14.7 16.8])
+        updateGenerator!(opf; label = 13)
+        testReusing(opf)
+
+        updateGenerator!(system; label = 13, status = 0)
+        cost!(system; generator = 13, active = 1, polynomial = [452.2; 31; 18; 5])
+        updateGenerator!(opf; label = 13)
+        testReusing(opf)
+
+        updateGenerator!(system; label = 13, status = 1)
+        cost!(system; generator = 13, active = 1, polynomial = [452.2; 31; 18])
+        updateGenerator!(opf; label = 13)
+        testReusing(opf)
+    end
+
+    @testset "Costs" begin
+        cost!(opf; generator = 5, active = 2, polynomial = [452.2; 31; 18; 5])
+        testReusing(opf)
+
+        cost!(opf; generator = 5, active = 2, polynomial = [452.2; 31; 18])
+        testReusing(opf)
+
+        cost!(opf; generator = 5, active = 2, polynomial = [165.0])
+        testReusing(opf)
+
+        cost!(opf; generator = 5, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+        testReusing(opf)
+
+        cost!(opf; generator = 5, active = 1, piecewise = [10.2 14.3; 11.5 16.1])
+        testReusing(opf)
+
+        cost!(opf; generator = 4, reactive = 2, polynomial = [452.2; 31; 18; 5])
+        testReusing(opf)
+
+        cost!(opf; generator = 4, reactive = 2, polynomial = [452.2; 31; 18])
+        testReusing(opf)
+
+        cost!(opf; generator = 4, reactive = 2, polynomial = [165.0])
+        testReusing(opf)
+
+        cost!(opf; generator = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+        testReusing(opf)
+
+        cost!(opf; generator = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1])
+        testReusing(opf)
     end
 end
 
@@ -140,128 +185,137 @@ end
     @default(unit)
     @default(template)
 
-    ########## First Pass ##########
-    system1 = powerSystem(path * "case14test.m")
+    system = powerSystem(path * "case14optimal.m")
+    cost!(system; generator = 3, active = 2, polynomial = [854.0, 116.0, 53.0])
+    opf = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 
-    updateBus!(system1; label = 1, type = 1, active = 0.15, angle = -0.1)
-    updateBus!(system1; label = 1, type = 1, conductance = 0.16)
-    updateBus!(system1; label = 2, type = 3, angle = -0.01)
+    @testset "Buses" begin
+        updateBus!(opf; label = 1, type = 1, active = 0.15, angle = -0.1, conductance = 0.16)
+        updateBus!(opf; label = 2, type = 3, angle = -0.01)
+        testReusing(opf)
 
-    addBranch!(system1; label = 21, from = 5, to = 7, reactance = 0.25, turnsRatio = 0.98)
-    addBranch!(system1; label = 22, from = 4, to = 5, reactance = 0.25, minFromBus = -0.18)
+        updateBus!(opf; label = 3, conductance = 0.2)
+        testReusing(opf)
 
-    updateBranch!(system1; label = 21, shiftAngle = -0.1, status = 0)
-    updateBranch!(system1; label = 21, status = 1)
-    updateBranch!(system1; label = 22, status = 0)
-    updateBranch!(system1; label = 22, maxFromBus = 0.18, minToBus = -0.18)
-    updateBranch!(system1; label = 22, maxToBus = 0.18, maxDiffAngle = 0.15)
-    updateBranch!(system1; label = 21, reactance = 0.35, maxDiffAngle = 0.22)
-
-    addGenerator!(system1; label = 9, bus = 3, active = 0.3, minActive = 0.0)
-    addGenerator!(system1; label = 10, bus = 3, active = 0.3)
-
-    updateGenerator!(system1; label = 9, maxActive = 0.5, status = 0)
-    updateGenerator!(system1; label = 9, status = 1, maxActive = 0.8)
-    updateGenerator!(system1; label = 10, status = 0, maxActive = 0.8)
-    updateGenerator!(system1; label = 9, status = 0)
-
-    cost!(system1; generator = 9, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system1; generator = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1])
-    cost!(system1; generator = 5, active = 2, polynomial = [854.0, 116.0])
-
-    dcModel!(system1)
-    opf1 = dcOptimalPowerFlow(system1, Ipopt.Optimizer)
-    powerFlow!(system1, opf1; power = true)
-
-    # Reuse DC Optimal Power Flow Model
-    system2 = powerSystem(path * "case14test.m")
-    dcModel!(system2)
-    opf2 = dcOptimalPowerFlow(system2, Ipopt.Optimizer)
-
-    updateBus!(system2, opf2; label = 1, type = 1, active = 0.15, angle = -0.1)
-    updateBus!(system2, opf2; label = 1, type = 1, conductance = 0.16)
-    updateBus!(system2, opf2; label = 2, type = 3, angle = -0.01)
-
-    addBranch!(system2, opf2; label = 21, from = 5, to = 7, reactance = 0.25, turnsRatio = 0.98)
-    addBranch!(system2, opf2; label = 22, from = 4, to = 5, reactance = 0.25, minFromBus = -0.18)
-
-    updateBranch!(system2, opf2; label = 21, shiftAngle = -0.1, status = 0)
-    updateBranch!(system2, opf2; label = 21, status = 1)
-    updateBranch!(system2, opf2; label = 22, status = 0)
-    updateBranch!(system2, opf2; label = 22, maxFromBus = 0.18, minToBus = -0.18)
-    updateBranch!(system2, opf2; label = 22, maxToBus = 0.18, maxDiffAngle = 0.15)
-    updateBranch!(system2, opf2; label = 21, reactance = 0.35, maxDiffAngle = 0.22)
-
-    addGenerator!(system2, opf2; label = 9, bus = 3, active = 0.3, minActive = 0.0)
-    addGenerator!(system2, opf2; label = 10, bus = 3, active = 0.3)
-
-    updateGenerator!(system2, opf2; label = 9, maxActive = 0.5, status = 0)
-    updateGenerator!(system2, opf2; label = 9, status = 1, maxActive = 0.8)
-    updateGenerator!(system2, opf2; label = 10, status = 0, maxActive = 0.8)
-    updateGenerator!(system2, opf2; label = 9, status = 0)
-
-    cost!(system2, opf2; generator = 9, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system2, opf2; generator = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1])
-    cost!(system2, opf2; generator = 5, active = 2, polynomial = [854.0, 116.0])
-
-    powerFlow!(system2, opf2; power = true)
-
-    @testset "First Pass" begin
-        compstruct(opf1.voltage, opf2.voltage; atol = 1e-10)
-        compstruct(opf1.power, opf2.power; atol = 1e-10)
-        @test objective_value(opf1.method.jump) ≈ objective_value(opf2.method.jump)
-
-        for list in list_of_constraint_types(opf1.method.jump)
-            @test num_constraints(opf1.method.jump, list[1], list[2]) ==
-                num_constraints(opf2.method.jump, list[1], list[2])
-        end
+        updateBus!(opf; label = 2, type = 1)
+        updateBus!(opf; label = 1, type = 3)
+        testReusing(opf)
     end
 
-    ########## Second Pass ##########
-    updateBus!(system1; label = 1, type = 1, conductance = 0.06, angle = -0.01)
+    @testset "Branches" begin
+        addBranch!(opf; label = 21, from = 5, to = 7, reactance = 0.25, turnsRatio = 0.98)
+        testReusing(opf)
 
-    updateBranch!(system1; label = 22, reactance = 0.35, minFromBus = -0.22)
-    updateBranch!(system1; label = 22, maxFromBus = 0.22, minToBus = -0.22, maxToBus = 0.22)
-    updateBranch!(system1; label = 21, status = 0)
+        addBranch!(opf; label = 22, from = 4, to = 5, reactance = 0.25, minFromBus = -0.18)
+        testReusing(opf)
 
-    addGenerator!(system1; label = 11, bus = 14, active = 0.3, minActive = 0.0)
+        addBranch!(opf; label = 23, from = 8, to = 9, reactance = 0.22, shiftAngle = -0.1)
+        testReusing(opf)
 
-    updateGenerator!(system1; label = 11, maxActive = 0.5, status = 0)
+        addBranch!(opf; label = 24, from = 8, to = 9, reactance = 0.22, status = 0)
+        testReusing(opf)
 
-    cost!(system1; generator = 11, active = 2, polynomial = [165.0])
-    cost!(system1; generator = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system1; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
+        updateBranch!(opf; label = 21, shiftAngle = -0.1, status = 0)
+        testReusing(opf)
 
-    dcModel!(system1)
-    opf1 = dcOptimalPowerFlow(system1, Ipopt.Optimizer)
-    powerFlow!(system1, opf1; power = true)
+        updateBranch!(opf; label = 21, status = 1)
+        testReusing(opf)
 
-    # Reuse DC Optimal Power Flow Model
-    updateBus!(system2, opf2; label = 1, type = 1, conductance = 0.06, angle = -0.01)
+        updateBranch!(opf; label = 22, status = 0)
+        testReusing(opf)
 
-    updateBranch!(system2, opf2; label = 22, reactance = 0.35, minFromBus = -0.22)
-    updateBranch!(system2, opf2; label = 22, maxFromBus = 0.22, minToBus = -0.22, maxToBus = 0.22)
-    updateBranch!(system2, opf2; label = 21, status = 0)
+        updateBranch!(opf; label = 21, maxFromBus = 0.18, minToBus = -0.18, maxDiffAngle = 0.22)
+        testReusing(opf)
 
-    addGenerator!(system2, opf2; label = 11, bus = 14, active = 0.3, minActive = 0.0)
+        updateBranch!(opf; label = 13, maxFromBus = 0.22, minToBus = -0.22, maxToBus = 0.22)
+        testReusing(opf)
 
-    updateGenerator!(system2, opf2; label = 11, maxActive = 0.5, status = 0)
+        addBranch!(system; label = 25, from = 1, to = 2, reactance = 0.45, minFromBus = 0.0)
+        updateBranch!(opf; label = 25, maxFromBus = 0.1, type = 1)
+        testReusing(opf)
 
-    cost!(system2, opf2; generator = 11, active = 2, polynomial = [165.0])
-    cost!(system2, opf2; generator = 10, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
-    cost!(system2, opf2; generator = 9, active = 2, polynomial = [856.2; 135.3; 80])
+        updateBranch!(system; label = 25, maxFromBus = 0.4, type = 3)
+        updateBranch!(opf; label = 25)
+        testReusing(opf)
+    end
 
-    setInitialPoint!(system2, opf2)
-    powerFlow!(system2, opf2; power = true)
+    @testset "Generators" begin
+        addGenerator!(opf; label = 9, bus = 3, active = 0.3, minActive = 0.0, maxActive = 0.5)
+        cost!(opf; generator = 9, active = 2, polynomial = [800.0; 200.0; 80.0])
+        testReusing(opf)
 
-    @testset "Second Pass" begin
-        compstruct(opf1.voltage, opf2.voltage; atol = 1e-10)
-        compstruct(opf1.power, opf2.power; atol = 1e-10)
-        @test objective_value(opf1.method.jump) ≈ objective_value(opf2.method.jump)
+        updateGenerator!(opf; label = 9, status = 1)
+        testReusing(opf)
 
-        for list in list_of_constraint_types(opf1.method.jump)
-            @test num_constraints(opf1.method.jump, list[1], list[2]) ==
-                num_constraints(opf2.method.jump, list[1], list[2])
-        end
+        cost!(opf; generator = 9, active = 1, piecewise = [10 12.3; 14.7 16.8; 18.1 19.2])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 9, status = 0)
+        cost!(opf; generator = 9, active = 2, polynomial = [40.0; 20.0; 5.0])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 9, status = 1)
+        testReusing(opf)
+
+        addGenerator!(opf; label = 10, bus = 3, status = 0)
+        cost!(opf; generator = 10, active = 2, polynomial = [800.0; 200.0; 80.0])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 10, maxActive = 0.5, status = 1)
+        cost!(opf; generator = 10, active = 1, piecewise = [10 12.3; 14.7 16.8; 18.1 19.2])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 10, status = 0)
+        cost!(opf; generator = 10, active = 2, polynomial = [400.0; 300.0; 10.0])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 10, status = 1)
+        testReusing(opf)
+
+        addGenerator!(opf; label = 11, bus = 4, active = 0.3, minActive = 0.0, status = 0)
+        cost!(opf; generator = 11, active = 1, piecewise = [10 12.3; 14.7 16.8; 18.1 19.2])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 11, status = 1)
+        cost!(opf; generator = 11, active = 2, polynomial = [400.0; 300.0])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 11, status = 0)
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 11, status = 1)
+        cost!(opf; generator = 11, active = 1, piecewise = [8 12.3; 16.7 17.8])
+        testReusing(opf)
+
+        cost!(opf; generator = 11, active = 2, polynomial = [200.0; 100.0; 50.0])
+        testReusing(opf)
+
+        addGenerator!(opf; label = 12, bus = 5)
+        cost!(opf; generator = 12, active = 1, piecewise = [10 12.3; 14.7 16.8])
+        testReusing(opf)
+
+        cost!(opf; generator = 12, active = 1, piecewise = [10 12.3; 14.7 16.8; 18.1 19.2])
+        testReusing(opf)
+
+        cost!(opf; generator = 12, active = 2, polynomial = [400.0; 300.0])
+        testReusing(opf)
+
+        updateGenerator!(opf; label = 12, status = 0)
+        testReusing(opf)
+
+        addGenerator!(system; label = 13, bus = 6, active = 0.3, minActive = 0.0, maxActive = 0.5)
+        cost!(system; generator = 13, active = 1, piecewise = [10 12.3; 14.7 16.8])
+        updateGenerator!(opf; label = 13)
+        testReusing(opf)
+
+        updateGenerator!(system; label = 13, status = 0)
+        cost!(system; generator = 13, active = 1, polynomial = [452.2; 31; 18; 5])
+        updateGenerator!(opf; label = 13)
+        testReusing(opf)
+
+        updateGenerator!(system; label = 13, status = 1)
+        cost!(system; generator = 13, active = 1, polynomial = [452.2; 31; 18])
+        updateGenerator!(opf; label = 13)
+        testReusing(opf)
     end
 end

@@ -48,73 +48,73 @@
     dcModel!(system)
 
     @testset "Case 1" begin
-        device = measurement()
+        monitoring = measurement(system)
 
         @wattmeter(varianceFrom = 1e-4, varianceBus = 1e-4)
-        addWattmeter!(system, device; from = "Branch 3", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 20", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 9", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 19", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 14", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 3", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 20", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 9", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 19", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 14", active = 0.04)
 
-        addWattmeter!(system, device; from = "Branch 10", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 11", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 12", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 13", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 8", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 19", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 20", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 10", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 11", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 12", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 13", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 8", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 19", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 20", active = 0.04)
 
-        islands = islandTopologicalFlow(system, device)
+        islands = islandTopologicalFlow(monitoring)
 
         islandsTest = [[1], [2; 3], [4; 7; 8; 9], [5; 6; 11; 12; 13], [10], [14]]
         for i = 1:lastindex(islandsTest)
             @test all(islands.island[i] .== islandsTest[i])
         end
 
-        pseudo = measurement()
-        addWattmeter!(system, pseudo; label = "P1", bus = "Bus 1", active = 0.04)
-        addWattmeter!(system, pseudo; label = "P2", bus = "Bus 2", active = 0.04)
-        addWattmeter!(system, pseudo; label = "P5", bus = "Bus 5", active = 0.04)
-        addWattmeter!(system, pseudo; label = "P3", bus = "Bus 3", active = 0.04)
-        addWattmeter!(system, pseudo; label = "P4", bus = "Bus 4", active = 0.04)
-        addWattmeter!(system, pseudo; label = "P9", bus = "Bus 9", active = 0.04)
-        addWattmeter!(system, pseudo; label = "P10", bus = "Bus 10", active = 0.04)
-        addWattmeter!(system, pseudo; label = "P11", bus = "Bus 11", active = 0.04)
-        addWattmeter!(system, pseudo; label = "P13", bus = "Bus 13", active = 0.04)
-        addWattmeter!(system, pseudo; label = "P14", bus = "Bus 14", active = 0.04)
+        pseudo = measurement(system)
+        addWattmeter!(pseudo; label = "P1", bus = "Bus 1", active = 0.04)
+        addWattmeter!(pseudo; label = "P2", bus = "Bus 2", active = 0.04)
+        addWattmeter!(pseudo; label = "P5", bus = "Bus 5", active = 0.04)
+        addWattmeter!(pseudo; label = "P3", bus = "Bus 3", active = 0.04)
+        addWattmeter!(pseudo; label = "P4", bus = "Bus 4", active = 0.04)
+        addWattmeter!(pseudo; label = "P9", bus = "Bus 9", active = 0.04)
+        addWattmeter!(pseudo; label = "P10", bus = "Bus 10", active = 0.04)
+        addWattmeter!(pseudo; label = "P11", bus = "Bus 11", active = 0.04)
+        addWattmeter!(pseudo; label = "P13", bus = "Bus 13", active = 0.04)
+        addWattmeter!(pseudo; label = "P14", bus = "Bus 14", active = 0.04)
 
-        addVarmeter!(system, pseudo; label = "P1", bus = "Bus 1", reactive = 0.04)
-        addVarmeter!(system, pseudo; label = "P2", bus = "Bus 2", reactive = 0.04)
-        addVarmeter!(system, pseudo; label = "P5", bus = "Bus 5", reactive = 0.04)
-        addVarmeter!(system, pseudo; label = "P3", bus = "Bus 3", reactive = 0.04)
-        addVarmeter!(system, pseudo; label = "P4", bus = "Bus 4", reactive = 0.04)
-        addVarmeter!(system, pseudo; label = "P9", bus = "Bus 9", reactive = 0.04)
-        addVarmeter!(system, pseudo; label = "P10", bus = "Bus 10", reactive = 0.04)
-        addVarmeter!(system, pseudo; label = "P11", bus = "Bus 11", reactive = 0.04)
-        addVarmeter!(system, pseudo; label = "P13", bus = "Bus 13", reactive = 0.04)
-        addVarmeter!(system, pseudo; label = "P14", bus = "Bus 14", reactive = 0.04)
+        addVarmeter!(pseudo; label = "P1", bus = "Bus 1", reactive = 0.04)
+        addVarmeter!(pseudo; label = "P2", bus = "Bus 2", reactive = 0.04)
+        addVarmeter!(pseudo; label = "P5", bus = "Bus 5", reactive = 0.04)
+        addVarmeter!(pseudo; label = "P3", bus = "Bus 3", reactive = 0.04)
+        addVarmeter!(pseudo; label = "P4", bus = "Bus 4", reactive = 0.04)
+        addVarmeter!(pseudo; label = "P9", bus = "Bus 9", reactive = 0.04)
+        addVarmeter!(pseudo; label = "P10", bus = "Bus 10", reactive = 0.04)
+        addVarmeter!(pseudo; label = "P11", bus = "Bus 11", reactive = 0.04)
+        addVarmeter!(pseudo; label = "P13", bus = "Bus 13", reactive = 0.04)
+        addVarmeter!(pseudo; label = "P14", bus = "Bus 14", reactive = 0.04)
 
         addPmu!(
-            system, pseudo; label = "T6",
+            pseudo; label = "T6",
             bus = "Bus 6", magnitude = 1.1, angle = 0.1, varianceMagnitude = 1e-3
         )
         addPmu!(
-            system, pseudo; label = "T7",
+            pseudo; label = "T7",
             bus = "Bus 7", magnitude = 1.1, angle = 0.1, varianceMagnitude = 1e-3
         )
 
-        restorationGram!(system, device, pseudo, islands)
+        restorationGram!(monitoring, pseudo, islands)
 
         pseudoSet = ["P1"; "P2"; "P5"; "P9"; "P10"]
-        for key in keys(device.wattmeter.label)
+        for key in keys(monitoring.wattmeter.label)
             for (k, label) in enumerate(pseudoSet)
                 if key == label
                     deleteat!(pseudoSet, k)
                 end
             end
         end
-        for key in keys(device.pmu.label)
+        for key in keys(monitoring.pmu.label)
             for (k, label) in enumerate(pseudoSet)
                 if key == label
                 deleteat!(pseudoSet, k)
@@ -125,40 +125,40 @@
     end
 
     @testset "Case 2" begin
-        device = measurement()
+        monitoring = measurement(system)
 
-        addWattmeter!(system, device; from = "Branch 3", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 20", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 9", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 19", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 14", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 3", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 20", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 9", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 19", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 14", active = 0.04)
 
-        addWattmeter!(system, device; from = "Branch 10", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 11", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 12", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 13", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 8", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 19", active = 0.04)
-        addWattmeter!(system, device; from = "Branch 20", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 10", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 11", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 12", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 13", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 8", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 19", active = 0.04)
+        addWattmeter!(monitoring; from = "Branch 20", active = 0.04)
 
-        addWattmeter!(system, device; bus = "Bus 2", active = 0.04)
-        addWattmeter!(system, device; bus = "Bus 10", active = 0.04)
-        addWattmeter!(system, device; bus = "Bus 14", active = 0.04)
-        addWattmeter!(system, device; bus = "Bus 9", active = 0.04)
+        addWattmeter!(monitoring; bus = "Bus 2", active = 0.04)
+        addWattmeter!(monitoring; bus = "Bus 10", active = 0.04)
+        addWattmeter!(monitoring; bus = "Bus 14", active = 0.04)
+        addWattmeter!(monitoring; bus = "Bus 9", active = 0.04)
 
-        islands = islandTopological(system, device)
+        islands = islandTopological(monitoring)
 
         islandsTest = [[1], [2; 3], [4; 7; 8; 9; 5; 6; 11; 12; 13; 10; 14]]
         for i = 1:lastindex(islandsTest)
             @test all(islands.island[i] .== islandsTest[i])
         end
 
-        pseudo = measurement()
-        addWattmeter!(system, pseudo; label = "P3", bus = "Bus 3", active = 0.04)
-        addVarmeter!(system, pseudo; label = "P3", bus = "Bus 3", reactive = 0.04)
+        pseudo = measurement(system)
+        addWattmeter!(pseudo; label = "P3", bus = "Bus 3", active = 0.04)
+        addVarmeter!(pseudo; label = "P3", bus = "Bus 3", reactive = 0.04)
 
-        restorationGram!(system, device, pseudo, islands)
-        @test device.wattmeter.label["P3"] == 17
+        restorationGram!(monitoring, pseudo, islands)
+        @test monitoring.wattmeter.label["P3"] == 17
     end
 
     system14 = powerSystem(path * "case14test.m")
@@ -168,79 +168,79 @@
 
     dcModel!(system14)
     pf = dcPowerFlow(system14)
-    powerFlow!(system14, pf; power = true)
+    powerFlow!(pf; power = true)
 
     @testset "Case 3" begin
-        device = measurement()
+        monitoring = measurement(system14)
         for (key, idx) in system14.bus.label
-            addWattmeter!(system14, device; bus = key, active = pf.power.injection.active[idx])
+            addWattmeter!(monitoring; bus = key, active = pf.power.injection.active[idx])
         end
         for (key, idx) in system14.branch.label
-            addWattmeter!(system14, device; from = key, active = pf.power.from.active[idx])
+            addWattmeter!(monitoring; from = key, active = pf.power.from.active[idx])
         end
-        statusWattmeter!(system14, device; inservice = 10)
-        islands = islandTopological(system14, device)
+        statusWattmeter!(monitoring; inservice = 10)
+        islands = islandTopological(monitoring)
 
-        pseudo = measurement()
+        pseudo = measurement(system14)
         for (key, idx) in system14.branch.label
-            addWattmeter!(system14, pseudo; label = "Pseudo $key", to = key, active = pf.power.to.active[idx])
-            addVarmeter!(system14, pseudo; label = "Pseudo $key", to = key, reactive = pf.power.to.active[idx])
+            addWattmeter!(pseudo; label = "Pseudo $key", to = key, active = pf.power.to.active[idx])
+            addVarmeter!(pseudo; label = "Pseudo $key", to = key, reactive = pf.power.to.active[idx])
         end
 
-        restorationGram!(system14, device, pseudo, islands)
+        restorationGram!(monitoring, pseudo, islands)
 
-        se = dcStateEstimation(system14, device)
-        stateEstimation!(system14, se)
+        se = dcStateEstimation(monitoring)
+        stateEstimation!(se)
         @test se.voltage.angle ≈ pf.voltage.angle
     end
 
     @testset "Case 4" begin
-        device = measurement()
+        monitoring = measurement(system14)
         for (key, idx) in system14.bus.label
-            addWattmeter!(system14, device; bus = key, active = pf.power.injection.active[idx])
+            addWattmeter!(monitoring; bus = key, active = pf.power.injection.active[idx])
         end
         for (key, idx) in system14.branch.label
-            addWattmeter!(system14, device; from = key, active = pf.power.from.active[idx])
+            addWattmeter!(monitoring; from = key, active = pf.power.from.active[idx])
         end
-        statusWattmeter!(system14, device; inservice = 8)
-        islands = islandTopological(system14, device)
+        statusWattmeter!(monitoring; inservice = 8)
+        islands = islandTopological(monitoring)
 
-        pseudo = measurement()
+        pseudo = measurement(system14)
         for (key, idx) in system14.bus.label
-            addWattmeter!(system14, pseudo; label = "Pseudo $key", bus = key, active = pf.power.injection.active[idx])
-            addVarmeter!(system14, pseudo; label = "Pseudo $key", bus = key, reactive = pf.power.injection.active[idx])
+            addWattmeter!(pseudo; label = "Pseudo $key", bus = key, active = pf.power.injection.active[idx])
+            addVarmeter!(pseudo; label = "Pseudo $key", bus = key, reactive = pf.power.injection.active[idx])
         end
 
-        restorationGram!(system14, device, pseudo, islands)
+        restorationGram!(monitoring, pseudo, islands)
 
-        se = dcStateEstimation(system14, device)
-        stateEstimation!(system14, se)
+        se = dcStateEstimation(monitoring)
+        stateEstimation!(se)
         @test se.voltage.angle ≈ pf.voltage.angle
     end
 
     @testset "Case 5" begin
-        device = measurement()
+        monitoring = measurement(system14)
         for (key, idx) in system14.bus.label
-            addWattmeter!(system14, device; bus = key, active = pf.power.injection.active[idx])
+            addWattmeter!(monitoring; bus = key, active = pf.power.injection.active[idx])
         end
         for (key, idx) in system14.branch.label
-            addWattmeter!(system14, device; from = key, active = pf.power.from.active[idx])
+            addWattmeter!(monitoring; from = key, active = pf.power.from.active[idx])
         end
-        statusWattmeter!(system14, device; inservice = 11)
-        islands = islandTopological(system14, device)
+        statusWattmeter!(monitoring; inservice = 11)
+        islands = islandTopological(monitoring)
 
-        pseudo = measurement()
+        pseudo = measurement(system14)
         for (key, idx) in system14.bus.label
             addPmu!(
-                system14, pseudo; label = "Pseudo $key", bus = key,
+                pseudo; label = "Pseudo $key", bus = key,
                 magnitude = 1, varianceMagnitude = 1, angle = pf.voltage.angle[idx]
             )
         end
 
-        restorationGram!(system14, device, pseudo, islands)
+        restorationGram!(monitoring, pseudo, islands)
 
-        se = dcStateEstimation(system14, device)
-        stateEstimation!(system14, se)
+        se = dcStateEstimation(monitoring)
+        stateEstimation!(se)
         @test se.voltage.angle ≈ pf.voltage.angle
     end
 end

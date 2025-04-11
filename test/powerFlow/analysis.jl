@@ -8,18 +8,18 @@
 
     acModel!(system14)
     analysis = newtonRaphson(system14, QR)
-    powerFlow!(system14, analysis; power = true, current = true)
+    powerFlow!(analysis; power = true, current = true)
 
     @testset "IEEE 14: Matpower" begin
-        testVoltageMatpower(matpwr14, analysis)
-        testPowerMatpower(matpwr14, analysis)
+        testVoltage(matpwr14, analysis)
+        testPower(matpwr14, analysis)
     end
 
     @testset "IEEE 14: Powers and Currents" begin
-        testCurrent(system14, analysis)
-        testBus(system14, analysis)
-        testBranch(system14, analysis)
-        testGenerator(system14, analysis)
+        testBus(analysis)
+        testBranch(analysis)
+        testGenerator(analysis)
+        testCurrent(analysis)
     end
 
     ########## IEEE 30-bus Test Case ##########
@@ -30,22 +30,22 @@
     startMagnitude = copy(analysis.voltage.magnitude)
     startAngle = copy(analysis.voltage.angle)
 
-    powerFlow!(system30, analysis; power = true, current = true)
+    powerFlow!(analysis; power = true, current = true)
 
     @testset "IEEE 30: Matpower" begin
-        testVoltageMatpower(matpwr30, analysis)
-        testPowerMatpower(matpwr30, analysis)
+        testVoltage(matpwr30, analysis)
+        testPower(matpwr30, analysis)
     end
 
     @testset "IEEE 30: Powers and Currents" begin
-        testCurrent(system30, analysis)
-        testBus(system30, analysis)
-        testBranch(system30, analysis)
-        testGenerator(system30, analysis)
+        testBus(analysis)
+        testBranch(analysis)
+        testGenerator(analysis)
+        testCurrent(analysis)
     end
 
     @testset "IEEE 30: Starting Voltages" begin
-        setInitialPoint!(system30, analysis)
+        setInitialPoint!(analysis)
         @test analysis.voltage.magnitude == startMagnitude
         @test analysis.voltage.angle == startAngle
     end
@@ -55,9 +55,9 @@
         updateBus!(system30; label = 3, type = 3)
 
         @suppress analysis = newtonRaphson(system30)
-        powerFlow!(system30, analysis)
+        powerFlow!(analysis)
 
-        testVoltageMatpower(matpwr30, analysis)
+        testVoltage(matpwr30, analysis)
     end
 end
 
@@ -68,10 +68,10 @@ end
 
     acModel!(system14)
     analysis = fastNewtonRaphsonBX(system14)
-    powerFlow!(system14, analysis; iteration = 30)
+    powerFlow!(analysis; iteration = 30)
 
     @testset "IEEE 14: Matpower" begin
-        testVoltageMatpower(matpwr14, analysis)
+        testVoltage(matpwr14, analysis)
     end
 
     ########## IEEE 30-bus Test Case ##########
@@ -79,21 +79,21 @@ end
     matpwr30 = h5read(path * "results.h5", "case30test/fastNewtonRaphsonBX")
 
     analysis = fastNewtonRaphsonBX(system30, QR)
-    powerFlow!(system30, analysis; iteration = 30)
+    powerFlow!(analysis; iteration = 30)
 
     @testset "IEEE 30: Matpower" begin
-        testVoltageMatpower(matpwr30, analysis)
+        testVoltage(matpwr30, analysis)
     end
 
     @testset "IEEE 30: Change of the Jacobian Pattern" begin
-        updateBranch!(system30, analysis; label = 5, status = 0)
+        updateBranch!(analysis; label = 5, status = 0)
         dropZeros!(system30.model.ac)
-        updateBranch!(system30, analysis; label = 5, status = 1)
+        updateBranch!(analysis; label = 5, status = 1)
 
-        setInitialPoint!(system30, analysis)
-        powerFlow!(system30, analysis; iteration = 30)
+        setInitialPoint!(analysis)
+        powerFlow!(analysis; iteration = 30)
 
-        testVoltageMatpower(matpwr30, analysis)
+        testVoltage(matpwr30, analysis)
     end
 end
 
@@ -106,10 +106,10 @@ end
 
     acModel!(system14)
     analysis = fastNewtonRaphsonXB(system14)
-    powerFlow!(system14, analysis; iteration = 30)
+    powerFlow!(analysis; iteration = 30)
 
     @testset "IEEE 14: Matpower" begin
-        testVoltageMatpower(matpwr14, analysis)
+        testVoltage(matpwr14, analysis)
     end
 
     ########## IEEE 30-bus Test Case ##########
@@ -117,10 +117,10 @@ end
     matpwr30 = h5read(path * "results.h5", "case30test/fastNewtonRaphsonXB")
 
     analysis = fastNewtonRaphsonXB(system30, QR)
-    powerFlow!(system30, analysis; iteration = 30)
+    powerFlow!(analysis; iteration = 30)
 
     @testset "IEEE 30: Matpower" begin
-        testVoltageMatpower(matpwr30, analysis)
+        testVoltage(matpwr30, analysis)
     end
 end
 
@@ -133,10 +133,10 @@ end
 
     acModel!(system14)
     analysis = gaussSeidel(system14)
-    powerFlow!(system14, analysis; iteration = 300)
+    powerFlow!(analysis; iteration = 300)
 
     @testset "IEEE 14: Matpower" begin
-        testVoltageMatpower(matpwr14, analysis)
+        testVoltage(matpwr14, analysis)
     end
 
     ########## IEEE 30-bus Test Case ##########
@@ -145,10 +145,10 @@ end
 
     analysis = gaussSeidel(system30)
     iteration = 0
-    powerFlow!(system30, analysis; iteration = 900)
+    powerFlow!(analysis; iteration = 900)
 
     @testset "IEEE 30: Matpower" begin
-        testVoltageMatpower(matpwr30, analysis)
+        testVoltage(matpwr30, analysis)
     end
 end
 
@@ -165,24 +165,21 @@ end
 
     acModel!(system14)
     nr = newtonRaphson(system14)
-    powerFlow!(system14, nr)
+    powerFlow!( nr)
 
     fnrBX = fastNewtonRaphsonBX(system14)
-    powerFlow!(system14, fnrBX; iteration = 300)
+    powerFlow!(fnrBX; iteration = 300)
 
     fnrXB = fastNewtonRaphsonXB(system14)
-    powerFlow!(system14, fnrXB; iteration = 300)
+    powerFlow!(fnrXB; iteration = 300)
 
     gs = gaussSeidel(system14)
-    powerFlow!(system14, gs; iteration = 1000, tolerance = 1e-9)
+    powerFlow!(gs; iteration = 1000, tolerance = 1e-9)
 
     @testset "IEEE 14: Voltages" begin
-        @test nr.voltage.magnitude ≈ fnrBX.voltage.magnitude
-        @test nr.voltage.angle ≈ fnrBX.voltage.angle
-        @test nr.voltage.magnitude ≈ fnrXB.voltage.magnitude
-        @test nr.voltage.angle ≈ fnrXB.voltage.angle
-        @test nr.voltage.magnitude ≈ gs.voltage.magnitude
-        @test nr.voltage.angle ≈ gs.voltage.angle
+        teststruct(nr.voltage, fnrBX.voltage; atol = 0)
+        teststruct(nr.voltage, fnrXB.voltage; atol = 0)
+        teststruct(nr.voltage, gs.voltage; atol = 0)
     end
 
     ########## IEEE 30-bus Test Case ##########
@@ -194,24 +191,21 @@ end
 
     acModel!(system30)
     nr = newtonRaphson(system30)
-    powerFlow!(system30, nr)
+    powerFlow!(nr)
 
     fnrBX = fastNewtonRaphsonBX(system30)
-    powerFlow!(system30, fnrBX)
+    powerFlow!(fnrBX)
 
     fnrXB = fastNewtonRaphsonXB(system30)
-    powerFlow!(system30, fnrXB)
+    powerFlow!(fnrXB)
 
     gs = gaussSeidel(system30)
-    powerFlow!(system30, gs; iteration = 1500, tolerance = 1e-9)
+    powerFlow!(gs; iteration = 1500, tolerance = 1e-9)
 
     @testset "IEEE 30: Voltages" begin
-        @test nr.voltage.magnitude ≈ fnrBX.voltage.magnitude
-        @test nr.voltage.angle ≈ fnrBX.voltage.angle
-        @test nr.voltage.magnitude ≈ fnrXB.voltage.magnitude
-        @test nr.voltage.angle ≈ fnrXB.voltage.angle
-        @test nr.voltage.magnitude ≈ gs.voltage.magnitude
-        @test nr.voltage.angle ≈ gs.voltage.angle
+        teststruct(nr.voltage, fnrBX.voltage; atol = 0)
+        teststruct(nr.voltage, fnrXB.voltage; atol = 0)
+        teststruct(nr.voltage, gs.voltage; atol = 0)
     end
 end
 
@@ -222,17 +216,17 @@ end
 
     dcModel!(system14)
     analysis = dcPowerFlow(system14)
-    powerFlow!(system14, analysis; power = true)
+    powerFlow!(analysis; power = true)
 
     @testset "IEEE 14: Matpower" begin
         @test analysis.voltage.angle ≈ matpwr14["voltage"]
-        testPowerMatpower(matpwr14, analysis)
+        testPower(matpwr14, analysis)
     end
 
     @testset "IEEE 14: Powers" begin
-        testBus(system14, analysis)
-        testBranch(system14, analysis)
-        testGenerator(system14, analysis)
+        testBus(analysis)
+        testBranch(analysis)
+        testGenerator(analysis)
     end
 
     ########## IEEE 30-bus Test Case ##########
@@ -240,17 +234,17 @@ end
     matpwr30 = h5read(path * "results.h5", "case30test/dcPowerFlow")
 
     analysis = dcPowerFlow(system30, LDLt)
-    powerFlow!(system30, analysis; power = true)
+    powerFlow!(analysis; power = true)
 
     @testset "IEEE 30: Matpower" begin
         @test analysis.voltage.angle ≈ matpwr30["voltage"]
-        testPowerMatpower(matpwr30, analysis)
+        testPower(matpwr30, analysis)
     end
 
     @testset "IEEE 30: Powers" begin
-        testBus(system30, analysis)
-        testBranch(system30, analysis)
-        testGenerator(system30, analysis)
+        testBus(analysis)
+        testBranch(analysis)
+        testGenerator(analysis)
     end
 end
 
@@ -259,90 +253,90 @@ end
 
     ########## Print AC Data ##########
     analysis = newtonRaphson(system14)
-    powerFlow!(system14, analysis; power = true, current = true)
+    @suppress powerFlow!(analysis; power = true, current = true, verbose = 3)
 
-    @capture_out @testset "Print AC Bus Data" begin
+    @suppress @testset "Print AC Bus Data" begin
         width = Dict("Voltage" => 10, "Power Demand Active" => 9)
         show = Dict("Current Injection" => false, "Power Demand Reactive" => false)
         fmt = Dict("Shunt Power" => "%.6f", "Voltage" => "%.2f")
 
-        printBusData(system14, analysis; width, show, fmt, repeat = 10)
-        printBusData(system14, analysis; width, show, fmt, repeat = 10, style = false)
+        printBusData(analysis; width, show, fmt, repeat = 10)
+        printBusData(analysis; width, show, fmt, repeat = 10, style = false)
 
         width = Dict("Voltage Angle" => 10, "Power Injection Active" => 9)
         delimiter = ""
 
-        printBusData(system14, analysis; label = 1, width, delimiter, header = true)
-        printBusData(system14, analysis; label = 2, width, delimiter)
-        printBusData(system14, analysis; label = 4, width, delimiter, footer = true)
-        printBusData(system14, analysis; label = 1, width, delimiter, style = false)
+        printBusData(analysis; label = 1, width, delimiter, header = true)
+        printBusData(analysis; label = 2, width, delimiter)
+        printBusData(analysis; label = 4, width, delimiter, footer = true)
+        printBusData(analysis; label = 1, width, delimiter, style = false)
 
         width = Dict("In-Use" => 10)
         show = Dict("Minimum" => false)
         fmt = Dict("Maximum Value" => "%.6f")
 
-        printBusSummary(system14, analysis; width, show, fmt)
-        printBusSummary(system14, analysis; width, show, fmt, style = false)
+        printBusSummary(analysis; width, show, fmt)
+        printBusSummary(analysis; width, show, fmt, style = false)
     end
 
-    @capture_out @testset "Print AC Branch Data" begin
+    @suppress @testset "Print AC Branch Data" begin
         width = Dict("To-Bus Power" => 10)
         show = Dict("Label" => false, "Series Current Angle" => false)
         fmt = Dict("From-Bus Power" => "%.2f", "To-Bus Power Reactive" => "%.2e")
 
-        printBranchData(system14, analysis; width, show, fmt, repeat = 10)
-        printBranchData(system14, analysis; width, show, fmt, style = false)
+        printBranchData(analysis; width, show, fmt, repeat = 10)
+        printBranchData(analysis; width, show, fmt, style = false)
 
         width = Dict("To-Bus Power" => 10)
         delimiter = ""
 
-        printBranchData(system14, analysis; label = 1, width, delimiter, header = true)
-        printBranchData(system14, analysis; label = 2, width, delimiter)
-        printBranchData(system14, analysis; label = 4, width, delimiter, footer = true)
-        printBranchData(system14, analysis; label = 4, width, style = false)
+        printBranchData(analysis; label = 1, width, delimiter, header = true)
+        printBranchData(analysis; label = 2, width, delimiter)
+        printBranchData(analysis; label = 4, width, delimiter, footer = true)
+        printBranchData(analysis; label = 4, width, style = false)
 
         width = Dict("In-Use" => 10)
         show = Dict("Minimum" => false)
         fmt = Dict("Maximum Value" => "%.2f")
 
-        printBranchSummary(system14, analysis; width, show, fmt, title = false)
-        printBranchSummary(system14, analysis; width, show, fmt, style = false)
+        printBranchSummary(analysis; width, show, fmt, title = false)
+        printBranchSummary(analysis; width, show, fmt, style = false)
     end
 
-    @capture_out @testset "Print AC Generator Data" begin
+    @suppress @testset "Print AC Generator Data" begin
         width = Dict("Power Output" => 10)
         show = Dict("Label Bus" => false, "Status" => true)
 
-        printGeneratorData(system14, analysis; width, show)
-        printGeneratorData(system14, analysis; width, show, style = false)
+        printGeneratorData(analysis; width, show)
+        printGeneratorData(analysis; width, show, style = false)
 
-        printGeneratorData(system14, analysis; label = 1, header = true, footer = true)
-        printGeneratorData(system14, analysis; label = 1, style = false)
+        printGeneratorData(analysis; label = 1, header = true, footer = true)
+        printGeneratorData(analysis; label = 1, style = false)
 
-        printGeneratorSummary(system14, analysis; title = false)
-        printGeneratorSummary(system14, analysis; style = false)
+        printGeneratorSummary(analysis; title = false)
+        printGeneratorSummary(analysis; style = false)
     end
 
     ########## Print DC Data ##########
     analysis = dcPowerFlow(system14)
-    powerFlow!(system14, analysis; power = true)
+    @suppress powerFlow!(analysis; power = true, verbose = 3)
 
-    @capture_out @testset "Print DC Bus Data" begin
-        printBusData(system14, analysis, repeat = 10)
-        printBusData(system14, analysis, repeat = 10; label = 1)
-        printBusSummary(system14, analysis)
+    @suppress @testset "Print DC Bus Data" begin
+        printBusData(analysis, repeat = 10)
+        printBusData(analysis, repeat = 10; label = 1)
+        printBusSummary(analysis)
     end
 
-    @capture_out @testset "Print DC Branch Data" begin
-        printBranchData(system14, analysis)
-        printBranchData(system14, analysis; label = 1)
-        printBranchSummary(system14, analysis)
+    @suppress @testset "Print DC Branch Data" begin
+        printBranchData(analysis)
+        printBranchData(analysis; label = 1)
+        printBranchSummary(analysis)
     end
 
-    @capture_out @testset "Print DC Generator Data" begin
-        printGeneratorData(system14, analysis)
-        printGeneratorData(system14, analysis; label = 1)
-        printGeneratorSummary(system14, analysis)
+    @suppress @testset "Print DC Generator Data" begin
+        printGeneratorData(analysis)
+        printGeneratorData(analysis; label = 1)
+        printGeneratorSummary(analysis)
     end
 end
 
@@ -355,45 +349,45 @@ end
 
     ########## Print AC Data ##########
     analysis = newtonRaphson(system14)
-    powerFlow!(system14, analysis; power = true, current = true)
+    powerFlow!(analysis; power = true, current = true)
 
-    @capture_out @testset "Print AC Bus Data" begin
-        printBusData(system14, analysis)
-        printBusData(system14, analysis; label = 1, header = true)
-        printBusSummary(system14, analysis)
+    @suppress @testset "Print AC Bus Data" begin
+        printBusData(analysis)
+        printBusData(analysis; label = 1, header = true)
+        printBusSummary(analysis)
     end
 
-    @capture_out @testset "Print AC Branch Data" begin
-        printBranchData(system14, analysis)
-        printBranchData(system14, analysis; label = 1, header = true)
-        printBranchSummary(system14, analysis)
+    @suppress @testset "Print AC Branch Data" begin
+        printBranchData(analysis)
+        printBranchData(analysis; label = 1, header = true)
+        printBranchSummary(analysis)
     end
 
-    @capture_out @testset "Print AC Generator Data" begin
-        printGeneratorData(system14, analysis)
-        printGeneratorData(system14, analysis; label = 1, header = true)
-        printGeneratorSummary(system14, analysis)
+    @suppress @testset "Print AC Generator Data" begin
+        printGeneratorData(analysis)
+        printGeneratorData(analysis; label = 1, header = true)
+        printGeneratorSummary(analysis)
     end
 
     ########## Print DC Data ##########
     analysis = dcPowerFlow(system14)
-    powerFlow!(system14, analysis; power = true)
+    powerFlow!(analysis; power = true)
 
-    @capture_out @testset "Print DC Bus Data" begin
-        printBusData(system14, analysis, repeat = 10)
-        printBusData(system14, analysis, repeat = 10; label = 1)
-        printBusSummary(system14, analysis)
+    @suppress @testset "Print DC Bus Data" begin
+        printBusData(analysis, repeat = 10)
+        printBusData(analysis, repeat = 10; label = 1)
+        printBusSummary(analysis)
     end
 
-    @capture_out @testset "Print DC Branch Data" begin
-        printBranchData(system14, analysis)
-        printBranchData(system14, analysis; label = 1)
-        printBranchSummary(system14, analysis)
+    @suppress @testset "Print DC Branch Data" begin
+        printBranchData(analysis)
+        printBranchData(analysis; label = 1)
+        printBranchSummary(analysis)
     end
 
-    @capture_out @testset "Print DC Generator Data" begin
-        printGeneratorData(system14, analysis)
-        printGeneratorData(system14, analysis; label = 1)
-        printGeneratorSummary(system14, analysis)
+    @suppress @testset "Print DC Generator Data" begin
+        printGeneratorData(analysis)
+        printGeneratorData(analysis; label = 1)
+        printGeneratorSummary(analysis)
     end
 end

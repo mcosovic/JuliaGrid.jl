@@ -30,7 +30,6 @@ addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", active = 20.2)
 addBus!(system; label = "Bus 3", conductance = 0.1)
 addBus!(system; label = "Bus 4", active = 50.8)
-
 nothing # hide
 ```
 
@@ -41,7 +40,6 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 3")
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2")
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3")
 addBranch!(system; label = "Branch 4", from = "Bus 3", to = "Bus 4", shiftAngle = -2.3)
-
 nothing # hide
 ```
 At this stage, no active power flow constraints are imposed, but they will be introduced later in the example.
@@ -60,14 +58,12 @@ Finally, we define the active power supply costs of the generators in polynomial
 cost!(system; generator = "Generator 1", active = 2, polynomial = [0.04; 20.0; 0.0])
 cost!(system; generator = "Generator 2", active = 2, polynomial = [1.00; 20.0; 0.0])
 cost!(system; generator = "Generator 3", active = 2, polynomial = [1.00; 20.0; 0.0])
-
 nothing # hide
 ```
 
 Once the power system data is defined, we generate a DC model that includes key matrices and vectors for analysis, such as the nodal admittance matrix:
 ```@example 4bus
 dcModel!(system)
-
 nothing # hide
 ```
 
@@ -75,7 +71,6 @@ nothing # hide
 
 ##### Display Data Settings
 Before running simulations, we configure the numeric format for specific data type of interest including active power flow at branches and generator outputs:
-
 ```@example 4bus
 fmt = Dict("From-Bus Power" => "%.2f", "To-Bus Power" => "%.2f", "Power Output" => "%.2f")
 nothing # hide
@@ -97,33 +92,33 @@ print(analysis.method.jump)
 
 Solving the DC optimal power flow model provides the bus voltage angles and generator active power outputs. Then, active powers across buses and branches are computed:
 ```@example 4bus
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis; power = true, verbose = 1)
 ```
 
 After obtaining the solution, bus-related results, including the optimal bus voltage angles, are examined:
 ```@example 4bus
-printBusData(system, analysis)
+printBusData(analysis)
 ```
 
 We observe that the voltage angle difference constraint at `Branch 1` reaches its upper limit. This can also be confirmed by examining the branch constraint data, where the associated dual variable takes a nonzero value:
 ```@example 4bus
-printBranchConstraint(system, analysis; label = "Branch 1", header = true, footer = true)
+printBranchConstraint(analysis; label = "Branch 1", header = true, footer = true)
 ```
 
 The optimal active power outputs of the generators are:
 ```@example 4bus
-printGeneratorData(system, analysis; fmt)
+printGeneratorData(analysis; fmt)
 ```
 
 All generators operate within their active power limits, as confirmed by the generator constraint data, where all dual variables remain zero:
 ```@example 4bus
-printGeneratorConstraint(system, analysis)
+printGeneratorConstraint(analysis)
 ```
 Furthermore, `Generator 1`, with the lowest cost, supplies most of the power, while `Generator 2` and `Generator 3` produce equal power amounts due to identical cost functions.
 
 Finally, we review the results related to branch flows:
 ```@example 4bus
-printBranchData(system, analysis; fmt)
+printBranchData(analysis; fmt)
 ```
 
 Thus, we obtained the active power flows, as illustrated in Figure 2.
@@ -139,29 +134,29 @@ Thus, we obtained the active power flows, as illustrated in Figure 2.
 ## Modifying Demands
 Let us now introduce a new state by updating the active power demands of consumers. These updates modify both the power system model and the DC optimal power flow model simultaneously:
 ```@example 4bus
-updateBus!(system, analysis; label = "Bus 2", active = 25.2)
-updateBus!(system, analysis; label = "Bus 4", active = 43.3)
+updateBus!(analysis; label = "Bus 2", active = 25.2)
+updateBus!(analysis; label = "Bus 4", active = 43.3)
 nothing # hide
 ```
 
 Next, we solve the DC optimal power flow again to compute the new solution without recreating the model. This step enables a warm start, as the initial primal and dual values correspond to those obtained in the base case:
 ```@example 4bus
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
 Now, we observe the power output of the generators:
 ```@example 4bus
-printGeneratorData(system, analysis; fmt)
+printGeneratorData(analysis; fmt)
 ```
 Compared to the base case, `Generator 1` increases output, while `Generator 2` and `Generator 3` reduce production to their minimum limits. Meanwhile, all voltage angle difference constraints remain within limits:
 ```@example 4bus
-printBranchConstraint(system, analysis)
+printBranchConstraint(analysis)
 ```
 
 At the end of this scenario, we can review branch-related results for a more comprehensive insight into power flows:
 ```@example 4bus
-printBranchData(system, analysis; fmt)
+printBranchData(analysis; fmt)
 ```
 
 The obtained results allow us to illustrate the active power flows in Figure 3.
@@ -177,26 +172,26 @@ The obtained results allow us to illustrate the active power flows in Figure 3.
 ## Modifying Generator Costs
 We adjust the cost functions for `Generator 1` and `Generator 3`, making `Generator 1` the highest-cost generator and `Generator 3` the lowest-cost one in the system. By updating both the power system model and the DC optimal power flow model simultaneously, we enable a warm start for solving this new scenario:
 ```@example 4bus
-cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [2.0; 40.0; 0.0])
-cost!(system, analysis; generator = "Generator 3", active = 2, polynomial = [0.5; 10.0; 0.0])
+cost!(analysis; generator = "Generator 1", active = 2, polynomial = [2.0; 40.0; 0.0])
+cost!(analysis; generator = "Generator 3", active = 2, polynomial = [0.5; 10.0; 0.0])
 nothing # hide
 ```
 
 Next, we solve the updated problem and calculate the resulting powers:
 ```@example 4bus
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
 The optimal active power outputs of the generators are as follows:
 ```@example 4bus
-printGeneratorData(system, analysis; fmt)
+printGeneratorData(analysis; fmt)
 ```
 In this scenario, we observe that, due to the higher cost of `Generator 1`, its output decreases, while the outputs of `Generator 2` and `Generator 3` increase. Notably, `Generator 3` now produces a higher amount of power compared to `Generator 2` due to its lower cost. While one might expect `Generator 1` to decrease supplies more drastically and `Generator 3` to increase more dramatically, this is not the case due to the need to satisfy other constraints, such as active power balance at each bus.
 
 We can also review the results related to branches for this scenario:
 ```@example 4bus
-printBranchData(system, analysis; fmt)
+printBranchData(analysis; fmt)
 ```
 
 Figure 4 illustrates the power flows for this scenario. Compared to the previous scenario, Figure 4 shows that `Branch 2` has significantly lower active power flow, while `Branch 3` has become considerably more loaded.
@@ -212,25 +207,25 @@ Figure 4 illustrates the power flows for this scenario. Compared to the previous
 ## Adding Branch Flow Constraints
 To limit active power flow, we introduce constraints on `Branch 2` and `Branch 3` by setting `type = 1`, where the active power flow at the from-bus end of these branches is limited using the `maxFromBus` keyword:
 ```@example 4bus
-updateBranch!(system, analysis; label = "Branch 2", type = 1, maxFromBus = 15.0)
-updateBranch!(system, analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
+updateBranch!(analysis; label = "Branch 2", type = 1, maxFromBus = 15.0)
+updateBranch!(analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
 ```
 
 Next, we recalculate the DC optimal power flow:
 ```@example 4bus
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
 Now, let us observe the generator outputs:
 ```@example 4bus
-printGeneratorData(system, analysis; fmt)
+printGeneratorData(analysis; fmt)
 ```
 The power flow limit at `Branch 3` forces `Generator 1` to increase its active power output despite its higher cost compared to `Generator 2` and `Generator 3`, due to the need to satisfy all constraints.
 
 We can review the branch data and observe that the active power at the from-bus end of `Branch 3` reaches the defined limit, while the power flow at `Branch 2` stays within the specified limits:
 ```@example 4bus
-printBranchData(system, analysis; fmt)
+printBranchData(analysis; fmt)
 ```
 
 Based on the obtained results, we can illustrate the power flows in Figure 5.
@@ -246,24 +241,24 @@ Based on the obtained results, we can illustrate the power flows in Figure 5.
 ## Modifying Network Topology
 At the end, we set `Branch 2` out-of-service:
 ```@example 4bus
-updateBranch!(system, analysis; label = "Branch 2", status = 0)
+updateBranch!(analysis; label = "Branch 2", status = 0)
 ```
 
 We then recalculate the DC optimal power flow:
 ```@example 4bus
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
 We can now observe the updated generator outputs:
 ```@example 4bus
-printGeneratorData(system, analysis; fmt)
+printGeneratorData(analysis; fmt)
 ```
 Due to the outage of `Branch 2` and the flow limit at `Branch 3`, `Generator 1` faces difficulties supplying load at `Bus 2`, reducing its output. Consequently, the only solution is to increase the output of `Generator 2` and `Generator 3`.
 
 Upon reviewing the branch data, we observe that the active power flows in the remaining in-service branches remain largely unchanged. This is because, following the outage of `Branch 2`, `Generator 2` and `Generator 3` have taken over the responsibility of supplying the load at `Bus 2`, effectively displacing `Generator 1`:
 ```@example 4bus
-printBranchData(system, analysis; fmt)
+printBranchData(analysis; fmt)
 ```
 
 Figure 6 illustrates these results under the outage of `Branch 2`.

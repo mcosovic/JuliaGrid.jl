@@ -1,390 +1,215 @@
-##### State Variables #####
-function θijState!(system::PowerSystem, method::LAV, idxBrch::Int64)
-    if !haskey(method.state.sinθij, idxBrch)
-        i = system.branch.layout.from[idxBrch]
-        j = system.branch.layout.to[idxBrch]
-        θij = @expression(method.jump, method.state.angle[i] - method.state.angle[j])
-        method.state.sinθij[idxBrch] = sin(θij)
-        method.state.cosθij[idxBrch] = cos(θij)
-    end
-end
-
-function θiState!(method::LAV, idxBus::Int64...)
-    for i in idxBus
-        if !haskey(method.state.sinθ, i)
-            method.state.sinθ[i] = sin(method.state.angle[i])
-            method.state.cosθ[i] = cos(method.state.angle[i])
-        end
-    end
-end
-
-function minusΦ(A::Float64, B::Float64, Φ::Float64)
-    return A * cos(Φ) + B * sin(Φ), -A * sin(Φ) + B * cos(Φ)
-end
-
-function plusΦ(A::Float64, B::Float64, Φ::Float64)
-    return A * cos(Φ) - B * sin(Φ), A * sin(Φ) + B * cos(Φ)
-end
-
-function idxBijGij(method::LAV, BG::Float64, i::Int64, j::Int64)
-    if haskey(method.state.incidence, (i, j))
-        return method.state.incidence[(i, j)], BG
-    else
-        return method.state.incidence[(j, i)], -BG
-    end
-end
-
-function GijBijθij(ac::ACModel, angle::Vector{VariableRef}, i::Int64, j::Int64, ptr::Int64)
-    θij = angle[i] - angle[j]
-    sinθij = sin(θij)
-    cosθij = cos(θij)
-    Gij, Bij = reim(ac.nodalMatrixTranspose.nzval[ptr])
-
-    return Gij, Bij, sinθij, cosθij
-end
-
 ##### Active Power Injection #####
-function Pi(system::PowerSystem, method::LAV, i::Int64)
+function Pi(system::PowerSystem, voltage::PolarVariableRef, i::Int64)
     ac = system.model.ac
-    s = method.state
-    V = method.state.magnitude
+    V = voltage.magnitude
 
-    expr = @expression(method.jump, real(ac.nodalMatrixTranspose[i, i]) * V[i])
+    expr = real(ac.nodalMatrixTranspose[i, i]) * V[i]
 
     @inbounds for ptr in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
         j = ac.nodalMatrix.rowval[ptr]
         if i != j
-            Gij, Bij = reim(ac.nodalMatrixTranspose.nzval[ptr])
-            k, Bij = idxBijGij(method, Bij, i, j)
-            θijState!(system, method, k)
+            Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltage.angle, i, j, ptr)
 
-            expr += (Gij * s.cosθij[k] + Bij * s.sinθij[k]) * V[j]
+            expr += (Gij * cosθij + Bij * sinθij) * V[j]
         end
     end
 
     V[i] * expr
 end
 
-function Pi(dc::DCModel, se::LAV, k::Int64)
-    nodal = dc.nodalMatrix
+function Pi(system::PowerSystem, voltage::AngleVariableRef, i::Int64)
+    nodal = system.model.dc.nodalMatrix
 
-    expr = @expression(se.jump, AffExpr())
-    @inbounds for ptr in nodal.colptr[k]:(nodal.colptr[k + 1] - 1)
+    expr = AffExpr()
+    @inbounds for ptr in nodal.colptr[i]:(nodal.colptr[i + 1] - 1)
         j = nodal.rowval[ptr]
-        add_to_expression!(expr, nodal.nzval[ptr] * se.state.angle[j])
+        add_to_expression!(expr, nodal.nzval[ptr] * voltage.angle[j])
     end
 
-    return expr
+    expr
 end
 
-##### From-Bus End Active Power Flow #####
-function Pij(system::PowerSystem, method::LAV, idx::Int64)
-    s = method.state
-    V = method.state.magnitude
-
+##### From-Bus Active Power Flow #####
+function Pij(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
     i, j = fromto(system, idx)
-    p = PijCoefficient(system.branch, system.model.ac, idx)
 
-    θijState!(system, method, idx)
+    V = voltage.magnitude
+    θij = voltage.angle[i] - voltage.angle[j]
+
+    p = PijCoefficient(system.branch, system.model.ac, idx)
     k1, k2 = plusΦ(p.B, p.C, system.branch.parameter.shiftAngle[idx])
 
-    p.A * V[i]^2 - V[i] * V[j] * (k1 * s.cosθij[idx] + k2 * s.sinθij[idx])
+    p.A * V[i]^2 - V[i] * V[j] * (k1 * cos(θij) + k2 * sin(θij))
 end
 
-function Pij(system::PowerSystem,
-    Vi::VariableRef,
-    Vj::VariableRef,
-    sinθij::NonlinearExpr,
-    cosθij::NonlinearExpr,
-    idx::Int64
-)
-    p = PijCoefficient(system.branch, system.model.ac, idx)
-
-    p.A * Vi^2 - Vi * Vj * (p.B * cosθij + p.C * sinθij)
-end
-
-function Pij(system::PowerSystem, state::DCState, admittance::Float64, idx::Int64)
+function Pij(system::PowerSystem, voltage::AngleVariableRef, admittance::Float64, idx::Int64)
     i, j = fromto(system, idx)
 
-    admittance * state.angle[i] - admittance * state.angle[j]
+    admittance * voltage.angle[i] - admittance * voltage.angle[j]
 end
 
-##### To-Bus End Active Power Flow #####
-function Pji(system::PowerSystem, method::LAV, idx::Int64)
-    s = method.state
-    V = method.state.magnitude
-
+##### To-Bus Active Power Flow #####
+function Pji(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
     i, j = fromto(system, idx)
+
+    V = voltage.magnitude
+    θij = voltage.angle[i] - voltage.angle[j]
+
     p = PjiCoefficient(system.branch, system.model.ac, idx)
-
-    θijState!(system, method, idx)
     k1, k2 = minusΦ(p.B, p.C, system.branch.parameter.shiftAngle[idx])
 
-    p.A * V[j]^2 - V[i] * V[j] * (k1 * s.cosθij[idx] - k2 * s.sinθij[idx])
-end
-
-function Pji(system::PowerSystem,
-    Vi::VariableRef,
-    Vj::VariableRef,
-    sinθij::NonlinearExpr,
-    cosθij::NonlinearExpr,
-    idx::Int64
-)
-    p = PjiCoefficient(system.branch, system.model.ac, idx)
-
-    p.A * Vj^2 - Vi * Vj * (p.B * cosθij - p.C * sinθij)
+    p.A * V[j]^2 - V[i] * V[j] * (k1 * cos(θij) - k2 * sin(θij))
 end
 
 ##### Reactive Power Injection #####
-function Qi(system::PowerSystem, method::LAV, i::Int64)
+function Qi(system::PowerSystem, voltage::PolarVariableRef, i::Int64)
     ac = system.model.ac
-    s = method.state
-    V = method.state.magnitude
+    V = voltage.magnitude
 
-    expr = @expression(method.jump, -imag(ac.nodalMatrixTranspose[i, i]) * V[i])
+    expr = -imag(ac.nodalMatrixTranspose[i, i]) * V[i]
 
     @inbounds for ptr in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
         j = ac.nodalMatrix.rowval[ptr]
         if i != j
-            Gij, Bij = reim(ac.nodalMatrixTranspose.nzval[ptr])
-            k, Gij = idxBijGij(method, Gij, i, j)
-            θijState!(system, method, k)
+            Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltage.angle, i, j, ptr)
 
-            expr += (Gij * s.sinθij[k] - Bij * s.cosθij[k]) * V[j]
+            expr += (Gij * sinθij - Bij * cosθij) * V[j]
         end
     end
 
     V[i] * expr
 end
 
-##### From-Bus End Reactive Power Flow #####
-function Qij(system::PowerSystem, method::LAV, idx::Int64)
-    s = method.state
-    V = method.state.magnitude
-
+##### From-Bus Reactive Power Flow #####
+function Qij(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
     i, j = fromto(system, idx)
-    p = QijCoefficient(system.branch, system.model.ac, idx)
 
-    θijState!(system, method, idx)
+    V = voltage.magnitude
+    θij = voltage.angle[i] - voltage.angle[j]
+
+    p = QijCoefficient(system.branch, system.model.ac, idx)
     k1, k2 = minusΦ(p.C, p.B, system.branch.parameter.shiftAngle[idx])
 
-    -p.A * V[i]^2 + V[i] * V[j] * (k1 * s.cosθij[idx] - k2 * s.sinθij[idx])
+    -p.A * V[i]^2 + V[i] * V[j] * (k1 * cos(θij) - k2 * sin(θij))
 end
 
-##### To-Bus End Reactive Power Flow #####
-function Qji(system::PowerSystem, method::LAV, idx::Int64)
-    s = method.state
-    V = method.state.magnitude
-
+##### To-Bus Reactive Power Flow #####
+function Qji(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
     i, j = fromto(system, idx)
-    p = QjiCoefficient(system.branch, system.model.ac, idx)
 
-    θijState!(system, method, idx)
+    V = voltage.magnitude
+    θij = voltage.angle[i] - voltage.angle[j]
+
+    p = QjiCoefficient(system.branch, system.model.ac, idx)
     k1, k2 = plusΦ(p.C, p.B, system.branch.parameter.shiftAngle[idx])
 
-    -p.A * V[j]^2 + V[i] * V[j] * (k1 * s.cosθij[idx] + k2 * s.sinθij[idx])
+    -p.A * V[j]^2 + V[i] * V[j] * (k1 * cos(θij) + k2 * sin(θij))
 end
 
-##### From-Bus End Current Magnitude #####
-function Iij(system::PowerSystem, method::LAV, square::Bool, idx::Int64)
-    V = method.state.magnitude
-    s = method.state
-
+##### From-Bus Current Magnitude #####
+function Iij(system::PowerSystem, voltage::PolarVariableRef, square::Bool, idx::Int64)
     i, j = fromto(system, idx)
-    p = IijCoefficient(system.branch, system.model.ac, idx)
 
-    θijState!(system, method, idx)
+    V = voltage.magnitude
+    θij = voltage.angle[i] - voltage.angle[j]
+
+    p = IijCoefficient(system.branch, system.model.ac, idx)
     k1, k2 = minusΦ(p.C, p.D, system.branch.parameter.shiftAngle[idx])
 
     if square
-        @expression(
-            method.jump, p.A * V[i]^2 + p.B * V[j]^2 -
-            2 * V[i] * V[j] * (k1 * s.cosθij[idx] - k2 * s.sinθij[idx])
-        )
+        p.A * V[i]^2 + p.B * V[j]^2 - 2 * V[i] * V[j] * (k1 * cos(θij) - k2 * sin(θij))
     else
-        @expression(
-            method.jump, sqrt(p.A * V[i]^2 + p.B * V[j]^2 -
-            2 * V[i] * V[j] * (k1 * s.cosθij[idx] - k2 * s.sinθij[idx]))
-        )
+        sqrt(p.A * V[i]^2 + p.B * V[j]^2 - 2 * V[i] * V[j] * (k1 * cos(θij) - k2 * sin(θij)))
     end
 end
 
-function Iij(
-    system::PowerSystem,
-    Vi::VariableRef,
-    Vj::VariableRef,
-    sinθij::NonlinearExpr,
-    cosθij::NonlinearExpr,
-    idx::Int64
-)
-    p = IijCoefficient(system.branch, system.model.ac, idx)
-
-    sqrt(p.A * Vi^2 + p.B * Vj^2 - 2 * Vi * Vj * (p.C * cosθij - p.D * sinθij))
-end
-
-function Iij2(
-    system::PowerSystem,
-    Vi::VariableRef,
-    Vj::VariableRef,
-    sinθij::NonlinearExpr,
-    cosθij::NonlinearExpr,
-    idx::Int64
-)
-    p = IijCoefficient(system.branch, system.model.ac, idx)
-
-    p.A * Vi^2 + p.B * Vj^2 - 2 * Vi * Vj * (p.C * cosθij - p.D * sinθij)
-end
-
-##### To-Bus End Current Magnitude #####
-function Iji(system::PowerSystem, method::LAV, square::Bool, idx::Int64)
-    V = method.state.magnitude
-    s = method.state
-
+##### To-Bus Current Magnitude #####
+function Iji(system::PowerSystem, voltage::PolarVariableRef, square::Bool, idx::Int64)
     i, j = fromto(system, idx)
-    p = IjiCoefficient(system.branch, system.model.ac, idx)
 
-    θijState!(system, method, idx)
+    V = voltage.magnitude
+    θij = voltage.angle[i] - voltage.angle[j]
+
+    p = IjiCoefficient(system.branch, system.model.ac, idx)
     k1, k2 = plusΦ(p.C, p.D, system.branch.parameter.shiftAngle[idx])
 
     if square
-        @expression(
-            method.jump, p.A * V[i]^2 + p.B * V[j]^2 -
-            2 * V[i] * V[j] * (k1 * s.cosθij[idx] + k2 * s.sinθij[idx])
-        )
+        p.A * V[i]^2 + p.B * V[j]^2 - 2 * V[i] * V[j] * (k1 * cos(θij) + k2 * sin(θij))
     else
-        @expression(
-            method.jump, sqrt(p.A * V[i]^2 + p.B * V[j]^2 -
-            2 * V[i] * V[j] * (k1 * s.cosθij[idx] + k2 * s.sinθij[idx]))
-        )
+        sqrt(p.A * V[i]^2 + p.B * V[j]^2 - 2 * V[i] * V[j] * (k1 * cos(θij) + k2 * sin(θij)))
     end
 end
 
-function Iji(
-    system::PowerSystem,
-    Vi::VariableRef,
-    Vj::VariableRef,
-    sinθ::NonlinearExpr,
-    cosθ::NonlinearExpr,
-    idx::Int64
-)
-    p = IjiCoefficient(system.branch, system.model.ac, idx)
-
-    sqrt(p.A * Vi^2 + p.B * Vj^2 - 2 * Vi * Vj * (p.C * cosθ + p.D * sinθ))
-end
-
-function Iji2(
-    system::PowerSystem,
-    Vi::VariableRef,
-    Vj::VariableRef,
-    sinθ::NonlinearExpr,
-    cosθ::NonlinearExpr,
-    idx::Int64
-)
-    p = IjiCoefficient(system.branch, system.model.ac, idx)
-
-    p.A * Vi^2 + p.B * Vj^2 - 2 * Vi * Vj * (p.C * cosθ + p.D * sinθ)
-end
-
-##### From-Bus End Current Angle #####
-function ψij(system::PowerSystem, method::LAV, idx::Int64)
-    IijRe, IijIm = ReImIij(system, method, idx)
+##### From-Bus Current Angle #####
+function ψij(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
+    IijRe, IijIm = ReImIij(system, voltage, idx)
 
     atan(IijIm, IijRe)
 end
 
-##### To-Bus End Current Angle #####
-function ψji(system::PowerSystem, method::LAV, idx::Int64)
-    IjiRe, IjiIm = ReImIji(system, method, idx)
+##### To-Bus Current Angle #####
+function ψji(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
+    IjiRe, IjiIm = ReImIji(system, voltage, idx)
 
     atan(IjiIm, IjiRe)
 end
 
-##### From-Bus End Apparent Power #####
-function Sij(
-    system::PowerSystem,
-    Vi::VariableRef,
-    Vj::VariableRef,
-    sinθ::NonlinearExpr,
-    cosθ::NonlinearExpr,
-    idx::Int64
-)
-    p = IijCoefficient(system.branch, system.model.ac, idx)
-
-    sqrt(p.A * Vi^4 + p.B * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (p.C * cosθ - p.D * sinθ))
-end
-
-function Sij2(
-    system::PowerSystem,
-    Vi::VariableRef,
-    Vj::VariableRef,
-    sinθ::NonlinearExpr,
-    cosθ::NonlinearExpr,
-    idx::Int64
-)
-    p = IijCoefficient(system.branch, system.model.ac, idx)
-
-    p.A * Vi^4 + p.B * Vi^2 * Vj^2 - 2 * Vi^3 * Vj * (p.C * cosθ - p.D * sinθ)
-end
-
-##### To-Bus End Apparent Power #####
-function Sji(
-    system::PowerSystem,
-    Vi::VariableRef,
-    Vj::VariableRef,
-    sinθ::NonlinearExpr,
-    cosθ::NonlinearExpr,
-    idx::Int64
-)
-    p = IjiCoefficient(system.branch, system.model.ac, idx)
-
-    sqrt(p.A * Vi^2 * Vj^2 + p.B * Vj^4 - 2 * Vi * Vj^3 * (p.C * cosθ + p.D * sinθ))
-end
-
-function Sji2(
-    system::PowerSystem,
-    Vi::VariableRef,
-    Vj::VariableRef,
-    sinθ::NonlinearExpr,
-    cosθ::NonlinearExpr,
-    idx::Int64
-)
-    p = IjiCoefficient(system.branch, system.model.ac, idx)
-
-    p.A * Vi^2 * Vj^2 + p.B * Vj^4 - 2 * Vi * Vj^3 * (p.C * cosθ + p.D * sinθ)
-end
-
-##### Real and Imaginary Components of Bus Voltage Phasor #####
-function ReImVi(method::LAV, idx::Int64)
-    V = method.state.magnitude
-    s = method.state
-    θiState!(method, idx)
-
-    return V[idx] * s.cosθ[idx], V[idx] * s.sinθ[idx]
-end
-
-function ReImVi(method::LAV, i::Int64, j::Int64)
-    method.magnitude[i], method.angle[i]
-end
-
-##### Real and Imaginary Components of From-Bus End Current Phasor #####
-function ReImIij(system::PowerSystem, method::LAV, idx::Int64)
-    V = method.state.magnitude
-    s = method.state
-
+##### From-Bus Apparent Power #####
+function Sij(system::PowerSystem, voltage::PolarVariableRef, square::Bool, idx::Int64)
     i, j = fromto(system, idx)
-    p = ψijCoefficient(system.branch, system.model.ac, idx)
 
-    θiState!(method, i, j)
+    V = voltage.magnitude
+    θij = voltage.angle[i] - voltage.angle[j]
+    p = IijCoefficient(system.branch, system.model.ac, idx)
+
+    if square
+        p.A * V[i]^4 + p.B * V[i]^2 * V[j]^2 - 2 * V[i]^3 * V[j] * (p.C * cos(θij) - p.D * sin(θij))
+    else
+        sqrt(p.A * V[i]^4 + p.B * V[i]^2 * V[j]^2 - 2 * V[i]^3 * V[j] * (p.C * cos(θij) - p.D * sin(θij)))
+    end
+end
+
+##### To-Bus Apparent Power #####
+function Sji(system::PowerSystem, voltage::PolarVariableRef, square::Bool, idx::Int64)
+    i, j = fromto(system, idx)
+
+    V = voltage.magnitude
+    θij = voltage.angle[i] - voltage.angle[j]
+    p = IjiCoefficient(system.branch, system.model.ac, idx)
+
+    if square
+        p.A * V[i]^2 * V[j]^2 + p.B * V[j]^4 - 2 * V[i] * V[j]^3 * (p.C * cos(θij) + p.D * sin(θij))
+    else
+        sqrt(p.A * V[i]^2 * V[j]^2 + p.B * V[j]^4 - 2 * V[i] * V[j]^3 * (p.C * cos(θij) + p.D * sin(θij)))
+    end
+end
+
+##### Bus Voltage Real and Imaginary Components #####
+function ReImVi(voltage::PolarVariableRef, i::Int64)
+    voltage.magnitude[i] * cos(voltage.angle[i]), voltage.magnitude[i] * sin(voltage.angle[i])
+end
+
+##### From-Bus Current Real and Imaginary Components #####
+function ReImIij(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
+    i, j = fromto(system, idx)
+
+    V = voltage.magnitude
+    sinθi = sin(voltage.angle[i])
+    cosθi = cos(voltage.angle[i])
+    sinθj = sin(voltage.angle[j])
+    cosθj = cos(voltage.angle[j])
+
+    p = ψijCoefficient(system.branch, system.model.ac, idx)
     k1, k2 = minusΦ(p.C, p.D, -system.branch.parameter.shiftAngle[idx])
     k3, k4 = plusΦ(p.D, p.C, -system.branch.parameter.shiftAngle[idx])
 
-    IijRe = (p.A * s.cosθ[i] - p.B * s.sinθ[i]) * V[i] - (k1 * s.cosθ[j] - k2 * s.sinθ[j]) * V[j]
-    IijIm = (p.A * s.sinθ[i] + p.B * s.cosθ[i]) * V[i] - (k3 * s.cosθ[j] + k4 * s.sinθ[j]) * V[j]
+    IijRe = (p.A * cosθi - p.B * sinθi) * V[i] - (k1 * cosθj - k2 * sinθj) * V[j]
+    IijIm = (p.A * sinθi + p.B * cosθi) * V[i] - (k3 * cosθj + k4 * sinθj) * V[j]
 
-    return IijRe, IijIm
+    IijRe, IijIm
 end
 
-function ReImIijCoefficient(branch::Branch, ac::ACModel, idx::Int64)
+function ReImIijCoefficient(branch::Branch, ac::AcModel, idx::Int64)
     gij, bij = reim(ac.admittance[idx])
     τinv = 1 / branch.parameter.turnsRatio[idx]
     Φ = branch.parameter.shiftAngle[idx]
@@ -397,69 +222,61 @@ function ReImIijCoefficient(branch::Branch, ac::ACModel, idx::Int64)
     )
 end
 
-function ReImIij(
-    system::PowerSystem,
-    method::LAV,
-    p::PiModel,
-    idx::Int64
-)
+function ReImIij(system::PowerSystem, voltage::PolarVariableRef, p::PiModel, idx::Int64)
     i, j = fromto(system, idx)
 
-    return AffExpr(0.0,
-        method.angle[i] => p.A,
-        method.magnitude[i] => p.B,
-        method.angle[j] => p.C,
-        method.magnitude[j]=> p.D,
+    AffExpr(0.0,
+        voltage.angle[i] => p.A,
+        voltage.magnitude[i] => p.B,
+        voltage.angle[j] => p.C,
+        voltage.magnitude[j]=> p.D,
     ),
     AffExpr(0.0,
-        method.angle[i] => -p.B,
-        method.magnitude[i] => p.A,
-        method.angle[j] => -p.D,
-        method.magnitude[j]=> p.C,
+        voltage.angle[i] => -p.B,
+        voltage.magnitude[i] => p.A,
+        voltage.angle[j] => -p.D,
+        voltage.magnitude[j]=> p.C,
     )
 end
 
-function ReImIij(
-    system::PowerSystem,
-    state::PMUState,
-    p::PiModel,
-    idx::Int64
-)
+function ReImIij(system::PowerSystem, voltage::RectangularVariableRef, p::PiModel, idx::Int64)
     i, j = fromto(system, idx)
 
-    return AffExpr(0.0,
-        state.realpart[i] => p.A,
-        state.imagpart[i] => p.B,
-        state.realpart[j] => p.C,
-        state.imagpart[j]=> p.D,
+    AffExpr(0.0,
+        voltage.real[i] => p.A,
+        voltage.imag[i] => p.B,
+        voltage.real[j] => p.C,
+        voltage.imag[j]=> p.D,
     ),
     AffExpr(0.0,
-        state.realpart[i] => -p.B,
-        state.imagpart[i] => p.A,
-        state.realpart[j] => -p.D,
-        state.imagpart[j]=> p.C,
+        voltage.real[i] => -p.B,
+        voltage.imag[i] => p.A,
+        voltage.real[j] => -p.D,
+        voltage.imag[j]=> p.C,
     )
 end
 
-##### Real and Imaginary Components of To-Bus End Current Phasor #####
-function ReImIji(system::PowerSystem, method::LAV, idx::Int64)
-    V = method.state.magnitude
-    s = method.state
-
+##### To-Bus Current Real and Imaginary Components #####
+function ReImIji(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
     i, j = fromto(system, idx)
+
+    V = voltage.magnitude
+    sinθi = sin(voltage.angle[i])
+    cosθi = cos(voltage.angle[i])
+    sinθj = sin(voltage.angle[j])
+    cosθj = cos(voltage.angle[j])
+
     p = ψjiCoefficient(system.branch, system.model.ac, idx)
-
-    θiState!(method, i, j)
     k1, k2 = minusΦ(p.C, p.D, system.branch.parameter.shiftAngle[idx])
     k3, k4 = plusΦ(p.D, p.C, system.branch.parameter.shiftAngle[idx])
 
-    IjiRe = (p.A * s.cosθ[j] - p.B * s.sinθ[j]) * V[j] - (k1 * s.cosθ[i] - k2 * s.sinθ[i]) * V[i]
-    IjiIm = (p.A * s.sinθ[j] + p.B * s.cosθ[j]) * V[j] - (k3 * s.cosθ[i] + k4 * s.sinθ[i]) * V[i]
+    IjiRe = (p.A * cosθj - p.B * sinθj) * V[j] - (k1 * cosθi - k2 * sinθi) * V[i]
+    IjiIm = (p.A * sinθj + p.B * cosθj) * V[j] - (k3 * cosθi + k4 * sinθi) * V[i]
 
     return IjiRe, IjiIm
 end
 
-function ReImIjiCoefficient(branch::Branch, ac::ACModel, idx::Int64)
+function ReImIjiCoefficient(branch::Branch, ac::AcModel, idx::Int64)
     gij, bij = reim(ac.admittance[idx])
     τinv = 1 / branch.parameter.turnsRatio[idx]
     Φ = branch.parameter.shiftAngle[idx]
@@ -472,32 +289,49 @@ function ReImIjiCoefficient(branch::Branch, ac::ACModel, idx::Int64)
     )
 end
 
+##### Read Data for Injection Measurements #####
+function GijBijθij(ac::AcModel, angle::Vector{VariableRef}, i::Int64, j::Int64, ptr::Int64)
+    θij = angle[i] - angle[j]
+    sinθij = sin(θij)
+    cosθij = cos(θij)
+    Gij, Bij = reim(ac.nodalMatrixTranspose.nzval[ptr])
+
+    return Gij, Bij, sinθij, cosθij
+end
+
+##### Eliminate Phase-Shift Angle from Sine and Cosine #####
+function minusΦ(A::Float64, B::Float64, Φ::Float64)
+    A * cos(Φ) + B * sin(Φ), -A * sin(Φ) + B * cos(Φ)
+end
+
+function plusΦ(A::Float64, B::Float64, Φ::Float64)
+    A * cos(Φ) - B * sin(Φ), A * sin(Φ) + B * cos(Φ)
+end
+
 ##### Add Constraints #####
-function addConstrLav!(method::LAV, expr::AffExpr, z::Float64, idx::Int64)
-    method.residual[idx] = @constraint(
-        method.jump, expr + method.deviation.positive[idx] - method.deviation.negative[idx] == z
-    )
+function addConstrLav!(lav::LAV, expr::AffExpr, z::Float64, idx::Int64)
+    dev = lav.variable.deviation
+    lav.residual[idx] = @constraint(lav.jump, expr + dev.positive[idx] - dev.negative[idx] == z)
 end
 
-function addConstrLav!(method::LAV, var::VariableRef, z::Float64, idx::Int64)
-    method.residual[idx] = @constraint(
-        method.jump, var + method.deviation.positive[idx] - method.deviation.negative[idx] == z
-    )
+function addConstrLav!(lav::LAV, expr::NonlinearExpr, z::Float64, idx::Int64)
+    dev = lav.variable.deviation
+    lav.residual[idx] = @constraint(lav.jump, expr + dev.positive[idx] - dev.negative[idx] == z)
 end
 
-function addConstrLav!(method::LAV, expr::NonlinearExpr, z::Float64, idx::Int64)
-    method.residual[idx] = @constraint(
-        method.jump, expr + method.deviation.positive[idx] - method.deviation.negative[idx] == z
-    )
+function addConstrLav!(lav::LAV, var::VariableRef, z::Float64, idx::Int64)
+    dev = lav.variable.deviation
+    lav.residual[idx] = @constraint(lav.jump, var + dev.positive[idx] - dev.negative[idx] == z)
 end
 
 ##### Add Objective #####
-function addObjectLav!(method::LAV, objective::AffExpr, idx::Int64)
-    add_to_expression!(objective, method.deviation.positive[idx] + method.deviation.negative[idx])
+function addObjectLav!(lav::LAV, objective::AffExpr, idx::Int64)
+    dev = lav.variable.deviation
+    add_to_expression!(objective, dev.positive[idx] + dev.negative[idx])
 end
 
-##### Fix Values #####
-function fix!(residualx::Vector{VariableRef}, residualy::Vector{VariableRef}, index::Int64)
-    fix(residualx[index], 0.0; force = true)
-    fix(residualy[index], 0.0; force = true)
+#### Fix Values #####
+function fix!(deviation::DeviationVariableRef, idx::Int64)
+    fix(deviation.positive[idx], 0.0; force = true)
+    fix(deviation.negative[idx], 0.0; force = true)
 end

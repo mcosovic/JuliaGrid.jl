@@ -65,7 +65,7 @@ nothing # hide
 
 The subsequent step involves performing the LU factorization of the nodal matrix ``\mathbf B = \mathbf L \mathbf U`` and computing the bus voltage angles using:
 ```@example PowerFlowSolutionDC
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -88,9 +88,9 @@ Finally, the resulting bus voltage angles are saved in the vector as follows:
 ---
 
 ## [Power Analysis](@id DCPowerAnalysisTutorials)
-After obtaining the solution from the DC power flow, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::DC)) function:
+After obtaining the solution from the DC power flow, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::DC)) function:
 ```@example PowerFlowSolutionDC
-power!(system, analysis)
+power!(analysis)
 nothing # hide
 ```
 

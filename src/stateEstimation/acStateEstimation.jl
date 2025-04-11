@@ -1,60 +1,49 @@
 """
-    gaussNewton(system::PowerSystem, device::Measurement, [method = LU])
+    gaussNewton(monitoring::Measurement, [method = LU])
 
-The function sets up the Gauss-Newton method to solve the nonlinear or AC state
-estimation model, where the vector of state variables is given in polar coordinates. The
-Gauss-Newton method throughout iterations provided WLS estimator.
+The function sets up the Gauss-Newton method to solve the nonlinear or AC state estimation model,
+where the vector of state variables is given in polar coordinates. The Gauss-Newton method throughout
+iterations provided WLS estimator.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` types to establish the WLS state
-estimation framework.
+This function requires the `Measurement` type to establish the WLS state estimation framework.
 
-Moreover, the presence of the `method` parameter is not mandatory. To address the WLS
-state estimation method, users can opt to utilize factorization techniques to decompose
-the gain matrix, such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric.
-Opting for the `Orthogonal` method is advisable for a more robust solution in scenarios
-involving ill-conditioned data, particularly when substantial variations in variances are
-present.
+Moreover, the presence of the `method` parameter is not mandatory. To address the WLS state
+estimation method, users can opt to utilize factorization techniques to decompose the gain matrix,
+such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. Opting for the
+`Orthogonal` method is advisable for a more robust solution in scenarios involving ill-conditioned
+data, particularly when substantial variations in variances are present.
 
-If the user does not provide the `method`, the default method for solving the estimation
-model will be `LU` factorization.
+If the user does not provide the `method`, the default method for solving the estimation model will
+be `LU` factorization.
 
 # Updates
-If the AC model has not been created, the function will automatically trigger an update of
-the `ac` field within the `PowerSystem` type.
+If the AC model has not been created, the function will automatically trigger an update of the `ac`
+field within the `PowerSystem` type.
 
 # Returns
-The function returns an instance of the `ACStateEstimation` type, which includes the
-following fields:
-- `voltage`: The variable allocated to store the bus voltage magnitudes and angles.
-- `power`: The variable allocated to store the active and reactive powers.
-- `method`: The system model vectors and matrices.
+The function returns an instance of the [`AcStateEstimation`](@ref AcStateEstimation) type.
 
 # Examples
 Set up the AC state estimation model to be solved using the default LU factorization:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
+analysis = gaussNewton(monitoring)
 ```
 
 Set up the AC state estimation model to be solved using the orthogonal method:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device, Orthogonal)
+analysis = gaussNewton(monitoring, Orthogonal)
 ```
 """
-function gaussNewton(
-    system::PowerSystem,
-    device::Measurement,
-    factorization::Type{<:Union{QR, LDLt, LU}} = LU
-)
-    jcb, mean, pcs, rsd, type, index, range, power, current, _ = acWLS(system, device)
+function gaussNewton(monitoring::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
+    system = monitoring.system
+    jcb, mean, pcs, rsd, type, index, range, power, current, _ = acWLS(system, monitoring)
 
-    ACStateEstimation(
+    AcStateEstimation(
         Polar(
             copy(system.bus.voltage.magnitude),
             copy(system.bus.voltage.angle)
@@ -68,18 +57,21 @@ function gaussNewton(
             rsd,
             fill(0.0, 2 * system.bus.number),
             factorized[factorization],
-            0.0,
-            0,
             type,
             index,
             range,
-            -1
-        )
+            Dict(:pattern => -1),
+            0.0,
+            0
+        ),
+        system,
+        monitoring,
     )
 end
 
-function gaussNewton(system::PowerSystem, device::Measurement, ::Type{<:Orthogonal})
-    jcb, mean, pcs, rsd, type, index, range, power, current, crld = acWLS(system, device)
+function gaussNewton(monitoring::Measurement, ::Type{<:Orthogonal})
+    system = monitoring.system
+    jcb, mean, pcs, rsd, type, index, range, power, current, crld = acWLS(system, monitoring)
 
     if crld
         throw(ErrorException(
@@ -87,7 +79,7 @@ function gaussNewton(system::PowerSystem, device::Measurement, ::Type{<:Orthogon
         )
     end
 
-    ACStateEstimation(
+    AcStateEstimation(
         Polar(
             copy(system.bus.voltage.magnitude),
             copy(system.bus.voltage.angle)
@@ -101,24 +93,26 @@ function gaussNewton(system::PowerSystem, device::Measurement, ::Type{<:Orthogon
             rsd,
             fill(0.0, 2 * system.bus.number),
             factorized[QR],
-            0.0,
-            0,
             type,
             index,
             range,
-            -1
-        )
+            Dict(:pattern => -1),
+            0.0,
+            0
+        ),
+        system,
+        monitoring,
     )
 end
 
-function acWLS(system::PowerSystem, device::Measurement)
+function acWLS(system::PowerSystem, monitoring::Measurement)
     ac = system.model.ac
     bus = system.bus
-    volt = device.voltmeter
-    amp = device.ammeter
-    watt = device.wattmeter
-    var = device.varmeter
-    pmu = device.pmu
+    volt = monitoring.voltmeter
+    amp = monitoring.ammeter
+    watt = monitoring.wattmeter
+    var = monitoring.varmeter
+    pmu = monitoring.pmu
     correlated = false
 
     checkSlackBus(system)
@@ -182,7 +176,7 @@ function acWLS(system::PowerSystem, device::Measurement)
     @inbounds for (i, k) in enumerate(amp.layout.index)
         status = amp.magnitude.status[i]
 
-        sq = if2(amp.layout.square[i])
+        sq = if2exp(amp.layout.square[i])
         mean[jcb.idx] = status * (amp.magnitude.mean[i]^sq)
         precision!(pcs, sq * amp.magnitude.variance[i])
 
@@ -227,7 +221,7 @@ function acWLS(system::PowerSystem, device::Measurement)
         statusAng = pmu.angle.status[i]
 
         if pmu.layout.polar[i]
-            sq = if2(pmu.layout.square[i])
+            sq = if2exp(pmu.layout.square[i])
             mean[jcb.idx] = statusMag * (pmu.magnitude.mean[i]^sq)
             precision!(pcs, sq * pmu.magnitude.variance[i])
 
@@ -274,7 +268,7 @@ function acWLS(system::PowerSystem, device::Measurement)
     jacobian = sparse(jcb.row, jcb.col, jcb.val, total, 2 * bus.number)
     precision = sparse(pcs.row, pcs.col, pcs.val, total, total)
 
-    power = ACPower(
+    power = AcPower(
         Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]),
@@ -284,7 +278,7 @@ function acWLS(system::PowerSystem, device::Measurement)
         Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[])
     )
-    current = ACCurrent(
+    current = AcCurrent(
         Polar(Float64[], Float64[]),
         Polar(Float64[], Float64[]),
         Polar(Float64[], Float64[]),
@@ -295,7 +289,7 @@ function acWLS(system::PowerSystem, device::Measurement)
         type, idx, range, power, current, correlated
 end
 
-function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
+function normalEquation!(system::PowerSystem, analysis::AcStateEstimation)
     ac = system.model.ac
     bus = system.bus
     branch = system.branch
@@ -304,6 +298,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
     jcb = se.jacobian
 
     se.objective = 0.0
+    I = [0.0; 0.0]
     @inbounds for col = 1:bus.number
         cok = col + bus.number
 
@@ -316,7 +311,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
 
             if se.type[row] == 6 # Pi
                 if col == se.index[row]
-                    I = [0.0; 0.0]
+                    fill!(I, 0.0)
                     for q in ac.nodalMatrix.colptr[col]:(ac.nodalMatrix.colptr[col + 1] - 1)
                         j = ac.nodalMatrix.rowval[q]
 
@@ -369,7 +364,7 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
 
             elseif se.type[row] == 9 # Qi
                 if col == se.index[row]
-                    I = [0.0; 0.0]
+                    fill!(I, 0.0)
                     for q in ac.nodalMatrix.colptr[col]:(ac.nodalMatrix.colptr[col + 1] - 1)
                         j = ac.nodalMatrix.rowval[q]
 
@@ -618,77 +613,71 @@ function normalEquation!(system::PowerSystem, analysis::ACStateEstimation)
 end
 
 """
-    acLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
+    acLavStateEstimation(monitoring::Measurement, optimizer;
         iteration, tolerance, bridge, name, magnitude, angle, positive, negative, verbose)
 
-The function sets up the LAV method to solve the nonlinear or AC state estimation
-model, where the vector of state variables is given in polar coordinates.
+The function sets up the LAV method to solve the nonlinear or AC state estimation model, where the
+vector of state variables is given in polar coordinates.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` types to establish the LAV state
-estimation model. The LAV method offers increased robustness compared to WLS, ensuring
-unbiasedness even in the presence of various measurement errors and outliers.
+This function requires the `Measurement` type to establish the LAV state estimation model. The LAV
+method offers increased robustness compared to WLS, ensuring unbiasedness even in the presence of
+various measurement errors and outliers.
 
 Users can employ the LAV method to find an estimator by choosing one of the available
-[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
-`Ipopt` suffices for most scenarios.
+[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically, `Ipopt`
+suffices for most scenarios.
 
 # Keywords
 The function accepts the following keywords:
 * `iteration`: Specifies the maximum number of iterations.
 * `tolerance`: Specifies the allowed deviation from the optimal solution.
 * `bridge`: Controls the bridging mechanism (default: `false`).
-* `name`: Handles the creation of string names (default: `false`).
+* `name`: Handles the creation of string names (default: `true`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
-Additionally, users can modify variable names used for printing and writing through the
-keywords `magnitude`, `angle`, `positive`, and `negative`. For instance, users can choose
-`magnitude = "V"`, `angle = "θ"`, `positive = "u"`, and `negative = "v"` to display equations
-in a more readable format.
+Additionally, users can modify variable names used for printing and writing through the keywords
+`magnitude`, `angle`, `positive`, and `negative`. For instance, users can choose `magnitude = "V"`,
+`angle = "θ"`, `positive = "u"`, and `negative = "v"` to display equations in a more readable format.
 
 # Updates
-If the AC model has not been created, the function will automatically trigger an update of
-the `ac` field within the `PowerSystem` composite type.
+If the AC model has not been created, the function will automatically trigger an update of the `ac`
+field within the `PowerSystem` composite type.
 
 # Returns
-The function returns an instance of the `ACStateEstimation` type, which includes the
-following fields:
-- `voltage`: The variable allocated to store the bus voltage magnitudes and angles.
-- `power`: The variable allocated to store the active and reactive powers.
-- `method`: The optimization model.
+The function returns an instance of the [`AcStateEstimation`](@ref AcStateEstimation) type.
 
 # Example
 ```jldoctest
 using Ipopt
 
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = acLavStateEstimation(system, device, Ipopt.Optimizer)
+analysis = acLavStateEstimation(monitoring, Ipopt.Optimizer)
 ```
 """
 function acLavStateEstimation(
-    system::PowerSystem,
-    device::Measurement,
+    monitoring::Measurement,
     @nospecialize optimizerFactory;
     iteration::IntMiss = missing,
     tolerance::FltIntMiss = missing,
     bridge::Bool = false,
-    name::Bool = false,
+    name::Bool = true,
     magnitude::String = "magnitude",
     angle::String = "angle",
     positive::String = "positive",
     negative::String = "negative",
     verbose::Int64 = template.config.verbose
 )
+    system = monitoring.system
     ac = system.model.ac
     bus = system.bus
     branch = system.branch
-    volt = device.voltmeter
-    amp = device.ammeter
-    watt = device.wattmeter
-    var = device.varmeter
-    pmu = device.pmu
+    volt = monitoring.voltmeter
+    amp = monitoring.ammeter
+    watt = monitoring.wattmeter
+    var = monitoring.varmeter
+    pmu = monitoring.pmu
 
     checkSlackBus(system)
     model!(system, ac)
@@ -702,18 +691,15 @@ function acLavStateEstimation(
 
     lav = LAV(
         jump,
-        ACState(
-            @variable(jump, magnitude[i = 1:bus.number], base_name = magnitude),
-            @variable(jump, angle[i = 1:bus.number], base_name = angle),
-            Dict{Int64, NonlinearExpr}(),
-            Dict{Int64, NonlinearExpr}(),
-            Dict{Int64, NonlinearExpr}(),
-            Dict{Int64, NonlinearExpr}(),
-            Dict{Tuple{Int64, Int64}, Int64}()
-        ),
-        Deviation(
-            @variable(jump, 0 <= positive[i = 1:total], base_name = positive),
-            @variable(jump, 0 <= negative[i = 1:total], base_name = negative)
+        LavVariableRef(
+            PolarVariableRef(
+                @variable(jump, magnitude[i = 1:bus.number], base_name = magnitude),
+                @variable(jump, angle[i = 1:bus.number], base_name = angle)
+            ),
+            DeviationVariableRef(
+                @variable(jump, 0 <= positive[i = 1:total], base_name = positive),
+                @variable(jump, 0 <= negative[i = 1:total], base_name = negative)
+            )
         ),
         Dict{Int64, ConstraintRef}(),
         OrderedDict{Int64, Int64}(),
@@ -722,18 +708,17 @@ function acLavStateEstimation(
     )
     objective = @expression(lav.jump, AffExpr())
 
-    @inbounds for i = 1:branch.number
-        lav.state.incidence[(fromto(system, i))] = i
-    end
+    voltage = lav.variable.voltage
+    deviation = lav.variable.deviation
 
-    fix(lav.state.angle[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
+    fix(voltage.angle[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
 
     @inbounds for (k, idx) in enumerate(volt.layout.index)
         if volt.magnitude.status[k] == 1
-            addConstrLav!(lav, lav.state.magnitude[idx], volt.magnitude.mean[k], k)
+            addConstrLav!(lav, voltage.magnitude[idx], volt.magnitude.mean[k], k)
             addObjectLav!(lav, objective, k)
         else
-            fix!(lav.deviation.positive, lav.deviation.negative, k)
+            fix!(deviation, k)
         end
     end
     lav.range[2] = volt.number + 1
@@ -742,16 +727,16 @@ function acLavStateEstimation(
     @inbounds for (k, idx) in enumerate(amp.layout.index)
         if amp.magnitude.status[k] == 1
             if amp.layout.from[k]
-                expr = Iij(system, lav, amp.layout.square[k], idx)
+                expr = Iij(system, voltage, amp.layout.square[k], idx)
             else
-                expr = Iji(system, lav, amp.layout.square[k], idx)
+                expr = Iji(system, voltage, amp.layout.square[k], idx)
             end
 
-            sq = if2(amp.layout.square[k])
+            sq = if2exp(amp.layout.square[k])
             addConstrLav!(lav, expr, amp.magnitude.mean[k]^sq, cnt)
             addObjectLav!(lav, objective, cnt)
         else
-            fix!(lav.deviation.positive, lav.deviation.negative, cnt)
+            fix!(deviation, cnt)
         end
         cnt += 1
     end
@@ -760,18 +745,18 @@ function acLavStateEstimation(
     @inbounds for (k, idx) in enumerate(watt.layout.index)
         if watt.active.status[k] == 1
             if watt.layout.bus[k]
-                expr = Pi(system, lav, idx)
+                expr = Pi(system, voltage, idx)
             else
                 if watt.layout.from[k]
-                    expr = Pij(system, lav, idx)
+                    expr = Pij(system, voltage, idx)
                 else
-                    expr = Pji(system, lav, idx)
+                    expr = Pji(system, voltage, idx)
                 end
             end
             addConstrLav!(lav, expr, watt.active.mean[k], cnt)
             addObjectLav!(lav, objective, cnt)
         else
-            fix!(lav.deviation.positive, lav.deviation.negative, cnt)
+            fix!(deviation, cnt)
         end
         cnt += 1
     end
@@ -780,18 +765,18 @@ function acLavStateEstimation(
     @inbounds for (k, idx) in enumerate(var.layout.index)
         if var.reactive.status[k] == 1
             if var.layout.bus[k]
-                expr = Qi(system, lav, idx)
+                expr = Qi(system, voltage, idx)
             else
                 if var.layout.from[k]
-                    expr = Qij(system, lav, idx)
+                    expr = Qij(system, voltage, idx)
                 else
-                    expr = Qji(system, lav, idx)
+                    expr = Qji(system, voltage, idx)
                 end
             end
             addConstrLav!(lav, expr, var.reactive.mean[k], cnt)
             addObjectLav!(lav, objective, cnt)
         else
-            fix!(lav.deviation.positive, lav.deviation.negative, cnt)
+            fix!(deviation, cnt)
         end
         cnt += 1
     end
@@ -801,54 +786,54 @@ function acLavStateEstimation(
         if pmu.layout.polar[k]
             if pmu.layout.bus[k]
                 if pmu.magnitude.status[k] == 1
-                    addConstrLav!(lav, lav.state.magnitude[idx], pmu.magnitude.mean[k], cnt)
+                    addConstrLav!(lav, voltage.magnitude[idx], pmu.magnitude.mean[k], cnt)
                     addObjectLav!(lav, objective, cnt)
                 else
-                    fix!(lav.deviation.positive, lav.deviation.negative, cnt)
+                    fix!(deviation, cnt)
                 end
 
                 if pmu.angle.status[k] == 1
-                    addConstrLav!(lav, lav.state.angle[idx], pmu.angle.mean[k], cnt + 1)
+                    addConstrLav!(lav, voltage.angle[idx], pmu.angle.mean[k], cnt + 1)
                     addObjectLav!(lav, objective, cnt + 1)
                 else
-                    fix!(lav.deviation.positive, lav.deviation.negative, cnt + 1)
+                    fix!(deviation, cnt + 1)
                 end
             else
                 if pmu.magnitude.status[k] == 1
                     if pmu.layout.from[k]
-                        expr = Iij(system, lav, pmu.layout.square[k], idx)
+                        expr = Iij(system, voltage, pmu.layout.square[k], idx)
                     else
-                        expr = Iji(system, lav, pmu.layout.square[k], idx)
+                        expr = Iji(system, voltage, pmu.layout.square[k], idx)
                     end
 
-                    sq = if2(pmu.layout.square[k])
+                    sq = if2exp(pmu.layout.square[k])
                     addConstrLav!(lav, expr, pmu.magnitude.mean[k]^sq, cnt)
                     addObjectLav!(lav, objective, cnt)
                 else
-                    fix!(lav.deviation.positive, lav.deviation.negative, cnt)
+                    fix!(deviation, cnt)
                 end
 
                 if pmu.angle.status[k] == 1
                     if pmu.layout.from[k]
-                        expr = ψij(system, lav, idx)
+                        expr = ψij(system, voltage, idx)
                     else
-                        expr = ψji(system, lav, idx)
+                        expr = ψji(system, voltage, idx)
                     end
                     addConstrLav!(lav, expr, pmu.angle.mean[k], cnt + 1)
                     addObjectLav!(lav, objective, cnt + 1)
                 else
-                    fix!(lav.deviation.positive, lav.deviation.negative, cnt + 1)
+                    fix!(deviation, cnt + 1)
                 end
             end
         else
             if pmu.magnitude.status[k] == 1 && pmu.angle.status[k] == 1
                 if pmu.layout.bus[k]
-                    ReExpr, ImExpr = ReImVi(lav, idx)
+                    ReExpr, ImExpr = ReImVi(voltage, idx)
                 else
                     if pmu.layout.from[k]
-                        ReExpr, ImExpr = ReImIij(system, lav, idx)
+                        ReExpr, ImExpr = ReImIij(system, voltage, idx)
                     else
-                        ReExpr, ImExpr = ReImIji(system, lav, idx)
+                        ReExpr, ImExpr = ReImIji(system, voltage, idx)
                     end
                 end
                 ReMean = pmu.magnitude.mean[k] * cos(pmu.angle.mean[k])
@@ -860,8 +845,8 @@ function acLavStateEstimation(
                 addConstrLav!(lav, ImExpr, ImMean, cnt + 1)
                 addObjectLav!(lav, objective, cnt + 1)
             else
-                fix!(lav.deviation.positive, lav.deviation.negative, cnt)
-                fix!(lav.deviation.positive, lav.deviation.negative, cnt + 1)
+                fix!(deviation, cnt)
+                fix!(deviation, cnt + 1)
             end
         end
         cnt += 2
@@ -870,12 +855,12 @@ function acLavStateEstimation(
 
     @objective(lav.jump, Min, objective)
 
-    ACStateEstimation(
+    AcStateEstimation(
         Polar(
             copy(bus.voltage.magnitude),
             copy(bus.voltage.angle)
         ),
-        ACPower(
+        AcPower(
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[]),
@@ -885,43 +870,44 @@ function acLavStateEstimation(
             Cartesian(Float64[], Float64[]),
             Cartesian(Float64[], Float64[])
         ),
-        ACCurrent(
+        AcCurrent(
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        lav
+        lav,
+        system,
+        monitoring
     )
 end
 
 """
-    increment!(system::PowerSystem, analysis::ACStateEstimation)
+    increment!(analysis::AcStateEstimation)
 
-By solving the normal equation, this function computes the bus voltage magnitude and angle
-increments.
+By solving the normal equation, this function computes the bus voltage magnitude and angle increments.
 
 # Updates
 The function updates the `residual`, `jacobian`, and `factorisation` variables within the
-`ACStateEstimation` type. Using these results, it then computes and updates the `increment`
-variable within the same type. It should be used during the Gauss-Newton iteration loop
-before invoking the [`solve!`](@ref solve!(::PowerSystem, analysis::ACStateEstimation))
-function.
+`AcStateEstimation` type. Using these results, it then computes and updates the `increment` variable
+within the same type. It should be used during the Gauss-Newton iteration loop before invoking the
+[`solve!`](@ref solve!(::AcStateEstimation)) function.
 
 # Returns
-The function returns the maximum absolute increment value, which can be used to terminate
-the iteration loop of the Gauss-Newton method applied to solve the AC state estimation problem.
+The function returns the maximum absolute increment value, which can be used to terminate the
+iteration loop of the Gauss-Newton method applied to solve the AC state estimation problem.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-increment!(system, analysis)
+analysis = gaussNewton(monitoring)
+increment!(analysis)
 ```
 """
-function increment!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton{Normal}})
+function increment!(analysis::AcStateEstimation{GaussNewton{Normal}})
+    system = analysis.system
+
     normalEquation!(system, analysis)
 
     bus = system.bus
@@ -937,8 +923,8 @@ function increment!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton
     gain = (transpose(jcb) * se.precision * jcb)
     gain[bus.layout.slack, bus.layout.slack] = 1.0
 
-    if se.pattern == -1
-        se.pattern = 0
+    if se.signature[:pattern] == -1
+        se.signature[:pattern] = 0
         se.factorization = factorization(gain, se.factorization)
     else
         se.factorization = factorization!(gain, se.factorization)
@@ -957,7 +943,9 @@ function increment!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton
     return maximum(abs, se.increment)
 end
 
-function increment!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton{Orthogonal}})
+function increment!(analysis::AcStateEstimation{GaussNewton{Orthogonal}})
+    system = analysis.system
+
     normalEquation!(system, analysis)
 
     bus = system.bus
@@ -976,8 +964,8 @@ function increment!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton
     end
 
     jcbScale = se.precision * jcb
-    if se.pattern == -1
-        se.pattern = 0
+    if se.signature[:pattern] == -1
+        se.signature[:pattern] = 0
         se.factorization = factorization(jcbScale, se.factorization)
     else
         se.factorization = factorization!(jcbScale, se.factorization)
@@ -999,29 +987,28 @@ function increment!(system::PowerSystem, analysis::ACStateEstimation{GaussNewton
 end
 
 """
-    solve!(system::PowerSystem, analysis::ACStateEstimation)
+    solve!(analysis::AcStateEstimation)
 
-By computing the bus voltage magnitudes and angles, the function solves the AC state estimation.
-Note that if the Gauss-Newton method is employed to obtain the WLS estimator, this function
-simply updates the state variables using the obtained increments.
+By computing the bus voltage magnitudes and angles, the function solves the AC state estimation. Note
+that if the Gauss-Newton method is employed to obtain the WLS estimator, this function simply updates
+the state variables using the obtained increments.
 
 # Updates
 The resulting bus voltage magnitudes and angles are stored in the `voltage` field of the
-`ACStateEstimation` type.
+`AcStateEstimation` type.
 
 # Examples
 Solving the AC state estimation model and obtaining the WLS estimator:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
+analysis = gaussNewton(monitoring)
 for iteration = 1:20
-    stopping = increment!(system, analysis)
+    stopping = increment!(analysis)
     if stopping < 1e-8
         break
     end
-    solve!(system, analysis
+    solve!(analysis)
 end
 ```
 
@@ -1029,18 +1016,14 @@ Solving the AC state estimation model and obtaining the LAV estimator:
 ```jldoctest
 using Ipopt
 
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = acLavStateEstimation(system, device, Ipopt.Optimizer; verbose = 1)
-solve!(system, analysis)
+analysis = acLavStateEstimation(monitoring, Ipopt.Optimizer; verbose = 1)
+solve!(analysis)
 ```
 """
-function solve!(
-    system::PowerSystem,
-    analysis::ACStateEstimation{GaussNewton{T}}
-) where T <: Union{Normal, Orthogonal}
-
+function solve!(analysis::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
+    system = analysis.system
     bus = system.bus
     volt = analysis.voltage
 
@@ -1051,10 +1034,8 @@ function solve!(
     analysis.method.iteration += 1
 end
 
-function solve!(
-    system::PowerSystem,
-    analysis::ACStateEstimation{LAV};
-)
+function solve!(analysis::AcStateEstimation{LAV})
+    system = analysis.system
     bus = system.bus
     lav = analysis.method
     volt = analysis.voltage
@@ -1063,76 +1044,43 @@ function solve!(
     silentJump(lav.jump, verbose)
 
     @inbounds for i = 1:bus.number
-        set_start_value(lav.state.angle[i]::VariableRef, bus.voltage.angle[i])
-        set_start_value(lav.state.magnitude[i]::VariableRef, bus.voltage.magnitude[i])
+        set_start_value(lav.variable.voltage.angle[i]::VariableRef, bus.voltage.angle[i])
+        set_start_value(lav.variable.voltage.magnitude[i]::VariableRef, bus.voltage.magnitude[i])
     end
 
     optimize!(lav.jump)
 
     @inbounds for i = 1:bus.number
-        volt.angle[i] = value(lav.state.angle[i]::VariableRef)
-        volt.magnitude[i] = value(lav.state.magnitude[i]::VariableRef)
+        volt.angle[i] = value(lav.variable.voltage.angle[i]::VariableRef)
+        volt.magnitude[i] = value(lav.variable.voltage.magnitude[i]::VariableRef)
     end
 
     printExit(lav.jump, verbose)
 end
 
 """
-    setInitialPoint!(source::Union{PowerSystem, Analysis}, target::ACStateEstimation)
+    setInitialPoint!(analysis::AcStateEstimation)
 
-The function can reset the initial point of the AC state estimation to values from the
-`PowerSystem` type. It can also initialize the AC state estimation based on results from
-the `Analysis` type, whether from an AC or DC analysis.
+The function sets the initial point of the AC state estimation to the values from the `PowerSystem`
+type.
 
-The function assigns the bus voltage magnitudes and angles in the `target` argument,
-using data from the `source` argument. This allows users to initialize AC state estimation
-as needed.
+# Updates
+The function modifies the `voltage` field of the `AcStateEstimation` type.
 
-If `source` comes from a DC analysis, only the bus voltage angles are assigned in the
-`target` argument, while the bus voltage magnitudes remain unchanged.
-
-# Examples
-Reset the initial point of the AC state estimation:
+# Example:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-for iteration = 1:20
-    stopping = increment!(system, analysis)
-    if stopping < 1e-8
-        break
-    end
-    solve!(system, analysis)
-end
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis)
 
-residualTest!(system, device, analysis; threshold = 1.0)
+residualTest!(analysis; threshold = 1.0)
 
-setInitialPoint!(system, analysis)
-for iteration = 1:20
-    stopping = increment!(system, analysis)
-    if stopping < 1e-8
-        break
-    end
-    solve!(system, analysis)
-end
-```
-
-Use wrapper functions and reset the initial point of the AC state estimation:
-```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
-
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis)
-
-residualTest!(system, device, analysis; threshold = 1.0)
-
-setInitialPoint!(system, analysis)
-stateEstimation!(system, analysis)
+setInitialPoint!(analysis)
+stateEstimation!(analysis)
 ```
 """
-function setInitialPoint!(system::PowerSystem, analysis::ACStateEstimation)
+function setInitialPoint!(analysis::AcStateEstimation)
     errorTransfer(system.bus.voltage.magnitude, analysis.voltage.magnitude)
     errorTransfer(system.bus.voltage.angle, analysis.voltage.angle)
 
@@ -1142,7 +1090,32 @@ function setInitialPoint!(system::PowerSystem, analysis::ACStateEstimation)
     end
 end
 
-function setInitialPoint!(source::AC, target::ACStateEstimation)
+"""
+    setInitialPoint!(source::Analysis, target::AcStateEstimation)
+
+The function initializes the AC state estimation based on results from the `Analysis` type, whether
+from an AC or DC analysis.
+
+The function assigns the bus voltage magnitudes and angles in the `target` argument, using data from
+the `source` argument. This allows users to initialize AC state estimation as needed.
+
+If `source` comes from a DC analysis, only the bus voltage angles are assigned in the `target`
+argument, while the bus voltage magnitudes remain unchanged.
+
+# Example
+```jldoctest
+system, monitoring = ems("case14.h5", "monitoring.h5")
+
+source = newtonRaphson(system)
+powerFlow!(source)
+
+target = gaussNewton(monitoring)
+
+setInitialPoint!(source, target)
+stateEstimation!(analysis)
+```
+"""
+function setInitialPoint!(source::AC, target::AcStateEstimation)
     errorTransfer(source.voltage.magnitude, target.voltage.magnitude)
     errorTransfer(source.voltage.angle, target.voltage.angle)
 
@@ -1152,7 +1125,7 @@ function setInitialPoint!(source::AC, target::ACStateEstimation)
     end
 end
 
-function setInitialPoint!(source::DC, target::ACStateEstimation)
+function setInitialPoint!(source::DC, target::AcStateEstimation)
     errorTransfer(source.voltage.angle, target.voltage.angle)
 
     @inbounds for i = 1:length(source.voltage.angle)
@@ -1243,14 +1216,6 @@ function fourIndices!(
     return jcb, type, idx
 end
 
-function if2(square::Bool)
-    if square
-        return 2
-    else
-        return 1
-    end
-end
-
 function nthIndices!(
     jcb::SparseModel,
     type::Vector{Int8},
@@ -1279,19 +1244,18 @@ function nthIndices!(
 end
 
 """
-    stateEstimation!(system::PowerSystem, analysis::ACStateEstimation;
-        iteration, tolerance, power, current, verbose)
+    stateEstimation!(analysis::AcStateEstimation; iteration, tolerance, power, current, verbose)
 
 The function serves as a wrapper for solving AC state estimation and includes the functions:
-* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})),
-* [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
-* [`current!`](@ref current!(::PowerSystem, ::AC)).
+* [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{Normal}})),
+* [`power!`](@ref power!(::AcPowerFlow)),
+* [`current!`](@ref current!(::AC)).
 
 Additionally, for the WLS model, it includes:
 * [`increment!`](@ref increment!).
 
-It computes bus voltage magnitudes and angles using the WLS or LAV model with the option
-to compute powers and currents.
+It computes bus voltage magnitudes and angles using the WLS or LAV model with the option to compute
+powers and currents.
 
 # Keywords
 Users can use the following keywords:
@@ -1301,33 +1265,31 @@ Users can use the following keywords:
 * `current`: Enables the computation of currents (default: `false`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
-For the WLS model, `tolerance` refers to the step size tolerance in the stopping criterion,
-whereas for the LAV model, it defines the allowed deviation from the optimal solution.
-If `iteration` and `tolerance` are not specified for the LAV model, the optimization solver
-settings are used.
+For the WLS model, `tolerance` refers to the step size tolerance in the stopping criterion, whereas
+for the LAV model, it defines the allowed deviation from the optimal solution. If `iteration` and
+`tolerance` are not specified for the LAV model, the optimization solver settings are used.
 
 # Examples
 Use the wrapper function to obtain the WLS estimator:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; tolerance = 1e-10, current = true, verbose = 3)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis; tolerance = 1e-10, current = true, verbose = 3)
 ```
 
 Use the wrapper function to obtain the LAV estimator:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+using Ipopt
 
-analysis = acLavStateEstimation(system, device, Ipopt.Optimizer)
-stateEstimation!(system, analysis; iteration = 30, power = true, verbose = 1)
+system, monitoring = ems("case14.h5", "monitoring.h5")
+
+analysis = acLavStateEstimation(monitoring, Ipopt.Optimizer)
+stateEstimation!(analysis; iteration = 30, power = true, verbose = 1)
 ```
 """
 function stateEstimation!(
-    system::PowerSystem,
-    analysis::ACStateEstimation{GaussNewton{T}};
+    analysis::AcStateEstimation{GaussNewton{T}};
     iteration::Int64 = 40,
     tolerance::Float64 = 1e-8,
     power::Bool = false,
@@ -1335,6 +1297,7 @@ function stateEstimation!(
     verbose::Int64 = template.config.verbose
 )  where T <: Union{Normal, Orthogonal}
 
+    system = analysis.system
     converged = false
     maxExceeded = false
     analysis.method.iteration = 0
@@ -1343,7 +1306,7 @@ function stateEstimation!(
     printMiddle(system, analysis, verbose)
 
     for iter = 0:iteration
-        maxInc = increment!(system, analysis)
+        maxInc = increment!(analysis)
 
         printSolver(analysis, maxInc, verbose)
         if maxInc < tolerance
@@ -1354,40 +1317,41 @@ function stateEstimation!(
             maxExceeded = true
             break
         end
-        solve!(system, analysis)
+        solve!(analysis)
     end
 
     printSolver(system, analysis, verbose)
     printExit(analysis, maxExceeded, converged, verbose)
 
     if power
-        power!(system, analysis)
+        power!(analysis)
     end
     if current
-        current!(system, analysis)
+        current!(analysis)
     end
 end
 
 function stateEstimation!(
-    system::PowerSystem,
-    analysis::ACStateEstimation{LAV};
+    analysis::AcStateEstimation{LAV};
     iteration::IntMiss = missing,
     tolerance::FltIntMiss = missing,
     power::Bool = false,
     current::Bool = false,
     verbose::IntMiss = missing
 )
+    system = analysis.system
+
     verbose = setJumpVerbose(analysis.method.jump, template, verbose)
     setAttribute(analysis.method.jump, iteration, tolerance, verbose)
 
     printTop(analysis, verbose)
 
-    solve!(system, analysis)
+    solve!(analysis)
 
     if power
-        power!(system, analysis)
+        power!(analysis)
     end
     if current
-        current!(system, analysis)
+        current!(analysis)
     end
 end

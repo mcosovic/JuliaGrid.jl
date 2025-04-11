@@ -1,40 +1,36 @@
 """
-    islandTopologicalFlow(system::PowerSystem, device::Measurement)
+    islandTopologicalFlow(monitoring::Measurement)
 
-The function utilizes a topological approach to detect flow-observable islands, resulting
-in the formation of disconnected and loop-free subgraphs. It is assumed that active and
-reactive power measurements are paired, indicating a standard observability analysis. In
-this analysis, islands formed by active power measurements correspond to those formed by
-reactive power measurements.
+The function utilizes a topological approach to detect flow-observable islands, resulting in the
+formation of disconnected and loop-free subgraphs. It is assumed that active and reactive power
+measurements are paired, indicating a standard observability analysis. In this analysis, islands
+formed by active power measurements correspond to those formed by reactive power measurements.
 
 # Arguments
-To define flow-observable islands, this function needs the composite types `PowerSystem`
-and `Measurement`.
+To define flow-observable islands, this function needs the `Measurement` type.
 
 # Returns
-The function returns an `Island` type, containing information about the islands:
-* `island`: List enumerating observable islands with indices of buses.
-* `bus`: Positions of buses in relation to each island.
-* `tie`: Tie data associated with buses and branches.
+The function returns an instance of the [`Island`](@ref Island) type.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-statusWattmeter!(system, device; inservice = 15)
-device.varmeter.reactive.status = copy(device.wattmeter.active.status)
+statusWattmeter!(monitoring; inservice = 15)
+monitoring.varmeter.reactive.status = copy(monitoring.wattmeter.active.status)
 
-islands = islandTopologicalFlow(system, device)
+islands = islandTopologicalFlow(monitoring)
 ```
 """
-function islandTopologicalFlow(system::PowerSystem, device::Measurement)
+function islandTopologicalFlow(monitoring::Measurement)
+    system = monitoring.system
+
     observe = Island([], Int64[], TieData(Set{Int64}(), Set{Int64}(), Set{Int64}()))
     rowval, colptr = connectionObservability(system)
 
-    connectedComponents(system, observe, device.wattmeter)
+    connectedComponents(system, observe, monitoring.wattmeter)
     tieBusBranch(system, observe)
-    tieInjection(observe, device.wattmeter)
+    tieInjection(observe, monitoring.wattmeter)
 
     mergePairs(system.bus, observe, rowval, colptr)
     tieBusBranch(system, observe)
@@ -43,44 +39,41 @@ function islandTopologicalFlow(system::PowerSystem, device::Measurement)
 end
 
 """
-    islandTopological(system::PowerSystem, device::Measurement)
+    islandTopological(monitoring::Measurement)
 
-The function employs a topological method to identify maximal-observable islands.
-Specifically, it employs active power measurements to pinpoint flow-observable islands.
-Subsequently, these islands are merged based on the available injection measurements.
+The function employs a topological method to identify maximal-observable islands. Specifically, it
+employs active power measurements to pinpoint flow-observable islands. Subsequently, these islands
+are merged based on the available injection measurements.
 
-It is assumed that active and reactive power measurements are paired, indicating a
-standard observability analysis. In this analysis, islands formed by active power
-measurements correspond to those formed by reactive power measurements.
+It is assumed that active and reactive power measurements are paired, indicating a standard
+observability analysis. In this analysis, islands formed by active power measurements correspond to
+those formed by reactive power measurements.
 
 # Arguments
-To define maximal-observable islands, this function needs the composite types `PowerSystem`
-and `Measurement`.
+To define maximal-observable islands, this function needs the `Measurement` type.
 
 # Returns
-The function returns an `Island` type, containing information about the islands:
-* `island`: List enumerating observable islands with indices of buses.
-* `bus`: Positions of buses in relation to each island.
-* `tie`: Tie data associated with buses and branches.
+The function returns an instance of the [`Island`](@ref Island) type.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-statusWattmeter!(system, device; inservice = 15)
-device.varmeter.reactive.status = copy(device.wattmeter.active.status)
+statusWattmeter!(monitoring; inservice = 15)
+monitoring.varmeter.reactive.status = copy(monitoring.wattmeter.active.status)
 
-islands = islandTopological(system, device)
+islands = islandTopological(monitoring)
 ```
 """
-function islandTopological(system::PowerSystem, device::Measurement)
+function islandTopological(monitoring::Measurement)
+    system = monitoring.system
+
     observe = Island([], Int64[], TieData(Set{Int64}(), Set{Int64}(), Set{Int64}()))
     rowval, colptr = connectionObservability(system)
 
-    connectedComponents(system, observe, device.wattmeter)
+    connectedComponents(system, observe, monitoring.wattmeter)
     tieBusBranch(system, observe)
-    tieInjection(observe, device.wattmeter)
+    tieInjection(observe, monitoring.wattmeter)
 
     mergePairs(system.bus, observe, rowval, colptr)
     mergeFlowIslands(system, observe, rowval, colptr)
@@ -371,43 +364,40 @@ function check(
 end
 
 """
-    restorationGram!(system::PowerSystem, device::Measurement, pseudo::Measurement,
-        islands::Island; threshold)
+    restorationGram!(monitoring::Measurement, pseudo::Measurement, islands::Island; threshold)
 
 Upon identifying the `Island`, the function incorporates measurements from the available
-pseudo-measurements in the `pseudo` variable into the `device` variable to reinstate
-observability. This method relies on reduced coefficient matrices and the Gram matrix.
+pseudo-measurements in the `pseudo` variable into the `monitoring` variable to reinstate observability.
+This method relies on reduced coefficient matrices and the Gram matrix.
 
-It is important to note that the device labels in the `device` and `pseudo` variables must
-be different to enable the function to successfully incorporate measurements from `pseudo`
-into the `device` set of measurements.
+It is important to note that the monitoring labels in the `monitoring` and `pseudo` variables must be
+different to enable the function to successfully incorporate measurements from `pseudo` into the
+`monitoring` set of measurements.
 
 # Keyword
-The keyword `threshold` defines the zero pivot threshold value, with a default value of `1e-5`.
-More precisely, all computed pivots less than this value will be treated as zero pivots.
+The keyword `threshold` defines the zero pivot threshold value, with a default value of `1e-5`. More
+precisely, all computed pivots less than this value will be treated as zero pivots.
 
 # Updates
-The function updates the `device` variable of the `Measurement` type.
+The function updates the `monitoring` variable of the `Measurement` type.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
-pseudo = measurement("pseudomeasurement14.h5")
+system, monitoring, pseudo = ems("case14.h5", "monitoring.h5", "pseudo.h5")
 
-statusWattmeter!(system, device; inservice = 10)
-islands = islandTopological(system, device)
+statusWattmeter!(monitoring; inservice = 10)
+islands = islandTopological(monitoring)
 
-restorationGram!(system, device, pseudo, islands)
+restorationGram!(monitoring, pseudomonitoring, islands)
 ```
 """
 function restorationGram!(
-    system::PowerSystem,
-    device::Measurement,
+    monitoring::Measurement,
     pseudo::Measurement,
     islands::Island;
     threshold::Float64 = 1e-5
 )
+    system = monitoring.system
     bus = system.bus
     branch = system.branch
 
@@ -430,10 +420,10 @@ function restorationGram!(
         jcb, con = addTie(rowval, colptr, islands, busIndex, k, jcb, con)
     end
 
-    @inbounds for i = 1:device.pmu.number
-        if device.pmu.layout.bus[i]
-            if device.pmu.angle.status[i] == 1 && device.pmu.magnitude.status[i] == 1
-                island = islands.bus[device.pmu.layout.index[i]]
+    @inbounds for i = 1:monitoring.pmu.number
+        if monitoring.pmu.layout.bus[i]
+            if monitoring.pmu.angle.status[i] == 1 && monitoring.pmu.magnitude.status[i] == 1
+                island = islands.bus[monitoring.pmu.layout.index[i]]
                 pushDirect!(jcb, island)
             end
         end
@@ -494,12 +484,12 @@ function restorationGram!(
                     (lblBus, _), _ = iterate(system.bus.label, indexBusBranch)
 
                     addWattmeter!(
-                        system, device; bus = lblBus, label = lblWatt,
+                        monitoring; bus = lblBus, label = lblWatt,
                         status = 1, active = watt.active.mean[idx],
                         variance = watt.active.variance[idx], noise = false
                     )
                     addVarmeter!(
-                        system, device; bus = lblBus, label = lblVar,
+                        monitoring; bus = lblBus, label = lblVar,
                         status = 1, reactive = var.reactive.mean[idx],
                         variance = var.reactive.variance[idx], noise = false
                     )
@@ -507,23 +497,23 @@ function restorationGram!(
                     (lblBranch, _), _ = iterate(system.branch.label, indexBusBranch)
                     if watt.layout.from[idx]
                         addWattmeter!(
-                            system, device; from = lblBranch, label = lblWatt,
+                            monitoring; from = lblBranch, label = lblWatt,
                             status = 1, active = watt.active.mean[idx],
                             variance = watt.active.variance[idx], noise = false
                         )
                         addVarmeter!(
-                            system, device; from = lblBranch, label = lblVar,
+                            monitoring; from = lblBranch, label = lblVar,
                             status = 1, reactive = var.reactive.mean[idx],
                             variance = var.reactive.variance[idx], noise = false
                         )
                     else
                         addWattmeter!(
-                            system, device; to = lblBranch, label = lblWatt,
+                            monitoring; to = lblBranch, label = lblWatt,
                             status = 1, active = watt.active.mean[idx],
                             variance = watt.active.variance[idx], noise = false
                         )
                         addVarmeter!(
-                            system, device; to = lblBranch, label = lblVar,
+                            monitoring; to = lblBranch, label = lblVar,
                             status = 1, reactive = var.reactive.mean[idx],
                             variance = var.reactive.variance[idx], noise = false
                         )
@@ -535,7 +525,7 @@ function restorationGram!(
                 (lblBus, _), _ = iterate(system.bus.label, indexBus)
 
                 addPmu!(
-                    system, device; bus = lblBus, label = lblPmu, status = 1,
+                    monitoring; bus = lblBus, label = lblPmu, status = 1,
                     magnitude = pmu.magnitude.mean[idx], angle = pmu.angle.mean[idx],
                     varianceMagnitude = pmu.magnitude.variance[idx],
                     varianceAngle = pmu.angle.variance[idx], noise = false
@@ -615,18 +605,16 @@ end
 """
     pmuPlacement(system::PowerSystem, optimizer; bridge, name, verbose)
 
-The function determines the optimal placement of PMUs through integer linear programming.
-It identifies the minimum set of PMUs required to ensure observability and a unique state
-estimator.
+The function determines the optimal placement of PMUs through integer linear programming. It
+identifies the minimum set of PMUs required to ensure observability and a unique state estimator.
 
-The function accepts a `PowerSystem` type as input to establish the framework for finding
-the optimal PMU placement. If the `ac` field within the `PowerSystem` type is not yet
-created, the function automatically initiates an update process.
+The function accepts a `PowerSystem` type as input to establish the framework for finding the optimal
+PMU placement. If the `ac` field within the `PowerSystem` type is not yet created, the function
+automatically initiates an update process.
 
-Additionally, the `optimizer` argument is a crucial component for formulating and solving
-the optimization problem. Typically, using the HiGHS or GLPK solver is sufficient. For
-more detailed information, please refer to the
-[JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
+Additionally, the `optimizer` argument is a crucial component for formulating and solving the
+optimization problem. Typically, using the HiGHS or GLPK solver is sufficient. For more detailed
+information, please refer to the [JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
 
 # Keywords
 The function accepts the following keywords:
@@ -635,40 +623,36 @@ The function accepts the following keywords:
 * `verbose`: Controls the output display, ranging from silent mode (`0`) to detailed output (`3`).
 
 # Returns
-The function returns an instance of the `PMUPlacement` type, containing variables such as:
-* `bus`: Bus labels with indices marking the positions of PMUs at buses.
-* `from`: Branch labels with indices marking the positions of PMUs at from-bus ends.
-* `to`: Branch labels with indices marking the positions of PMUs at to-bus ends.
+The function returns an instance of the [`PmuPlacement`](@ref PmuPlacement) type.
 
-Note that if a PMU is understood as a device that measures the bus voltage phasor and all
-branch current phasors incident to the bus, users only need the results stored in the `bus`
-variable. However, if a PMU is considered to measure individual phasor, then all required
-phasor measurements can be found in the `bus`, `from`, and `to` variables.
+Note that if a PMU is understood as a device that measures the bus voltage phasor and all branch
+current phasors incident to the bus, users only need the results stored in the `bus` variable.
+However, if a PMU is considered to measure individual phasor, then all required phasor measurements
+can be found in the `bus`, `from`, and `to` variables.
 
 # Example
 ```jldoctest
 using HiGHS, Ipopt
 
-system = powerSystem("case14.h5")
-device = measurement()
+system, monitoring = ems("case14.h5")
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-powerFlow!(system, analysis; current = true)
+powerFlow!(analysis; current = true)
 
 placement = pmuPlacement(system, HiGHS.Optimizer)
 
 @pmu(label = "PMU ?: !")
 for (bus, i) in placement.bus
     Vi, θi = analysis.voltage.magnitude[i], analysis.voltage.angle[i]
-    addPmu!(system, device; bus = bus, magnitude = Vi, angle = θi)
+    addPmu!(monitoring; bus = bus, magnitude = Vi, angle = θi)
 end
 for branch in keys(placement.from)
-    Iij, ψij = fromCurrent(system, analysis; label = branch)
-    addPmu!(system, device; from = branch, magnitude = Iij, angle = ψij)
+    Iij, ψij = fromCurrent(analysis; label = branch)
+    addPmu!(monitoring; from = branch, magnitude = Iij, angle = ψij)
 end
 for branch in keys(placement.to)
-    Iji, ψji = toCurrent(system, analysis; label = branch)
-    addPmu!(system, device; to = branch, magnitude = Iji, angle = ψji)
+    Iji, ψji = toCurrent(analysis; label = branch)
+    addPmu!(monitoring; to = branch, magnitude = Iji, angle = ψji)
 end
 ```
 """
@@ -683,7 +667,7 @@ function pmuPlacement(
     branch = system.branch
     ac = system.model.ac
 
-    placementPmu = PMUPlacement(
+    placementPmu = PmuPlacement(
         OrderedDict{template.config.system, Int64}(),
         OrderedDict{template.config.system, Int64}(),
         OrderedDict{template.config.system, Int64}()
@@ -733,17 +717,17 @@ function pmuPlacement(
 end
 
 """
-    pmuPlacement!(system::PowerSystem, device::Measurement, analysis::AC, optimizer;
+    pmuPlacement!(monitoring::Measurement, analysis::AC, optimizer;
         varianceMagnitudeBus, varianceAngleBus,
         varianceMagnitudeFrom, varianceAngleFrom,
         varianceMagnitudeTo, varianceAngleTo,
         noise, correlated, polar,
         bridge, name, verbose)
 
-The function finds the optimal PMU placement by executing [pmuPlacement](@ref pmuPlacement)
-function. Then, based on the results from the `AC` type, it generates phasor measurements
-and integrates them into the `Measurement` type. If current values are missing in the `AC`
-type, the function calculates the associated currents required to form measurement values.
+The function finds the optimal PMU placement by executing [`pmuPlacement`](@ref pmuPlacement)
+function. Then, based on the results from the `AC` type, it generates phasor measurements and
+integrates them into the `Measurement` type. If current values are missing in the `AC` type, the
+function calculates the associated currents required to form measurement values.
 
 # Keywords
 PMUs at the buses can be configured using:
@@ -771,32 +755,26 @@ Settings for the optimization solver include:
 * `name`: Handles the creation of string names (default: `false`).
 * `verbose`: Controls the output display, ranging from silent mode (`0`) to detailed output (`3`).
 
-
 # Updates
 The function updates the `pmu` field of the `Measurement` type.
 
 # Returns
-The function returns an instance of the `PMUPlacement` type, containing variables such as:
-* `bus`: Bus labels with indices marking the positions of PMUs at buses.
-* `from`: Branch labels with indices marking the positions of PMUs at from-bus ends.
-* `to`: Branch labels with indices marking the positions of PMUs at to-bus ends.
+The function returns an instance of the [`PmuPlacement`](@ref PmuPlacement) type.
 
 # Example
 ```jldoctest
 using HiGHS, Ipopt
 
-system = powerSystem("case14.h5")
-device = measurement()
+system, monitoring = ems("case14.h5")
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-powerFlow!(system, analysis; current = true)
+powerFlow!(analysis; current = true)
 
-pmuPlacement!(system, device, analysis, HiGHS.Optimizer)
+pmuPlacement!(monitoring, analysis, HiGHS.Optimizer)
 ```
 """
 function pmuPlacement!(
-    system::PowerSystem,
-    device::Measurement,
+    monitoring::Measurement,
     analysis::AC,
     (@nospecialize optimizerFactory);
     bridge::Bool = false,
@@ -812,37 +790,38 @@ function pmuPlacement!(
     correlated::Bool = template.pmu.correlated,
     polar::Bool = template.pmu.polar
 )
+    system = monitoring.system
     placement = pmuPlacement(system, optimizerFactory; bridge, name, verbose)
     errorVoltage(analysis.voltage.magnitude)
 
     for (bus, idx) in placement.bus
         Vᵢ, θᵢ = analysis.voltage.magnitude[idx], analysis.voltage.angle[idx]
         addPmu!(
-            system, device; bus = bus, magnitude = Vᵢ, angle = θᵢ,
+            monitoring; bus = bus, magnitude = Vᵢ, angle = θᵢ,
             varianceMagnitude = varianceMagnitudeBus, varianceAngle = varianceAngleBus,
             noise, correlated, polar
         )
     end
     for (branch, idx) in placement.from
         if isempty(analysis.current.from.magnitude)
-            Iᵢⱼ, ψᵢⱼ = fromCurrent(system, analysis; label = branch)
+            Iᵢⱼ, ψᵢⱼ = fromCurrent(analysis; label = branch)
         else
             Iᵢⱼ, ψᵢⱼ = analysis.current.from.magnitude[idx], analysis.current.from.angle[idx]
         end
         addPmu!(
-            system, device; from = branch, magnitude = Iᵢⱼ, angle = ψᵢⱼ,
+            monitoring; from = branch, magnitude = Iᵢⱼ, angle = ψᵢⱼ,
             varianceMagnitude = varianceMagnitudeFrom, varianceAngle = varianceAngleFrom,
             noise, correlated, polar
         )
     end
     for (branch, idx) in placement.to
         if isempty(analysis.current.to.magnitude)
-            Iⱼᵢ, ψⱼᵢ = toCurrent(system, analysis; label = branch)
+            Iⱼᵢ, ψⱼᵢ = toCurrent(analysis; label = branch)
         else
             Iⱼᵢ, ψⱼᵢ = analysis.current.to.magnitude[idx], analysis.current.to.angle[idx]
         end
         addPmu!(
-            system, device; to = branch, magnitude = Iⱼᵢ, angle = ψⱼᵢ,
+            monitoring; to = branch, magnitude = Iⱼᵢ, angle = ψⱼᵢ,
             varianceMagnitude = varianceMagnitudeTo, varianceAngle = varianceAngleTo,
             noise, correlated, polar
         )

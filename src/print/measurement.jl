@@ -1,11 +1,10 @@
 """
-    printVoltmeterData(system::PowerSystem, device::Measurement,
-        [analysis::Analysis], [io::IO];
+    printVoltmeterData(data::Union{Measurement, Analysis}, [io::IO];
         label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
-The function prints data related to voltmeters. Optionally, an `IO` may be passed as the
-last argument to redirect the output. Users can also omit the `Analysis` type to print
-only data related to the `Measurement` type.
+The function prints data related to voltmeters. Optionally, an `IO` may be passed as the last
+argument to redirect the output. Users may choose to print only measurement data by passing the
+`Measurement` type, or both measurement data and analysis results by passing the `Analysis` type.
 
 # Keywords
 The following keywords control the printed data:
@@ -21,67 +20,62 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Examples
 Print data for all voltmeters:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; power = true)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis)
 
 fmt = Dict("Voltage Magnitude" => "%.2f", "Voltage Magnitude Estimate" => "%.6f")
 show = Dict("Voltage Magnitude Residual" => false)
 
-printVoltmeterData(system, device, analysis; fmt, show, delimiter = " ", repeat = 10)
+printVoltmeterData(analysis; fmt, show, delimiter = " ", repeat = 10)
 ```
 
 Print data for specific voltmeters:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; power = true)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis)
 
 width = Dict("Voltage Magnitude Estimate" => 11)
 
-printVoltmeterData(system, device, analysis; label = 1, width, header = true)
-printVoltmeterData(system, device, analysis; label = 6, width)
-printVoltmeterData(system, device, analysis; label = 8, width, footer = true)
+printVoltmeterData(analysis; label = 1, width, header = true)
+printVoltmeterData(analysis; label = 6, width)
+printVoltmeterData(analysis; label = 8, width, footer = true)
 ```
 """
 function printVoltmeterData(
-    system::PowerSystem,
-    device::Measurement,
+    monitoring::Measurement,
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = device.voltmeter.number + 1,
+    repeat::Int64 = monitoring.voltmeter.number + 1,
     kwargs...
 )
     voltage = Polar(Float64[], Float64[])
 
-    printVolt(io, system, device, voltage, unitList, pfx, label, repeat; kwargs...)
+    printVolt(io, monitoring.system, monitoring, voltage, unitList, pfx, label, repeat; kwargs...)
 end
 
 function printVoltmeterData(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::Union{PMUStateEstimation, ACStateEstimation},
+    se::Union{PmuStateEstimation, AcStateEstimation},
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = device.voltmeter.number + 1,
+    repeat::Int64 = se.monitoring.voltmeter.number + 1,
     kwargs...
 )
-    printVolt(io, system, device, analysis.voltage, unitList, pfx, label, repeat; kwargs...)
+    printVolt(io, se.system, se.monitoring, se.voltage, unitList, pfx, label, repeat; kwargs...)
 end
 
 function printVolt(
     io::IO,
     system::PowerSystem,
-    device::Measurement,
+    monitoring::Measurement,
     voltg::Polar,
     unitList::UnitList,
     pfx::PrefixLive,
@@ -89,7 +83,7 @@ function printVolt(
     repeat::Int64;
     kwargs...
 )
-    volt = device.voltmeter
+    volt = monitoring.voltmeter
 
     labels = pickLabel(volt, volt.label, label, "voltmeter")
     prt = voltData(system, voltg, volt, unitList, pfx, label, labels, repeat; kwargs...)
@@ -127,15 +121,15 @@ function voltData(
 )
     type = "Voltage Magnitude"
     unitVoltg = unitList.voltageMagnitudeLive
-    device = !isempty(volt.label)
+    monitoring = !isempty(volt.label)
     state = !isempty(voltg.magnitude)
     style, delimiter, key = printkwargs(; kwargs...)
 
     fmt, width, show, subheading, unit, head, minv, maxv = layoutMeter(
-        key.fmt, key.width, key.show, unitVoltg, device, state, style, type
+        key.fmt, key.width, key.show, unitVoltg, monitoring, state, style, type
     )
 
-    if device && style
+    if monitoring && style
         @inbounds for (label, i) in labels
             idxBus = volt.layout.index[i]
             scale = scaleVoltage(pfx, system, idxBus)
@@ -161,13 +155,12 @@ function voltData(
 end
 
 """
-    printAmmeterData(system::PowerSystem, device::Measurement,
-        [analysis::Analysis], [io::IO];
+    printAmmeterData(data::Union{Measurement, Analysis}, [io::IO];
         label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
-The function prints data related to ammeters. Optionally, an `IO` may be passed as the
-last argument to redirect the output. Users can also omit the `Analysis` type to print
-only data related to the `Measurement` type.
+The function prints data related to ammeters. Optionally, an `IO` may be passed as the last argument
+to redirect the output. Users may choose to print only measurement data by passing the `Measurement`
+type, or both measurement data and analysis results by passing the `Analysis` type.
 
 # Keywords
 The following keywords control the printed data:
@@ -183,79 +176,74 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Examples
 Print data for all ammeters:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; current = true)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis; current = true)
 
 fmt = Dict("Current Magnitude" => "%.2f", "Current Magnitude Estimate" => "%.6f")
 show = Dict("Current Magnitude Residual" => false)
 
-printAmmeterData(system, device, analysis; fmt, show, delimiter = " ", repeat = 10)
+printAmmeterData(analysis; fmt, show, delimiter = " ", repeat = 10)
 ```
 
 Print data for specific ammeters:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; current = true)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis; current = true)
 
 width = Dict("Current Magnitude" => 10)
 
-printAmmeterData(system, device, analysis; label = "From 1", width, header = true)
-printAmmeterData(system, device, analysis; label = "From 4", width)
-printAmmeterData(system, device, analysis; label = "From 6", width, footer = true)
+printAmmeterData(analysis; label = "From 1", width, header = true)
+printAmmeterData(analysis; label = "From 4", width)
+printAmmeterData(analysis; label = "From 6", width, footer = true)
 ```
 """
 function printAmmeterData(
-    system::PowerSystem,
-    device::Measurement,
+    monitoring::Measurement,
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = device.ammeter.number + 1,
+    repeat::Int64 = monitoring.ammeter.number + 1,
     kwargs...
 )
-    current = ACCurrent(
+    current = AcCurrent(
         Polar(Float64[], Float64[]),
         Polar(Float64[], Float64[]),
         Polar(Float64[], Float64[]),
         Polar(Float64[], Float64[])
     )
-    printAmp(io, system, device, current, unitList, pfx, label, repeat; kwargs...)
+    printAmp(io, monitoring.system, monitoring, current, unitList, pfx, label, repeat; kwargs...)
 end
 
 function printAmmeterData(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::Union{PMUStateEstimation, ACStateEstimation},
+    se::Union{PmuStateEstimation, AcStateEstimation},
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = device.ammeter.number + 1,
+    repeat::Int64 = se.monitoring.ammeter.number + 1,
     kwargs...
 )
-    printAmp(io, system, device, analysis.current, unitList, pfx, label, repeat; kwargs...)
+    printAmp(io, se.system, se.monitoring, se.current, unitList, pfx, label, repeat; kwargs...)
 end
 
 function printAmp(
     io::IO,
     system::PowerSystem,
-    device::Measurement,
-    current::ACCurrent,
+    monitoring::Measurement,
+    current::AcCurrent,
     unitList::UnitList,
     pfx::PrefixLive,
     label::IntStrMiss,
     repeat::Int64;
     kwargs...
 )
-    amp = device.ammeter
+    amp = monitoring.ammeter
 
     labels = pickLabel(amp, amp.label, label, "ammeter")
     prt = ampData(system, amp, current, unitList, pfx, label, labels, repeat; kwargs...)
@@ -285,7 +273,7 @@ end
 function ampData(
     system::PowerSystem,
     amp::Ammeter,
-    current::ACCurrent,
+    current::AcCurrent,
     unitList::UnitList,
     pfx::PrefixLive,
     label::IntStrMiss,
@@ -295,15 +283,15 @@ function ampData(
 )
     type = "Current Magnitude"
     unitAmp = unitList.currentMagnitudeLive
-    device = !isempty(amp.label)
+    monitoring = !isempty(amp.label)
     state = !isempty(current.from.magnitude)
     style, delimiter, key = printkwargs(; kwargs...)
 
     fmt, width, show, subheading, unit, head, minv, maxv = layoutMeter(
-        key.fmt, key.width, key.show, unitAmp, device, state, style, type
+        key.fmt, key.width, key.show, unitAmp, monitoring, state, style, type
     )
 
-    if device && style
+    if monitoring && style
         scale = 1.0
         @inbounds for (label, i) in labels
             idxBrch = amp.layout.index[i]
@@ -331,13 +319,12 @@ function ampData(
 end
 
 """
-    printWattmeterData(system::PowerSystem, device::Measurement,
-        [analysis::Analysis], [io::IO];
+    printWattmeterData(data::Union{Measurement, Analysis}, [io::IO];
         label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
-The function prints data related to wattmeters. Optionally, an `IO` may be passed as the
-last argument to redirect the output. Users can also omit the `Analysis` type to print
-only data related to the `Measurement` type.
+The function prints data related to wattmeters. Optionally, an `IO` may be passed as the last
+argument to redirect the output. Users may choose to print only measurement data by passing the
+`Measurement` type, or both measurement data and analysis results by passing the `Analysis` type.
 
 # Keywords
 The following keywords control the printed data:
@@ -353,47 +340,44 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Examples
 Print data for all wattmeters:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; power = true)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis; power = true)
 
 fmt = Dict("Active Power" => "%.2f", "Active Power Estimate" => "%.6f")
-
 show = Dict("Active Power Status" => false)
-printWattmeterData(system, device, analysis; fmt, show, delimiter = " ", repeat = 14)
+
+printWattmeterData(analysis; fmt, show, delimiter = " ", repeat = 14)
 ```
 
 Print data for specific wattmeters:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; power = true)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis; power = true)
 
 width = Dict("Active Power Residual" => 11)
 
-printWattmeterData(system, device, analysis; label = 2, width, header = true)
-printWattmeterData(system, device, analysis; label = 5, width)
-printWattmeterData(system, device, analysis; label = 9, width, footer = true)
+printWattmeterData(analysis; label = 2, width, header = true)
+printWattmeterData(analysis; label = 5, width)
+printWattmeterData(analysis; label = 9, width, footer = true)
 ```
 """
 function printWattmeterData(
-    system::PowerSystem,
-    device::Measurement,
+    monitoring::Measurement,
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = device.wattmeter.number + 1,
+    repeat::Int64 = monitoring.wattmeter.number + 1,
     kwargs...
 )
-    power = ACPower(
+    power = AcPower(
         Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]),
@@ -403,33 +387,31 @@ function printWattmeterData(
         Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[])
     )
-    printWatt(io, system, device, power, unitList, pfx, label, repeat; kwargs...)
+    printWatt(io, monitoring.system, monitoring, power, unitList, pfx, label, repeat; kwargs...)
 end
 
 function printWattmeterData(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::Union{PMUStateEstimation, ACStateEstimation, DCStateEstimation},
+    se::Union{PmuStateEstimation, AcStateEstimation, DcStateEstimation},
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = device.wattmeter.number + 1,
+    repeat::Int64 = se.monitoring.wattmeter.number + 1,
     kwargs...
 )
-    printWatt(io, system, device, analysis.power, unitList, pfx, label, repeat; kwargs...)
+    printWatt(io, se.system, se.monitoring, se.power, unitList, pfx, label, repeat; kwargs...)
 end
 
 function printWatt(
     io::IO,
     system::PowerSystem,
-    device::Measurement,
-    pwr::Union{ACPower, DCPower},
+    monitoring::Measurement,
+    pwr::Union{AcPower, DcPower},
     unitList::UnitList,
     pfx::PrefixLive,
     label::IntStrMiss,
     repeat::Int64;
     kwargs...
 )
-    watt = device.wattmeter
+    watt = monitoring.wattmeter
     scale = scalePrint(system, pfx)
 
     labels = pickLabel(watt, watt.label, label, "wattmeter")
@@ -455,7 +437,7 @@ end
 
 function wattData(
     watt::Wattmeter,
-    pwr::Union{ACPower, DCPower},
+    pwr::Union{AcPower, DcPower},
     unitList::UnitList,
     scale::Dict{Symbol, Float64},
     label::IntStrMiss,
@@ -465,15 +447,15 @@ function wattData(
 )
     type = "Active Power"
     unitP = unitList.activePowerLive
-    device = !isempty(watt.label)
+    monitoring = !isempty(watt.label)
     state = !isempty(pwr.injection.active)
     style, delimiter, key = printkwargs(; kwargs...)
 
     fmt, width, show, subheading, unit, head, minv, maxv = layoutMeter(
-        key.fmt, key.width, key.show, unitP, device, state, style, type
+        key.fmt, key.width, key.show, unitP, monitoring, state, style, type
     )
 
-    if device && style
+    if monitoring && style
         @inbounds for (label, i) in labels
             P = estimate(watt, pwr.injection.active, pwr.from.active, pwr.to.active, i)
             idx = watt.layout.index[i]
@@ -498,13 +480,12 @@ function wattData(
 end
 
 """
-    printVarmeterData(system::PowerSystem, device::Measurement,
-        [analysis::Analysis], [io::IO];
+    printVarmeterData(data::Union{Measurement, Analysis}, [io::IO];
         label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
-The function prints data related to varmeters. Optionally, an `IO` may be passed as the
-last argument to redirect the output. Users can also omit the `Analysis` type to print
-only data related to the `Measurement` type.
+The function prints data related to varmeters. Optionally, an `IO` may be passed as the last argument
+to redirect the output. Users may choose to print only measurement data by passing the `Measurement`
+type, or both measurement data and analysis results by passing the `Analysis` type.
 
 # Keywords
 The following keywords control the printed data:
@@ -520,47 +501,44 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printBusData`](@ref printBusData) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Examples
 Print data for all varmeters:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; power = true)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis; power = true)
 
 fmt = Dict("Reactive Power" => "%.2f", "Reactive Power Estimate" => "%.6f")
 show = Dict("Reactive Power Status" => false)
 
-printVarmeterData(system, device, analysis; fmt, show, delimiter = " ", repeat = 14)
+printVarmeterData(analysis; fmt, show, delimiter = " ", repeat = 14)
 ```
 
 Print data for specific varmeters:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; power = true)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis; power = true)
 
 width = Dict("Reactive Power Residual" => 11)
 
-printVarmeterData(system, device, analysis; label = 2, width, header = true)
-printVarmeterData(system, device, analysis; label = 5, width)
-printVarmeterData(system, device, analysis; label = 9, width, footer = true)
+printVarmeterData(analysis; label = 2, width, header = true)
+printVarmeterData(analysis; label = 5, width)
+printVarmeterData(analysis; label = 9, width, footer = true)
 ```
 """
 function printVarmeterData(
-    system::PowerSystem,
-    device::Measurement,
+    monitoring::Measurement,
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = device.varmeter.number + 1,
+    repeat::Int64 = monitoring.varmeter.number + 1,
     kwargs...
 )
-    power = ACPower(
+    power = AcPower(
         Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]),
         Cartesian(Float64[], Float64[]),
@@ -571,33 +549,31 @@ function printVarmeterData(
         Cartesian(Float64[], Float64[])
     )
 
-    printVar(io, system, device, power, unitList, pfx, label, repeat; kwargs...)
+    printVar(io, monitoring.system, monitoring, power, unitList, pfx, label, repeat; kwargs...)
 end
 
 function printVarmeterData(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::Union{PMUStateEstimation, ACStateEstimation},
+    se::Union{PmuStateEstimation, AcStateEstimation},
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = device.varmeter.number + 1,
+    repeat::Int64 = se.monitoring.varmeter.number + 1,
     kwargs...
 )
-    printVar(io, system, device, analysis.power, unitList, pfx, label, repeat; kwargs...)
+    printVar(io, se.system, se.monitoring, se.power, unitList, pfx, label, repeat; kwargs...)
 end
 
 function printVar(
     io::IO,
     system::PowerSystem,
-    device::Measurement,
-    pwr::ACPower,
+    monitoring::Measurement,
+    pwr::AcPower,
     unitList::UnitList,
     pfx::PrefixLive,
     label::IntStrMiss,
-    repeat::Int64 = device.varmeter.number + 1;
+    repeat::Int64 = monitoring.varmeter.number + 1;
     kwargs...
 )
-    var = device.varmeter
+    var = monitoring.varmeter
     scale = scalePrint(system, pfx)
 
     labels = pickLabel(var, var.label, label, "varmeter")
@@ -623,7 +599,7 @@ end
 
 function varData(
     var::Varmeter,
-    pwr::ACPower,
+    pwr::AcPower,
     unitList::UnitList,
     scale::Dict{Symbol, Float64},
     label::IntStrMiss,
@@ -633,15 +609,15 @@ function varData(
 )
     type = "Reactive Power"
     unitQ = unitList.reactivePowerLive
-    device = !isempty(var.label)
+    monitoring = !isempty(var.label)
     state = !isempty(pwr.injection.reactive)
     style, delimiter, key = printkwargs(; kwargs...)
 
     fmt, width, show, subheading, unit, head, minv, maxv = layoutMeter(
-        key.fmt, key.width, key.show, unitQ, device, state, style, type
+        key.fmt, key.width, key.show, unitQ, monitoring, state, style, type
     )
 
-    if device && style
+    if monitoring && style
         @inbounds for (label, i) in labels
             Q = estimate(var, pwr.injection.reactive, pwr.from.reactive, pwr.to.reactive, i)
             idx = var.layout.index[i]
@@ -666,13 +642,12 @@ function varData(
 end
 
 """
-    printPmuData(system::PowerSystem, device::Measurement,
-        [analysis::Analysis], [io::IO];
+    printPmuData(data::Union{Measurement, Analysis}, [io::IO];
         label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
-The function prints data related to PMUs. Optionally, an `IO` may be passed as the last
-argument to redirect the output. Users can also omit the `Analysis` type to print
-only data related to the `Measurement` type.
+The function prints data related to PMUs. Optionally, an `IO` may be passed as the last argument to
+redirect the output. Users may choose to print only measurement data by passing the `Measurement`
+type, or both measurement data and analysis results by passing the `Analysis` type.
 
 # Keywords
 The following keywords control the printed data:
@@ -688,93 +663,86 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printPmuData`](@ref printPmuData) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Examples
 Print data for all PMUs:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; current = true)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis; current = true)
 
 fmt = Dict("Current Magnitude" => "%.2f", "Current Magnitude Variance" => "%.5f")
 show = Dict("Current Angle" => false, "Current Magnitude Status" => false)
 
-printPmuData(system, device, analysis; fmt, show, delimiter = " ", repeat = 10)
+printPmuData(analysis; fmt, show, delimiter = " ", repeat = 10)
 ```
 
 Print data for specific PMUs:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; current = true)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis; current = true)
 
 width = Dict("Current Magnitude" => 10, "Current Angle Status" => 8)
 
-printPmuData(system, device, analysis; label = "From 1", width, header = true)
-printPmuData(system, device, analysis; label = "From 4", width)
-printPmuData(system, device, analysis; label = "From 6", width, footer = true)
+printPmuData(analysis; label = "From 1", width, header = true)
+printPmuData(analysis; label = "From 4", width)
+printPmuData(analysis; label = "From 6", width, footer = true)
 ```
 """
 function printPmuData(
-    system::PowerSystem,
-    device::Measurement,
+    monitoring::Measurement,
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = device.pmu.number + 1,
+    repeat::Int64 = monitoring.pmu.number + 1,
     kwargs...
 )
     voltage = Polar(Float64[], Float64[])
-    current = ACCurrent(
+    current = AcCurrent(
         Polar(Float64[], Float64[]),
         Polar(Float64[], Float64[]),
         Polar(Float64[], Float64[]),
         Polar(Float64[], Float64[])
     )
-    printPmu(io, system, device, voltage, current, unitList, pfx, label, repeat; kwargs...)
+    printPmu(io, monitoring.system, monitoring, voltage, current, unitList, pfx, label, repeat; kwargs...)
 end
 
 function printPmuData(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::Union{PMUStateEstimation, ACStateEstimation},
+    se::Union{PmuStateEstimation, AcStateEstimation},
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = device.pmu.number + 1,
+    repeat::Int64 = se.monitoring.pmu.number + 1,
     kwargs...
 )
-    printPmu(io, system, device, analysis.voltage, analysis.current, unitList, pfx, label, repeat; kwargs...)
+    printPmu(io, se.system, se.monitoring, se.voltage, se.current, unitList, pfx, label, repeat; kwargs...)
 end
 
 function printPmuData(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::DCStateEstimation,
+    se::DcStateEstimation,
     io::IO = stdout;
     label::IntStrMiss = missing,
-    repeat::Int64 = device.pmu.number + 1,
+    repeat::Int64 = se.monitoring.pmu.number + 1,
     kwargs...
 )
-    printPmu(io, system, device, analysis.voltage, unitList, pfx, label, repeat; kwargs...)
+    printPmu(io, se.system, se.monitoring, se.voltage, unitList, pfx, label, repeat; kwargs...)
 end
 
 function printPmu(
     io::IO,
     system::PowerSystem,
-    device::Measurement,
+    monitoring::Measurement,
     voltage::Polar,
-    current::ACCurrent,
+    current::AcCurrent,
     unitList::UnitList,
     pfx::PrefixLive,
     label::IntStrMiss,
     repeat::Int64;
     kwargs...
 )
-    pmu = device.pmu
+    pmu = monitoring.pmu
     scale = scalePrint(system, pfx)
 
     if isempty(pmu.label)
@@ -837,7 +805,7 @@ function pmuData(
     system::PowerSystem,
     pmu::PMU,
     voltage::Polar,
-    current::ACCurrent,
+    current::AcCurrent,
     unitList::UnitList,
     scale::Dict{Symbol, Float64},
     label::IntStrMiss,
@@ -957,15 +925,15 @@ end
 function printPmu(
     io::IO,
     system::PowerSystem,
-    device::Measurement,
-    voltg::PolarAngle,
+    monitoring::Measurement,
+    voltg::Angle,
     unitList::UnitList,
     pfx::PrefixLive,
     label::IntStrMiss,
     repeat::Int64;
     kwargs...
 )
-    pmu = device.pmu
+    pmu = monitoring.pmu
     scale = scalePrint(system, pfx)
 
     labels = pickLabel(pmu, pmu.label, label, "pmu")
@@ -994,7 +962,7 @@ end
 
 function pmuData(
     pmu::PMU,
-    voltg::PolarAngle,
+    voltg::Angle,
     unitList::UnitList,
     scale::Dict{Symbol, Float64},
     label::IntStrMiss,
@@ -1004,12 +972,12 @@ function pmuData(
 )
     type = "Voltage Angle"
     liveθ = unitList.voltageAngleLive
-    device = any(pmu.layout.bus)
-    state = !isempty(voltg.angle) && device
+    monitoring = any(pmu.layout.bus)
+    state = !isempty(voltg.angle) && monitoring
     style, delimiter, key = printkwargs(; kwargs...)
 
     fmt, width, show, subheading, unit, head, minv, maxv = layoutMeter(
-        key.fmt, key.width, key.show, liveθ, device, state, style, type
+        key.fmt, key.width, key.show, liveθ, monitoring, state, style, type
     )
 
     if !isempty(pmu.label) && style
@@ -1042,7 +1010,7 @@ function layoutMeter(
     kwidth::Dict{String, Int64},
     kshow::Dict{String, Bool},
     unitMeter::String,
-    device::Bool,
+    monitoring::Bool,
     estimate::Bool,
     style::Bool,
     type::String
@@ -1094,12 +1062,12 @@ function layoutMeter(
         head[:stat] => _width(width[head[:metr]], 6, style),
     )
     show = OrderedDict(
-        head[:labl] => device,
-        head[:mean] => _show(show[head[:metr]], device),
-        head[:vari] => _show(show[head[:metr]], device),
+        head[:labl] => monitoring,
+        head[:mean] => _show(show[head[:metr]], monitoring),
+        head[:vari] => _show(show[head[:metr]], monitoring),
         head[:esti] => _show(show[head[:metr]], estimate),
         head[:resi] => _show(show[head[:metr]], estimate),
-        head[:stat] => _show(show[head[:metr]], device)
+        head[:stat] => _show(show[head[:metr]], monitoring)
     )
     transfer!(fmt, kfmt, width, kwidth, show, kshow, style)
 
@@ -1199,23 +1167,23 @@ function printDevice(
     printf(io, prt, idxDevice, meter.status, :stat)
 end
 
-function estimate(device::M,
+function estimate(monitoring::M,
     bus::Vector{Float64},
     from::Vector{Float64},
     to::Vector{Float64},
     i::Int64
 )
-    if device.layout.bus[i]
+    if monitoring.layout.bus[i]
         return bus
-    elseif device.layout.from[i]
+    elseif monitoring.layout.from[i]
         return from
     else
         return to
     end
 end
 
-function estimate(device::M, from::Vector{Float64}, to::Vector{Float64}, i::Int64)
-    if device.layout.from[i]
+function estimate(monitoring::M, from::Vector{Float64}, to::Vector{Float64}, i::Int64)
+    if monitoring.layout.from[i]
         return from
     else
         return to

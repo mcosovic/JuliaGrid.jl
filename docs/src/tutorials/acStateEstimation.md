@@ -32,7 +32,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 Following that, we will introduce the `Measurement` type and incorporate a set of measurement devices ``\mathcal M`` into the graph ``\mathcal G``. The AC state estimation includes a set of voltmeters ``\mathcal V``, ammeters ``\mathcal I``, wattmeters ``\mathcal P``, varmeters ``\mathcal Q``, and PMUs ``\bar{\mathcal P}``, with PMUs being able to integrate into AC state estimation in either rectangular coordinates or polar coordinates. To start, we initialize the `Measurement` type:
 ```@example ACSETutorial
-device = measurement()
+monitoring = measurement(system)
 nothing # hide
 ```
 
@@ -99,7 +99,7 @@ When introducing a voltmeter ``V_i \in \mathcal V`` at bus ``i \in \mathcal N``,
 
 For example:
 ```@example ACSETutorial
-addVoltmeter!(system, device; label = "V₁", bus = 1, magnitude = 1.0, variance = 1e-3)
+addVoltmeter!(monitoring; label = "V₁", bus = 1, magnitude = 1.0, variance = 1e-3)
 nothing # hide
 ```
 
@@ -123,7 +123,7 @@ When introducing an ammeter at branch ``(i,j) \in \mathcal E``, it can be placed
 
 For example:
 ```@example ACSETutorial
-addAmmeter!(system, device; label = "I₁₂", from = 1, magnitude = 0.3, variance = 1e-2)
+addAmmeter!(monitoring; label = "I₁₂", from = 1, magnitude = 0.3, variance = 1e-2)
 nothing # hide
 ```
 
@@ -161,9 +161,7 @@ The next option is to introduce this measurement in squared form. In this case, 
 
 For example:
 ```@example ACSETutorial
-addAmmeter!(
-  system, device; label = "I²₁₂", from = 1, magnitude = 0.3, variance = 1e-2, square = true
-)
+addAmmeter!(monitoring; label = "I²₁₂", from = 1, magnitude = 0.3, variance = 1e-2, square = true)
 nothing # hide
 ```
 
@@ -179,7 +177,7 @@ In addition to the scenario where we add ammeters at the from-bus end, an ammete
 
 For example:
 ```@example ACSETutorial
-addAmmeter!(system, device; label = "I₂₁", to = 1, magnitude = 0.3, variance = 1e-3)
+addAmmeter!(monitoring; label = "I₂₁", to = 1, magnitude = 0.3, variance = 1e-3)
 nothing # hide
 ```
 
@@ -218,7 +216,7 @@ As explained for the current magnitude measurement from the bus, we can also int
 For example:
 ```@example ACSETutorial
 addAmmeter!(
-  system, device; label = "I²₂₁", to = 1, magnitude = 0.3, variance = 1e-3, square = true
+  monitoring; label = "I²₂₁", to = 1, magnitude = 0.3, variance = 1e-3, square = true
 )
 nothing # hide
 ```
@@ -235,7 +233,7 @@ When adding a wattmeter ``P_i \in \mathcal P`` at bus ``i \in \mathcal N``, user
 
 For example:
 ```@example ACSETutorial
-addWattmeter!(system, device; label = "P₃", bus = 3, active = -0.5, variance = 1e-3)
+addWattmeter!(monitoring; label = "P₃", bus = 3, active = -0.5, variance = 1e-3)
 nothing # hide
 ```
 
@@ -267,7 +265,7 @@ Additionally, when introducing a wattmeter at branch ``(i,j) \in \mathcal E``, u
 
 For example:
 ```@example ACSETutorial
-addWattmeter!(system, device; label = "P₁₂", from = 1, active = 0.2, variance = 1e-4)
+addWattmeter!(monitoring; label = "P₁₂", from = 1, active = 0.2, variance = 1e-4)
 nothing # hide
 ```
 
@@ -299,7 +297,7 @@ Similarly, a wattmeter can be placed at the to-bus end, denoted as ``P_{ji} \in 
 
 For example:
 ```@example ACSETutorial
-addWattmeter!(system, device; label = "P₂₁", to = 1, active = -0.2, variance = 1e-4)
+addWattmeter!(monitoring; label = "P₂₁", to = 1, active = -0.2, variance = 1e-4)
 nothing # hide
 ```
 
@@ -330,7 +328,7 @@ When adding a varmeter ``Q_i \in \mathcal Q`` at bus ``i \in \mathcal N``, users
 
 For example:
 ```@example ACSETutorial
-addVarmeter!(system, device; label = "Q₃", bus = 3, reactive = 0, variance = 1e-3)
+addVarmeter!(monitoring; label = "Q₃", bus = 3, reactive = 0, variance = 1e-3)
 nothing # hide
 ```
 
@@ -362,7 +360,7 @@ Additionally, when introducing a varmeter at branch ``(i,j) \in \mathcal E``, us
 
 For example:
 ```@example ACSETutorial
-addVarmeter!(system, device; label = "Q₁₂", from = 1, reactive = 0.2, variance = 1e-4)
+addVarmeter!(monitoring; label = "Q₁₂", from = 1, reactive = 0.2, variance = 1e-4)
 nothing # hide
 ```
 
@@ -394,7 +392,7 @@ Similarly, a varmeter can be placed at the to-bus end, denoted as ``Q_{ji} \in \
 
 For example:
 ```@example ACSETutorial
-addVarmeter!(system, device; label = "Q₂₁", to = 1, reactive = -0.2, variance = 1e-4)
+addVarmeter!(monitoring; label = "Q₂₁", to = 1, reactive = -0.2, variance = 1e-4)
 nothing # hide
 ```
 
@@ -428,7 +426,7 @@ To include phasor measurement ``(V_i, \theta_i) \in \bar{\mathcal P}`` at bus ``
 For example:
 ```@example ACSETutorial
 addPmu!(
-  system, device; label = "V₁, θ₁", bus = 1, magnitude = 1.0, angle = 0,
+  monitoring; label = "V₁, θ₁", bus = 1, magnitude = 1.0, angle = 0,
   varianceMagnitude = 1e-5, varianceAngle = 1e-6, polar = true
 )
 nothing # hide
@@ -462,7 +460,7 @@ When a PMU ``(V_i, \theta_i) \in \bar{\mathcal P}`` is introduced at bus ``i \in
 For example:
 ```@example ACSETutorial
 addPmu!(
-  system, device; label = "V₂, θ₂", bus = 2, magnitude = 0.9, angle = -0.1,
+  monitoring; label = "V₂, θ₂", bus = 2, magnitude = 0.9, angle = -0.1,
   varianceMagnitude = 1e-5, varianceAngle = 1e-5
 )
 nothing # hide
@@ -519,7 +517,7 @@ In the previous example, the user neglects the covariances between the real and 
 ```
 ```@example ACSETutorial
 addPmu!(
-  system, device; label = "V₃, θ₃", bus = 3, magnitude = 0.9, angle = -0.2,
+  monitoring; label = "V₃, θ₃", bus = 3, magnitude = 0.9, angle = -0.2,
   varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true
   )
 nothing # hide
@@ -551,7 +549,7 @@ To include phasor measurement ``(I_{ij}, \psi_{ij}) \in \bar{\mathcal P}`` at br
 For example:
 ```@example ACSETutorial
 addPmu!(
-  system, device; label = "I₁₂, ψ₁₂", from = 1, magnitude = 0.3, angle = -0.7,
+  monitoring; label = "I₁₂, ψ₁₂", from = 1, magnitude = 0.3, angle = -0.7,
   varianceMagnitude = 1e-5, varianceAngle = 1e-4, polar = true
 )
 nothing # hide
@@ -602,7 +600,7 @@ Therefore, here we specify the measurement values, variances, and measurement fu
 For example:
 ```@example ACSETutorial
 addPmu!(
-  system, device; label = "I₂₃, ψ₂₃", from = 3, magnitude = 0.3, angle = 0.4,
+  monitoring; label = "I₂₃, ψ₂₃", from = 3, magnitude = 0.3, angle = 0.4,
   varianceMagnitude = 1e-5, varianceAngle = 1e-4
 )
 nothing # hide
@@ -665,7 +663,7 @@ In the previous example, the user neglects the covariances between the real and 
 ```
 ```@example ACSETutorial
 addPmu!(
-  system, device; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, angle = -0.5,
+  monitoring; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, angle = -0.5,
   varianceMagnitude = 1e-4, varianceAngle = 1e-5, correlated = true
 )
 nothing # hide
@@ -689,7 +687,7 @@ To include phasor measurement ``(I_{ji}, \psi_{ji}) \in \bar{\mathcal P}`` at br
 For example:
 ```@example ACSETutorial
 addPmu!(
-  system, device; label = "I₂₁, ψ₂₁", to = 1, magnitude = 0.3, angle = 2.3,
+  monitoring; label = "I₂₁, ψ₂₁", to = 1, magnitude = 0.3, angle = 2.3,
   varianceMagnitude = 1e-2, varianceAngle = 1e-3, polar = true
 )
 nothing # hide
@@ -738,7 +736,7 @@ When introducing a PMU at branch ``(i,j) \in \mathcal E``, it can be placed at t
 For example:
 ```@example ACSETutorial
 addPmu!(
-  system, device; label = "I₃₂, ψ₃₂", to = 3, magnitude = 0.3, angle = -2.9,
+  monitoring; label = "I₃₂, ψ₃₂", to = 3, magnitude = 0.3, angle = -2.9,
   varianceMagnitude = 1e-5, varianceAngle = 1e-5
 )
 nothing # hide
@@ -801,7 +799,7 @@ As before, we are neglecting the covariances between the real and imaginary part
 ```
 ```@example ACSETutorial
 addPmu!(
-  system, device; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, angle = 2.5,
+  monitoring; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, angle = 2.5,
   varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true
 )
 nothing # hide
@@ -832,26 +830,26 @@ The nonlinear or AC state estimation represents a non-convex problem arising fro
 ##### Initialization
 Let us begin by setting up a new set of measurements for the defined power system:
 ```@example ACSETutorial
-device = measurement()
+monitoring = measurement(system)
 
 @wattmeter(label = "Watmeter ?")
-addWattmeter!(system, device; bus = 3, active = -0.5, variance = 1e-3)
-addWattmeter!(system, device; from = 1, active = 0.2, variance = 1e-4)
+addWattmeter!(monitoring; bus = 3, active = -0.5, variance = 1e-3)
+addWattmeter!(monitoring; from = 1, active = 0.2, variance = 1e-4)
 
 @varmeter(label = "Varmeter ?")
-addVarmeter!(system, device; bus = 2, reactive = -0.3, variance = 1e-3)
-addVarmeter!(system, device; from = 1, reactive = 0.2, variance = 1e-4)
+addVarmeter!(monitoring; bus = 2, reactive = -0.3, variance = 1e-3)
+addVarmeter!(monitoring; from = 1, reactive = 0.2, variance = 1e-4)
 
 @pmu(label = "PMU ?")
-addPmu!(system, device; bus = 1, magnitude = 1.0, angle = 0, polar = true)
-addPmu!(system, device; bus = 3, magnitude = 0.9, angle = -0.2)
+addPmu!(monitoring; bus = 1, magnitude = 1.0, angle = 0, polar = true)
+addPmu!(monitoring; bus = 3, magnitude = 0.9, angle = -0.2)
 nothing # hide
 ```
 
 To compute the voltage magnitudes and angles of buses using the Gauss-Newton method in JuliaGrid, we need to first execute the [`acModel!`](@ref acModel!) function to set up the system. Then, initialize the Gauss-Newton method using the [`gaussNewton`](@ref gaussNewton) function. The following code snippet demonstrates this process:
 ```@example ACSETutorial
 acModel!(system)
-analysis = gaussNewton(system, device)
+analysis = gaussNewton(monitoring)
 nothing # hide
 ```
 
@@ -875,14 +873,14 @@ Here, we utilize a "flat start" approach in our method. It is important to keep 
 ---
 
 ##### Iterative Process
-To apply the Gauss-Newton method, JuliaGrid provides the [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{Normal}})) function. This function is utilized iteratively until a stopping criterion is met, as demonstrated in the following code snippet:
+To apply the Gauss-Newton method, JuliaGrid provides the [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{Normal}})) function. This function is utilized iteratively until a stopping criterion is met, as demonstrated in the following code snippet:
 ```@example ACSETutorial
 for iteration = 0:20
-    stopping = increment!(system, analysis)
+    stopping = increment!(analysis)
     if stopping < 1e-8
         break
     end
-    solve!(system, analysis)
+    solve!(analysis)
 end
 ```
 
@@ -890,7 +888,7 @@ The function [`increment!`](@ref increment!) calculates the vector of residuals 
 ```math
   \mathbf r (\mathbf x^{(\nu)}) = \mathbf{z} - \mathbf h (\mathbf x^{(\nu)}).
 ```
-The resulting vector from these calculations is stored in the residual variable of the `ACStateEstimation` type and can be accessed through the following line of code:
+The resulting vector from these calculations is stored in the residual variable of the `AcStateEstimation` type and can be accessed through the following line of code:
 ```@repl ACSETutorial
 𝐫 = analysis.method.residual
 ```
@@ -902,7 +900,7 @@ At the same time, the function forms the Jacobian matrix ``\mathbf J (\mathbf x^
 		\mathbf G (\mathbf x^{(\nu)}) = \mathbf J (\mathbf x^{(\nu)})^{T} \bm \Sigma^{-1} \mathbf J (\mathbf x^{(\nu)})
 ```
 
-The Jacobian matrix and factorized gain matrix are stored in the `ACStateEstimation` type and can be accessed after each iteration:
+The Jacobian matrix and factorized gain matrix are stored in the `AcStateEstimation` type and can be accessed after each iteration:
 ```@repl ACSETutorial
 𝐉 = analysis.method.jacobian
 𝐋 = analysis.method.factorization.L
@@ -917,7 +915,7 @@ Then finally, the function computes the vector of state variable increments usin
 !!! tip "Tip"
     By default, JuliaGrid uses LU factorization as the primary method for factorizing the gain matrix ``\mathbf{G} = \mathbf{L}\mathbf{U}``, aiming to compute the increments. Nevertheless, users have the flexibility to opt for QR or LDLt factorization as an alternative method.
 
-Increment values are stored in the `ACStateEstimation` type and can be accessed after each iteration:
+Increment values are stored in the `AcStateEstimation` type and can be accessed after each iteration:
 ```@repl ACSETutorial
 𝚫𝐱 = analysis.method.increment
 ```
@@ -932,7 +930,7 @@ Next, the [`increment!`](@ref increment!) function provides the maximum absolute
 ```
 
 
-Finally the function [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}) adds the computed increment term to the previous solution to obtain a new solution:
+Finally the function [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}) adds the computed increment term to the previous solution to obtain a new solution:
 ```math
   \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)}.
 ```
@@ -953,7 +951,7 @@ As a reminder, the Jacobian matrix consists of ``n`` columns representing bus vo
 ##### Precision Matrix
 Let us revisit the precision matrix ``\mathbf W``. In the previous example, we introduced a PMU in rectangular coordinates without considering correlations between measurement errors. Now, let us update that PMU to include correlation between measurement errors:
 ```@example ACSETutorial
-updatePmu!(system, device, analysis; label = "PMU 2", correlated = true)
+updatePmu!(analysis; label = "PMU 2", correlated = true)
 nothing # hide
 ```
 
@@ -992,20 +990,20 @@ The resolution of the WLS state estimation problem using the conventional method
 
 This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
 ```@example ACSETutorial
-updatePmu!(system, device; label = "PMU 2", correlated = false)
+updatePmu!(monitoring; label = "PMU 2", correlated = false)
 nothing # hide
 ```
 
 To address ill-conditioned situations arising from significant differences in measurement variances, users can now employ the orthogonal factorization approach:
 ```@example ACSETutorial
-analysis = gaussNewton(system, device, Orthogonal)
+analysis = gaussNewton(monitoring, Orthogonal)
 
 for iteration = 0:20
-    stopping = increment!(system, analysis)
+    stopping = increment!(analysis)
     if stopping < 1e-8
         break
     end
-    solve!(system, analysis)
+    solve!(analysis)
 end
 nothing # hide
 ```
@@ -1081,14 +1079,14 @@ To form the above optimization problem, the user can call the following function
 using Ipopt
 using JuMP # hide
 
-analysis = acLavStateEstimation(system, device, Ipopt.Optimizer)
+analysis = acLavStateEstimation(monitoring, Ipopt.Optimizer)
 nothing # hide
 ```
 
 Then the user can solve the optimization problem by:
 ```@example ACSETutorial
 JuMP.set_silent(analysis.method.jump) # hide
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -1101,9 +1099,9 @@ Users can retrieve the estimated bus voltage magnitudes ``\hat{\mathbf V} = [\ha
 ---
 
 ## [Power Analysis](@id ACPowerAnalysisTutorials)
-Once the computation of voltage magnitudes and angles at each bus is completed, various electrical quantities can be determined. JuliaGrid offers the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) function, which enables the calculation of powers associated with buses and branches. Here is an example code snippet demonstrating its usage:
+Once the computation of voltage magnitudes and angles at each bus is completed, various electrical quantities can be determined. JuliaGrid offers the [`power!`](@ref power!(::AcPowerFlow)) function, which enables the calculation of powers associated with buses and branches. Here is an example code snippet demonstrating its usage:
 ```@example ACSETutorial
-power!(system, analysis)
+power!(analysis)
 nothing # hide
 ```
 
@@ -1118,7 +1116,7 @@ The function stores the computed powers in the rectangular coordinate system. It
 | Branch | [To-bus end flows](@ref BranchNetworkEquationsTutorials)      | ``\mathbf P_\mathrm{j} = [P_{ji}]``              | ``\mathbf Q_\mathrm{j} = [Q_{ji}]``              |
 | Branch | [Shunt elements](@ref BranchShuntElementsTutorials)           | ``\mathbf P_\mathrm{s} = [P_{\mathrm{s}ij}]``    | ``\mathbf Q_\mathrm{s} = [Q_{\mathrm{s}ij}]``    |
 | Branch | [Series elements](@ref BranchSeriesElementTutorials)          | ``\mathbf P_\mathrm{l} = [P_{\mathrm{l}ij}]``    | ``\mathbf Q_\mathrm{l} = [Q_{\mathrm{l}ij}]``    |
-|           |                                                            |                                                  |                                                  |
+|        |                                                               |                                                  |                                                  |
 
 !!! note "Info"
     For a clear comprehension of the equations, symbols presented in this section, as well as for a better grasp of power directions, please refer to the [Unified Branch Model](@ref UnifiedBranchModelTutorials).
@@ -1194,9 +1192,9 @@ The vectors of [active and reactive power flows](@ref BranchNetworkEquationsTuto
 ---
 
 ## [Current Analysis](@id PMUCurrentAnalysisTutorials)
-JuliaGrid offers the [`current!`](@ref current!(::PowerSystem, ::ACPowerFlow)) function, which enables the calculation of currents associated with buses and branches. Here is an example code snippet demonstrating its usage:
+JuliaGrid offers the [`current!`](@ref current!(::AcPowerFlow)) function, which enables the calculation of currents associated with buses and branches. Here is an example code snippet demonstrating its usage:
 ```@example ACSETutorial
-current!(system, analysis)
+current!(analysis)
 nothing # hide
 ```
 

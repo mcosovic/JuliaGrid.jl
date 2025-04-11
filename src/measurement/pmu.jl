@@ -1,13 +1,11 @@
 """
-    addPmu!(system::PowerSystem, device::Measurement;
-        label, bus, from, to,
-        magnitude, varianceMagnitude, angle, varianceAngle,
+    addPmu!(monitoring::Measurement;
+        label, bus, from, to, magnitude, varianceMagnitude, angle, varianceAngle,
         noise, correlated, polar, square, status)
 
-The function adds a PMU to the `Measurement` type within a given `PowerSystem` type. The
-PMU can be added to an already defined bus or branch. When defining the PMU, it is essential
-to provide the bus voltage magnitude and angle if the PMU is located at a bus or the branch
-current magnitude and angle if the PMU is located at a branch.
+The function adds a PMU to the `Measurement` type. The PMU can be added to an already defined bus or
+branch. When defining the PMU, it is essential to provide the bus voltage magnitude and angle if the
+PMU is located at a bus or the branch current magnitude and angle if the PMU is located at a branch.
 
 # Keywords
 The PMU is defined with the following keywords:
@@ -42,51 +40,48 @@ The function updates the `pmu` field of the `Measurement` type.
 
 # Default Settings
 Default settings for certain keywords are as follows: `varianceMagnitude = 1e-8`,
-`varianceAngle = 1e-8`, `status = 1`, `noise = false`, `correlated = false`, `polar = false`,
-and `square = false` which apply to PMUs located at the bus, as well as at both the from-bus
-and to-bus ends. Users can fine-tune these settings by explicitly specifying the variance
-and status for PMUs positioned at the buses, from-bus ends, or to-bus ends of branches
-using the [`@pmu`](@ref @pmu) macro.
+`varianceAngle = 1e-8`, `noise = false`, `correlated = false`, `polar = false`, `square = false`,
+and `status = 1` which apply to PMUs located at the bus, as well as at both the from-bus and to-bus
+ends. Users can fine-tune these settings by explicitly specifying the variance and status for PMUs
+positioned at the buses, from-bus ends, or to-bus ends of branches using the [`@pmu`](@ref @pmu)
+macro.
 
 # Units
-The default units for the `magnitude`, `varianceMagnitude`, and `angle`, `varianceAngle`
-keywords are per-units and radians. However, users have the option to switch to volts and
-degrees when the PMU is located at a bus using the [`@voltage`](@ref @voltage) macro, or
-amperes and degrees when the PMU is located at a branch through the use of the
-[`@current`](@ref @current) macro.
+The default units for the `magnitude`, `varianceMagnitude`, and `angle`, `varianceAngle` keywords
+are per-units and radians. However, users have the option to switch to volts and degrees when the
+PMU is located at a bus using the [`@voltage`](@ref @voltage) macro, or amperes and degrees when the
+PMU is located at a branch through the use of the [`@current`](@ref @current) macro.
 
 # Examples
 Adding PMUs using the default unit system:
 ```jldoctest
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 131.8e3)
 addBus!(system; label = "Bus 2", base = 131.8e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 1.1, angle = -0.1)
-addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 1.1, angle = 0.1)
+addPmu!(monitoring; label = "PMU 1", bus = "Bus 1", magnitude = 1.1, angle = -0.1)
+addPmu!(monitoring; label = "PMU 2", from = "Branch 1", magnitude = 1.1, angle = 0.1)
 ```
 
 Adding PMUs using a custom unit system:
 ```jldoctest
 @voltage(kV, deg, kV)
 @current(A, deg)
-system = powerSystem()
-device = measurement()
+
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 131.8)
 addBus!(system; label = "Bus 2", base = 131.8)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 145, angle = -5.7)
-addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 481, angle = 5.7)
+addPmu!(monitoring; label = "PMU 1", bus = "Bus 1", magnitude = 145, angle = -5.7)
+addPmu!(monitoring; label = "PMU 2", from = "Branch 1", magnitude = 481, angle = 5.7)
 ```
 """
 function addPmu!(
-    system::PowerSystem,
-    device::Measurement;
+    monitoring::Measurement;
     label::IntStrMiss = missing,
     bus::IntStrMiss = missing,
     from::IntStrMiss = missing,
@@ -101,9 +96,10 @@ function addPmu!(
     polar::Bool = template.pmu.polar,
     square::Bool = template.pmu.square
 )
+    system = monitoring.system
     baseVoltg = system.base.voltage
     branch = system.branch
-    pmu = device.pmu
+    pmu = monitoring.pmu
     def = template.pmu
 
     location, busFlag, fromFlag, toFlag = checkLocation(bus, from, to)
@@ -182,15 +178,15 @@ function addPmu!(
 end
 
 """
-    addPmu!(system::PowerSystem, device::Measurement, analysis::AC;
+    addPmu!(monitoring::Measurement, analysis::AC;
         varianceMagnitudeBus, varianceAngleBus, statusBus,
         varianceMagnitudeFrom, varianceAngleFrom, statusFrom,
         varianceMagnitudeTo, varianceAngleTo, statusTo,
         noise, correlated, polar, square)
 
-The function incorporates PMUs into the `Measurement` type for every bus and branch within
-the `PowerSystem` type. These measurements are derived from the exact bus voltage magnitudes
-and angles, as well as branch current magnitudes and angles defined in the `AC` type.
+The function incorporates PMUs into the `Measurement` type for every branch within the `PowerSystem`
+type from which `Measurement` was created. These measurements are derived from the exact bus voltage
+magnitudes and angles, as well as branch current magnitudes and angles defined in the `AC` type.
 
 # Keywords
 PMUs at the buses can be configured using:
@@ -233,32 +229,30 @@ Settings for handling phasor measurements include:
 The function updates the `pmu` field of the `Measurement` type.
 
 # Default Settings
-Default settings for variance keywords are established at `1e-8`, with all statuses set to
-`1`, `polar = false`, `correlated = false`, `noise = false`, and `square = false`. Users can change
-these default settings using the [`@pmu`](@ref @pmu) macro.
+Default settings for variance keywords are established at `1e-8`, with all statuses set to `1`,
+`polar = false`, `correlated = false`, `noise = false`, and `square = false`. Users can change these
+default settings using the [`@pmu`](@ref @pmu) macro.
 
 # Units
-The default units for the variance keywords are in per-units and radians. However, users
-have the option to switch to volts and degrees when the PMU is located at a bus using the
-[`@voltage`](@ref @voltage) macro, or amperes and degrees when the PMU is located at a
-branch through the use of the [`@current`](@ref @current) macro.
+The default units for the variance keywords are in per-units and radians. However, users have the
+option to switch to volts and degrees when the PMU is located at a bus using the
+[`@voltage`](@ref @voltage) macro, or amperes and degrees when the PMU is located at a branch through
+the use of the [`@current`](@ref @current) macro.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement()
-
-acModel!(system)
-analysis = newtonRaphson(system)
-powerFlow!(system, analysis; current = true)
-
 @pmu(label = "PMU ?")
-addPmu!(system, device, analysis; varianceMagnitudeBus = 1e-3)
+
+system, monitoring = ems("case14.h5")
+
+analysis = newtonRaphson(system)
+powerFlow!(analysis; current = true)
+
+addPmu!(monitoring, analysis; varianceMagnitudeBus = 1e-3)
 ```
 """
 function addPmu!(
-    system::PowerSystem,
-    device::Measurement,
+    monitoring::Measurement,
     analysis::AC;
     varianceMagnitudeBus::FltIntMiss = missing,
     varianceAngleBus::FltIntMiss = missing,
@@ -274,10 +268,11 @@ function addPmu!(
     square::Bool = template.pmu.square,
     noise::Bool = template.pmu.noise
 )
+    system = monitoring.system
     errorVoltage(analysis.voltage.magnitude)
 
     baseVoltg = system.base.voltage
-    pmu = device.pmu
+    pmu = monitoring.pmu
     current = analysis.current
     def = template.pmu
 
@@ -306,7 +301,7 @@ function addPmu!(
             pmuNumber += system.branch.layout.inservice
         end
 
-        pmu.label = OrderedDict{template.config.device, Int64}()
+        pmu.label = OrderedDict{template.config.monitoring, Int64}()
         sizehint!(pmu.label, pmuNumber)
 
         pmu.layout.index = fill(0, pmuNumber)
@@ -400,28 +395,18 @@ function addPmu!(
 end
 
 """
-    updatePmu!(system::PowerSystem, device::Measurement, [analysis::Analysis];
-        kwargs...)
+    updatePmu!(monitoring::Measurement; kwargs...)
 
 The function allows for the alteration of parameters for a PMU.
 
-# Arguments
-If the `Analysis` type is omitted, the function applies changes to the `Measurement` type
-only. However, when including the `Analysis` type, it updates both the `Measurement` and
-`Analysis` types. This streamlined process avoids the need to completely rebuild vectors
-and matrices when adjusting these parameters.
-
 # Keywords
-To update a specific PMU, provide the necessary `kwargs` input arguments in accordance
-with the keywords specified in the [`addPmu!`](@ref addPmu!) function, along with their
-respective values. Ensure that the `label` keyword matches the `label` of the existing PMU
-you want to modify. If any keywords are omitted, their corresponding values will remain
-unchanged.
+To update a specific PMU, provide the necessary `kwargs` input arguments in accordance with the
+keywords specified in the [`addPmu!`](@ref addPmu!) function, along with their respective values.
+Ensure that the `label` keyword matches the `label` of the existing PMU you want to modify. If any
+keywords are omitted, their corresponding values will remain unchanged.
 
 # Updates
-The function updates the `pmu` field within the `Measurement` composite type. Furthermore,
-it guarantees that any modifications to the parameters are transmitted to the `Analysis`
-type.
+The function updates the `pmu` field within the `Measurement` type.
 
 # Units
 Units for input parameters can be changed using the same method as described for the
@@ -429,24 +414,23 @@ Units for input parameters can be changed using the same method as described for
 
 # Example
 ```jldoctest
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 132e3)
 
-addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 1.1, angle = -0.1)
-updatePmu!(system, device; label = "PMU 1", magnitude = 1.05)
+addPmu!(monitoring; label = "PMU 1", bus = "Bus 1", magnitude = 1.1, angle = -0.1)
+updatePmu!(monitoring; label = "PMU 1", magnitude = 1.05)
 ```
 """
 function updatePmu!(
-    system::PowerSystem,
-    device::Measurement;
+    monitoring::Measurement;
     label::IntStr,
     square::BoolMiss = missing,
     kwargs...
 )
+    system = monitoring.system
     baseVoltg = system.base.voltage
-    pmu = device.pmu
+    pmu = monitoring.pmu
     key = pmukwargs(template.pmu; kwargs...)
 
     idx = pmu.label[getLabel(pmu, label, "PMU")]
@@ -485,471 +469,410 @@ function updatePmu!(
         pmu.angle, idx, key.angle, key.varianceAngle,
         key.status, key.noise, pfxAngle, 1.0
     )
-end
 
-function updatePmu!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::DCStateEstimation{WLS{T}};
-    label::IntStr,
-    square::BoolMiss = missing,
-    kwargs...
-) where T <: Union{Normal, Orthogonal}
-
-    slack = system.bus.layout.slack
-    pmu = device.pmu
-    se = analysis.method
-    key = pmukwargs(template.pmu; kwargs...)
-
-    idxPmu = pmu.label[getLabel(pmu, label, "PMU")]
-    oldStatus = pmu.angle.status[idxPmu]
-    oldVariance = pmu.angle.variance[idxPmu]
-
-    updatePmu!(system, device; label, square, key...)
-
-    if pmu.layout.bus[idxPmu]
-        newStatus = pmu.angle.status[idxPmu]
-        idxBus = pmu.layout.index[idxPmu]
-        idx = analysis.method.index[idxPmu]
-
-        if oldStatus != newStatus || oldVariance != pmu.angle.variance[idxPmu]
-            se.run = true
-        end
-
-        if isset(key.status, key.angle)
-            se.mean[idx] =
-                newStatus * (pmu.angle.mean[idxPmu] - system.bus.voltage.angle[slack])
-
-            if isset(key.status)
-                se.coefficient[idx, idxBus] = newStatus
-            end
-        end
-
-        if isset(key.varianceAngle)
-            se.precision.nzval[idx] = 1 / pmu.angle.variance[idxPmu]
-        end
+    if !pmu.layout.bus[idx]
+        idxBrch = pmu.layout.index[idx]
+        pmu.magnitude.status[idx] &= system.branch.layout.status[idxBrch]
+        pmu.angle.status[idx] &= system.branch.layout.status[idxBrch]
     end
 end
 
+"""
+    updatePmu!(analysis::Analysis; kwargs...)
+
+The function extends the [`updatePmu!`](@ref updatePmu!(::Measurement)) function. By passing the
+`Analysis` type, the function first updates the specific PMU within the `Measurement` type using the
+provided `kwargs`, and then updates the `Analysis` type with all parameters associated with that PMU.
+
+A key feature of this function is that any prior modifications made to the specified PMU are preserved
+and applied to the `Analysis` type when the function is executed, ensuring consistency throughout the
+update process.
+
+# Example
+```jldoctest
+system, monitoring = ems("case14.h5", "monitoring.h5")
+
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis)
+
+updatePmu!(analysis; label = 4, magnitude = 0.95, angle = -0.1)
+```
+"""
 function updatePmu!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::DCStateEstimation{LAV};
-    label::IntStr,
-    square::BoolMiss = missing,
-    kwargs...
-)
-    bus = system.bus
-    pmu = device.pmu
-    se = analysis.method
-    key = pmukwargs(template.pmu; kwargs...)
-
-    idxPmu = pmu.label[getLabel(pmu, label, "PMU")]
-
-    updatePmu!(system, device; label, square, key...)
-
-    if pmu.layout.bus[idxPmu]
-        idx = se.index[idxPmu]
-        if pmu.angle.status[idxPmu] == 1
-            add!(se, idx)
-
-            mean = meanθi(pmu, bus, idxPmu)
-            addConstrLav!(se, se.state.angle[pmu.layout.index[idxPmu]], mean, idx)
-        else
-            remove!(se, idx)
-        end
-    end
-end
-
-function updatePmu!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::PMUStateEstimation{WLS{T}};
+    analysis::AcStateEstimation{GaussNewton{T}};
     label::IntStrMiss,
     square::BoolMiss = missing,
     kwargs...
 ) where T <: Union{Normal, Orthogonal}
 
-    bus = system.bus
-    branch = system.branch
-    ac = system.model.ac
-    pmu = device.pmu
-    se = analysis.method
-    key = pmukwargs(template.pmu; kwargs...)
+    bus = analysis.system.bus
+    pmu = analysis.monitoring.pmu
+    wls = analysis.method
 
-    idx = pmu.label[getLabel(pmu, label, "PMU")]
-    statusOld = pmu.magnitude.status[idx] & pmu.angle.status[idx]
-    correlatedOld = pmu.layout.correlated[idx]
+    updatePmu!(analysis.monitoring; label, square, kwargs...)
 
-    updatePmu!(system, device; label, square, key...)
-
-    statusNew = pmu.magnitude.status[idx] & pmu.angle.status[idx]
-    mean = isset(key.magnitude, key.angle)
-    variance = isset(key.varianceMagnitude, key.varianceAngle)
-
-    cosθ = cos(pmu.angle.mean[idx])
-    sinθ = sin(pmu.angle.mean[idx])
-    row = 2 * idx - 1
-    rox = row + 1
-
-    if mean || variance || (pmu.layout.correlated[idx] != correlatedOld)
-        varRe, varIm = variancePmu(pmu, cosθ, sinθ, idx)
-
-        if pmu.layout.correlated[idx]
-            precision!(se.precision, pmu, cosθ, sinθ, varRe, varIm, idx, row)
-        else
-            se.precision[row, row] = 1 / varRe
-            se.precision[rox, rox] = 1 / varIm
-            if correlatedOld
-                se.precision[row, rox] = 0.0
-                se.precision[rox, row] = 0.0
-            end
-        end
-    end
-
-    k = pmu.layout.index[idx]
-    if statusNew != statusOld || mean
-        if statusNew == 1 && (pmu.layout.bus[idx] || branch.layout.status[k] == 1)
-            se.mean[row] = pmu.magnitude.mean[idx] * cosθ
-            se.mean[rox] = pmu.magnitude.mean[idx] * sinθ
-        else
-            se.mean[row] = 0.0
-            se.mean[rox] = 0.0
-        end
-    end
-
-    if statusNew != statusOld
-        if pmu.layout.bus[idx]
-            if statusNew == 1
-                se.coefficient[row, k] = 1.0
-                se.coefficient[rox, k + bus.number] = 1.0
-            else
-                se.coefficient[row, k] = 0.0
-                se.coefficient[rox, k + bus.number] = 0.0
-            end
-        else
-            i, j = fromto(system, k)
-            m = i + bus.number
-            n = j + bus.number
-
-            if statusNew == 1 && branch.layout.status[k] == 1
-                if pmu.layout.from[idx]
-                    p = ReImIijCoefficient(branch, ac, k)
-                else
-                    p = ReImIjiCoefficient(branch, ac, k)
-                end
-                se.coefficient[row, i] = se.coefficient[rox, m] = p.A
-                se.coefficient[row, j] = se.coefficient[rox, n] = p.C
-                se.coefficient[row, m] = p.B
-                se.coefficient[row, n] = p.D
-                se.coefficient[rox, i] = -p.B
-                se.coefficient[rox, j] = -p.D
-            else
-                se.coefficient[row, i] = se.coefficient[rox, m] = 0.0
-                se.coefficient[row, j] = se.coefficient[rox, n] = 0.0
-                se.coefficient[row, m] = se.coefficient[rox, i] = 0.0
-                se.coefficient[row, n] = se.coefficient[rox, j] = 0.0
-            end
-        end
-    end
-end
-
-function updatePmu!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::PMUStateEstimation{LAV};
-    label::IntStrMiss,
-    square::BoolMiss = missing,
-    kwargs...
-)
-    bus = system.bus
-    branch = system.branch
-    ac = system.model.ac
-    pmu = device.pmu
-    se = analysis.method
-    key = pmukwargs(template.pmu; kwargs...)
-
-    idx = pmu.label[getLabel(pmu, label, "PMU")]
-    statusOld = pmu.magnitude.status[idx] & pmu.angle.status[idx]
-
-    updatePmu!(system, device; label, square, key...)
-
-    statusNew = pmu.magnitude.status[idx] & pmu.angle.status[idx]
-
-    sinθ, cosθ = sincos(pmu.angle.mean[idx])
-
-    idxRe = 2 * idx - 1
-    idxIm = idxRe + 1
-    if statusOld == 0 && statusNew == 1
-        add!(se, idxRe)
-        add!(se, idxIm)
-
-        idxBusBrch = pmu.layout.index[idx]
-        if pmu.layout.bus[idx]
-            reExpr = se.state.realpart[idxBusBrch]
-            imExpr = se.state.imagpart[idxBusBrch]
-        else
-            if branch.layout.status[idxBusBrch] == 1
-                if pmu.layout.from[idxBusBrch]
-                    piModel = ReImIijCoefficient(branch, ac, idxBusBrch)
-                else
-                    piModel = ReImIjiCoefficient(branch, ac, idxBusBrch)
-                end
-                reExpr, imExpr = ReImIij(system, se.state, piModel, idxBusBrch)
-            end
-        end
-        addConstrLav!(se, reExpr, 0.0, idxRe)
-        addConstrLav!(se, imExpr, 0.0, idxIm)
-    end
-
-    if statusOld == 1 && statusNew == 0
-        remove!(se, idxRe)
-        remove!(se, idxIm)
-    end
-
-    if statusNew == 1 || isset(key.magnitude, key.angle)
-        reMean = pmu.magnitude.mean[idx] * cosθ
-        imMean = pmu.magnitude.mean[idx] * sinθ
-
-        set_normalized_rhs(se.residual[idxRe], reMean)
-        set_normalized_rhs(se.residual[idxIm], imMean)
-    end
-end
-
-function updatePmu!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::ACStateEstimation{GaussNewton{T}};
-    label::IntStrMiss,
-    square::BoolMiss = missing,
-    kwargs...
-) where T <: Union{Normal, Orthogonal}
-
-    bus = system.bus
-    pmu = device.pmu
-    se = analysis.method
-    key = pmukwargs(template.pmu; kwargs...)
-
-    idxPmu = pmu.label[getLabel(pmu, label, "PMU")]
+    idxPmu = getIndex(pmu, label, "PMU")
     idxBusBrch = pmu.layout.index[idxPmu]
-    correlatedOld = pmu.layout.correlated[idxPmu]
 
-    updatePmu!(system, device; label, square, key...)
-
-    idx =
-        device.voltmeter.number + device.wattmeter.number +
-        device.varmeter.number + device.ammeter.number + (2 * idxPmu - 1)
+    idx = wls.range[5] + 2 * (idxPmu - 1)
     idq = idx + 1
 
-    if pmu.layout.polar[idxPmu]
-        if pmu.layout.bus[idxPmu]
-            se.precision[idx, idx] = 1 / pmu.magnitude.variance[idxPmu]
-        else
-            sq = if2(pmu.layout.square[idxPmu])
-            se.precision[idx, idx] = 1 / (sq * pmu.magnitude.variance[idxPmu])
-        end
-        se.precision[idq, idq] = 1 / pmu.angle.variance[idxPmu]
+    v = pmu.magnitude.status[idxPmu]
+    t = pmu.angle.status[idxPmu]
 
-        if pmu.magnitude.status[idxPmu] == 1
-            if pmu.layout.bus[idxPmu]
-                se.mean[idx] = pmu.magnitude.mean[idxPmu]
-                se.jacobian[idx, bus.number + idxBusBrch] = 1.0
-                se.type[idx] = 12
-            else
-                se.mean[idx] = pmu.magnitude.mean[idxPmu]^sq
-                if pmu.layout.from[idxPmu]
-                    if pmu.layout.square[idxPmu]
-                        se.type[idx] = 4
-                    else
-                        se.type[idx] = 2
-                    end
-                else
-                    if pmu.layout.square[idxPmu]
-                        se.type[idx] = 5
-                    else
-                        se.type[idx] = 3
-                    end
-                end
-            end
-        else
-            if pmu.layout.bus[idxPmu]
-                se.jacobian[idx, bus.number + idxBusBrch] = 0.0
-            else
-                i, j = fromto(system, idxBusBrch)
+    wls.precision[idx, idq] = 0.0
+    wls.precision[idq, idx] = 0.0
 
-                se.jacobian[idx, i] = se.jacobian[idx, bus.number + i] = 0.0
-                se.jacobian[idx, j] = se.jacobian[idx, bus.number + j] = 0.0
-            end
-            se.mean[idx] = 0.0
-            se.residual[idx] = 0.0
-            se.type[idx] = 0
-        end
-
-        if pmu.angle.status[idxPmu] == 1
-            if pmu.layout.bus[idxPmu]
-                se.jacobian[idq, idxBusBrch] = 1.0
-                se.type[idq] = 13
-            elseif pmu.layout.from[idxPmu]
-                se.type[idq] = 14
-            else
-                se.type[idq] = 15
-            end
-            se.mean[idq] = pmu.angle.mean[idxPmu]
-        else
-            if pmu.layout.bus[idxPmu]
-                se.jacobian[idq, idxBusBrch] = 0.0
-            else
-                i, j = fromto(system, idxBusBrch)
-
-                se.jacobian[idq, i] = se.jacobian[idq, bus.number + i] = 0.0
-                se.jacobian[idq, j] = se.jacobian[idq, bus.number + j] = 0.0
-            end
-            se.mean[idq] = 0.0
-            se.residual[idq] = 0.0
-            se.type[idq] = 0
-        end
-    else
-        if pmu.magnitude.status[idxPmu] == 1 && pmu.angle.status[idxPmu] == 1
-            se.mean[idx] = pmu.magnitude.mean[idxPmu] * cos(pmu.angle.mean[idxPmu])
-            se.mean[idq] = pmu.magnitude.mean[idxPmu] * sin(pmu.angle.mean[idxPmu])
-            if pmu.layout.bus[idxPmu]
-                se.type[idx] = 16
-                se.type[idq] = 17
-            elseif pmu.layout.from[idxPmu]
-                se.type[idx] = 18
-                se.type[idq] = 20
-            else
-                se.type[idx] = 19
-                se.type[idq] = 21
-            end
-        else
-            if pmu.layout.bus[idxPmu]
-                se.jacobian[idx, idxBusBrch] = 0.0
-                se.jacobian[idx, bus.number + idxBusBrch] = 0.0
-                se.jacobian[idq, idxBusBrch] = 0.0
-                se.jacobian[idq, bus.number + idxBusBrch] = 0.0
-            else
-                i, j = fromto(system, idxBusBrch)
-
-                se.jacobian[idx, i] = se.jacobian[idx, bus.number + i] = 0.0
-                se.jacobian[idx, j] = se.jacobian[idx, bus.number + j] = 0.0
-                se.jacobian[idq, i] = se.jacobian[idq, bus.number + i] = 0.0
-                se.jacobian[idq, j] = se.jacobian[idq, bus.number + j] = 0.0
-            end
-            se.mean[idx] = se.mean[idq] = 0.0
-            se.residual[idx] = se.residual[idq] = 0.0
-            se.type[idx] = se.type[idq] = 0
-        end
-    end
-
-    if pmu.layout.polar[idxPmu]
-        if correlatedOld
-            se.precision[idx, idq] = 0.0
-            se.precision[idq, idx] = 0.0
-        end
-    else
+    if !pmu.layout.polar[idxPmu]
         cosθ = cos(pmu.angle.mean[idxPmu])
         sinθ = sin(pmu.angle.mean[idxPmu])
 
         varRe, varIm = variancePmu(pmu, cosθ, sinθ, idxPmu)
 
         if pmu.layout.correlated[idxPmu]
-            precision!(se.precision, pmu, cosθ, sinθ, varRe, varIm, idxPmu, idx)
+            if !isstored(wls.precision, idx, idq)
+                wls.signature[:pattern] = -1
+            end
+            precision!(wls.precision, pmu, cosθ, sinθ, varRe, varIm, idxPmu, idx)
         else
-            se.precision[idx, idx] = 1 / varRe
-            se.precision[idq, idq] = 1 / varIm
-            se.precision[idx, idq] = 0.0
-            se.precision[idq, idx] = 0.0
+            wls.precision[idx, idx] = 1 / varRe
+            wls.precision[idq, idq] = 1 / varIm
+        end
+    end
+
+    if pmu.layout.bus[idxPmu]
+        if pmu.layout.polar[idxPmu] # PMU Polar Bus
+
+            wls.mean[idx] = v * pmu.magnitude.mean[idxPmu]
+            wls.mean[idq] = t * pmu.angle.mean[idxPmu]
+
+            wls.precision[idx, idx] = 1 / pmu.magnitude.variance[idxPmu]
+            wls.precision[idq, idq] = 1 / pmu.angle.variance[idxPmu]
+
+            wls.jacobian[idx, bus.number + idxBusBrch] = v * 1.0
+            wls.jacobian[idq, idxBusBrch] = t * 1.0
+
+            wls.residual[idx] *= v
+            wls.residual[idq] *= t
+
+            wls.type[idx] = v * 12
+            wls.type[idq] = t * 13
+
+            wls.jacobian[idx, idxBusBrch] = 0.0
+            wls.jacobian[idq, bus.number + idxBusBrch] = 0.0
+        else # PMU Rectangular Bus
+            p = v * t
+
+            if !isstored(wls.jacobian, idx, idxBusBrch)
+                wls.signature[:pattern] = -1
+            end
+
+            wls.mean[idx] = p * pmu.magnitude.mean[idxPmu] * cosθ
+            wls.mean[idq] = p * pmu.magnitude.mean[idxPmu] * sinθ
+
+            wls.jacobian[idx, idxBusBrch] = eps(Float64)
+            wls.jacobian[idx, bus.number + idxBusBrch] = eps(Float64)
+            wls.jacobian[idq, idxBusBrch] = eps(Float64)
+            wls.jacobian[idq, bus.number + idxBusBrch] = eps(Float64)
+
+            wls.residual[idx] *= p
+            wls.residual[idq] *= p
+
+            wls.type[idx] = p * 16
+            wls.type[idq] = p * 17
+        end
+    else # PMU Branch
+        i, j = fromto(analysis.system, idxBusBrch)
+
+        wls.jacobian[idx, i] = wls.jacobian[idx, bus.number + i] = 0.0
+        wls.jacobian[idx, j] = wls.jacobian[idx, bus.number + j] = 0.0
+
+        wls.jacobian[idq, i] = wls.jacobian[idq, bus.number + i] = 0.0
+        wls.jacobian[idq, j] = wls.jacobian[idq, bus.number + j] = 0.0
+
+        if pmu.layout.polar[idxPmu] # PMU Polar Branch
+            sq = if2exp(pmu.layout.square[idxPmu])
+
+            wls.mean[idx] = v * pmu.magnitude.mean[idxPmu]^sq
+            wls.mean[idq] = t * pmu.angle.mean[idxPmu]
+
+            wls.precision[idx, idx] = 1 / (sq * pmu.magnitude.variance[idxPmu])
+            wls.precision[idq, idq] = 1 / pmu.angle.variance[idxPmu]
+
+            wls.residual[idx] *= v
+            wls.residual[idx] *= t
+
+            ty = if2type(pmu.layout.square[idxPmu])
+            if pmu.layout.from[idxPmu]
+                wls.type[idx] = v * (2 + ty)
+                wls.type[idq] = t * 14
+            else
+                wls.type[idx] = v * (3 + ty)
+                wls.type[idq] = t * 15
+            end
+        else # PMU Rectangular Branch
+            p = v * t
+
+            wls.mean[idx] = p * (pmu.magnitude.mean[idxPmu] * cosθ)
+            wls.mean[idq] = p * (pmu.magnitude.mean[idxPmu] * sinθ)
+
+            wls.residual[idx] *= p
+            wls.residual[idq] *= p
+
+            if pmu.layout.from[idxPmu]
+                wls.type[idx] = p * 18
+                wls.type[idq] = p * 20
+            else
+                wls.type[idx] = p * 19
+                wls.type[idq] = p * 21
+            end
         end
     end
 end
 
 function updatePmu!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::ACStateEstimation{LAV};
+    analysis::AcStateEstimation{LAV};
     label::IntStrMiss,
     square::BoolMiss = missing,
     kwargs...
 )
-    bus = system.bus
-    pmu = device.pmu
-    se = analysis.method
-    key = pmukwargs(template.pmu; kwargs...)
+    system = analysis.system
+    pmu = analysis.monitoring.pmu
+    lav = analysis.method
 
-    updatePmu!(system, device; label, square, key...)
+    updatePmu!(analysis.monitoring; label, square, kwargs...)
 
-    idxPmu = pmu.label[getLabel(pmu, label, "PMU")]
+    idxPmu = getIndex(pmu, label, "PMU")
     idxBusBrch = pmu.layout.index[idxPmu]
-    idx =
-        device.voltmeter.number + device.wattmeter.number +
-        device.varmeter.number + device.ammeter.number + (2 * idxPmu - 1)
 
-    if pmu.layout.polar[idxPmu]
-        if pmu.layout.bus[idxPmu]
-            if pmu.magnitude.status[idxPmu] == 1
-                add!(se, idx)
-                addConstrLav!(se, se.state.magnitude[idxBusBrch], pmu.magnitude.mean[idxPmu], idx)
-            else
-                remove!(se, idx)
-            end
+    idx = lav.range[5] + 2 * (idxPmu - 1)
 
-            if pmu.angle.status[idxPmu] == 1
-                add!(se, idx + 1)
-                expr = @expression(se.jump, se.state.angle[idxBusBrch])
-                addConstrLav!(se, expr, pmu.angle.mean[idxPmu], idx + 1)
-            else
-                remove!(se, idx + 1)
-            end
-        else
-            if pmu.magnitude.status[idxPmu] == 1
-                add!(se, idx)
-                if pmu.layout.from[idxPmu]
-                    expr = Iij(system, se, pmu.layout.square[idxPmu], idxBusBrch)
-                else
-                    expr = Iji(system, se, pmu.layout.square[idxPmu], idxBusBrch)
-                end
+    remove!(lav, idx)
+    remove!(lav, idx + 1)
 
-                sq = if2(pmu.layout.square[k])
-                addConstrLav!(lav, expr, pmu.magnitude.mean[idxPmu]^sq, idx)
-            else
-                remove!(se, idx)
-            end
-
-            if pmu.angle.status[idxPmu] == 1
-                add!(se, idx + 1)
-                if pmu.layout.from[idxPmu]
-                    expr = ψij(system, se, idxBusBrch)
-                else
-                    expr = ψji(system, se, idxBusBrch)
-                end
-                addConstrLav!(se, expr, pmu.angle.mean[idxPmu], idx + 1)
-            else
-                remove!(se, idx + 1)
-            end
-        end
-    else
-        if pmu.magnitude.status[idxPmu] == 1 && pmu.angle.status[idxPmu] == 1
-            add!(se, idx)
-            add!(se, idx + 1)
+    if pmu.layout.polar[idxPmu] # PMU Polar Bus and Branch
+        if pmu.magnitude.status[idxPmu] == 1
+            add!(lav, idx)
 
             if pmu.layout.bus[idxPmu]
-                ReExpr, ImExpr = ReImVi(se, idxBusBrch)
+                expr = lav.variable.voltage.magnitude[idxBusBrch]
+                sq = 1
             else
                 if pmu.layout.from[idxPmu]
-                    ReExpr, ImExpr = ReImIij(system, se, idxBusBrch)
+                    expr = Iij(system, lav.variable.voltage, pmu.layout.square[idxPmu], idxBusBrch)
                 else
-                    ReExpr, ImExpr = ReImIji(system, se, idxBusBrch)
+                    expr = Iji(system, lav.variable.voltage, pmu.layout.square[idxPmu], idxBusBrch)
                 end
+                sq = if2exp(pmu.layout.square[idxPmu])
+            end
+
+            addConstrLav!(lav, expr, pmu.magnitude.mean[idxPmu]^sq, idx)
+        end
+
+        if pmu.angle.status[idxPmu] == 1
+            add!(lav, idx + 1)
+
+            if pmu.layout.bus[idxPmu]
+                expr = lav.variable.voltage.angle[idxBusBrch]
+            elseif pmu.layout.from[idxPmu]
+                expr = ψij(system, lav.variable.voltage, idxBusBrch)
+            else
+                expr = ψji(system, lav.variable.voltage, idxBusBrch)
+            end
+
+            addConstrLav!(lav, expr, pmu.angle.mean[idxPmu], idx + 1)
+        end
+    else # PMU Rectangular Bus and Branch
+        if pmu.magnitude.status[idxPmu] == 1 && pmu.angle.status[idxPmu] == 1
+            add!(lav, idx)
+            add!(lav, idx + 1)
+
+            if pmu.layout.bus[idxPmu]
+                ReExpr, ImExpr = ReImVi(lav.variable.voltage, idxBusBrch)
+            elseif pmu.layout.from[idxPmu]
+                ReExpr, ImExpr = ReImIij(system, lav.variable.voltage, idxBusBrch)
+            else
+                ReExpr, ImExpr = ReImIji(system, lav.variable.voltage, idxBusBrch)
             end
             ReMean = pmu.magnitude.mean[idxPmu] * cos(pmu.angle.mean[idxPmu])
             ImMean = pmu.magnitude.mean[idxPmu] * sin(pmu.angle.mean[idxPmu])
 
-            addConstrLav!(se, ReExpr, ReMean, idx)
-            addConstrLav!(se, ImExpr, ImMean, idx + 1)
+            addConstrLav!(lav, ReExpr, ReMean, idx)
+            addConstrLav!(lav, ImExpr, ImMean, idx + 1)
+        end
+    end
+end
+
+function updatePmu!(
+    analysis::PmuStateEstimation{WLS{T}};
+    label::IntStrMiss,
+    square::BoolMiss = missing,
+    kwargs...
+) where T <: Union{Normal, Orthogonal}
+
+    pmu = analysis.monitoring.pmu
+    wls = analysis.method
+
+    updatePmu!(analysis.monitoring; label, square, kwargs...)
+
+    idx = getIndex(pmu, label, "PMU")
+    row = 2 * idx - 1
+    rox = row + 1
+
+    wls.precision[row, rox] = 0.0
+    wls.precision[rox, row] = 0.0
+
+    cosθ = cos(pmu.angle.mean[idx])
+    sinθ = sin(pmu.angle.mean[idx])
+
+    varRe, varIm = variancePmu(pmu, cosθ, sinθ, idx)
+    if pmu.layout.correlated[idx]
+        if !isstored(wls.precision, row, rox)
+            wls.signature[:pattern] = -1
+        end
+        precision!(wls.precision, pmu, cosθ, sinθ, varRe, varIm, idx, row)
+    else
+        wls.precision[row, row] = 1 / varRe
+        wls.precision[rox, rox] = 1 / varIm
+    end
+
+    status = pmu.magnitude.status[idx] * pmu.angle.status[idx]
+
+    k = pmu.layout.index[idx]
+    if pmu.layout.bus[idx]
+        wls.mean[row] = status * (pmu.magnitude.mean[idx] * cosθ)
+        wls.mean[rox] = status * (pmu.magnitude.mean[idx] * sinθ)
+
+        wls.coefficient[row, k] = status * 1.0
+        wls.coefficient[rox, k + analysis.system.bus.number] = status * 1.0
+    else
+        wls.mean[row] = status * (pmu.magnitude.mean[idx] * cosθ)
+        wls.mean[rox] = status * (pmu.magnitude.mean[idx] * sinθ)
+
+        i, j = fromto(analysis.system, k)
+        m = i + analysis.system.bus.number
+        n = j + analysis.system.bus.number
+
+        if status == 1
+            if pmu.layout.from[idx]
+                p = ReImIijCoefficient(analysis.system.branch, analysis.system.model.ac, k)
+            else
+                p = ReImIjiCoefficient(analysis.system.branch, analysis.system.model.ac, k)
+            end
+            wls.coefficient[row, i] = wls.coefficient[rox, m] = p.A
+            wls.coefficient[row, j] = wls.coefficient[rox, n] = p.C
+            wls.coefficient[row, m] = p.B
+            wls.coefficient[row, n] = p.D
+            wls.coefficient[rox, i] = -p.B
+            wls.coefficient[rox, j] = -p.D
         else
-            remove!(se, idx)
-            remove!(se, idx + 1)
+            wls.coefficient[row, i] = wls.coefficient[rox, m] = 0.0
+            wls.coefficient[row, j] = wls.coefficient[rox, n] = 0.0
+            wls.coefficient[row, m] = wls.coefficient[rox, i] = 0.0
+            wls.coefficient[row, n] = wls.coefficient[rox, j] = 0.0
+        end
+    end
+end
+
+function updatePmu!(
+    analysis::PmuStateEstimation{LAV};
+    label::IntStrMiss,
+    square::BoolMiss = missing,
+    kwargs...
+)
+    pmu = analysis.monitoring.pmu
+    lav = analysis.method
+
+    updatePmu!(analysis.monitoring; label, square, kwargs...)
+
+    idx = getIndex(pmu, label, "PMU")
+    idxBusBrch = pmu.layout.index[idx]
+    idxRe = 2 * idx - 1
+    idxIm = idxRe + 1
+
+    status = pmu.magnitude.status[idx] * pmu.angle.status[idx]
+
+    remove!(lav, idxRe)
+    remove!(lav, idxIm)
+    if status == 1
+        add!(lav, idxRe)
+        add!(lav, idxIm)
+
+        sinθ, cosθ = sincos(pmu.angle.mean[idx])
+        reMean = pmu.magnitude.mean[idx] * cosθ
+        imMean = pmu.magnitude.mean[idx] * sinθ
+
+        if pmu.layout.bus[idx]
+            reExpr = lav.variable.voltage.real[idxBusBrch]
+            imExpr = lav.variable.voltage.imag[idxBusBrch]
+        else
+            if pmu.layout.from[idx]
+                p = ReImIijCoefficient(analysis.system.branch, analysis.system.model.ac, idxBusBrch)
+
+            else
+                p = ReImIjiCoefficient(analysis.system.branch, analysis.system.model.ac, idxBusBrch)
+            end
+            reExpr, imExpr = ReImIij(analysis.system, lav.variable.voltage, p, idxBusBrch)
+        end
+        addConstrLav!(lav, reExpr, reMean, idxRe)
+        addConstrLav!(lav, imExpr, imMean, idxIm)
+    end
+end
+
+function updatePmu!(
+    analysis::DcStateEstimation{WLS{T}};
+    label::IntStr,
+    square::BoolMiss = missing,
+    kwargs...
+) where T <: Union{Normal, Orthogonal}
+
+    slack = analysis.system.bus.layout.slack
+    pmu = analysis.monitoring.pmu
+    wls = analysis.method
+
+    updatePmu!(analysis.monitoring; label, square, kwargs...)
+
+    idxPmu = getIndex(pmu, label, "PMU")
+
+    if pmu.layout.bus[idxPmu]
+        idx = analysis.method.index[idxPmu]
+
+        oldCoef = wls.coefficient[idx, pmu.layout.index[idxPmu]]
+        oldPrec = wls.precision.nzval[idx]
+
+        status = pmu.angle.status[idxPmu]
+
+        wls.mean[idx] = status * (pmu.angle.mean[idxPmu] - analysis.system.bus.voltage.angle[slack])
+        wls.coefficient[idx, pmu.layout.index[idxPmu]] = status
+        wls.precision.nzval[idx] = 1 / pmu.angle.variance[idxPmu]
+
+        if oldCoef != status || oldPrec != wls.precision.nzval[idx]
+            wls.signature[:run] = true
+        end
+    end
+end
+
+function updatePmu!(
+    analysis::DcStateEstimation{LAV};
+    label::IntStr,
+    square::BoolMiss = missing,
+    kwargs...
+)
+    pmu = analysis.monitoring.pmu
+    lav = analysis.method
+
+    updatePmu!(analysis.monitoring; label, square, kwargs...)
+
+    idxPmu = pmu.label[getLabel(pmu, label, "PMU")]
+
+    if pmu.layout.bus[idxPmu]
+        idx = lav.index[idxPmu]
+
+        remove!(lav, idx)
+        if pmu.angle.status[idxPmu] == 1
+            add!(lav, idx)
+            mean = meanθi(pmu, analysis.system.bus, idxPmu)
+            addConstrLav!(lav, lav.variable.voltage.angle[pmu.layout.index[idxPmu]], mean, idx)
         end
     end
 end
@@ -960,17 +883,16 @@ end
         varianceMagnitudeFrom, varianceAngleFrom, statusFrom,
         varianceMagnitudeTo, varianceAngleTo, statusTo)
 
-The macro generates a template for a PMU, which can be utilized to define a PMU using the
-[`addPmu!`](@ref addPmu!) function.
+The macro generates a template for a PMU.
 
 # Keywords
-To establish the PMU template, users can configure the pattern for labels using the `label`
-keyword, specify the type of `noise`, and indicate the `correlated, `polar`, and `square` system
-utilized for managing phasors during state estimation.
+To establish the PMU template, users can configure the pattern for labels using the `label` keyword,
+specify the type of `noise`, and indicate the `correlated, `polar`, and `square` system utilized for
+managing phasors during state estimation.
 
-Users have the option to set default values for magnitude and angle variances, as well as
-statuses. This can be done for PMUs located at the buses using the `varianceMagnitudeBus`,
-`varianceAngleBus`, and `statusBus` keywords.
+Users have the option to set default values for magnitude and angle variances, as well as statuses.
+This can be done for PMUs located at the buses using the `varianceMagnitudeBus`, `varianceAngleBus`,
+and `statusBus` keywords.
 
 The same configuration can be applied at both the from-bus ends of the branches using the
 `varianceMagnitudeFrom`, `varianceAngleFrom`, and `statusFrom` keywords.
@@ -979,40 +901,40 @@ For PMUs located at the to-bus ends of the branches, users can use the `variance
 `varianceAngleTo`, and `statusTo` keywords.
 
 # Units
-By default, the units for variances are per-units and radians. However, users have the
-option to switch to volts and degrees as the units for PMUs located at the buses by using
-the [`@voltage`](@ref @voltage) macro, or they can switch to amperes  and degrees as the
-units for PMUs located at the branches by using the [`@current`](@ref @current) macro.
+By default, the units for variances are per-units and radians. However, users have the option to
+switch to volts and degrees as the units for PMUs located at the buses by using the
+[`@voltage`](@ref @voltage) macro, or they can switch to amperes  and degrees as the units for PMUs
+located at the branches by using the [`@current`](@ref @current) macro.
 
 # Examples
 Adding PMUs using the default unit system:
 ```jldoctest
-system = powerSystem()
-device = measurement()
+@pmu(label = "PMU ?", varianceAngleBus = 1e-6, varianceMagnitudeFrom = 1e-4)
+
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 132e3)
 addBus!(system; label = "Bus 2", base = 132e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-@pmu(label = "PMU ?", varianceAngleBus = 1e-6, varianceMagnitudeFrom = 1e-4)
-addPmu!(system, device; bus = "Bus 1", magnitude = 1.1, angle = -0.1)
-addPmu!(system, device; from = "Branch 1", magnitude = 1.1, angle = -0.2)
+addPmu!(monitoring; bus = "Bus 1", magnitude = 1.1, angle = -0.1)
+addPmu!(monitoring; from = "Branch 1", magnitude = 1.1, angle = -0.2)
 ```
 
 Adding PMUs using a custom unit system:
 ```jldoctest
 @voltage(kV, deg, kV)
 @current(A, deg)
-system = powerSystem()
-device = measurement()
+@pmu(label = "PMU ?", varianceAngleBus = 5.73e-5, varianceMagnitudeFrom = 0.0481)
+
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 132.0)
 addBus!(system; label = "Bus 2", base = 132.0)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-@pmu(label = "PMU ?", varianceAngleBus = 5.73e-5, varianceMagnitudeFrom = 0.0481)
-addPmu!(system, device; bus = "Bus 1", magnitude = 145.2, angle = -5.73)
-addPmu!(system, device; from = "Branch 1", magnitude = 481.125, angle = -11.46)
+addPmu!(monitoring; bus = "Bus 1", magnitude = 145.2, angle = -5.73)
+addPmu!(monitoring; from = "Branch 1", magnitude = 481.125, angle = -11.46)
 ```
 """
 macro pmu(kwargs...)

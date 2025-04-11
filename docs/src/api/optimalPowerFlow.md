@@ -10,24 +10,25 @@ using JuliaGrid, Ipopt
 
 ###### AC Optimal Power Flow
 * [`acOptimalPowerFlow`](@ref acOptimalPowerFlow)
-* [`solve!`](@ref solve!(::PowerSystem, ::ACOptimalPowerFlow))
-* [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::ACOptimalPowerFlow))
-* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACOptimalPowerFlow))
+* [`solve!`](@ref solve!(::AcOptimalPowerFlow))
+* [`setInitialPoint!`](@ref setInitialPoint!(::AcOptimalPowerFlow))
+* [`powerFlow!`](@ref powerFlow!(::AcOptimalPowerFlow))
 
 ###### DC Optimal Power Flow
 * [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow)
-* [`solve!`](@ref solve!(::PowerSystem, ::DCOptimalPowerFlow))
-* [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::DCOptimalPowerFlow))
-* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::DCOptimalPowerFlow))
+* [`solve!`](@ref solve!(::DcOptimalPowerFlow))
+* [`setInitialPoint!`](@ref setInitialPoint!(::DcOptimalPowerFlow))
+* [`powerFlow!`](@ref powerFlow!(::DcOptimalPowerFlow))
 
 ---
 
 ## AC Optimal Power Flow
 ```@docs
 acOptimalPowerFlow
-solve!(::PowerSystem, ::ACOptimalPowerFlow)
-setInitialPoint!(::PowerSystem, ::ACOptimalPowerFlow)
-powerFlow!(::PowerSystem, ::ACOptimalPowerFlow)
+solve!(::AcOptimalPowerFlow)
+setInitialPoint!(::AcOptimalPowerFlow)
+setInitialPoint!(::AC, ::AcOptimalPowerFlow)
+powerFlow!(::AcOptimalPowerFlow)
 ```
 
 ---
@@ -35,7 +36,8 @@ powerFlow!(::PowerSystem, ::ACOptimalPowerFlow)
 ## DC Optimal Power Flow
 ```@docs
 dcOptimalPowerFlow
-solve!(::PowerSystem, ::DCOptimalPowerFlow)
-setInitialPoint!(::PowerSystem, ::DCOptimalPowerFlow)
-powerFlow!(::PowerSystem, ::DCOptimalPowerFlow)
+solve!(::DcOptimalPowerFlow)
+setInitialPoint!(::DcOptimalPowerFlow)
+setInitialPoint!(::DC, ::DcOptimalPowerFlow)
+powerFlow!(::DcOptimalPowerFlow)
 ```

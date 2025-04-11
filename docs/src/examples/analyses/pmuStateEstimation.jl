@@ -29,7 +29,7 @@ show = Dict("Shunt Power" => false, "Status" => false, "Series Power" => false)
 placement = pmuPlacement(system, HiGHS.Optimizer; verbose = 1)
 
 ##### Measurement Model #####
-device = measurement()
+monitoring = measurement(system)
 
 updateBus!(system; label = "Bus 2", type = 1, active = 0.217, reactive = 0.127)
 updateBus!(system; label = "Bus 3", type = 1, active = 0.478, reactive = -0.039)
@@ -42,50 +42,50 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 4", active = 0.412, reac
 
 acModel!(system)
 powerFlow = newtonRaphson(system)
-powerFlow!(system, powerFlow; verbose = 1)
+powerFlow!(powerFlow; verbose = 1)
 
 @pmu(label = "!")
 for (bus, idx) in placement.bus
     Vᵢ, θᵢ = powerFlow.voltage.magnitude[idx], powerFlow.voltage.angle[idx]
-    addPmu!(system, device; bus = bus, magnitude = Vᵢ, angle = θᵢ, noise = true)
+    addPmu!(monitoring; bus = bus, magnitude = Vᵢ, angle = θᵢ, noise = true)
 end
 
 for branch in keys(placement.from)
-    Iᵢⱼ, ψᵢⱼ = fromCurrent(system, powerFlow; label = branch)
-    addPmu!(system, device; from = branch, magnitude = Iᵢⱼ, angle = ψᵢⱼ)
+    Iᵢⱼ, ψᵢⱼ = fromCurrent(powerFlow; label = branch)
+    addPmu!(monitoring; from = branch, magnitude = Iᵢⱼ, angle = ψᵢⱼ)
 end
 for branch in keys(placement.to)
-    Iⱼᵢ, ψⱼᵢ = toCurrent(system, powerFlow; label = branch)
-    addPmu!(system, device; to = branch, magnitude = Iⱼᵢ, angle = ψⱼᵢ)
+    Iⱼᵢ, ψⱼᵢ = toCurrent(powerFlow; label = branch)
+    addPmu!(monitoring; to = branch, magnitude = Iⱼᵢ, angle = ψⱼᵢ)
 end
 
-printPmuData(system, device; width = Dict("Label" => 15))
+printPmuData(monitoring; width = Dict("Label" => 15))
 
 ##### Base Case Analysis #####
-analysis = pmuStateEstimation(system, device)
-stateEstimation!(system, analysis; power = true, verbose = 1)
+analysis = pmuStateEstimation(monitoring)
+stateEstimation!(analysis; power = true, verbose = 1)
 
-power!(system, powerFlow)
-printBusData(system, analysis; show)
-printBusData(system, powerFlow; show)
-printBranchData(system, analysis; show)
+power!(powerFlow)
+printBusData(analysis; show)
+printBusData(powerFlow; show)
+printBranchData(analysis; show)
 
 ##### Modifying Measurement Data #####
-updatePmu!(system, device, analysis; label = "From Branch 8", magnitude = 1.1)
-updatePmu!(system, device, analysis; label = "From Branch 2", angle = 0.2, noise = true)
+updatePmu!(analysis; label = "From Branch 8", magnitude = 1.1)
+updatePmu!(analysis; label = "From Branch 2", angle = 0.2, noise = true)
 
-stateEstimation!(system, analysis; power = true, verbose = 1)
+stateEstimation!(analysis; power = true, verbose = 1)
 
-printBusData(system, analysis; show)
+printBusData(analysis; show)
 
 ##### Modifying Measurement Set #####
-updatePmu!(system, device; label = "From Branch 2", status = 0)
-updatePmu!(system, device; label = "From Branch 8", status = 0)
+updatePmu!(monitoring; label = "From Branch 2", status = 0)
+updatePmu!(monitoring; label = "From Branch 8", status = 0)
 
-addPmu!(system, device; to = "Branch 2", magnitude = 0.2282, angle = -2.9587)
-addPmu!(system, device; to = "Branch 8", magnitude = 0.0414, angle = -0.2424)
+addPmu!(monitoring; to = "Branch 2", magnitude = 0.2282, angle = -2.9587)
+addPmu!(monitoring; to = "Branch 8", magnitude = 0.0414, angle = -0.2424)
 
-analysis = pmuStateEstimation(system, device)
-stateEstimation!(system, analysis; power = true, verbose = 1)
+analysis = pmuStateEstimation(monitoring)
+stateEstimation!(analysis; power = true, verbose = 1)
 
-printBusData(system, analysis; show)
+printBusData(analysis; show)

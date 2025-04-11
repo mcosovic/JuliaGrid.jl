@@ -43,16 +43,16 @@ JuliaGrid employs standard observability analysis performed on the linear decoup
 
 Let us illustrate this concept with the following example, where measurements form an unobservable system:
 ```@example ACObservability
-device = measurement()
+monitoring = measurement(system)
 
-addWattmeter!(system, device; label = 1, from = 1, active = 0.93)
-addVarmeter!(system, device; label = 1, from = 1, reactive = -0.41)
+addWattmeter!(monitoring; label = 1, from = 1, active = 0.93)
+addVarmeter!(monitoring; label = 1, from = 1, reactive = -0.41)
 
-addWattmeter!(system, device; label = 2, bus = 2, active = -0.1)
-addVarmeter!(system, device; label = 2, bus = 2, reactive = -0.01)
+addWattmeter!(monitoring; label = 2, bus = 2, active = -0.1)
+addVarmeter!(monitoring; label = 2, bus = 2, reactive = -0.01)
 
-addWattmeter!(system, device; label = 3, bus = 3, active = -0.30)
-addVarmeter!(system, device; label = 3, bus = 3, reactive = 0.52)
+addWattmeter!(monitoring; label = 3, bus = 3, active = -0.30)
+addVarmeter!(monitoring; label = 3, bus = 3, reactive = 0.52)
 nothing # hide
 ```
 
@@ -67,7 +67,7 @@ The selection between them relies on the power system's structure and the availa
 ##### Flow-Observale Islands
 To identify flow-observable islands, JuliaGrid employs a topological method outlined in [horisberger1985observability](@cite). The process begins with the examination of all active power flow measurements from wattmeters, aiming to determine the largest sets of connected buses within the network linked by branches with active power flow measurements. Subsequently, the analysis considers individual boundary or tie active power injection measurements, involving two islands that may potentially be merged into a single observable island. The user can initiate this process by calling the function:
 ```@example ACObservability
-islands = islandTopologicalFlow(system, device)
+islands = islandTopologicalFlow(monitoring)
 nothing # hide
 ```
 
@@ -88,7 +88,7 @@ This tie data will be utilized throughout the restoration step, where we introdu
 ##### Maximal-Observale Islands
 To identify maximal-observable islands, we extend the analysis with an additional processing step. After processing individual injection tie measurements, we are left with a series of injection measurements that are not entirely contained within any observable zone. In this set of remaining tie injections, we now examine pairs involving three and only three previously determined observable zones (including individual buses). If we find such a pair, the three islands will be merged, and all injection measurements related exclusively to these three islands are no longer considered. The procedure then restarts at the stage where we process tie active power injection measurements involving two and only two islands. If no mergers are possible with pairs, we then consider sets of three injection measurements involving four islands, and so on [horisberger1985observability](@cite). The user can initiate this by calling the function:
 ```@example ACObservability
-islands = islandTopological(system, device)
+islands = islandTopological(monitoring)
 nothing # hide
 ```
 
@@ -110,7 +110,7 @@ Compared to the tie data obtained after detecting flow-observable islands, we no
 ## Observability Restoration
 Before commencing the restoration of observability in the context of the linear decoupled measurement model and observability analysis, it is imperative to ensure that the system possesses one bus voltage magnitude measurement. This necessity arises from the fact that observable islands are identified based on wattmeters, where wattmeters are tasked with estimating voltage angles. Since one voltage angle is already known from the slack bus, the same principle should be applied to bus voltage magnitudes. Therefore, to address this requirement, we add:
 ```@example ACObservability
-addVoltmeter!(system, device; bus = 1, magnitude = 1.0)
+addVoltmeter!(monitoring; bus = 1, magnitude = 1.0)
 nothing # hide
 ```
 
@@ -125,13 +125,13 @@ However, let us introduce the matrix ``\mathbf M_\mathrm{r} \in \mathbb{R}^{r \t
 
 Subsequently, the user needs to establish a set of pseudo-measurements, where measurements must come in pairs as well. Let us create that set:
 ```@example ACObservability
-pseudo = measurement()
+pseudo = measurement(system)
 
-addWattmeter!(system, pseudo; label = 4, bus = 1, active = 0.93)
-addVarmeter!(system, pseudo; label = 4, bus = 1, reactive = -0.41)
+addWattmeter!(pseudo; label = 4, bus = 1, active = 0.93)
+addVarmeter!(pseudo; label = 4, bus = 1, reactive = -0.41)
 
-addWattmeter!(system, pseudo; label = 5, from = 5, active = 0.30)
-addVarmeter!(system, pseudo; label = 5, from = 5, reactive = 0.03)
+addWattmeter!(pseudo; label = 5, from = 5, active = 0.30)
+addVarmeter!(pseudo; label = 5, from = 5, reactive = 0.03)
 nothing # hide
 ```
 
@@ -146,7 +146,7 @@ Additionally, users have the option to include bus voltage angle measurements fr
 
 Users can execute the observability restoration procedure with the following:
 ```@example ACObservability
-restorationGram!(system, device, pseudo, islands; threshold = 1e-6)
+restorationGram!(monitoring, pseudo, islands; threshold = 1e-6)
 nothing # hide
 ```
 
@@ -165,15 +165,15 @@ The decomposition of ``\mathbf D`` into its ``\mathbf Q`` and ``\mathbf R`` fact
 ```
 JuliaGrid designates the corresponding measurement as redundant, where ``\epsilon`` represents a pre-determined zero pivot `threshold`, set to `1e-6` in this example. The minimal set of pseudo-measurements for observability restoration corresponds to the non-zero diagonal elements at positions associated with the candidate pseudo-measurements. It is essential to note that an inappropriate choice of the zero pivot threshold may adversely affect observability restoration. Additionally, there is a possibility that the set of pseudo-measurements ``\mathcal{M}_\text{p}`` may not be sufficient for achieving observability restoration.
 
-Finally, the fifth wattmeter, and consequently the fifth varmeter successfully restore observability, and these measurements are added to the `device` variable, which stores actual measurements:
+Finally, the fifth wattmeter, and consequently the fifth varmeter successfully restore observability, and these measurements are added to the `monitoring` variable, which stores actual measurements:
 ```@repl ACObservability
-device.wattmeter.label
-device.varmeter.label
+monitoring.wattmeter.label
+monitoring.varmeter.label
 ```
 
 Here, we can confirm that the new measurement set establishes the observable system formed by a single island:
 ```@repl ACObservability
-islands = islandTopological(system, device);
+islands = islandTopological(monitoring);
 
 islands.island
 ```

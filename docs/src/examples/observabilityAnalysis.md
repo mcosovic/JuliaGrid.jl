@@ -35,7 +35,6 @@ addBranch!(system; label = "Branch 5", from = "Bus 3", to = "Bus 4")
 addBranch!(system; label = "Branch 6", from = "Bus 4", to = "Bus 6")
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1")
-
 nothing # hide
 ```
 
@@ -55,20 +54,19 @@ Next, we define the measurement model. JuliaGrid employs standard observability 
 
 Notably, the island detection step relies only on wattmeters, meaning that if the goal is simply to identify observable islands, defining wattmeters alone is sufficient. However, for observability restoration followed by state estimation, varmeters are also needed. Therefore, the four meters represent both wattmeters and varmeters:
 ```@example 6bus
-device = measurement()
+monitoring = measurement(system)
 
-addWattmeter!(system, device; label = "Meter 1", from = "Branch 1", active = 1.1)
-addVarmeter!(system, device; label = "Meter 1", from = "Branch 1", reactive = -0.5)
+addWattmeter!(monitoring; label = "Meter 1", from = "Branch 1", active = 1.1)
+addVarmeter!(monitoring; label = "Meter 1", from = "Branch 1", reactive = -0.5)
 
-addWattmeter!(system, device; label = "Meter 2", bus = "Bus 2", active = -0.1)
-addVarmeter!(system, device; label = "Meter 2", bus = "Bus 2", reactive = -0.1)
+addWattmeter!(monitoring; label = "Meter 2", bus = "Bus 2", active = -0.1)
+addVarmeter!(monitoring; label = "Meter 2", bus = "Bus 2", reactive = -0.1)
 
-addWattmeter!(system, device; label = "Meter 3", bus = "Bus 4", active = -0.3)
-addVarmeter!(system, device; label = "Meter 3", bus = "Bus 4", reactive = 0.6)
+addWattmeter!(monitoring; label = "Meter 3", bus = "Bus 4", active = -0.3)
+addVarmeter!(monitoring; label = "Meter 3", bus = "Bus 4", reactive = 0.6)
 
-addWattmeter!(system, device; label = "Meter 4", to = "Branch 6", active = 0.2)
-addVarmeter!(system, device; label = "Meter 4", to = "Branch 6", reactive = 0.3)
-
+addWattmeter!(monitoring; label = "Meter 4", to = "Branch 6", active = 0.2)
+addVarmeter!(monitoring; label = "Meter 4", to = "Branch 6", reactive = 0.3)
 nothing # hide
 ```
 
@@ -78,7 +76,7 @@ Observability analysis begins with identifying observable islands. We have the a
 
 In the first step, we focus on determining the flow-observable islands:
 ```@example 6bus
-islands = islandTopologicalFlow(system, device)
+islands = islandTopologicalFlow(monitoring)
 nothing # hide
 ```
 
@@ -99,7 +97,7 @@ The first observable island consists of `Bus 1` and `Bus 2`, the second island i
 
 In addition to flow islands, we can also identify maximal-observable islands:
 ```@example 6bus
-islands = islandTopological(system, device)
+islands = islandTopological(monitoring)
 nothing # hide
 ```
 
@@ -109,7 +107,7 @@ islands.island
 nothing # hide
 ```
 
-As observed, the devices `Meter 2` and `Meter 3` together merge the first, second, and third flow-observable islands into one, as shown in Figure 4.
+As observed, the monitorings `Meter 2` and `Meter 3` together merge the first, second, and third flow-observable islands into one, as shown in Figure 4.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/examples/observability/6bus_maximal.svg" width="430" class="my-svg"/>
@@ -125,38 +123,39 @@ From the standpoint of island identification, detecting flow-observable islands 
 ## Observability Restoration
 To perform the observability restoration step, a new set of measurements, called pseudo-measurements, is needed. These typically hold historical data about electrical quantities. Let us define this set:
 ```@example 6bus
-pseudo = measurement()
+pseudo = measurement(system)
 
-addWattmeter!(system, pseudo; label = "Pseudo 1", from = "Branch 5", active = 0.3)
-addVarmeter!(system, pseudo; label = "Pseudo 1", from = "Branch 5", reactive = 0.1)
+addWattmeter!(pseudo; label = "Pseudo 1", from = "Branch 5", active = 0.3)
+addVarmeter!(pseudo; label = "Pseudo 1", from = "Branch 5", reactive = 0.1)
 
-addWattmeter!(system, pseudo; label = "Pseudo 2", bus = "Bus 5", active = 0.3)
-addVarmeter!(system, pseudo; label = "Pseudo 2", bus = "Bus 5", reactive = -0.2)
+addWattmeter!(pseudo; label = "Pseudo 2", bus = "Bus 5", active = 0.3)
+addVarmeter!(pseudo; label = "Pseudo 2", bus = "Bus 5", reactive = -0.2)
 nothing # hide
 ```
 
 Next, we can invoke the observability restoration function:
 ```@example 6bus
-restorationGram!(system, device, pseudo, islands)
+restorationGram!(monitoring, pseudo, islands)
 nothing # hide
 ```
 This function identifies the minimal set of pseudo-measurements needed to make the system observable, which in this case is `Pseudo 2`. This pseudo-measurement is then transferred to the measurement model.
 
 As a result, the final set of wattmeters used for measuring active power consists of:
 ```@example 6bus
-printWattmeterData(system, device)
+printWattmeterData(monitoring)
 ```
 
 Likewise, the final set of varmeters used for measuring reactive power consists of:
 ```@example 6bus
-printVarmeterData(system, device)
+printVarmeterData(monitoring)
 ```
 
 As we can see, adding the `Pseudo 2` measurement makes the system observable, which we can confirm by identifying observable islands with only one island:
 ```@example 6bus
-islands = islandTopological(system, device)
+islands = islandTopological(monitoring)
 nothing # hide
 ```
+
 ```@repl 6bus
 islands.island
 nothing # hide
@@ -164,7 +163,7 @@ nothing # hide
 
 To proceed with the AC state estimation algorithm, we need one additional step to make the state estimation solvable. Specifically, it is crucial to ensure that the system has at least one bus voltage magnitude measurement. This requirement stems from the fact that observable islands are identified using wattmeters, which estimate voltage angles. Since the voltage angle at the slack bus is already known, the same approach should be applied to bus voltage magnitudes. To fulfill this condition, we add the following measurement:
 ```@example 6bus
-addVoltmeter!(system, device; label = "Pseudo 3", bus = "Bus 1", magnitude = 1.0)
+addVoltmeter!(monitoring; label = "Pseudo 3", bus = "Bus 1", magnitude = 1.0)
 nothing # hide
 ```
 
@@ -218,26 +217,26 @@ These variables provide users with a convenient way to define phasor measurement
 
 However, users have the option to manually specify phasor measurement values:
 ```@example 6bus
-pmu = measurement()
+pmu = measurement(system)
 
-addPmu!(system, pmu; label = "PMU 1-1", bus = "Bus 2", magnitude = 1.1, angle = -0.2)
-addPmu!(system, pmu; label = "PMU 1-2", to = "Branch 1", magnitude = 1.2, angle = -2.7)
-addPmu!(system, pmu; label = "PMU 1-3", from = "Branch 2", magnitude = 0.6, angle = 0.3)
-addPmu!(system, pmu; label = "PMU 1-4", from = "Branch 3", magnitude = 0.6, angle = 0.7)
+addPmu!(pmu; label = "PMU 1-1", bus = "Bus 2", magnitude = 1.1, angle = -0.2)
+addPmu!(pmu; label = "PMU 1-2", to = "Branch 1", magnitude = 1.2, angle = -2.7)
+addPmu!(pmu; label = "PMU 1-3", from = "Branch 2", magnitude = 0.6, angle = 0.3)
+addPmu!(pmu; label = "PMU 1-4", from = "Branch 3", magnitude = 0.6, angle = 0.7)
 
-addPmu!(system, pmu; label = "PMU 2-1", bus = "Bus 3", magnitude = 1.2, angle = -0.3)
-addPmu!(system, pmu; label = "PMU 2-2", to = "Branch 2", magnitude = 0.6, angle = -2.8)
-addPmu!(system, pmu; label = "PMU 2-3", from = "Branch 4", magnitude = 0.3, angle = -2.8)
+addPmu!(pmu; label = "PMU 2-1", bus = "Bus 3", magnitude = 1.2, angle = -0.3)
+addPmu!(pmu; label = "PMU 2-2", to = "Branch 2", magnitude = 0.6, angle = -2.8)
+addPmu!(pmu; label = "PMU 2-3", from = "Branch 4", magnitude = 0.3, angle = -2.8)
 
-addPmu!(system, pmu; label = "PMU 3-1", bus = "Bus 4", magnitude = 1.2, angle = -0.3)
-addPmu!(system, pmu; label = "PMU 3-2", to = "Branch 3", magnitude = 0.6, angle = -2.3)
-addPmu!(system, pmu; label = "PMU 3-3", to = "Branch 4", magnitude = 0.3, angle = 0.3)
-addPmu!(system, pmu; label = "PMU 3-4", from = "Branch 6", magnitude = 0.2, angle = 1.9)
+addPmu!(pmu; label = "PMU 3-1", bus = "Bus 4", magnitude = 1.2, angle = -0.3)
+addPmu!(pmu; label = "PMU 3-2", to = "Branch 3", magnitude = 0.6, angle = -2.3)
+addPmu!(pmu; label = "PMU 3-3", to = "Branch 4", magnitude = 0.3, angle = 0.3)
+addPmu!(pmu; label = "PMU 3-4", from = "Branch 6", magnitude = 0.2, angle = 1.9)
 
 nothing # hide
 ```
 
 This set of phasor measurements ensures system observability and guarantees a unique state estimator. The defined phasor measurements can be displayed using:
 ```@example 6bus
-printPmuData(system, pmu)
+printPmuData(pmu)
 ```

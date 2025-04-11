@@ -1,5 +1,5 @@
 # [AC Power Flow](@id ACPowerFlowManual)
-To perform the AC power flow analysis, we will first need the `PowerSystem` type that has been created with the AC model. Following that, we can construct the power flow model encapsulated within the `ACPowerFlow` type by employing one of the following functions:
+To perform the AC power flow analysis, we will first need the `PowerSystem` type that has been created with the AC model. Following that, we can construct the power flow model encapsulated within the `AcPowerFlow` type by employing one of the following functions:
 * [`newtonRaphson`](@ref newtonRaphson),
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX),
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB),
@@ -8,15 +8,15 @@ To perform the AC power flow analysis, we will first need the `PowerSystem` type
 ---
 
 To obtain bus voltages and solve the power flow problem, users can implement an iterative process using functions:
-* [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})),
-* [`solve!`](@ref solve!(::PowerSystem, ACPowerFlow{NewtonRaphson})).
+* [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})),
+* [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})).
 
 After solving the AC power flow, JuliaGrid provides functions for computing powers and currents:
-* [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)),
-* [`current!`](@ref current!(::PowerSystem, ::AC)).
+* [`power!`](@ref power!(::AcPowerFlow)),
+* [`current!`](@ref current!(::AC)).
 
 Alternatively, instead of designing their own iteration process and computing powers and currents, users can use the wrapper function:
-* [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACPowerFlow)).
+* [`powerFlow!`](@ref powerFlow!(::AcPowerFlow)).
 
 Users can also access specialized functions for computing specific types of [powers](@ref ACPowerAnalysisAPI) and [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators within the power system.
 
@@ -29,7 +29,7 @@ Finally, the package provides two functions for reactive power limit validation 
 ---
 
 ## [Bus Type Modification](@id BusTypeModificationManual)
-Depending on how the system is constructed, the types of buses that are initially set are checked and can be changed during the construction of the `ACPowerFlow` type.
+Depending on how the system is constructed, the types of buses that are initially set are checked and can be changed during the construction of the `AcPowerFlow` type.
 
 To explain the details, we consider a power system and assume that the Newton-Raphson method has been chosen:
 ```julia
@@ -213,13 +213,13 @@ nothing # hide
     ```
     The capability to change the factorization method is exclusively available for the Newton-Raphson and fast Newton-Raphson methods.
 
-This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})). The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) computes the voltage magnitudes and angles.
+This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})). The [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})) computes the voltage magnitudes and angles.
 
-To perform an iterative process with the Newton-Raphson or fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function must be included inside the iteration loop. For instance:
+To perform an iterative process with the Newton-Raphson or fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function must be included inside the iteration loop. For instance:
 ```@example ACPowerFlowSolution
 for iteration = 1:100
-    mismatch!(system, analysis)
-    solve!(system, analysis)
+    mismatch!(analysis)
+    solve!(analysis)
 end
 nothing # hide
 ```
@@ -229,11 +229,11 @@ Upon completion of the AC power flow analysis, the solution is conveyed through 
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-In contrast, the iterative loop of the Gauss-Seidel method does not require the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function:
+In contrast, the iterative loop of the Gauss-Seidel method does not require the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function:
 ```@example ACPowerFlowSolution
 analysis = gaussSeidel(system)
 for iteration = 1:100
-    solve!(system, analysis)
+    solve!(analysis)
 end
 nothing # hide
 ```
@@ -245,31 +245,31 @@ In these examples, the algorithms run until the specified number of iterations i
 ---
 
 ##### Breaking the Iterative Process
-We can terminate the iterative process using the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function. The following code shows an example of how to use the function to break out of the iteration loop:
+We can terminate the iterative process using the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function. The following code shows an example of how to use the function to break out of the iteration loop:
 ```@example ACPowerFlowSolution
 @voltage(pu, rad, V) # hide
 analysis = newtonRaphson(system)
 for iteration = 1:100
-    stopping = mismatch!(system, analysis)
+    stopping = mismatch!(analysis)
     if all(stopping .< 1e-8)
         println("Solution found in $(analysis.method.iteration) iterations.")
         break
     end
-    solve!(system, analysis)
+    solve!(analysis)
 end
 nothing # hide
 ```
 
-The [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) function returns the maximum absolute values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms.
+The [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function returns the maximum absolute values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms.
 
 ---
 
 ##### Wrapper Function
-JuliaGrid provides a wrapper function [`powerFlow!`](@ref powerFlow!(::PowerSystem, ::ACPowerFlow)) for AC power flow analysis. Hence, it offers a way to solve AC power flow with reduced implementation effort:
+JuliaGrid provides a wrapper function [`powerFlow!`](@ref powerFlow!(::AcPowerFlow)) for AC power flow analysis. Hence, it offers a way to solve AC power flow with reduced implementation effort:
 ```@example ACPowerFlowSolution
-setInitialPoint!(system, analysis) # hide
+setInitialPoint!(analysis) # hide
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; verbose = 3)
+powerFlow!(analysis; verbose = 3)
 nothing # hide
 ```
 
@@ -285,7 +285,7 @@ For instance, while the Gauss-Seidel method is commonly used to swiftly derive a
 ```@example ACPowerFlowSolution
 gs = gaussSeidel(system)
 for iteration = 1:5
-    solve!(system, gs)
+    solve!(gs)
 end
 ```
 
@@ -294,11 +294,8 @@ Next, we can initialize the Newton-Raphson method with the voltages obtained fro
 analysis = newtonRaphson(system)
 
 setInitialPoint!(gs, analysis)
-powerFlow!(system, analysis; verbose = 1)
+powerFlow!(analysis; verbose = 1)
 ```
-
-!!! note "Info"
-    The functions [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) only modify the `PowerSystem` type to eliminate mistakes in the bus types as explained in the section [Bus Type Modification](@ref BusTypeModificationManual). Further, the functions [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) do not modify the `PowerSystem` type at all. Therefore, it is safe to use the same `PowerSystem` type for multiple analyses once it has been created.
 
 ---
 
@@ -306,15 +303,15 @@ powerFlow!(system, analysis; verbose = 1)
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example ACPowerFlowSolution
 @voltage(pu, deg)
-printBusData(system, analysis)
+printBusData(analysis)
 nothing # hide
 ```
 
 Next, users can easily customize the print results for specific buses, for example:
 ```julia
-printBusData(system, analysis; label = "Bus 1", header = true)
-printBusData(system, analysis; label = "Bus 2")
-printBusData(system, analysis; label = "Bus 3", footer = true)
+printBusData(analysis; label = "Bus 1", header = true)
+printBusData(analysis; label = "Bus 2")
+printBusData(analysis; label = "Bus 3", footer = true)
 ```
 
 ---
@@ -323,7 +320,7 @@ printBusData(system, analysis; label = "Bus 3", footer = true)
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
 ```julia
 open("bus.txt", "w") do file
-    printBusData(system, analysis, file)
+    printBusData(analysis, file)
 end
 ```
 
@@ -335,7 +332,7 @@ For CSV output, users should first generate a simple table with `style = false`,
 using CSV
 
 io = IOBuffer()
-printBusData(system, analysis, io; style = false)
+printBusData(analysis, io; style = false)
 CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ```
 
@@ -344,7 +341,7 @@ CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ## [Power System Update](@id ACPowerSystemAlterationManual)
 After establishing the `PowerSystem` type using the [`powerSystem`](@ref powerSystem) function and configuring the AC model with [`acModel!`](@ref acModel!), users gain the capability to incorporate new branches and generators. Furthermore, they can adjust buses, branches, and generators.
 
-Once updates are done, users can progress towards generating the `ACPowerFlow` type using the [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) function. Ultimately, resolving the AC power flow is achieved through the utilization of the [`mismatch!`](@ref mismatch!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::PowerSystem, ::ACPowerFlow{NewtonRaphson})) functions:
+Once updates are done, users can progress towards generating the `AcPowerFlow` type using the [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) function. Ultimately, resolving the AC power flow is achieved through the utilization of the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})) functions:
 ```@example ACPowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -361,8 +358,8 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, active = 3.2)
 
 acModel!(system)
-analysis = newtonRaphson(system) # <- Build ACPowerFlow for the defined power system
-powerFlow!(system, analysis)
+analysis = newtonRaphson(system) # <- Build AcPowerFlow for the defined power system
+powerFlow!(analysis)
 
 updateBus!(system; label = "Bus 2", active = 0.2)
 
@@ -372,8 +369,8 @@ updateBranch!(system; label = "Branch 1", status = 0)
 addGenerator!(system; label = "Generator 2", bus = "Bus 1", active = 0.2)
 updateGenerator!(system; label = "Generator 1", active = 0.3)
 
-analysis = newtonRaphson(system) # <- Build ACPowerFlow for the updated power system
-powerFlow!(system, analysis)
+analysis = newtonRaphson(system) # <- Build AcPowerFlow for the updated power system
+powerFlow!(analysis)
 nothing # hide
 ```
 
@@ -383,11 +380,11 @@ nothing # hide
 ---
 
 ## [Power Flow Update](@id ACPowerFlowUpdateManual)
-An advanced methodology involves users establishing the `ACPowerFlow` type using [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) just once. After this initial setup, users can integrate new branches and generators, and also have the capability to modify buses, branches, and generators, all without the need to recreate the `ACPowerFlow` type.
+An advanced methodology involves users establishing the `AcPowerFlow` type using [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) just once. After this initial setup, users can integrate new branches and generators, and also have the capability to modify buses, branches, and generators, all without the need to recreate the `AcPowerFlow` type.
 
-This advancement extends beyond the previous scenario where recreating the `PowerSystem` and AC model was unnecessary, to now include the scenario where `ACPowerFlow` also does not need to be recreated. Such efficiency proves particularly beneficial in cases where JuliaGrid can reuse established Jacobian matrices or even factorizations, especially when users choose the fast Newton-Raphson method.
+This advancement extends beyond the previous scenario where recreating the `PowerSystem` and AC model was unnecessary, to now include the scenario where `AcPowerFlow` also does not need to be recreated. Such efficiency proves particularly beneficial in cases where JuliaGrid can reuse established Jacobian matrices or even factorizations, especially when users choose the fast Newton-Raphson method.
 
-By modifying the previous example, we observe that we now create the `ACPowerFlow` type only once using the [`newtonRaphson`](@ref newtonRaphson) function. This approach allows us to circumvent the need for reinitializing the Jacobian matrix, enabling us to proceed directly with iterations:
+By modifying the previous example, we observe that we now create the `AcPowerFlow` type only once using the [`newtonRaphson`](@ref newtonRaphson) function. This approach allows us to circumvent the need for reinitializing the Jacobian matrix, enabling us to proceed directly with iterations:
 ```@example ACPowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -404,24 +401,24 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", magnitude = 1.1, active = 3.2)
 
 acModel!(system)
-analysis = newtonRaphson(system) # <- Build ACPowerFlow for the defined power system
-powerFlow!(system, analysis)
+analysis = newtonRaphson(system) # <- Build AcPowerFlow for the defined power system
+powerFlow!(analysis)
 
-updateBus!(system, analysis; label = "Bus 2", active = 0.2)
+updateBus!(analysis; label = "Bus 2", active = 0.2)
 
-addBranch!(system, analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
-updateBranch!(system, analysis; label = "Branch 1", status = 0)
+addBranch!(analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
+updateBranch!(analysis; label = "Branch 1", status = 0)
 
-addGenerator!(system, analysis; label = "Generator 2", bus = "Bus 1", active = 0.2)
-updateGenerator!(system, analysis; label = "Generator 1", active = 0.3)
+addGenerator!(analysis; label = "Generator 2", bus = "Bus 1", active = 0.2)
+updateGenerator!(analysis; label = "Generator 1", active = 0.3)
 
-# <- No need for re-build; we have already updated the existing ACPowerFlow instance
-powerFlow!(system, analysis)
+# <- No need for re-build; we have already updated the existing AcPowerFlow instance
+powerFlow!(analysis)
 nothing # hide
 ```
 
 !!! note "Info"
-    This concept removes the need to restart and recreate both the `PowerSystem` within the `ac` field and the `ACPowerFlow` from the beginning when implementing changes to the existing power system.
+    This concept removes the need to restart and recreate both the `PowerSystem` within the `ac` field and the `AcPowerFlow` from the beginning when implementing changes to the existing power system.
 
 ---
 
@@ -429,16 +426,16 @@ nothing # hide
 An intriguing scenario unfolds when employing the fast Newton-Raphson method. Continuing from the previous example, let us now initialize the fast Newton-Raphson method and proceed with iterations as outlined below:
 ```@example ACPowerFlowSolution
 analysis = fastNewtonRaphsonBX(system)
-powerFlow!(system, analysis; verbose = 1)
+powerFlow!(analysis; verbose = 1)
 nothing # hide
 ```
 
 Now, let us make changes to the power system and proceed directly to the iteration step:
 ```@example ACPowerFlowSolution
-updateBus!(system, analysis; label = "Bus 2", reactive = 0.04)
-updateGenerator!(system, analysis; label = "Generator 1", reactive = 0.1)
+updateBus!(analysis; label = "Bus 2", reactive = 0.04)
+updateGenerator!(analysis; label = "Generator 1", reactive = 0.1)
 
-powerFlow!(system, analysis; verbose = 1)
+powerFlow!(analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -448,12 +445,12 @@ nothing # hide
 ---
 
 ##### Warm Start
-In these scenarios, users leverage the previously created `PowerSystem` type with the AC model and also reuse the `ACPowerFlow` type, proceeding directly to the iterations. This approach offers the advantage of a "warm start", wherein the initial voltages for the subsequent iteration step align with the solution from the previous iteration step. This alignment facilitates an efficient continuation of the power flow analysis.
+In these scenarios, users leverage the previously created `PowerSystem` type with the AC model and also reuse the `AcPowerFlow` type, proceeding directly to the iterations. This approach offers the advantage of a "warm start", wherein the initial voltages for the subsequent iteration step align with the solution from the previous iteration step. This alignment facilitates an efficient continuation of the power flow analysis.
 
 Let us now make another alteration to the power system:
 ```@example ACPowerFlowSolution
-updateBus!(system, analysis; label = "Bus 1", active = 0.1, magnitude = 0.95, angle = -0.07)
-updateGenerator!(system, analysis; label = "Generator 2", reactive = 0.2, magnitude = 1.1)
+updateBus!(analysis; label = "Bus 1", active = 0.1, magnitude = 0.95, angle = -0.07)
+updateGenerator!(analysis; label = "Generator 2", reactive = 0.2, magnitude = 1.1)
 nothing # hide
 ```
 
@@ -465,7 +462,7 @@ Therefore, users possess the flexibility to adjust these initial values as neede
 
 If users prefer to set initial voltages according to the typical scenario, they can accomplish this through the [`setInitialPoint!`](@ref setInitialPoint!) function:
 ```@example ACPowerFlowSolution
-setInitialPoint!(system, analysis)
+setInitialPoint!(analysis)
 ```
 
 Now, we have initial voltages defined exclusively according to the `PowerSystem`. These values are exactly the same as if we executed the [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) function after all the updates we performed:
@@ -480,7 +477,7 @@ The [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewt
 
 In such scenarios, JuliaGrid will raise an error:
 ```@repl ACPowerFlowSolution
-updateBus!(system, analysis; label = "Bus 2", type = 2)
+updateBus!(analysis; label = "Bus 2", type = 2)
 ```
 
 In this scenario, the user must execute the [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) function instead of trying to reuse them, for example:
@@ -488,16 +485,16 @@ In this scenario, the user must execute the [`newtonRaphson`](@ref newtonRaphson
 updateBus!(system; label = "Bus 2", type = 2)
 
 analysis = fastNewtonRaphsonBX(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 ```
 
 !!! note "Info"
-    After creating the `PowerSystem` and `ACPowerFlow` types, users can add or modify buses, branches, and generators before directly proceeding to iterations. JuliaGrid automatically executes the necessary functions when adjustments lead to a valid solution. However, if modifications are incompatible, like altering bus types, JuliaGrid raises an error to prevent misleading outcomes, ensuring accuracy.
+    After creating the `PowerSystem` and `AcPowerFlow` types, users can add or modify buses, branches, and generators before directly proceeding to iterations. JuliaGrid automatically executes the necessary functions when adjustments lead to a valid solution. However, if modifications are incompatible, like altering bus types, JuliaGrid raises an error to prevent misleading outcomes, ensuring accuracy.
 
 ---
 
 ## [Power and Current Analysis](@id ACPowerCurrentAnalysisManual)
-After obtaining the solution from the AC power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::ACPowerFlow)) functions. For instance, let us consider the power system for which we obtained the AC power flow solution:
+After obtaining the solution from the AC power flow, we can calculate various electrical quantities related to buses, branches, and generators using the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AcPowerFlow)) functions. For instance, let us consider the power system for which we obtained the AC power flow solution:
 ```@example ComputationPowersCurrentsLosses
 using JuliaGrid # hide
 @default(unit) # hide
@@ -518,14 +515,14 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.0, reactive = 0.2)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; verbose = 1)
+powerFlow!(analysis; verbose = 1)
 nothing # hide
 ```
 
 We can now utilize the provided functions to compute powers and currents:
 ```@example ComputationPowersCurrentsLosses
-power!(system, analysis)
-current!(system, analysis)
+power!(analysis)
+current!(analysis)
 nothing # hide
 ```
 
@@ -536,7 +533,7 @@ print(system.branch.label, analysis.current.to.angle)
 ```
 
 !!! note "Info"
-    For a better understanding of the powers and currents from buses, branches, and generators obtained by the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) and [`current!`](@ref current!(::PowerSystem, ::AC)) functions, refer to the [AC Power Flow Analysis](@ref ACPowerFlowTutorials).
+    For a better understanding of the powers and currents from buses, branches, and generators obtained by the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AC)) functions, refer to the [AC Power Flow Analysis](@ref ACPowerFlowTutorials).
 
 ---
 
@@ -545,7 +542,7 @@ Users can utilize any of the print functions outlined in the [Print Power System
 ```@example ComputationPowersCurrentsLosses
 @voltage(pu, deg)
 @power(MW, MVAr)
-printBusSummary(system, analysis)
+printBusSummary(analysis)
 @default(unit) # hide
 nothing # hide
 ```
@@ -555,7 +552,7 @@ nothing # hide
 ##### Active and Reactive Power Injection
 To calculate the active and reactive power injection associated with a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-active, reactive = injectionPower(system, analysis; label = "Bus 1")
+active, reactive = injectionPower(analysis; label = "Bus 1")
 ```
 
 ---
@@ -563,7 +560,7 @@ active, reactive = injectionPower(system, analysis; label = "Bus 1")
 ##### Active and Reactive Power Injection from Generators
 To calculate the active and reactive power injection from the generators at a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-active, reactive = supplyPower(system, analysis; label = "Bus 1")
+active, reactive = supplyPower(analysis; label = "Bus 1")
 ```
 
 ---
@@ -571,7 +568,7 @@ active, reactive = supplyPower(system, analysis; label = "Bus 1")
 ##### Active and Reactive Power at Shunt Element
 To calculate the active and reactive power associated with shunt element at a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-active, reactive = shuntPower(system, analysis; label = "Bus 3")
+active, reactive = shuntPower(analysis; label = "Bus 3")
 ```
 
 ---
@@ -579,8 +576,8 @@ active, reactive = shuntPower(system, analysis; label = "Bus 3")
 ##### Active and Reactive Power Flow
 Similarly, we can compute the active and reactive power flow at both the from-bus and to-bus ends of the specific branch by utilizing the functions provided below:
 ```@repl ComputationPowersCurrentsLosses
-active, reactive = fromPower(system, analysis; label = "Branch 2")
-active, reactive = toPower(system, analysis; label = "Branch 2")
+active, reactive = fromPower(analysis; label = "Branch 2")
+active, reactive = toPower(analysis; label = "Branch 2")
 ```
 
 ---
@@ -588,7 +585,7 @@ active, reactive = toPower(system, analysis; label = "Branch 2")
 ##### Active and Reactive Power at Charging Admittances
 To calculate the active and reactive power linked with branch charging admittances of the particular branch, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-active, reactive = chargingPower(system, analysis; label = "Branch 1")
+active, reactive = chargingPower(analysis; label = "Branch 1")
 ```
 
 Active powers indicate active losses within the branch's charging admittances. Moreover, charging admittances injected reactive powers into the power system due to their capacitive nature.
@@ -598,7 +595,7 @@ Active powers indicate active losses within the branch's charging admittances. M
 ##### Active and Reactive Power at Series Impedance
 To calculate the active and reactive power across the series impedance of the branch, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-active, reactive = seriesPower(system, analysis; label = "Branch 2")
+active, reactive = seriesPower(analysis; label = "Branch 2")
 ```
 
 The active power also considers active losses originating from the series resistance of the branch, while the reactive power represents reactive losses resulting from the impedance's inductive characteristics.
@@ -608,7 +605,7 @@ The active power also considers active losses originating from the series resist
 ##### Generator Active and Reactive Power Output
 We can compute the active and reactive power output of a particular generator using the function:
 ```@repl ComputationPowersCurrentsLosses
-active, reactive = generatorPower(system, analysis; label = "Generator 1")
+active, reactive = generatorPower(analysis; label = "Generator 1")
 ```
 
 ---
@@ -616,7 +613,7 @@ active, reactive = generatorPower(system, analysis; label = "Generator 1")
 ##### Current Injection
 To calculate the current injection associated with a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
-magnitude, angle = injectionCurrent(system, analysis; label = "Bus 1")
+magnitude, angle = injectionCurrent(analysis; label = "Bus 1")
 ```
 
 ---
@@ -624,8 +621,8 @@ magnitude, angle = injectionCurrent(system, analysis; label = "Bus 1")
 ##### Current Flow
 We can compute the current flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
 ```@repl ComputationPowersCurrentsLosses
-magnitude, angle = fromCurrent(system, analysis; label = "Branch 2")
-magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
+magnitude, angle = fromCurrent(analysis; label = "Branch 2")
+magnitude, angle = toCurrent(analysis; label = "Branch 2")
 ```
 
 ---
@@ -633,7 +630,7 @@ magnitude, angle = toCurrent(system, analysis; label = "Branch 2")
 ##### Current Through Series Impedance
 To calculate the current passing through the series impedance of the branch in the direction from the from-bus end to the to-bus end, we can use the following function:
 ```@repl ComputationPowersCurrentsLosses
-magnitude, angle = seriesCurrent(system, analysis; label = "Branch 2")
+magnitude, angle = seriesCurrent(analysis; label = "Branch 2")
 ```
 
 ---
@@ -664,9 +661,9 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 3", reactive = 0.8)
 addGenerator!(system; label = "Generator 3", bus = "Bus 4", reactive = 0.9)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 
-violate = reactiveLimit!(system, analysis)
+violate = reactiveLimit!(analysis)
 nothing # hide
 ```
 
@@ -695,13 +692,13 @@ print(system.bus.label, system.bus.layout.type)
 After modifying the `PowerSystem` type as described earlier, we can run the simulation again with the following code:
 ```@example GeneratorReactivePowerLimits
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 nothing # hide
 ```
 
 Once the simulation is complete, we can verify that all generator reactive power outputs now satisfy the limits by checking the violate variable again:
 ```@repl GeneratorReactivePowerLimits
-violate = reactiveLimit!(system, analysis)
+violate = reactiveLimit!(analysis)
 ```
 
 !!! note "Info"
@@ -733,19 +730,19 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", maxReactive = 0.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 4", reactive = 0.3)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 nothing # hide
 ```
 
 Upon checking the limits, we can observe that the slack bus has been transformed by executing the following code:
 ```@repl NewSlackBus
-violate = reactiveLimit!(system, analysis)
+violate = reactiveLimit!(analysis)
 ```
 
 Here, the generator connected to the slack bus is violating the minimum reactive power limit, which indicates the need to convert the slack bus. It is important to note that the new slack bus can be created only from the generator bus (`type = 2`). We will now perform another AC power flow analysis on the modified system using the following:
 ```@example NewSlackBus
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 ```
 
 After examining the bus voltages, we will focus on the angles:
@@ -755,7 +752,7 @@ print(system.bus.label, analysis.voltage.angle)
 
 We can observe that the angles have been calculated based on the new slack bus. JuliaGrid offers the function to adjust these angles to match the original slack bus as follows:
 ```@example NewSlackBus
-adjustAngle!(system, analysis; slack = "Bus 1")
+adjustAngle!(analysis; slack = "Bus 1")
 ```
 
 After executing the above code, the updated results can be viewed:

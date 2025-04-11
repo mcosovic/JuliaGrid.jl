@@ -32,7 +32,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 Following that, we will introduce the `Measurement` type and incorporate a set of PMUs ``\mathcal{M} \equiv \bar{\mathcal{P}}`` into the graph ``\mathcal{G}``, that capture both bus voltage and branch current phasors. To construct the linear PMU state estimation model, we represent the vector of state variables, as well as phasor measurements, in the rectangular coordinate system. Thus, we initialize the `Measurement` type:
 ```@example PMUSETutorial
-device = measurement()
+monitoring = measurement(system)
 nothing # hide
 ```
 
@@ -75,7 +75,7 @@ When a PMU ``(V_i, \theta_i) \in \bar{\mathcal P}`` is introduced at bus ``i \in
 
 For example:
 ```@example PMUSETutorial
-addPmu!(system, device; label = "V₂, θ₂", bus = 2, magnitude = 0.9, angle = -0.1,
+addPmu!(monitoring; label = "V₂, θ₂", bus = 2, magnitude = 0.9, angle = -0.1,
 varianceMagnitude = 1e-5, varianceAngle = 1e-5)
 nothing # hide
 ```
@@ -121,7 +121,7 @@ In the previous example, the user neglected the covariances between the real and
   \mathbf w = [w_{\Re(\bar{V}_i)}, w_{\Im(\bar{V}_i)}].
 ```
 ```@example PMUSETutorial
-addPmu!(system, device; label = "V₃, θ₃", bus = 3, magnitude = 0.9, angle = -0.2,
+addPmu!(monitoring; label = "V₃, θ₃", bus = 3, magnitude = 0.9, angle = -0.2,
 varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true)
 nothing # hide
 ```
@@ -151,7 +151,7 @@ If the user chooses to include phasor measurement ``(I_{ij}, \psi_{ij}) \in \bar
 
 For example:
 ```@example PMUSETutorial
-addPmu!(system, device; label = "I₂₃, ψ₂₃", from = 3, magnitude = 0.3, angle = 0.4,
+addPmu!(monitoring; label = "I₂₃, ψ₂₃", from = 3, magnitude = 0.3, angle = 0.4,
 varianceMagnitude = 1e-3, varianceAngle = 1e-4)
 nothing # hide
 ```
@@ -206,7 +206,7 @@ In the previous example, the user neglects the covariances between the real and 
   \mathbf w = [w_{\Re(\bar{I}_{ij})}, w_{\Im(\bar{I}_{ij})}].
 ```
 ```@example PMUSETutorial
-addPmu!(system, device; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, angle = -0.5,
+addPmu!(monitoring; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, angle = -0.5,
 varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true)
 nothing # hide
 ```
@@ -228,7 +228,7 @@ If the user chooses to include phasor measurement ``(I_{ji}, \psi_{ji}) \in \bar
 
 For example:
 ```@example PMUSETutorial
-addPmu!(system, device; label = "I₃₂, ψ₃₂", to = 3, magnitude = 0.3, angle = -2.9,
+addPmu!(monitoring; label = "I₃₂, ψ₃₂", to = 3, magnitude = 0.3, angle = -2.9,
 varianceMagnitude = 1e-5, varianceAngle = 1e-5)
 nothing # hide
 ```
@@ -276,7 +276,7 @@ As before, we are neglecting the covariances between the real and imaginary part
     \mathbf w = [w_{\Re(\bar{I}_{ji})}, w_{\Im(\bar{I}_{ji})}].
 ```
 ```@example PMUSETutorial
-addPmu!(system, device; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, angle = 2.5,
+addPmu!(monitoring; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, angle = 2.5,
 varianceMagnitude = 1e-5, varianceAngle = 1e-5, correlated = true)
 nothing # hide
 ```
@@ -300,7 +300,7 @@ Here, ``\mathbf z \in \mathbb{R}^k`` denotes the vector of measurement values, `
 ##### Implementation
 JuliaGrid initiates the PMU state estimation framework by setting up the WLS model, as illustrated in the following:
 ```@example PMUSETutorial
-analysis = pmuStateEstimation(system, device)
+analysis = pmuStateEstimation(monitoring)
 nothing # hide
 ```
 
@@ -323,20 +323,20 @@ JuliaGrid opts not to retain the covariance matrix ``\bm \Sigma`` but rather sto
 
 The precision matrix does not maintain a diagonal form, indicating that correlations between the real and imaginary parts of the phasor measurements are included in the model. To ignore these correlations, simply omit the `correlated` keyword within the function that adds a PMU. For example:
 ```@example PMUSETutorial
-device = measurement()
+monitoring = measurement(system)
 
 @pmu(label = "PMU ?", noise = false)
-addPmu!(system, device; bus = 1, magnitude = 1.0, angle = 0.0)
-addPmu!(system, device; bus = 2, magnitude = 0.8745, angle = -0.1529)
-addPmu!(system, device; from = 1, magnitude = 0.3033, angle = -0.7136)
-addPmu!(system, device; from = 2, magnitude = 0.3142, angle = -0.4950)
-addPmu!(system, device; to = 3, magnitude = 0.2809, angle = -2.8954)
+addPmu!(monitoring; bus = 1, magnitude = 1.0, angle = 0.0)
+addPmu!(monitoring; bus = 2, magnitude = 0.8745, angle = -0.1529)
+addPmu!(monitoring; from = 1, magnitude = 0.3033, angle = -0.7136)
+addPmu!(monitoring; from = 2, magnitude = 0.3142, angle = -0.4950)
+addPmu!(monitoring; to = 3, magnitude = 0.2809, angle = -2.8954)
 nothing # hide
 ```
 
 Following this, we recreate the WLS state estimation model:
 ```@example PMUSETutorial
-analysis = pmuStateEstimation(system, device)
+analysis = pmuStateEstimation(monitoring)
 nothing # hide
 ```
 
@@ -362,7 +362,7 @@ Next, the WLS equation is solved to obtain the estimate of state variables:
 	\hat{\mathbf x} = [\mathbf H^T \bm \Sigma^{-1} \mathbf H]^{-1} \mathbf H^T \bm \Sigma^{-1} \mathbf z.
 ```
 
-This process is executed using the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{WLS{Normal}})) function:
+This process is executed using the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function:
 ```@example PMUSETutorial
 solve!(system, analysis)
 ```
@@ -399,7 +399,7 @@ The resolution of the WLS state estimation problem using the conventional method
 
 To address ill-conditioned situations arising from significant differences in measurement variances, users can employ an alternative approach:
 ```@example PMUSETutorial
-analysis = pmuStateEstimation(system, device, Orthogonal)
+analysis = pmuStateEstimation(monitoring, Orthogonal)
 nothing # hide
 ```
 
@@ -426,9 +426,9 @@ At this point, QR factorization is performed on the rectangular matrix:
   \bar{\mathbf H} = {\mathbf W^{1/2}} \mathbf H = \mathbf Q \mathbf R.
 ```
 
-Executing this procedure involves the [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{WLS{Normal}})) function:
+Executing this procedure involves the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function:
 ```@example PMUSETutorial
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -477,14 +477,14 @@ To form the above optimization problem, the user can call the following function
 using Ipopt
 using JuMP # hide
 
-analysis = pmuLavStateEstimation(system, device, Ipopt.Optimizer)
+analysis = pmuLavStateEstimation(monitoring, Ipopt.Optimizer)
 nothing # hide
 ```
 
 Then the user can solve the optimization problem by:
 ```@example PMUSETutorial
 JuMP.set_silent(analysis.method.jump) # hide
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -497,9 +497,9 @@ Users can retrieve the estimated bus voltage magnitudes ``\hat{\mathbf V} = [\ha
 ---
 
 ## [Power Analysis](@id PMUPowerAnalysisTutorials)
-Once the computation of voltage magnitudes and angles at each bus is completed, various electrical quantities can be determined. JuliaGrid offers the [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow)) function, which enables the calculation of powers associated with buses and branches. Here is an example code snippet demonstrating its usage:
+Once the computation of voltage magnitudes and angles at each bus is completed, various electrical quantities can be determined. JuliaGrid offers the [`power!`](@ref power!(::AcPowerFlow)) function, which enables the calculation of powers associated with buses and branches. Here is an example code snippet demonstrating its usage:
 ```@example PMUSETutorial
-power!(system, analysis)
+power!(analysis)
 nothing # hide
 ```
 
@@ -590,7 +590,7 @@ The vectors of [active and reactive power flows](@ref BranchNetworkEquationsTuto
 ---
 
 ## [Current Analysis](@id PMUCurrentAnalysisTutorials)
-JuliaGrid offers the [`current!`](@ref current!(::PowerSystem, ::ACPowerFlow)) function, which enables the calculation of currents associated with buses and branches. Here is an example code snippet demonstrating its usage:
+JuliaGrid offers the [`current!`](@ref current!(::AcPowerFlow)) function, which enables the calculation of currents associated with buses and branches. Here is an example code snippet demonstrating its usage:
 ```@example PMUSETutorial
 current!(system, analysis)
 nothing # hide

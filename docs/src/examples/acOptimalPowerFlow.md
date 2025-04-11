@@ -31,7 +31,6 @@ addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", active = 20.2, reactive = 10.5)
 addBus!(system; label = "Bus 3", conductance = 0.1, susceptance = 8.2)
 addBus!(system; label = "Bus 4", active = 50.8, reactive = 23.1)
-
 nothing # hide
 ```
 
@@ -42,7 +41,6 @@ addBranch!(system; from = "Bus 1", to = "Bus 3", resistance = 0.02, susceptance 
 addBranch!(system; from = "Bus 1", to = "Bus 2", resistance = 0.05, susceptance = 0.04)
 addBranch!(system; from = "Bus 2", to = "Bus 3", resistance = 0.04, susceptance = 0.04)
 addBranch!(system; from = "Bus 3", to = "Bus 4", turnsRatio = 0.98)
-
 nothing # hide
 ```
 
@@ -60,14 +58,12 @@ Finally, we define the active power supply costs of the generators in polynomial
 cost!(system; generator = "Generator 1", active = 2, polynomial = [0.04; 20.0; 0.0])
 cost!(system; generator = "Generator 2", active = 2, polynomial = [1.00; 20.0; 0.0])
 cost!(system; generator = "Generator 3", active = 2, polynomial = [1.00; 20.0; 0.0])
-
 nothing # hide
 ```
 
 After defining the power system data, we generate an AC model that includes essential vectors and matrices for analysis, such as the nodal admittance matrix:
 ```@example 4bus
 acModel!(system)
-
 nothing # hide
 ```
 
@@ -103,32 +99,32 @@ nothing # hide
 First, we create the AC optimal power flow model and select the `Ipopt` solver. Next, we solve the model to determine bus voltage magnitudes and angles, along with the active and reactive power outputs of the generators. Afterward, we compute the remaining power values for buses and branches:
 ```@setup 4bus
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 ```
 ```@example 4bus
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis, power = true, verbose = 1)
 ```
 
 Once the AC optimal power flow is solved, we can review the bus-related results, including the optimal values of bus voltage magnitudes and angles:
 ```@example 4bus
-printBusData(system, analysis; show = show1, fmt = fmt1)
+printBusData(analysis; show = show1, fmt = fmt1)
 ```
 
 The optimal active and reactive outputs of the generators are as follows:
 ```@example 4bus
-printGeneratorData(system, analysis; fmt = fmt3)
+printGeneratorData(analysis; fmt = fmt3)
 ```
 As we can observe from the generator data, the `Generator 1`, which has the lowest costs, generates power at the maximum value. Additionally, we can observe that `Generator 2` and `Generator 3` have the same cost functions, which dictate that these two will produce an equal amount of active power.
 
 We enabled users to display bus, branch, or generator data related to the optimal power analysis. For instance, for generator data, we can observe that the dual variables related to `Generator 1` are different from zero, indicating that the generator's output has reached its limit:
 ```@example 4bus
-printGeneratorConstraint(system, analysis; show = show3)
+printGeneratorConstraint(analysis; show = show3)
 ```
 
 Finally, we can also review the results related to branches:
 ```@example 4bus
-printBranchData(system, analysis; show = show2, fmt = fmt2)
+printBranchData(analysis; show = show2, fmt = fmt2)
 ```
 
 Thus, we obtained the active and reactive power flows, as illustrated in Figure 2.
@@ -153,26 +149,26 @@ Thus, we obtained the active and reactive power flows, as illustrated in Figure 
 ## Modifying Demands
 Let us now introduce a new state by updating the active and reactive power demands of consumers. These updates modify both the power system model and the AC optimal power flow model simultaneously:
 ```@example 4bus
-updateBus!(system, analysis; label = "Bus 2", active = 25.2, reactive = 13.5)
-updateBus!(system, analysis; label = "Bus 4", active = 43.3, reactive = 18.6)
+updateBus!(analysis; label = "Bus 2", active = 25.2, reactive = 13.5)
+updateBus!(analysis; label = "Bus 4", active = 43.3, reactive = 18.6)
 nothing # hide
 ```
 
 Next, we solve the AC optimal power flow again to compute the new solution without recreating the model. This step enables a warm start, as the initial primal and dual values correspond to those obtained in the base case:
 ```@example 4bus
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis, power = true, verbose = 1)
 nothing # hide
 ```
 
 Now, we observe the power output of the generators:
 ```@example 4bus
-printGeneratorData(system, analysis; fmt = fmt3)
+printGeneratorData(analysis; fmt = fmt3)
 ```
 Compared to the base case, all generators have reduced power supplies due to lower demand. It is important to note that, although one might expect `Generator 1` to continue producing at maximum output because of its lower cost, while only `Generator 2` and `Generator 3` reduce their production, this is not the case. The reason is that the optimal power flow must also satisfy power balance and bus voltage magnitude constraints.
 
 At the end of this scenario, we can review branch-related results for a more comprehensive insight into power flows:
 ```@example 4bus
-printBranchData(system, analysis; show = show2, fmt = fmt2)
+printBranchData(analysis; show = show2, fmt = fmt2)
 ```
 
 The obtained results allow us to illustrate the active and reactive power flows in Figure 3.
@@ -197,27 +193,27 @@ The obtained results allow us to illustrate the active and reactive power flows 
 ## Modifying Generator Costs
 We modify the cost functions for all generators, altering the objective function of the AC optimal power flow. By modifying the cost function of `Generator 1`, we shift it from being the lowest-cost to the highest-cost generator in the system. Updating both the power system model and the AC optimal power flow model simultaneously allows us to enable a warm start for the optimization problem:
 ```@example 4bus
-cost!(system, analysis; generator = "Generator 1", active = 2, polynomial = [2.0; 20.0; 0.0])
-cost!(system, analysis; generator = "Generator 2", active = 2, polynomial = [0.8; 20.0; 0.0])
-cost!(system, analysis; generator = "Generator 3", active = 2, polynomial = [0.8; 20.0; 0.0])
+cost!(analysis; generator = "Generator 1", active = 2, polynomial = [2.0; 20.0; 0.0])
+cost!(analysis; generator = "Generator 2", active = 2, polynomial = [0.8; 20.0; 0.0])
+cost!(analysis; generator = "Generator 3", active = 2, polynomial = [0.8; 20.0; 0.0])
 nothing # hide
 ```
 
 Next, we solve the updated problem and calculate the resulting powers:
 ```@example 4bus
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis, power = true, verbose = 1)
 nothing # hide
 ```
 
 The optimal active and reactive power outputs of the generators are as follows:
 ```@example 4bus
-printGeneratorData(system, analysis; fmt = fmt3)
+printGeneratorData(analysis; fmt = fmt3)
 ```
 In this scenario, we observe that, due to the increased cost of `Generator 1`, both `Generator 2` and `Generator 3` have increased their production to the maximum possible values to capitalize on their lower costs. The remaining required active power is then supplied by `Generator 1`.
 
 We can also review the results related to branches for this scenario:
 ```@example 4bus
-printBranchData(system, analysis; show = show2, fmt = fmt2)
+printBranchData(analysis; show = show2, fmt = fmt2)
 ```
 
 Figure 4 illustrates the power flows for this scenario. Compared to the previous scenario, Figure 4a shows that `Branch 2` has significantly lower active power flow, while `Branch 3` has become considerably more loaded.
@@ -242,30 +238,32 @@ Figure 4 illustrates the power flows for this scenario. Compared to the previous
 ## Adding Branch Flow Constraints
 To limit active power flow, we introduce constraints on `Branch 2` and `Branch 3` by setting `type = 1`, where the active power flow at the from-bus end of these branches is limited using the `maxFromBus` keyword:
 ```@example 4bus
-updateBranch!(system, analysis; label = "Branch 2", type = 1, maxFromBus = 15.0)
-updateBranch!(system, analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
+updateBranch!(analysis; label = "Branch 2", type = 1, maxFromBus = 15.0)
+updateBranch!(analysis; label = "Branch 3", type = 1, maxFromBus = 15.0)
+nothing # hide
 ```
 
 Next, we recalculate the AC optimal power flow:
 ```@example 4bus
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis, power = true, verbose = 1)
 nothing # hide
 ```
 
 Now, let us observe the generator outputs:
 ```@example 4bus
-printGeneratorData(system, analysis; fmt = fmt3)
+printGeneratorData(analysis; fmt = fmt3)
 ```
+
 The power flow limit at `Branch 3` forces `Generator 1` to increase its active power output despite its higher cost compared to `Generator 2` and `Generator 3`, due to the need to satisfy all constraints. Additionally, we also observe a significant redistribution in the production of reactive powers.
 
 We can review the branch data constraints and observe that the active power at the from-bus end of `Branch 3` reaches the defined limit, which leads to the power redistribution described earlier, while the power flow at `Branch 2` stays within the specified limits:
 ```@example 4bus
-printBranchConstraint(system, analysis)
+printBranchConstraint(analysis)
 ```
 
 Finally, we can review the branch-related data to examine the redistribution of powers in detail:
 ```@example 4bus
-printBranchData(system, analysis; show = show2, fmt = fmt2)
+printBranchData(analysis; show = show2, fmt = fmt2)
 ```
 
 Based on the obtained results, we can illustrate the power flows in Figure 5.
@@ -290,24 +288,25 @@ Based on the obtained results, we can illustrate the power flows in Figure 5.
 ## Modifying Network Topology
 At the end, we set `Branch 2` out-of-service:
 ```@example 4bus
-updateBranch!(system, analysis; label = "Branch 2", status = 0)
+updateBranch!(analysis; label = "Branch 2", status = 0)
 ```
 
 We then recalculate the AC optimal power flow:
 ```@example 4bus
-powerFlow!(system, analysis, power = true, verbose = 1)
+powerFlow!(analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
 We can now observe the updated generator outputs:
 ```@example 4bus
-printGeneratorData(system, analysis; fmt = fmt3)
+printGeneratorData(analysis; fmt = fmt3)
 ```
+
 Due to the outage of `Branch 2` and the flow limit at `Branch 3`, `Generator 1` faces difficulties supplying load at `Bus 2`, reducing its output. Consequently, the only solution is to increase the output of `Generator 2` and `Generator 3`.
 
 Upon reviewing the branch data, we observe that the active power flows in the remaining in-service branches remain largely unchanged. This is because, following the outage of `Branch 2`, `Generator 2` and `Generator 3` have taken over the responsibility of supplying the load at `Bus 2`, effectively displacing `Generator 1`:
 ```@example 4bus
-printBranchData(system, analysis; show = show2, fmt = fmt2)
+printBranchData(analysis; show = show2, fmt = fmt2)
 ```
 
 Figure 6 illustrates these results under the outage of `Branch 2`.

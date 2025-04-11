@@ -8,36 +8,36 @@ system30 = powerSystem(path * "case30test.m")
     ########## IEEE 14-bus Test Case ##########
     acModel!(system14)
     analysis = newtonRaphson(system14)
-    powerFlow!(system14, analysis)
+    powerFlow!(analysis)
     iteration = copy(analysis.method.iteration)
 
-    reactiveLimit!(system14, analysis)
+    reactiveLimit!(analysis)
 
     analysis = newtonRaphson(system14)
-    powerFlow!(system14, analysis)
+    powerFlow!(analysis)
     analysis.method.iteration += iteration
 
-    adjustAngle!(system14, analysis; slack = 1)
+    adjustAngle!(analysis; slack = 1)
 
     @testset "IEEE 14: Matpower" begin
-        testVoltageMatpower(matpower14, analysis)
+        testVoltage(matpower14, analysis)
     end
 
     ########## IEEE 30-bus Test Case ##########
     acModel!(system30)
     analysis = newtonRaphson(system30)
-    powerFlow!(system30, analysis)
+    powerFlow!(analysis)
     iteration = copy(analysis.method.iteration)
 
-    @suppress reactiveLimit!(system30, analysis)
+    @suppress reactiveLimit!(analysis)
 
     analysis = newtonRaphson(system30)
-    powerFlow!(system30, analysis)
+    powerFlow!(analysis)
     analysis.method.iteration += iteration
 
-    adjustAngle!(system30, analysis; slack = 1)
+    adjustAngle!(analysis; slack = 1)
 
     @testset "IEEE 30: Matpower" begin
-        testVoltageMatpower(matpower30, analysis)
+        testVoltage(matpower30, analysis)
     end
 end

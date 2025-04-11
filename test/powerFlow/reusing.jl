@@ -3,417 +3,416 @@
     @default(template)
     @config(label = Integer)
 
-    ########## First Pass ##########
-    system1 = powerSystem(path * "case14test.m")
+    system = powerSystem(path * "case14test.m")
+    nr = newtonRaphson(system)
 
-    updateBus!(system1; label = 14, active = 0.12, reactive = 0.13)
-    updateBus!(system1; label = 14, conductance = 0.1, susceptance = 0.2)
-    updateBus!(system1; label = 14, magnitude = 1.2, angle = -0.17)
-    updateBus!(system1; label = 7, active = 0.15)
+    @testset "Buses" begin
+        updateBus!(nr; label = 14, active = 0.12, reactive = 0.13)
+        testReusing(nr)
 
-    addBranch!(system1; from = 2, to = 3, resistance = 0.02, reactance = 0.35)
-    addBranch!(system1; from = 3, to = 5, resistance = 0.02, reactance = 0.35, conductance = 0.001)
-    addBranch!(system1; from = 11, to = 12, reactance = 0.12, turnsRatio = 0.95, shiftAngle = -0.17)
+        updateBus!(nr; label = 14, conductance = 0.1, susceptance = 0.2)
+        testReusing(nr)
 
-    updateBranch!(system1; label = 12, resistance = 0.02, status = 1)
-    updateBranch!(system1; label = 5, reactance = 0.28, susceptance = 0.001, status = 1)
-    updateBranch!(system1; label = 5, turnsRatio = 0.99, status = 0)
+        updateBus!(nr; label = 14, conductance = 0.3, susceptance = 0.1)
+        testReusing(nr)
 
-    addGenerator!(system1;  bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-    addGenerator!(system1; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
+        updateBus!(nr; label = 14, magnitude = 1.2, angle = -0.17)
+        testReusing(nr)
 
-    updateGenerator!(system1; label = 4, status = 0)
-    updateGenerator!(system1; label = 7, active = 0.15, magnitude = 0.92)
+        updateBus!(nr; label = 7, active = 0.15)
+        testReusing(nr)
 
-    acModel!(system1)
-    nr1 = newtonRaphson(system1)
-    powerFlow!(system1, nr1; tolerance = 1e-12, power = true, current = true)
+        updateBus!(nr; label = 10, active = 0.12, susceptance = 0.05, angle = -0.21)
+        testReusing(nr)
 
-    # Reuse Newton-Raphson Model
-    system2 = powerSystem(path * "case14test.m")
-    acModel!(system2)
-    nr2 = newtonRaphson(system2)
+        updateBus!(system; label = 10, magnitude = 0.29, angle = -0.2, active = 0.2, reactive = 0.1)
+        updateBus!(nr; label = 10, conductance = 0.1, susceptance = 0.2)
+        testReusing(nr)
 
-    updateBus!(system2, nr2; label = 14, active = 0.12, reactive = 0.13)
-    updateBus!(system2, nr2; label = 14, conductance = 0.1, susceptance = 0.2)
-    updateBus!(system2, nr2; label = 14, magnitude = 1.2, angle = -0.17)
-    updateBus!(system2, nr2; label = 7, active = 0.15)
-
-    addBranch!(system2, nr2; from = 2, to = 3, resistance = 0.02, reactance = 0.35)
-    addBranch!(system2, nr2; from = 3, to = 5, resistance = 0.02, reactance = 0.35, conductance = 0.001)
-    addBranch!(system2, nr2; from = 11, to = 12, reactance = 0.12, turnsRatio = 0.95, shiftAngle = -0.17)
-
-    updateBranch!(system2, nr2; label = 12, resistance = 0.02, status = 1)
-    updateBranch!(system2, nr2; label = 5, reactance = 0.28, susceptance = 0.001, status = 1)
-    updateBranch!(system2, nr2; label = 5, turnsRatio = 0.99, status = 0)
-
-    addGenerator!(system2, nr2;  bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-    addGenerator!(system2, nr2; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
-
-    updateGenerator!(system2, nr2; label = 4, status = 0)
-    updateGenerator!(system2, nr2; label = 7, active = 0.15, magnitude = 0.92)
-
-    powerFlow!(system2, nr2; tolerance = 1e-12, power = true, current = true)
-
-    @testset "First Pass" begin
-        compstruct(nr1.voltage, nr2.voltage; atol = 1e-10)
-        compstruct(nr1.power, nr2.power; atol = 1e-10)
-        compstruct(nr1.current, nr2.current; atol = 1e-8)
-        @test nr1.method.iteration == nr2.method.iteration
+        power!(nr)
+        current!(nr)
+        testBus(nr)
+        testBranch(nr)
+        testGenerator(nr)
     end
 
-    ########## Second Pass ##########
-    updateBus!(system1; label = 10, active = 0.12, susceptance = 0.005, angle = -0.21)
-    updateBus!(system1; label = 10, reactive = 0.2, magnitude = 1.02)
+    @testset "Branches" begin
+        addBranch!(nr; from = 2, to = 3, resistance = 0.02, reactance = 0.35)
+        testReusing(nr)
 
-    addBranch!(system1; from = 16, to = 7, resistance = 0.001, reactance = 0.23, susceptance = 0.1)
+        addBranch!(nr; from = 3, to = 5, resistance = 0.02, reactance = 0.35, conductance = 0.001)
+        testReusing(nr)
 
-    updateBranch!(system1; label = 14, resistance = 0.02, reactance = 0.18, status = 1)
-    updateBranch!(system1; label = 5, status = 1)
+        addBranch!(nr; from = 11, to = 12, reactance = 0.12, turnsRatio = 0.95, shiftAngle = -0.17)
+        testReusing(nr)
 
-    addGenerator!(system1; bus = 2, active = 0.2, magnitude = 0.92)
-    addGenerator!(system1; bus = 16, active = 0.3, reactive = 0.2)
-    updateGenerator!(system1; label = 4, status = 0)
-    updateGenerator!(system1; label = 7, reactive = 0.13, magnitude = 0.91)
+        addBranch!(nr; from = 16, to = 7, resistance = 0.01, reactance = 0.23, susceptance = 0.1)
+        testReusing(nr)
 
-    acModel!(system1)
-    nr1 = newtonRaphson(system1)
-    powerFlow!(system1, nr1; tolerance = 1e-12, power = true, current = true)
+        updateBranch!(nr; label = 12, resistance = 0.02, status = 1)
+        testReusing(nr)
 
-    # Reuse Newton-Raphson Model
-    updateBus!(system2, nr2; label = 10, active = 0.12, susceptance = 0.005, angle = -0.21)
-    updateBus!(system2, nr2; label = 10, reactive = 0.2, magnitude = 1.02)
+        updateBranch!(nr; label = 5, reactance = 0.28, susceptance = 0.001, status = 1)
+        testReusing(nr)
 
-    addBranch!(system2, nr2; from = 16, to = 7, resistance = 0.001, reactance = 0.23, susceptance = 0.1)
+        updateBranch!(nr; label = 5, turnsRatio = 0.99, status = 0)
+        testReusing(nr)
 
-    updateBranch!(system2, nr2; label = 14, resistance = 0.02, reactance = 0.18, status = 1)
-    updateBranch!(system2, nr2; label = 5, status = 1)
+        updateBranch!(nr; label = 5, status = 1)
+        testReusing(nr)
 
-    addGenerator!(system2, nr2; bus = 2, active = 0.2, magnitude = 0.92)
-    addGenerator!(system2, nr2; bus = 16, active = 0.3, reactive = 0.2)
+        updateBranch!(nr; label = 5, status = 0)
+        testReusing(nr)
 
-    updateGenerator!(system2, nr2; label = 4, status = 0)
-    updateGenerator!(system2, nr2; label = 7, reactive = 0.13, magnitude = 0.91)
+        updateBranch!(nr; label = 12, status = 0)
+        testReusing(nr)
 
-    powerFlow!(system2, nr2; tolerance = 1e-12, power = true, current = true)
+        updateBranch!(system; label = 12, resistance = 0.03, reactance = 0.4, susceptance = 0.1)
+        updateBranch!(nr; label = 12, conductance = 0.01, status = 1)
+        testReusing(nr)
 
-    @testset "Second Pass" begin
-        compstruct(nr1.voltage, nr2.voltage; atol = 1e-10)
-        compstruct(nr1.power, nr2.power; atol = 1e-10)
-        compstruct(nr1.current, nr2.current; atol = 1e-8)
+        addBranch!(system; from = 14, to = 13, resistance = 0.01, reactance = 0.23)
+        updateBranch!(nr; label = 25, conductance = 0.01, status = 1)
+        testReusing(nr)
+
+        power!(nr)
+        current!(nr)
+        testBus(nr)
+        testBranch(nr)
+        testGenerator(nr)
+    end
+
+    @testset "Generators" begin
+        addGenerator!(nr; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
+        testReusing(nr)
+
+        addGenerator!(nr; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
+        testReusing(nr)
+
+        updateGenerator!(nr; label = 4, status = 0)
+        testReusing(nr)
+
+        updateGenerator!(nr; label = 4, status = 1)
+        testReusing(nr)
+
+        updateGenerator!(nr; label = 4, status = 0)
+        testReusing(nr)
+
+        updateGenerator!(nr; label = 7, active = 0.15, magnitude = 0.92)
+        testReusing(nr)
+
+        updateGenerator!(system; label = 4, active = 0.5, reactive = 0.3, magnitude = 0.98)
+        updateGenerator!(nr; label = 4, status = 1)
+        testReusing(nr)
+
+        addGenerator!(system; bus = 2, active = 0.5, reactive = 0.1, magnitude = 0.97)
+        updateGenerator!(nr; label = 11)
+        testReusing(nr)
+
+        power!(nr)
+        current!(nr)
+        testBus(nr)
+        testBranch(nr)
+        testGenerator(nr)
     end
 end
 
 @testset "Reusing Fast Newton-Raphson Method" begin
-    ########## First Pass ##########
-    system1 = powerSystem(path * "case14test.m")
+    @default(unit)
+    @default(template)
+    @config(label = Integer)
 
-    updateBus!(system1; label = 14, active = 0.12, reactive = 0.13, magnitude = 1.2)
-    updateBus!(system1; label = 10, active = 0.12, susceptance = 0.05, angle = -0.21)
-    updateBus!(system1; label = 7, active = 0.15)
+    system = powerSystem(path * "case14test.m")
+    fnr = fastNewtonRaphsonBX(system)
 
-    addBranch!(system1; from = 16, to = 7, resistance = 0.001, reactance = 0.13)
-    addBranch!(system1; from = 11, to = 12, reactance = 0.12, turnsRatio = 0.95, shiftAngle = -0.17)
+    @testset "Buses" begin
+        updateBus!(fnr; label = 14, active = 0.12, reactive = 0.13)
+        testReusing(fnr)
 
-    updateBranch!(system1; label = 14, resistance = 0.02, reactance = 0.41, status = 1)
-    updateBranch!(system1; label = 2, susceptance = 0.2)
-    updateBranch!(system1; label = 13, status = 0)
+        updateBus!(fnr; label = 14, conductance = 0.1, susceptance = 0.2)
+        testReusing(fnr)
 
-    addGenerator!(system1; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-    addGenerator!(system1; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
+        updateBus!(fnr; label = 14, conductance = 0.3, susceptance = 0.0)
+        testReusing(fnr)
 
-    updateGenerator!(system1; label = 4, status = 0)
-    updateGenerator!(system1; label = 7, active = 0.15, magnitude = 0.92)
+        updateBus!(fnr; label = 14, magnitude = 1.2, angle = -0.17, susceptance = 0.3)
+        testReusing(fnr)
 
-    acModel!(system1)
-    fnr1 = fastNewtonRaphsonBX(system1)
-    powerFlow!(system1, fnr1; iteration = 100, tolerance = 1e-12, power = true, current = true)
+        updateBus!(fnr; label = 7, active = 0.15)
+        testReusing(fnr)
 
-    # Reuse Fast Newton-Raphson Model
-    system2 = powerSystem(path * "case14test.m")
-    acModel!(system2)
-    fnr2 = fastNewtonRaphsonBX(system2)
+        updateBus!(fnr; label = 10, active = 0.12, susceptance = 0.005, angle = -0.21)
+        testReusing(fnr)
 
-    updateBus!(system2, fnr2; label = 14, active = 0.12, reactive = 0.13, magnitude = 1.2)
-    updateBus!(system2, fnr2; label = 10, active = 0.12, susceptance = 0.05, angle = -0.21)
-    updateBus!(system2, fnr2; label = 7, active = 0.15)
-
-    addBranch!(system2, fnr2; from = 16, to = 7, resistance = 0.001, reactance = 0.13)
-    addBranch!(system2, fnr2; from = 11, to = 12, reactance = 0.12, turnsRatio = 0.95, shiftAngle = -0.17)
-
-    updateBranch!(system2, fnr2; label = 14, resistance = 0.02, reactance = 0.41, status = 1)
-    updateBranch!(system2, fnr2; label = 2, susceptance = 0.2)
-    updateBranch!(system2, fnr2; label = 13, status = 0)
-
-    addGenerator!(system2, fnr2; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-    addGenerator!(system2, fnr2; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
-    updateGenerator!(system2, fnr2; label = 4, status = 0)
-    updateGenerator!(system2, fnr2; label = 7, active = 0.15, magnitude = 0.92)
-
-    powerFlow!(system2, fnr2; iteration = 100, tolerance = 1e-12, power = true, current = true)
-
-    @testset "First Pass" begin
-        compstruct(fnr1.voltage, fnr2.voltage; atol = 1e-10)
-        compstruct(fnr1.power, fnr2.power; atol = 1e-10)
-        compstruct(fnr1.current, fnr2.current; atol = 1e-8)
-        @test fnr1.method.iteration == fnr2.method.iteration
+        updateBus!(system; label = 10, magnitude = 0.29, angle = -0.2, susceptance = 0.2)
+        updateBus!(fnr; label = 10, conductance = 0.1, active = 0.2, reactive = 0.1)
+        testReusing(fnr)
     end
 
-    ########## Second Pass ##########
-    updateBus!(system1; label = 10, active = 0.12, magnitude = 1.02, angle = -0.21)
-    updateBus!(system1; label = 5, reactive = 0.12, conductance = 0.2)
+    @testset "Branches" begin
+        addBranch!(fnr; from = 2, to = 3, resistance = 0.02, reactance = 0.35)
+        testReusing(fnr)
 
-    updateBranch!(system1; label = 22, status = 0)
-    updateBranch!(system1; label = 13, reactance = 0.21, status = 1)
+        addBranch!(fnr; from = 3, to = 5, resistance = 0.02, reactance = 0.35, conductance = 0.001)
+        testReusing(fnr)
 
-    addGenerator!(system1; bus = 2, active = 0.2, magnitude = 0.92)
-    addGenerator!(system1; bus = 16, active = 0.3, reactive = 0.2)
+        addBranch!(fnr; from = 11, to = 12, reactance = 0.12, turnsRatio = 0.95, shiftAngle = -0.17)
+        testReusing(fnr)
 
-    updateGenerator!(system1; label = 4, status = 0)
-    updateGenerator!(system1; label = 7, reactive = 0.13, magnitude = 0.91)
+        addBranch!(fnr; from = 16, to = 7, resistance = 0.01, reactance = 0.23, susceptance = 0.1)
+        testReusing(fnr)
 
-    acModel!(system1)
-    fnr1 = fastNewtonRaphsonBX(system1)
-    powerFlow!(system1, fnr1; iteration = 100, tolerance = 1e-12, power = true, current = true)
+        updateBranch!(fnr; label = 12, resistance = 0.02, status = 1)
+        testReusing(fnr)
 
-    # Reuse Fast Newton-Raphson Model
-    updateBus!(system2, fnr2; label = 10, active = 0.12, magnitude = 1.02, angle = -0.21)
-    updateBus!(system2, fnr2; label = 5, reactive = 0.12, conductance = 0.2)
+        updateBranch!(fnr; label = 5, reactance = 0.28, susceptance = 0.001, status = 1)
+        testReusing(fnr)
 
-    updateBranch!(system2, fnr2; label = 22, status = 0)
-    updateBranch!(system2, fnr2; label = 13, reactance = 0.21, status = 1)
+        updateBranch!(fnr; label = 5, turnsRatio = 0.99, status = 0)
+        testReusing(fnr)
 
-    addGenerator!(system2, fnr2; bus = 2, active = 0.2, magnitude = 0.92)
-    addGenerator!(system2, fnr2; bus = 16, active = 0.3, reactive = 0.2)
+        updateBranch!(fnr; label = 5, status = 1)
+        testReusing(fnr)
 
-    updateGenerator!(system2, fnr2; label = 4, status = 0)
-    updateGenerator!(system2, fnr2; label = 7, reactive = 0.13, magnitude = 0.91)
+        updateBranch!(fnr; label = 5, status = 0)
+        testReusing(fnr)
 
-    powerFlow!(system2, fnr2; iteration = 100, tolerance = 1e-12, power = true, current = true)
+        updateBranch!(fnr; label = 12, status = 0)
+        testReusing(fnr)
 
-    @testset "Second Pass" begin
-        compstruct(fnr1.voltage, fnr2.voltage; atol = 1e-10)
-        compstruct(fnr1.power, fnr2.power; atol = 1e-10)
-        compstruct(fnr1.current, fnr2.current; atol = 1e-8)
+        addBranch!(system; from = 14, to = 13, resistance = 0.01, reactance = 0.23)
+        updateBranch!(fnr; label = 25, conductance = 0.01, status = 1)
+        testReusing(fnr)
+
+        addBranch!(system; from = 1, to = 2, resistance = 0.01, reactance = 0.23)
+        updateBranch!(fnr; label = 26)
+        testReusing(fnr)
+
+        addBranch!(system; from = 2, to = 1, resistance = 0.05, reactance = 0.42)
+        updateBranch!(fnr; label = 27, susceptance = 0.1)
+        testReusing(fnr)
+
+        updateBranch!(fnr; label = 27, status = 0)
+        testReusing(fnr)
+
+        updateBranch!(system; label = 12, resistance = 0.03, reactance = 0.4, susceptance = 0.1)
+        updateBranch!(fnr; label = 12, conductance = 0.01, status = 1)
+        testReusing(fnr)
+    end
+
+    @testset "Generators" begin
+        addGenerator!(fnr;  bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
+        testReusing(fnr)
+
+        addGenerator!(fnr; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
+        testReusing(fnr)
+
+        updateGenerator!(fnr; label = 4, status = 0)
+        testReusing(fnr)
+
+        updateGenerator!(fnr; label = 4, status = 1)
+        testReusing(fnr)
+
+        updateGenerator!(fnr; label = 4, status = 0)
+        testReusing(fnr)
+
+        updateGenerator!(fnr; label = 7, active = 0.15, magnitude = 0.92)
+        testReusing(fnr)
+
+        updateGenerator!(system; label = 4, active = 0.5, reactive = 0.3, magnitude = 0.98)
+        updateGenerator!(fnr; label = 4, status = 1)
+        testReusing(fnr)
+
+        addGenerator!(system; bus = 2, active = 0.5, reactive = 0.1, magnitude = 0.97)
+        updateGenerator!(fnr; label = 11)
+        testReusing(fnr)
     end
 end
 
 @testset "Reusing Gauss-Seidel Method" begin
     @default(template)
 
-    ########## First Pass ##########
-    system1 = powerSystem(path * "case14test.m")
+    system = powerSystem(path * "case14test.m")
+    gs = gaussSeidel(system)
 
-    updateBus!(system1; label = 14, reactive = 0.13, conductance = 0.1, angle = -0.17)
-    updateBus!(system1; label = 14, active = 0.12, susceptance = 0.2, magnitude = 1.2)
-    updateBus!(system1; label = 7, active = 0.15)
+    @testset "Buses" begin
+        updateBus!(gs; label = 14, active = 0.12, reactive = 0.13)
+        testReusing(gs)
 
-    addBranch!(system1; from = 2, to = 5, resistance = 0.02, reactance = 0.35)
-    addBranch!(system1; from = 3, to = 5, resistance = 0.02, reactance = 0.35, conductance = 0.001)
-    addBranch!(system1; from = 11, to = 12, reactance = 0.12, turnsRatio = 0.95, shiftAngle = -0.17)
+        updateBus!(gs; label = 14, conductance = 0.1, susceptance = 0.2)
+        testReusing(gs)
 
-    updateBranch!(system1; label = 12, resistance = 0.02, reactance = 0.31, status = 0)
-    updateBranch!(system1; label = 2, resistance = 0.02, reactance = 0.15, status = 0)
-    updateBranch!(system1; label = 2, status = 1)
+        updateBus!(gs; label = 14, conductance = 0.3, susceptance = 0.1)
+        testReusing(gs)
 
-    addGenerator!(system1; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-    addGenerator!(system1; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
+        updateBus!(gs; label = 14, magnitude = 1.2, angle = -0.17)
+        testReusing(gs)
 
-    updateGenerator!(system1; label = 4, status = 0)
-    updateGenerator!(system1; label = 7, active = 0.15, magnitude = 0.92)
+        updateBus!(gs; label = 7, active = 0.15)
+        testReusing(gs)
 
-    acModel!(system1)
-    gs1 = gaussSeidel(system1)
-    powerFlow!(system1, gs1; iteration = 1000, tolerance = 1e-12, power = true, current = true)
+        updateBus!(gs; label = 10, active = 0.12, susceptance = 0.005, angle = -0.21)
+        testReusing(gs)
 
-    # Reuse Gauss-Seidel Model
-    system2 = powerSystem(path * "case14test.m")
-    acModel!(system2)
-    gs2 = gaussSeidel(system2)
-
-    updateBus!(system2, gs2; label = 14, reactive = 0.13, conductance = 0.1, angle = -0.17)
-    updateBus!(system2, gs2; label = 14, active = 0.12, susceptance = 0.2, magnitude = 1.2)
-    updateBus!(system2, gs2; label = 7, active = 0.15)
-
-    addBranch!(system2, gs2; from = 2, to = 5, resistance = 0.02, reactance = 0.35)
-    addBranch!(system2, gs2; from = 3, to = 5, resistance = 0.02, reactance = 0.35, conductance = 0.001)
-    addBranch!(system2, gs2; from = 11, to = 12, reactance = 0.12, turnsRatio = 0.95, shiftAngle = -0.17)
-
-    updateBranch!(system2, gs2; label = 12, resistance = 0.02, reactance = 0.31, status = 0)
-    updateBranch!(system2, gs2; label = 2, resistance = 0.02, reactance = 0.15, status = 0)
-    updateBranch!(system2, gs2; label = 2, status = 1)
-
-    addGenerator!(system2, gs2; bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
-    addGenerator!(system2, gs2; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
-
-    updateGenerator!(system2, gs2; label = 4, status = 0)
-    updateGenerator!(system2, gs2; label = 7, active = 0.15, magnitude = 0.92)
-
-    powerFlow!(system2, gs2; iteration = 1000, tolerance = 1e-12, power = true, current = true)
-
-    @testset "First Pass" begin
-        compstruct(gs1.voltage, gs2.voltage; atol = 1e-10)
-        compstruct(gs1.power, gs2.power; atol = 1e-10)
-        compstruct(gs1.current, gs2.current; atol = 1e-8)
-        @test gs1.method.iteration == gs2.method.iteration
+        updateBus!(system; label = 10, magnitude = 0.29, angle = -0.2, susceptance = 0.2)
+        updateBus!(gs; label = 10, conductance = 0.1, active = 0.2, reactive = 0.1)
+        testReusing(gs)
     end
 
-    ########## Second Pass ##########
-    updateBus!(system1; label = 10, active = 0.12, susceptance = 0.05, magnitude = 1.02)
-    updateBus!(system1; label = 4, reactive = 0.1, conductance = 0.5, angle = -0.2)
+    @testset "Branches" begin
+        addBranch!(gs; from = 2, to = 3, resistance = 0.02, reactance = 0.35)
+        testReusing(gs)
 
-    addBranch!(system1; from = 16, to = 7, resistance = 0.01, reactance = 0.3, susceptance = 0.1)
-    addBranch!(system1; from = 16, to = 2, resistance = 0.01, reactance = 0.16)
+        addBranch!(gs; from = 3, to = 5, resistance = 0.02, reactance = 0.35, conductance = 0.001)
+        testReusing(gs)
 
-    updateBranch!(system1; label = 14, resistance = 0.02, reactance = 0.11, status = 1)
-    updateBranch!(system1; label = 25, status = 0)
+        addBranch!(gs; from = 11, to = 12, reactance = 0.12, turnsRatio = 0.95, shiftAngle = -0.17)
+        testReusing(gs)
 
-    addGenerator!(system1; bus = 2, active = 0.2, magnitude = 0.92)
-    addGenerator!(system1; bus = 16, active = 0.3, reactive = 0.2)
+        addBranch!(gs; from = 16, to = 7, resistance = 0.01, reactance = 0.23, susceptance = 0.1)
+        testReusing(gs)
 
-    updateGenerator!(system1; label = 4, status = 0)
-    updateGenerator!(system1; label = 7, reactive = 0.13, magnitude = 0.91)
+        updateBranch!(gs; label = 12, resistance = 0.02, status = 1)
+        testReusing(gs)
 
-    acModel!(system1)
-    gs1 = gaussSeidel(system1)
-    powerFlow!(system1, gs1; iteration = 1000, tolerance = 1e-12, power = true, current = true)
+        updateBranch!(gs; label = 5, reactance = 0.28, susceptance = 0.001, status = 1)
+        testReusing(gs)
 
-    # Reuse Gauss-Seidel Model
-    updateBus!(system2, gs2; label = 10, active = 0.12, susceptance = 0.05, magnitude = 1.02)
-    updateBus!(system2, gs2; label = 4, reactive = 0.1, conductance = 0.5, angle = -0.2)
+        updateBranch!(gs; label = 5, turnsRatio = 0.99, status = 0)
+        testReusing(gs)
 
-    addBranch!(system2, gs2; from = 16, to = 7, resistance = 0.01, reactance = 0.3, susceptance = 0.1)
-    addBranch!(system2, gs2; from = 16, to = 2, resistance = 0.01, reactance = 0.16)
+        updateBranch!(gs; label = 5, status = 1)
+        testReusing(gs)
 
-    updateBranch!(system2, gs2; label = 14, resistance = 0.02, reactance = 0.11, status = 1)
-    updateBranch!(system2, gs2; label = 25, status = 0)
+        updateBranch!(gs; label = 5, status = 0)
+        testReusing(gs)
 
-    addGenerator!(system2, gs2; bus = 2, active = 0.2, magnitude = 0.92)
-    addGenerator!(system2, gs2; bus = 16, active = 0.3, reactive = 0.2)
+        updateBranch!(gs; label = 12, status = 0)
+        testReusing(gs)
 
-    updateGenerator!(system2, gs2; label = 4, status = 0)
-    updateGenerator!(system2, gs2; label = 7, reactive = 0.13, magnitude = 0.91)
+        addBranch!(system; from = 14, to = 13, resistance = 0.01, reactance = 0.23)
+        updateBranch!(gs; label = 25, conductance = 0.01, status = 1)
+        testReusing(gs)
+    end
 
-    setInitialPoint!(system2, gs2)
-    powerFlow!(system2, gs2; iteration = 1000, tolerance = 1e-12, power = true, current = true)
+    @testset "Generators" begin
+        addGenerator!(gs;  bus = 16, active = 0.8, reactive = 0.2, magnitude = 0.95)
+        testReusing(gs)
 
-    @testset "Second Pass" begin
-        compstruct(gs1.voltage, gs2.voltage; atol = 1e-10)
-        compstruct(gs1.power, gs2.power; atol = 1e-10)
-        compstruct(gs1.current, gs2.current; atol = 1e-8)
+        addGenerator!(gs; bus = 4, active = 0.8, reactive = 0.2, magnitude = 0.9)
+        testReusing(gs)
+
+        updateGenerator!(gs; label = 4, status = 0)
+        testReusing(gs)
+
+        updateGenerator!(gs; label = 4, status = 1)
+        testReusing(gs)
+
+        updateGenerator!(gs; label = 4, status = 0)
+        testReusing(gs)
+
+        updateGenerator!(gs; label = 7, active = 0.15, magnitude = 0.92)
+        testReusing(gs)
+
+        addGenerator!(system; bus = 2, active = 0.5, reactive = 0.1, magnitude = 0.97)
+        updateGenerator!(gs; label = 11)
+        testReusing(gs)
     end
 end
 
 @testset "Reusing DC Power Flow" begin
-    ########## First Pass ##########
-    system1 = powerSystem(path * "case14test.m")
+    system = powerSystem(path * "case14test.m")
+    dc = dcPowerFlow(system)
 
-    updateBus!(system1; label = 1, active = 0.15, conductance = 0.16)
+    @testset "Buses" begin
+        updateBus!(dc; label = 3, active = 0.15, conductance = 0.16)
+        testReusing(dc)
 
-    addGenerator!(system1; bus = 2, active = 0.8)
-    addGenerator!(system1; bus = 14, active = 0.5, status = 0)
+        updateBus!(dc; label = 3, conductance = 0.26)
+        testReusing(dc)
 
-    updateGenerator!(system1; label = 9, active = 1.2)
-    updateGenerator!(system1; label = 1, status = 0)
-    updateGenerator!(system1; label = 7, status = 1)
+        updateBus!(system; label = 4, conductance = 0.26)
+        updateBus!(dc; label = 4)
+        testReusing(dc)
 
-    dc1 = dcPowerFlow(system1)
-    powerFlow!(system1, dc1; power = true)
-
-    # Reuse DC Power Flow Model
-    system2 = powerSystem(path * "case14test.m")
-    dc2 = dcPowerFlow(system2)
-
-    updateBus!(system2, dc2; label = 1, active = 0.15, conductance = 0.16)
-
-    addGenerator!(system2, dc2; bus = 2, active = 0.8)
-    addGenerator!(system2, dc2; bus = 14, active = 0.5, status = 0)
-
-    updateGenerator!(system2, dc2; label = 9, active = 1.2)
-    updateGenerator!(system2, dc2; label = 1, status = 0)
-    updateGenerator!(system2, dc2; label = 7, status = 1)
-
-    powerFlow!(system2, dc2; power = true)
-
-    relsystem2 = copy(system2.model.dc.model)
-    reldc2 = copy(dc2.method.dcmodel)
-
-    @testset "First Pass" begin
-        compstruct(dc1.voltage, dc2.voltage; atol = 1e-10)
-        compstruct(dc1.power, dc2.power; atol = 1e-10)
+        power!(dc)
+        testBus(dc)
+        testBranch(dc)
+        testGenerator(dc)
     end
 
-    ######### Second Pass ##########
-    updateBus!(system1; label = 3, active = 0.25, susceptance = 0.21)
-    updateBus!(system1; label = 4, conductance = 0.21)
+    @testset "Branches" begin
+        addBranch!(dc; from = 16, to = 7, reactance = 0.03)
+        testReusing(dc)
 
-    updateBranch!(system1; label = 4, shiftAngle = -1.2)
+        addBranch!(dc; from = 16, to = 7, reactance = 0.08, status = 0)
+        testReusing(dc)
 
-    updateGenerator!(system1; label = 8, active = 1.2)
-    updateGenerator!(system1; label = 1, status = 1)
+        updateBranch!(dc; label = 4, shiftAngle = -1.2)
+        testReusing(dc)
 
-    dc1 = dcPowerFlow(system1)
-    powerFlow!(system1, dc1; power = true)
+        updateBranch!(dc; label = 14, reactance = 0.03, status = 1)
+        testReusing(dc)
 
-    # Reuse DC Power Flow Model
-    updateBus!(system2, dc2; label = 3, active = 0.25, susceptance = 0.21)
-    updateBus!(system2, dc2; label = 4, conductance = 0.21)
+        updateBranch!(dc; label = 10, reactance = 0.03, status = 0)
+        testReusing(dc)
 
-    updateBranch!(system2, dc2; label = 4, shiftAngle = -1.2)
+        updateBranch!(dc; label = 10, status = 1)
+        testReusing(dc)
 
-    updateGenerator!(system2, dc2; label = 8, active = 1.2)
-    updateGenerator!(system2, dc2; label = 1, status = 1)
+        updateBranch!(dc; label = 10, status = 0)
+        testReusing(dc)
 
-    powerFlow!(system2, dc2; power = true)
+        addBranch!(system; from = 14, to = 13, resistance = 0.01, reactance = 0.23)
+        updateBranch!(dc; label = 23, conductance = 0.01, status = 1)
+        testReusing(dc)
 
-    @testset "Second Pass" begin
-        compstruct(dc1.voltage, dc2.voltage; atol = 1e-10)
-        compstruct(dc1.power, dc2.power; atol = 1e-10)
+        addBranch!(system; from = 14, to = 13, resistance = 0.01, reactance = 0.23, status = 0)
+        updateBranch!(dc; label = 24)
+        testReusing(dc)
 
-        @test relsystem2 == system2.model.dc.model
-        @test reldc2 == dc2.method.dcmodel
+        updateBranch!(dc; label = 24, status = 1)
+        testReusing(dc)
+
+        power!(dc)
+        testBus(dc)
+        testBranch(dc)
+        testGenerator(dc)
     end
 
-    ######### Third Pass ##########
-    addBranch!(system1; from = 16, to = 7, reactance = 0.03)
+    @testset "Generators" begin
+        addGenerator!(dc; bus = 2, active = 0.8)
+        testReusing(dc)
 
-    updateBranch!(system1; label = 14, reactance = 0.03, status = 1)
-    updateBranch!(system1; label = 10, reactance = 0.03, status = 0)
-    updateBranch!(system1; label = 3, status = 1)
+        addGenerator!(dc; bus = 14, active = 0.5, status = 0)
+        testReusing(dc)
 
-    addGenerator!(system1; bus = 2, active = 0.8)
+        updateGenerator!(dc; label = 9, active = 1.2)
+        testReusing(dc)
 
-    updateGenerator!(system1; label = 9, status = 0)
-    updateGenerator!(system1; label = 1, status = 1)
-    updateGenerator!(system1; label = 3, status = 1)
+        updateGenerator!(dc; label = 7, status = 0)
+        testReusing(dc)
 
-    dc1 = dcPowerFlow(system1)
-    powerFlow!(system1, dc1; power = true)
+        updateGenerator!(dc; label = 7, status = 1)
+        testReusing(dc)
 
-    # Reuse DC Power Flow Model
-    addBranch!(system2, dc2; from = 16, to = 7, reactance = 0.03)
+        updateGenerator!(dc; label = 7, status = 0)
+        testReusing(dc)
 
-    updateBranch!(system2, dc2; label = 14, reactance = 0.03, status = 1)
-    updateBranch!(system2, dc2; label = 10, reactance = 0.03, status = 0)
-    updateBranch!(system2, dc2; label = 3, status = 1)
+        addGenerator!(system; bus = 2, active = 0.5, reactive = 0.1)
+        updateGenerator!(dc; label = 11)
+        testReusing(dc)
 
-    addGenerator!(system2, dc2; bus = 2, active = 0.8)
+        addGenerator!(system; bus = 3, active = 0.8, status = 0)
+        updateGenerator!(dc; label = 12)
+        testReusing(dc)
 
-    updateGenerator!(system2, dc2; label = 9, status = 0)
-    updateGenerator!(system2, dc2; label = 1, status = 1)
-    updateGenerator!(system2, dc2; label = 3, status = 1)
+        updateGenerator!(dc; label = 12, status = 1)
+        testReusing(dc)
 
-    powerFlow!(system2, dc2; power = true)
-
-    @testset "Third Pass" begin
-        compstruct(dc1.voltage, dc2.voltage; atol = 1e-10)
-        compstruct(dc1.power, dc2.power; atol = 1e-10)
-
-        @test relsystem2 != system2.model.dc.model
-        @test reldc2 != dc2.method.dcmodel
-
-        dropZeros!(system2.model.dc)
-        solve!(system2, dc2)
-        @test dc1.voltage.angle ≈ dc2.voltage.angle
+        power!(dc)
+        testBus(dc)
+        testBranch(dc)
+        testGenerator(dc)
     end
 end

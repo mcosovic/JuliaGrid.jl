@@ -9,9 +9,9 @@ using JuliaGrid, Ipopt, HiGHS
 ---
 
 ###### Observability Analysis
-* [`islandTopologicalFlow`](@ref islandTopologicalFlow(::PowerSystem, ::Measurement))
-* [`islandTopological`](@ref islandTopological(::PowerSystem, ::Measurement))
-* [`restorationGram!`](@ref restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island))
+* [`islandTopologicalFlow`](@ref islandTopologicalFlow)
+* [`islandTopological`](@ref islandTopological)
+* [`restorationGram!`](@ref restorationGram!)
 * [`pmuPlacement`](@ref pmuPlacement)
 * [`pmuPlacement!`](@ref pmuPlacement!)
 
@@ -19,21 +19,21 @@ using JuliaGrid, Ipopt, HiGHS
 * [`gaussNewton`](@ref gaussNewton)
 * [`acLavStateEstimation`](@ref acLavStateEstimation)
 * [`increment!`](@ref increment!)
-* [`solve!`](@ref solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal})
-* [`setInitialPoint!`](@ref setInitialPoint!(::PowerSystem, ::ACStateEstimation))
-* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal})
+* [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal})
+* [`setInitialPoint!`](@ref setInitialPoint!(::AcStateEstimation))
+* [`stateEstimation!`](@ref stateEstimation!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal})
 
 ###### PMU State Estimation
 * [`pmuStateEstimation`](@ref pmuStateEstimation)
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation)
-* [`solve!`](@ref solve!(::PowerSystem, ::PMUStateEstimation{WLS{Normal}}))
-* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::PMUStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal})
+* [`solve!`](@ref solve!(:::PmuStateEstimation{WLS{Normal}}))
+* [`stateEstimation!`](@ref stateEstimation!(::PmuStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal})
 
 ###### DC State Estimation
 * [`dcStateEstimation`](@ref dcStateEstimation)
 * [`dcLavStateEstimation`](@ref dcLavStateEstimation)
-* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{WLS{Normal}}))
-* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::DCStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal})
+* [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}}))
+* [`stateEstimation!`](@ref stateEstimation!(::DcStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal})
 
 ###### Bad Data Analysis
 * [`chiTest`](@ref chiTest)
@@ -43,9 +43,9 @@ using JuliaGrid, Ipopt, HiGHS
 
 ## Observability Analysis
 ```@docs
-islandTopologicalFlow(::PowerSystem, ::Measurement)
-islandTopological(::PowerSystem, ::Measurement)
-restorationGram!(::PowerSystem, ::Measurement, ::Measurement, ::Island)
+islandTopologicalFlow
+islandTopological
+restorationGram!
 pmuPlacement
 pmuPlacement!
 ```
@@ -57,9 +57,9 @@ pmuPlacement!
 gaussNewton
 acLavStateEstimation
 increment!
-solve!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
-setInitialPoint!(::PowerSystem, ::ACStateEstimation)
-stateEstimation!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
+solve!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
+setInitialPoint!(::AcStateEstimation)
+stateEstimation!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
 ```
 
 ---
@@ -68,8 +68,8 @@ stateEstimation!(::PowerSystem, ::ACStateEstimation{GaussNewton{T}}) where T <: 
 ```@docs
 pmuStateEstimation
 pmuLavStateEstimation
-solve!(::PowerSystem, ::PMUStateEstimation{WLS{Normal}})
-stateEstimation!(::PowerSystem, ::PMUStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal}
+solve!(::PmuStateEstimation{WLS{Normal}})
+stateEstimation!(::PmuStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal}
 ```
 
 ---
@@ -78,8 +78,8 @@ stateEstimation!(::PowerSystem, ::PMUStateEstimation{WLS{T}}) where T <: Union{N
 ```@docs
 dcStateEstimation
 dcLavStateEstimation
-solve!(::PowerSystem, ::DCStateEstimation{WLS{Normal}})
-stateEstimation!(::PowerSystem, ::DCStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal}
+solve!(::DcStateEstimation{WLS{Normal}})
+stateEstimation!(::DcStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal}
 ```
 
 ---

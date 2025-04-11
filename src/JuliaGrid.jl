@@ -66,7 +66,7 @@ export dcOptimalPowerFlow
 ######### Measurement ##########
 include("measurement/load.jl")
 include("measurement/save.jl")
-export measurement, saveMeasurement
+export measurement, saveMeasurement, ems
 
 ########## Measurement Devices ##########
 include("measurement/utility.jl")

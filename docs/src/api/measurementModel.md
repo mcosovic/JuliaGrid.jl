@@ -10,6 +10,7 @@ using JuliaGrid
 
 ###### Measurement Data
 * [`measurement`](@ref measurement)
+* [`ems`](@ref ems)
 * [`saveMeasurement`](@ref saveMeasurement)
 * [`status!`](@ref status!)
 
@@ -48,6 +49,7 @@ using JuliaGrid
 ## Measurement Data
 ```@docs
 measurement
+ems
 saveMeasurement
 status!
 ```
@@ -56,8 +58,8 @@ status!
 
 ## Voltmeter
 ```@docs
-addVoltmeter!(::PowerSystem, ::Measurement)
-addVoltmeter!(::PowerSystem, ::Measurement, ::AC)
+addVoltmeter!(::Measurement)
+addVoltmeter!(::Measurement, ::AC)
 updateVoltmeter!
 statusVoltmeter!
 @voltmeter
@@ -67,8 +69,8 @@ statusVoltmeter!
 
 ## Ammeter
 ```@docs
-addAmmeter!(::PowerSystem, ::Measurement)
-addAmmeter!(::PowerSystem, ::Measurement, ::AC)
+addAmmeter!(::Measurement)
+addAmmeter!(::Measurement, ::AC)
 updateAmmeter!
 statusAmmeter!
 @ammeter
@@ -78,8 +80,8 @@ statusAmmeter!
 
 ## Wattmeter
 ```@docs
-addWattmeter!(::PowerSystem, ::Measurement)
-addWattmeter!(::PowerSystem, ::Measurement, ::AC)
+addWattmeter!(::Measurement)
+addWattmeter!(::Measurement, ::AC)
 updateWattmeter!
 statusWattmeter!
 @wattmeter
@@ -89,8 +91,8 @@ statusWattmeter!
 
 ## Varmeter
 ```@docs
-addVarmeter!(::PowerSystem, ::Measurement)
-addVarmeter!(::PowerSystem, ::Measurement, ::AC)
+addVarmeter!(::Measurement)
+addVarmeter!(::Measurement, ::AC)
 updateVarmeter!
 statusVarmeter!
 @varmeter
@@ -100,8 +102,8 @@ statusVarmeter!
 
 ## PMU
 ```@docs
-addPmu!(::PowerSystem, ::Measurement)
-addPmu!(::PowerSystem, ::Measurement, ::AC)
+addPmu!(::Measurement)
+addPmu!(::Measurement, ::AC)
 updatePmu!
 statusPmu!
 @pmu

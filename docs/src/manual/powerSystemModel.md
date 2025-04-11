@@ -758,6 +758,3 @@ system.generator.cost.reactive.piecewise[1]
 
 !!! tip "Tip"
     The [`cost!`](@ref cost!) function not only adds costs but also allows users to update previously defined cost functions. This functionality is particularly valuable in optimal power flow analyses, as it allows users to modify generator power costs without the need to recreate models from scratch.
-
-
-

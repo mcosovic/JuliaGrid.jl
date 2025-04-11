@@ -11,10 +11,10 @@
     @base(hdf5, MVA, kV)
 
     @testset "Power System Data" begin
-        compstruct(matlab.bus, hdf5.bus)
-        compstruct(matlab.branch, hdf5.branch)
-        compstruct(matlab.generator, hdf5.generator)
-        compstruct(matlab.base, hdf5.base)
+        teststruct(matlab.bus, hdf5.bus)
+        teststruct(matlab.branch, hdf5.branch)
+        teststruct(matlab.generator, hdf5.generator)
+        teststruct(matlab.base, hdf5.base)
     end
 
     @testset "Base Data" begin
@@ -42,9 +42,9 @@ end
     @base(hdf5, MVA, kV)
 
     @testset "Power System Data" begin
-        compstruct(matlab.bus, hdf5.bus)
-        compstruct(matlab.branch, hdf5.branch)
-        compstruct(matlab.generator, hdf5.generator)
-        compstruct(matlab.base, hdf5.base)
+        teststruct(matlab.bus, hdf5.bus)
+        teststruct(matlab.branch, hdf5.branch)
+        teststruct(matlab.generator, hdf5.generator)
+        teststruct(matlab.base, hdf5.base)
     end
 end

@@ -39,16 +39,15 @@ Below, we have provided a list of exhaustive examples in order to ease users in 
 ```julia
 using JuliaGrid
 
-system = powerSystem("case14.h5")         # Build the power system model
-acModel!(system)                          # Build the AC model
+system = powerSystem("case14.h5") # Build the power system model
 
-analysis = newtonRaphson(system)          # Build the power flow model
+analysis = newtonRaphson(system)  # Build the power flow model
+powerFlow!(analysis; verbose = 3) # Compute voltages
 
-powerFlow!(system, analysis; verbose = 3) # Compute voltages
-power!(system, analysis)                  # Compute powers
-current!(system, analysis)                # Compute currents
+power!(analysis)                  # Compute powers
+current!(analysis)                # Compute currents
 
-printBusData(system, analysis)            # Print bus data
+printBusData(analysis)            # Print bus data
 ```
 
 ---
@@ -57,18 +56,18 @@ printBusData(system, analysis)            # Print bus data
 ```julia
 using JuliaGrid
 
-@power(MW, MVAr)                           # Specify the power units
-system = powerSystem("case14.h5")          # Build the power system model
-dcModel!(system)                           # Build the DC model
+@power(MW, MVAr)                   # Specify the power units
+system = powerSystem("case14.h5")  # Build the power system model
 
-analysis = dcPowerFlow(system)             # Build the power flow model
-powerFlow!(system, analysis; power = true) # Compute powers and voltage angles
+analysis = dcPowerFlow(system)     # Build the power flow model
+powerFlow!(analysis; power = true) # Compute powers and voltage angles
 
-@generator(active = 20.0)                  # Define the template
-addGenerator!(system, analysis; bus = 1)   # Add the new generator
-powerFlow!(system, analysis; power = true) # Recompute powers and voltage angles
+@generator(active = 20.0)          # Define the template
+addGenerator!(analysis; bus = 1)   # Add the new generator
 
-printBusSummary(system, analysis)          # Print bus summary data
+powerFlow!(analysis; power = true) # Recompute powers and voltage angles
+
+printBusSummary(analysis)          # Print bus summary data
 ```
 
 ---
@@ -77,18 +76,15 @@ printBusSummary(system, analysis)          # Print bus summary data
 ```julia
 using JuliaGrid, Ipopt
 
-system = powerSystem("case14.h5")                       # Build the power system model
-acModel!(system)                                        # Build the AC model
+system = powerSystem("case14.h5")                      # Build the power system model
 
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)  # Build the optimal power flow model
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer) # Build the optimal power flow model
+powerFlow!(analysis; current = true, verbose = 3)      # Compute voltages and currents
 
-powerFlow!(system, analysis; power = true, verbose = 3) # Compute powers and voltages
-current!(system, analysis)                              # Compute currents
+@branch(resistance = 0.01, reactance = 0.2)            # Define the template
+addBranch!(analysis; from = 1, to = 5)                 # Add the new branch
 
-@branch(resistance = 0.01, reactance = 0.2)             # Define the template
-addBranch!(system, analysis; from = 1, to = 5)          # Add the new branch
-powerFlow!(system, analysis; power = true, verbose = 3) # Recompute powers and voltages
-current!(system, analysis)                              # Recompute currents
+powerFlow!(analysis; current = true, verbose = 3)      # Recompute voltages and currents
 ```
 
 ---
@@ -98,12 +94,11 @@ current!(system, analysis)                              # Recompute currents
 using JuliaGrid, HiGHS
 
 system = powerSystem("case14.h5")                      # Build the power system model
-dcModel!(system)                                       # Build the DC model
 
 analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer) # Build the optimal power flow model
-powerFlow!(system, analysis; power = true)             # Compute powers and voltage angles
+powerFlow!(analysis; power = true)                     # Compute powers and voltage angles
 
-printBranchData(system, analysis)                      # Print branch data
+printBranchData(analysis)                              # Print branch data
 ```
 
 ---
@@ -112,16 +107,12 @@ printBranchData(system, analysis)                      # Print branch data
 ```julia
 using JuliaGrid
 
-system = powerSystem("case14.h5")               # Build the power system model
-device = measurement("measurement14.h5")        # Build the measurement model
-acModel!(system)                                # Build the AC model
+system, monitoring = ems("case14.h5", "monitoring.h5") # Build the energy management system
 
-analysis = gaussNewton(system, device)          # Build the state estimation model
+analysis = gaussNewton(monitoring)                     # Build the state estimation model
+stateEstimation!(analysis; power = true, verbose = 3)  # Compute estimate of voltages and powers
 
-stateEstimation!(system, analysis; verbose = 3) # Compute estimate of voltages
-power!(system, analysis)                        # Compute powers
-
-printWattmeterData(system, device, analysis)    # Print wattmeter data
+printWattmeterData(analysis)                           # Print wattmeter data
 ```
 ---
 
@@ -129,14 +120,12 @@ printWattmeterData(system, device, analysis)    # Print wattmeter data
 ```julia
 using JuliaGrid
 
-system = powerSystem("case14.h5")             # Build the power system model
-device = measurement("measurement14.h5")      # Build the measurement model
-acModel!(system)                              # Build the AC model
+system, monitoring = ems("case14.h5", "monitoring.h5") # Build the energy management system
 
-analysis = pmuStateEstimation(system, device) # Build the state estimation model
-stateEstimation!(system, analysis)            # Compute estimate of voltages
+analysis = pmuStateEstimation(monitoring)              # Build the state estimation model
+stateEstimation!(analysis)                             # Compute estimate of voltages
 
-printPmuData(system, device, analysis)        # Print PMU data
+printPmuData(analysis)                                 # Print PMU data
 ```
 
 ---
@@ -145,17 +134,15 @@ printPmuData(system, device, analysis)        # Print PMU data
 ```julia
 using JuliaGrid
 
-system = powerSystem("case14.h5")            # Build the power system model
-device = measurement("measurement14.h5")     # Build the measurement model
-dcModel!(system)                             # Build the DC model
+system, monitoring = ems("case14.h5", "monitoring.h5") # Build the energy management system
 
-analysis = dcStateEstimation(system, device) # Build the state estimation model
-stateEstimation!(system, analysis)           # Compute estimate of voltage angles
+analysis = dcStateEstimation(monitoring)               # Build the state estimation model
+stateEstimation!(analysis)                             # Compute estimate of voltage angles
 
-residualTest!(system, device, analysis)      # Perform bad data analysis
-stateEstimation!(system, analysis)           # Recompute voltage angles
+residualTest!(analysis)                                # Perform bad data analysis
+stateEstimation!(analysis)                             # Recompute voltage angles
 
-printBusData(system, analysis)               # Print bus data
+printBusData(analysis)                                 # Print bus data
 ```
 
 ---

@@ -9,65 +9,65 @@ using JuliaGrid
 ---
 
 ###### AC Powers
-* [`power!`](@ref power!(::PowerSystem, ::ACPowerFlow))
-* [`injectionPower`](@ref injectionPower(::PowerSystem, ::AC))
-* [`supplyPower`](@ref supplyPower(::PowerSystem, ::ACPowerFlow))
-* [`shuntPower`](@ref shuntPower(::PowerSystem, ::AC))
-* [`fromPower`](@ref fromPower(::PowerSystem, ::AC))
-* [`toPower`](@ref toPower(::PowerSystem, ::AC))
-* [`seriesPower`](@ref seriesPower(::PowerSystem, ::AC))
-* [`chargingPower`](@ref chargingPower(::PowerSystem, ::AC))
-* [`generatorPower`](@ref generatorPower(::PowerSystem, ::ACPowerFlow))
+* [`power!`](@ref power!(::AcPowerFlow))
+* [`injectionPower`](@ref injectionPower(::AC))
+* [`supplyPower`](@ref supplyPower(::AcPowerFlow))
+* [`shuntPower`](@ref shuntPower(::AC))
+* [`fromPower`](@ref fromPower(::AC))
+* [`toPower`](@ref toPower(::AC))
+* [`seriesPower`](@ref seriesPower(::AC))
+* [`chargingPower`](@ref chargingPower(::AC))
+* [`generatorPower`](@ref generatorPower(::AcPowerFlow))
 
 ###### AC Currents
-* [`current!`](@ref current!(::PowerSystem, ::AC))
-* [`injectionCurrent`](@ref injectionCurrent(::PowerSystem, ::AC))
-* [`fromCurrent`](@ref fromCurrent(::PowerSystem, ::AC))
-* [`toCurrent`](@ref toCurrent(::PowerSystem, ::AC))
-* [`seriesCurrent`](@ref seriesCurrent(::PowerSystem, ::AC))
+* [`current!`](@ref current!(::AC))
+* [`injectionCurrent`](@ref injectionCurrent(::AC))
+* [`fromCurrent`](@ref fromCurrent(::AC))
+* [`toCurrent`](@ref toCurrent(::AC))
+* [`seriesCurrent`](@ref seriesCurrent(::AC))
 
 ###### DC Powers
-* [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow))
-* [`injectionPower`](@ref injectionPower(::PowerSystem, ::DCPowerFlow))
-* [`supplyPower`](@ref supplyPower(::PowerSystem, ::DCPowerFlow))
-* [`fromPower`](@ref fromPower(::PowerSystem, ::DC))
-* [`toPower`](@ref toPower(::PowerSystem, ::DC))
-* [`generatorPower`](@ref generatorPower(::PowerSystem, ::DCPowerFlow))
+* [`power!`](@ref power!(::DcPowerFlow))
+* [`injectionPower`](@ref injectionPower(::DcPowerFlow))
+* [`supplyPower`](@ref supplyPower(::DcPowerFlow))
+* [`fromPower`](@ref fromPower(::DC))
+* [`toPower`](@ref toPower(::DC))
+* [`generatorPower`](@ref generatorPower(::DcPowerFlow))
 
 ---
 
 ## [AC Powers](@id ACPowerAnalysisAPI)
 ```@docs
-power!(::PowerSystem, ::ACPowerFlow)
-injectionPower(::PowerSystem, ::AC)
-supplyPower(::PowerSystem, ::ACPowerFlow)
-shuntPower(::PowerSystem, ::AC)
-fromPower(::PowerSystem, ::AC)
-toPower(::PowerSystem, ::AC)
-seriesPower(::PowerSystem, ::AC)
-chargingPower(::PowerSystem, ::AC)
-generatorPower(::PowerSystem, ::ACPowerFlow)
+power!(::AcPowerFlow)
+injectionPower(::AC)
+supplyPower(::AcPowerFlow)
+shuntPower(::AC)
+fromPower(::AC)
+toPower(::AC)
+seriesPower(::AC)
+chargingPower(::AC)
+generatorPower(::AcPowerFlow)
 ```
 
 ---
 
 ## [AC Currents](@id ACCurrentAnalysisAPI)
 ```@docs
-current!(::PowerSystem, ::AC)
-injectionCurrent(::PowerSystem, ::AC)
-fromCurrent(::PowerSystem, ::AC)
-toCurrent(::PowerSystem, ::AC)
-seriesCurrent(::PowerSystem, ::AC)
+current!(::AC)
+injectionCurrent(::AC)
+fromCurrent(::AC)
+toCurrent(::AC)
+seriesCurrent(::AC)
 ```
 
 ---
 
 ## [DC Powers](@id DCPowerAnalysisAPI)
 ```@docs
-power!(::PowerSystem, ::DCPowerFlow)
-injectionPower(::PowerSystem, ::DCPowerFlow)
-supplyPower(::PowerSystem, ::DCPowerFlow)
-fromPower(::PowerSystem, ::DC)
-toPower(::PowerSystem, ::DC)
-generatorPower(::PowerSystem, ::DCPowerFlow)
+power!(::DcPowerFlow)
+injectionPower(::DcPowerFlow)
+supplyPower(::DcPowerFlow)
+fromPower(::DC)
+toPower(::DC)
+generatorPower(::DcPowerFlow)
 ```

@@ -25,6 +25,7 @@ mutable struct BusLayout
     lossZone::Vector{Int64}
     slack::Int64
     label::Int64
+    pattern::Int64
 end
 
 mutable struct BusSupply
@@ -212,7 +213,7 @@ mutable struct BaseData
 end
 
 ##### DC Model #####
-mutable struct DCModel
+mutable struct DcModel
     nodalMatrix::SparseMatrixCSC{Float64, Int64}
     admittance::Vector{Float64}
     shiftPower::Vector{Float64}
@@ -221,7 +222,7 @@ mutable struct DCModel
 end
 
 ##### AC Model #####
-mutable struct ACModel
+mutable struct AcModel
     nodalMatrix::SparseMatrixCSC{ComplexF64, Int64}
     nodalMatrixTranspose::SparseMatrixCSC{ComplexF64, Int64}
     nodalFromFrom::Vector{ComplexF64}
@@ -236,23 +237,23 @@ end
 """
     Model
 
-A composite type used in [`PowerSystem`](@ref PowerSystem) to store vectors and matrices
-related to the power system's topology and parameters.
+A composite type used in [`PowerSystem`](@ref PowerSystem) to store vectors and matrices related to
+the power system's topology and parameters.
 
 # Fields
-- `ac::ACModel`: AC model, including the nodal admittance matrix and Y-parameters of two-port branches.
-- `dc::DCModel`: DC model, including the nodal admittance matrix and branch admittances.
+- `ac::AcModel`: AC model, including the nodal admittance matrix and Y-parameters of two-port branches.
+- `dc::DcModel`: DC model, including the nodal admittance matrix and branch admittances.
 """
 mutable struct Model
-    ac::ACModel
-    dc::DCModel
+    ac::AcModel
+    dc::DcModel
 end
 
 """
     PowerSystem
 
-A composite type constructed using the [`powerSystem`](@ref powerSystem) function to store
-power system data.
+A composite type constructed using the [`powerSystem`](@ref powerSystem) function to store power
+system data.
 
 # Fields
 - `bus::Bus`: Bus-related data.
@@ -403,8 +404,7 @@ end
 """
     Measurement
 
-A composite type built using the [`measurement`](@ref measurement) function to store
-measurement data.
+A composite type built using the [`measurement`](@ref measurement) function to store measurement data.
 
 # Fields
 - `voltmeter::Voltmeter`: Data related to bus voltage magnitude measurements.
@@ -412,6 +412,7 @@ measurement data.
 - `wattmeter::Wattmeter`: Data related to active power injection and active power flow measurements.
 - `varmeter::Varmeter`: Data related to reactive power injection and reactive power flow measurements.
 - `pmu::PMU`: Data related to bus voltage and branch current phasor measurements.
+- `system::PowerSystem`: The reference to the power system.
 """
 mutable struct Measurement
     voltmeter::Voltmeter
@@ -419,6 +420,7 @@ mutable struct Measurement
     wattmeter::Wattmeter
     varmeter::Varmeter
     pmu::PMU
+    system::PowerSystem
 end
 
 ##### Types #####

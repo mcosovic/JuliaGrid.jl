@@ -33,17 +33,15 @@ end
 
 ##### Scale Quantities #####
 function scaleVoltage(system::PowerSystem, pfx::PrefixLive, i::Int64)
-    return (system.base.voltage.value[i] * system.base.voltage.prefix) / (sqrt(3) * pfx.voltageMagnitude)
+    (system.base.voltage.value[i] * system.base.voltage.prefix) / (sqrt(3) * pfx.voltageMagnitude)
 end
 
 function scaleVoltage(pfx::PrefixLive, system::PowerSystem, i::Int64)
     if pfx.voltageMagnitude == 0.0
-        scaleV = 1.0
+        return 1.0
     else
-        scaleV = scaleVoltage(system, pfx, i)
+        return scaleVoltage(system, pfx, i)
     end
-
-    return scaleV
 end
 
 function scaleCurrent(system::PowerSystem, pfx::PrefixLive, i::Int64)
@@ -56,12 +54,10 @@ end
 
 function scaleCurrent(pfx::PrefixLive, system::PowerSystem, i::Int64)
     if pfx.currentMagnitude == 0.0
-        scaleI = 1.0
+        return 1.0
     else
-        scaleI = scaleCurrent(system, pfx, i)
+        return scaleCurrent(system, pfx, i)
     end
-
-    return scaleI
 end
 
 function scaleIij(system::PowerSystem, scale::Float64, pfx::PrefixLive, from::Bool, idx::Int64)
@@ -73,12 +69,13 @@ function scaleIij(system::PowerSystem, scale::Float64, pfx::PrefixLive, from::Bo
         end
     end
 
-    return scale
+    scale
 end
 
 function scalePrint(system::PowerSystem, pfx::PrefixLive)
     basePower = system.base.power.value * system.base.power.prefix
-    return Dict(
+
+    Dict(
         :θ => pfx.voltageAngle != 0.0 ? 1 / pfx.voltageAngle : 1.0,
         :P => pfx.activePower != 0.0 ? basePower / pfx.activePower : 1.0,
         :Q => pfx.reactivePower != 0.0 ? basePower / pfx.reactivePower : 1.0,
@@ -202,30 +199,30 @@ function transfer!(
         end
     end
 
-    return _fmt, _width, _show
+    _fmt, _width, _show
 end
 
 function _fmt(_fmt::String; format::String = "%*.4f")
-    return isempty(_fmt) ? format : _fmt
+    isempty(_fmt) ? format : _fmt
 end
 
 function _width(_width::Int64, span::Int64, style::Bool)
-    return max(span, _width) * style
+    max(span, _width) * style
 end
 
 function _show(
     _show::Bool,
     value::Union{Vector{Float64}, Dict{Int64, ConstraintRef}, Dict{Int64, Float64}}
 )
-    return !isempty(value) & _show
+    !isempty(value) & _show
 end
 
 function _show(_show::Bool, value::Bool)
-    return value & _show
+    value & _show
 end
 
 function _header(headerMain::String, headerStyle::String, style::Bool)
-    return style ? headerMain : headerStyle
+    style ? headerMain : headerStyle
 end
 
 function _blank(
@@ -245,7 +242,7 @@ function _blank(
         end
     end
 
-    return blankWidth::Int64
+    blankWidth::Int64
 end
 
 function _blank(
@@ -282,7 +279,7 @@ function _blank(
         end
     end
 
-    return _blank(width, show, delimiter, head, keys...)
+    _blank(width, show, delimiter, head, keys...)
 end
 
 function printing!(
@@ -306,7 +303,7 @@ function printing!(
         end
     end
 
-    return howMany <= 0
+    howMany <= 0
 end
 
 function fmtwidth(show::OrderedDict{String, Bool})
@@ -318,7 +315,7 @@ function fmtwidth(show::OrderedDict{String, Bool})
         width[key] = 0
     end
 
-    return fmt, width
+    fmt, width
 end
 
 function fmtRegex(fmt::String)
@@ -813,7 +810,7 @@ function fminmax(
         vminmax[2] = min(primalValue, vminmax[2])
     end
 
-    return minmax
+    minmax
 end
 
 function fminmax(
@@ -830,7 +827,7 @@ function fminmax(
         vminmax[2] = min(dualValue, vminmax[2])
     end
 
-    return vminmax
+    vminmax
 end
 
 function fminmax(
@@ -848,7 +845,7 @@ function fminmax(
         vminmax[2] = min(dualValue, vminmax[2])
     end
 
-    return vminmax
+    vminmax
 end
 
 function fminmax(
@@ -865,7 +862,7 @@ function fminmax(
         vminmax[2] = min(val, vminmax[2])
     end
 
-    return vminmax
+    vminmax
 end
 
 ##### Utility Functions #####
@@ -883,7 +880,7 @@ function pickLabel(
         dictIterator = labels
     end
 
-    return dictIterator
+    dictIterator
 end
 
 function getLabel(
@@ -910,15 +907,15 @@ function getLabel(
         end
     end
 
-    return busLabel
+    busLabel
 end
 
 function getLabel(label::OrderedDict{String, Int64}, i::Int64)
-    return iterate(label, i)[1][1]
+    iterate(label, i)[1][1]
 end
 
 function isValid(jump::JuMP.Model, constraint::Dict{Int64, ConstraintRef}, i::Int64)
-    return haskey(constraint, i) && is_valid(jump, constraint[i])
+    haskey(constraint, i) && is_valid(jump, constraint[i])
 end
 
 ##### Print Keywords #####

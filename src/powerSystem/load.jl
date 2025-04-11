@@ -1,10 +1,9 @@
 """
     powerSystem(file::String)
 
-The function builds the composite type `PowerSystem` and populates `bus`, `branch`,
-`generator` and `base` fields. Once the type `PowerSystem` has been created, it is
-possible to add new buses, branches, or generators, or modify the parameters of
-existing ones.
+The function builds the composite type `PowerSystem` and populates `bus`, `branch`,  `generator` and
+`base` fields. Once the type `PowerSystem` has been created, it is possible  to add new buses,
+branches, or generators, or modify the parameters of existing ones.
 
 # Argument
 It requires a string path to:
@@ -20,9 +19,9 @@ The `PowerSystem` composite type with the following fields:
 - `model`: Data associated with AC and DC analyses.
 
 # Units
-JuliaGrid stores all data in per-units and radians format which are fixed, the exceptions
-are base values in volt-amperes and volts. The prefixes for these base values can be
-changed using the [`@base`](@ref @base) macro.
+JuliaGrid stores all data in per-units and radians format which are fixed, the exceptions are base
+values in volt-amperes and volts. The prefixes for these base values can be changed using the
+[`@base`](@ref @base) macro.
 
 # Example
 ```jldoctest
@@ -60,10 +59,9 @@ end
 """
     powerSystem()
 
-Alternatively, the `PowerSystem` type can be initialized by calling the function without
-any arguments. This allows the model to be built from scratch and modified as needed.
-This generates an empty `PowerSystem` type, with only the base power initialized to 1.0e8
-volt-amperes.
+Alternatively, the `PowerSystem` type can be initialized by calling the function without any
+arguments. This allows the model to be built from scratch and modified as needed. This generates an
+empty `PowerSystem` type, with only the base power initialized to 1.0e8 volt-amperes.
 
 # Example
 ```jldoctest
@@ -78,7 +76,7 @@ function powerSystem()
             BusSupply(Float64[], Float64[], Dict{Int64, Vector{Int64}}()),
             BusShunt(Float64[], Float64[]),
             BusVoltage(Float64[], Float64[], Float64[], Float64[]),
-            BusLayout(Int8[], Int64[], Int64[], 0, 0),
+            BusLayout(Int8[], Int64[], Int64[], 0, 0, 0),
             0
         ),
         Branch(
@@ -119,11 +117,11 @@ function powerSystem()
             BaseVoltage(Float64[], "V", 1.0)
         ),
         Model(
-            ACModel(
+            AcModel(
                 spzeros(0, 0), spzeros(0, 0), ComplexF64[], ComplexF64[],
                 ComplexF64[], ComplexF64[], ComplexF64[], 0, 0
             ),
-            DCModel(spzeros(0, 0), Float64[], Float64[], 0, 0)
+            DcModel(spzeros(0, 0), Float64[], Float64[], 0, 0)
         )
     )
 end
@@ -634,10 +632,10 @@ end
 
 ##### Read Data From HDF5 File #####
 @inline function readHDF5(group::Group, key::String, number::Int64)
-    if length(group[key]) != 1
-        return read(group[key])::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}, Vector{Bool}}
-    else
+    if length(group[key]) == 1
         return fill(read(group[key])::Union{Float64, Int64, Int8, Bool}, number)
+    else
+        return read(group[key])::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}, Vector{Bool}}
     end
 end
 

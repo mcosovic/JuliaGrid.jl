@@ -16,241 +16,240 @@ system30 = powerSystem(path * "case30test.m")
 
     acModel!(system14)
     pf = newtonRaphson(system14)
-    powerFlow!(system14, pf; power = true, current = true)
+    powerFlow!(pf; power = true, current = true)
 
-    device = measurement()
+    monitoring = measurement(system14)
     @pmu(varianceMagnitudeBus = 1, varianceAngleBus = 1)
-    addPmu!(system14, device, pf; statusFrom = -1, statusTo = -1, polar = true)
+    addPmu!( monitoring, pf; statusFrom = -1, statusTo = -1, polar = true)
 
     @testset "IEEE 14: Voltmeter Measurements" begin
-        meter = deepcopy(device)
+        meter = deepcopy(monitoring)
 
         @voltmeter(variance = 1e-4)
-        addVoltmeter!(system14, meter, pf)
-        testEstimation(system14, meter, pf)
+        addVoltmeter!(meter, pf)
+        testAcEstimation(meter, pf)
     end
 
     @testset "IEEE 14: Ammeter Measurements" begin
-        meter = deepcopy(device)
+        meter = deepcopy(monitoring)
 
         @ammeter(varianceFrom = 1e-2, varianceTo = 1e-2)
-        addAmmeter!(system14, meter, pf)
-        testEstimation(system14, meter, pf)
+        addAmmeter!(meter, pf)
+        testAcEstimation(meter, pf)
     end
 
     @testset "IEEE 14: Ammeter Squared Measurements" begin
-        meter = deepcopy(device)
+        meter = deepcopy(monitoring)
 
         @ammeter(varianceFrom = 1e-4, varianceTo = 1e-4)
-        addAmmeter!(system14, meter, pf; square = true)
-        testEstimation(system14, meter, pf)
+        addAmmeter!(meter, pf; square = true)
+        testAcEstimation(meter, pf)
     end
 
     @testset "IEEE 14: Bus Wattmeter Measurements" begin
-        meter = deepcopy(device)
+        meter = deepcopy(monitoring)
 
         @wattmeter(varianceBus = 1e-4)
-        addWattmeter!(system14, meter, pf; statusFrom = -1, statusTo = -1)
-        testEstimation(system14, meter, pf)
+        addWattmeter!(meter, pf; statusFrom = -1, statusTo = -1)
+        testAcEstimation(meter, pf)
     end
 
     @testset "IEEE 14: Branch Wattmeter Measurements" begin
-        meter = deepcopy(device)
+        meter = deepcopy(monitoring)
 
         @wattmeter(varianceFrom = 1e-4, varianceTo = 1e-4)
-        addWattmeter!(system14, meter, pf; statusBus = -1)
-        testEstimation(system14, meter, pf)
+        addWattmeter!(meter, pf; statusBus = -1)
+        testAcEstimation(meter, pf)
     end
 
     @testset "IEEE 14: Bus Varmeter Measurements" begin
-        meter = deepcopy(device)
+        meter = deepcopy(monitoring)
 
         @varmeter(varianceBus = 1e-4)
-        addVarmeter!(system14, meter, pf; statusFrom = -1, statusTo = -1)
-        testEstimation(system14, meter, pf)
+        addVarmeter!(meter, pf; statusFrom = -1, statusTo = -1)
+        testAcEstimation(meter, pf)
     end
 
     @testset "IEEE 14: Branch Varmeter Measurements" begin
-        meter = deepcopy(device)
+        meter = deepcopy(monitoring)
 
         @varmeter(varianceFrom = 1e-2, varianceTo = 1e-2)
-        addVarmeter!(system14, meter, pf; statusBus = -1)
-        testEstimation(system14, meter, pf)
+        addVarmeter!(meter, pf; statusBus = -1)
+        testAcEstimation(meter, pf)
     end
 
     @testset "IEEE 14: PMU Bus Rectangular Correlated Measurements" begin
-        device = measurement()
+        monitoring = measurement(system14)
 
         addPmu!(
-            system14, device, pf; varianceMagnitudeBus = 1e-4, varianceAngleBus = 1e-4,
+            monitoring, pf; varianceMagnitudeBus = 1e-4, varianceAngleBus = 1e-4,
             statusFrom = -1, statusTo = -1, correlated = true)
-        addPmuBus(system14, device, pf)
-        testEstimation(system14, device, pf)
+        addPmuBus(monitoring, pf)
+        testAcEstimation(monitoring, pf)
     end
 
     @testset "IEEE 14: PMU Branch Rectangular Measurements" begin
-        device = measurement()
+        monitoring = measurement(system14)
 
         @pmu(varianceMagnitudeFrom = 1e-4, varianceAngleFrom = 1e-4)
         @pmu(varianceMagnitudeTo = 1e-4, varianceAngleTo = 1e-4)
-        addPmu!(system14, device, pf; statusBus = -1)
-        addPmuBus(system14, device, pf)
-        testEstimation(system14, device, pf)
+        addPmu!(monitoring, pf; statusBus = -1)
+        addPmuBus(monitoring, pf)
+        testAcEstimation(monitoring, pf)
     end
 
     @testset "IEEE 14: PMU Branch Rectangular Correlated Measurements" begin
-        device = measurement()
+        monitoring = measurement(system14)
 
-        addPmu!(system14, device, pf; statusBus = -1, correlated = true)
-        addPmuBus(system14, device, pf)
-        testEstimation(system14, device, pf)
+        addPmu!(monitoring, pf; statusBus = -1, correlated = true)
+        addPmuBus(monitoring, pf)
+        testAcEstimation(monitoring, pf)
     end
 
     @testset "IEEE 14: PMU From-Branch Polar Measurements" begin
-        device = measurement()
+        monitoring = measurement(system14)
 
         @pmu(varianceMagnitudeFrom = 1e-2, varianceAngleFrom = 1e-2)
-        addPmu!(system14, device, pf; statusBus = -1, statusTo = -1, polar = true)
-        addPmuBus(system14, device, pf)
-        device.pmu.magnitude.status[[2, 14, 18]] .= 0
-        device.pmu.angle.status[[14, 18]] .= 0
+        addPmu!(monitoring, pf; statusBus = -1, statusTo = -1, polar = true)
+        addPmuBus(monitoring, pf)
+        monitoring.pmu.magnitude.status[[2, 14, 18]] .= 0
+        monitoring.pmu.angle.status[[14, 18]] .= 0
 
-        testEstimation(system14, device, pf)
+        testAcEstimation(monitoring, pf)
     end
 
     @testset "IEEE 14: PMU From-Branch Polar Squared Measurements" begin
-        device = measurement()
+        monitoring = measurement(system14)
 
         @pmu(varianceMagnitudeFrom = 1e-2, varianceAngleFrom = 1e-2)
-        addPmu!(system14, device, pf; statusBus = -1, statusTo = -1, polar = true, square = true)
-        addPmuBus(system14, device, pf)
-        device.pmu.magnitude.status[[14, 18]] .= 0
-        device.pmu.angle.status[[14, 18]] .= 0
+        addPmu!(monitoring, pf; statusBus = -1, statusTo = -1, polar = true, square = true)
+        addPmuBus(monitoring, pf)
+        monitoring.pmu.magnitude.status[[14, 18]] .= 0
+        monitoring.pmu.angle.status[[14, 18]] .= 0
 
-        testEstimation(system14, device, pf)
+        testAcEstimation(monitoring, pf)
     end
 
     @testset "IEEE 14: PMU To-Branch Polar Measurements" begin
-        device = measurement()
+        monitoring = measurement(system14)
 
         @pmu(varianceMagnitudeTo = 1e-2, varianceAngleTo = 1e-2)
-        addPmu!(system14, device, pf; statusBus = -1, statusFrom = -1, statusTo = 0, polar = true)
-        addPmuBus(system14, device, pf)
+        addPmu!(monitoring, pf; statusBus = -1, statusFrom = -1, statusTo = 0, polar = true)
+        addPmuBus(monitoring, pf)
 
-        device.pmu.magnitude.status[4] = 1
-        device.pmu.magnitude.status[8] = 1
-        device.pmu.magnitude.status[12] = 1
-        device.pmu.magnitude.status[16] = 1
-        device.pmu.magnitude.status[18] = 1
+        monitoring.pmu.magnitude.status[4] = 1
+        monitoring.pmu.magnitude.status[8] = 1
+        monitoring.pmu.magnitude.status[12] = 1
+        monitoring.pmu.magnitude.status[16] = 1
+        monitoring.pmu.magnitude.status[18] = 1
 
-        device.pmu.angle.status[3] = 1
-        device.pmu.angle.status[5] = 1
-        device.pmu.angle.status[8] = 1
-        device.pmu.angle.status[13] = 1
-        device.pmu.angle.status[18] = 1
+        monitoring.pmu.angle.status[3] = 1
+        monitoring.pmu.angle.status[5] = 1
+        monitoring.pmu.angle.status[8] = 1
+        monitoring.pmu.angle.status[13] = 1
+        monitoring.pmu.angle.status[18] = 1
 
-        testEstimation(system14, device, pf)
+        testAcEstimation(monitoring, pf)
     end
 
     @testset "IEEE 14: PMU To-Branch Polar Squared Measurements" begin
-        device = measurement()
+        monitoring = measurement(system14)
 
         @pmu(varianceMagnitudeTo = 1e-2, varianceAngleTo = 1e-2)
-        addPmu!(system14, device, pf; statusBus = -1, statusFrom = -1, statusTo = 0, polar = true, square = true)
-        addPmuBus(system14, device, pf)
+        addPmu!(monitoring, pf; statusBus = -1, statusFrom = -1, statusTo = 0, polar = true, square = true)
+        addPmuBus(monitoring, pf)
 
-        device.pmu.magnitude.status[4] = 1
-        device.pmu.magnitude.status[8] = 1
-        device.pmu.magnitude.status[12] = 1
-        device.pmu.magnitude.status[16] = 1
-        device.pmu.magnitude.status[18] = 1
+        monitoring.pmu.magnitude.status[4] = 1
+        monitoring.pmu.magnitude.status[8] = 1
+        monitoring.pmu.magnitude.status[12] = 1
+        monitoring.pmu.magnitude.status[16] = 1
+        monitoring.pmu.magnitude.status[18] = 1
 
-        testEstimation(system14, device, pf)
+        testAcEstimation(monitoring, pf)
     end
 
-    device = measurement()
+    monitoring = measurement(system14)
     @testset "IEEE 14: All Measurements" begin
-        addVoltmeter!(system14, device, pf)
-        addAmmeter!(system14, device, pf)
-        addWattmeter!(system14, device, pf)
-        addVarmeter!(system14, device, pf)
-        addPmu!(system14, device, pf)
-        testEstimation(system14, device, pf)
+        addVoltmeter!(monitoring, pf)
+        addAmmeter!(monitoring, pf)
+        addWattmeter!(monitoring, pf)
+        addVarmeter!(monitoring, pf)
+        addPmu!(monitoring, pf)
+        testAcEstimation(monitoring, pf)
     end
 
     @testset "IEEE 14: QR Factorization" begin
-        analysisQR = gaussNewton(system14, device, QR)
-        stateEstimation!(system14, analysisQR)
+        analysisQR = gaussNewton(monitoring, QR)
+        stateEstimation!(analysisQR)
 
-        compstruct(analysisQR.voltage, pf.voltage; atol = 1e-10)
+        teststruct(analysisQR.voltage, pf.voltage; atol = 1e-10)
     end
 
     @testset "IEEE 14: Orthogonal Method" begin
-        orthogonal = gaussNewton(system14, device, Orthogonal)
-        stateEstimation!(system14, orthogonal; power = true, current = true)
+        orthogonal = gaussNewton(monitoring, Orthogonal)
+        stateEstimation!(orthogonal; power = true, current = true)
 
-        compstruct(orthogonal.voltage, pf.voltage; atol = 1e-10)
-        compstruct(orthogonal.power, pf.power; atol = 1e-10)
+        teststruct(orthogonal.voltage, pf.voltage; atol = 1e-10)
+        teststruct(orthogonal.power, pf.power; atol = 1e-10)
     end
 
     ########## IEEE 30-bus Test Case ##########
     acModel!(system30)
     pf = newtonRaphson(system30)
-    powerFlow!(system30, pf; power = true, current = true)
+    powerFlow!(pf; power = true, current = true)
 
-    device = measurement()
-    addPmu!(system30, device, pf; statusFrom = -1, statusTo = -1, polar = true)
+    monitoring = measurement(system30)
+    addPmu!(monitoring, pf; statusFrom = -1, statusTo = -1, polar = true)
 
     @testset "IEEE 30: Voltmeter Measurements" begin
-        meter = deepcopy(device)
+        meter = deepcopy(monitoring)
 
-        addVoltmeter!(system30, meter, pf; variance = 1e-4)
-        testEstimation(system30, meter, pf)
+        addVoltmeter!(meter, pf; variance = 1e-4)
+        testAcEstimation(meter, pf)
     end
 
     @testset "IEEE 30: Wattmeter Measurements" begin
-        meter = deepcopy(device)
+        meter = deepcopy(monitoring)
 
-        addWattmeter!(system30, meter, pf; varianceBus = 1e-2, varianceFrom = 1e-2, varianceTo = 1e-2)
-        testEstimation(system30, meter, pf)
+        addWattmeter!(meter, pf; varianceBus = 1e-2, varianceFrom = 1e-2, varianceTo = 1e-2)
+        testAcEstimation(meter, pf)
     end
 
     @testset "IEEE 30: Varmeter Measurements" begin
-        meter = deepcopy(device)
+        meter = deepcopy(monitoring)
 
-        addVarmeter!(system30, meter, pf)
-        testEstimation(system30, meter, pf)
+        addVarmeter!(meter, pf)
+        testAcEstimation(meter, pf)
     end
 
     @testset "IEEE 30: Rectangular PMU Measurements" begin
-        device = measurement()
+        monitoring = measurement(system30)
 
-        addPmu!(system30, device, pf; correlated = true)
-        addPmuBus(system30, device, pf)
-        testEstimation(system30, device, pf)
+        addPmu!(monitoring, pf; correlated = true)
+        addPmuBus(monitoring, pf)
+        testAcEstimation(monitoring, pf)
     end
 
-    device = measurement()
+    monitoring = measurement(system30)
 
     @testset "IEEE 30: All Measurements" begin
-        addVoltmeter!(system30, device, pf)
-        addWattmeter!(system30, device, pf)
-        addVarmeter!(system30, device, pf)
-        addPmu!(system30, device, pf)
-        testEstimation(system30, device, pf)
+        addVoltmeter!(monitoring, pf)
+        addWattmeter!(monitoring, pf)
+        addVarmeter!(monitoring, pf)
+        addPmu!(monitoring, pf)
+        testAcEstimation(monitoring, pf)
     end
 
     @testset "IEEE 30: Orthogonal Method" begin
-        orthogonal = gaussNewton(system30, device, Orthogonal)
-        stateEstimation!(system30, orthogonal; tolerance = 1e-10, power = true)
+        orthogonal = gaussNewton(monitoring, Orthogonal)
+        stateEstimation!(orthogonal; tolerance = 1e-10, power = true)
 
-        compstruct(orthogonal.voltage, pf.voltage; atol = 1e-8)
-        compstruct(orthogonal.power, pf.power; atol = 1e-8)
+        teststruct(orthogonal.voltage, pf.voltage; atol = 1e-8)
+        teststruct(orthogonal.power, pf.power; atol = 1e-8)
     end
 
     @testset "IEEE 30: Covariance Matrix" begin
-        system = powerSystem()
-        device = measurement()
+        system, monitoring = ems()
         covariance = zeros(6, 6)
 
         addBus!(system; type = 3, active = 0.5)
@@ -266,7 +265,7 @@ system30 = powerSystem(path * "case30test.m")
 
         zv = 0.9; zθ = 0.5; vv = 1e-2; vθ = 1.6
         addPmu!(
-            system, device; bus = 3, magnitude = zv, angle = zθ,
+            monitoring; bus = 3, magnitude = zv, angle = zθ,
             varianceMagnitude = vv, varianceAngle = vθ, correlated = true
         )
         covariance[1,1] = vv * (cos(zθ))^2 + vθ * (zv * sin(zθ))^2
@@ -276,7 +275,7 @@ system30 = powerSystem(path * "case30test.m")
 
         zv = 0.8; zθ = -0.3; vv = 0.5; vθ = 2.6
         addPmu!(
-            system, device;
+            monitoring;
             from = 3, magnitude = zv, angle = zθ, varianceMagnitude = vv, varianceAngle = vθ
         )
         covariance[3,3] = vv * (cos(zθ))^2 + vθ * (zv * sin(zθ))^2
@@ -284,7 +283,7 @@ system30 = powerSystem(path * "case30test.m")
 
         zv = 1.3; zθ = -0.2; vv = 1e-1; vθ = 0.2
         addPmu!(
-            system, device; to = 2, magnitude = zv, angle = zθ, varianceMagnitude = vv,
+            monitoring; to = 2, magnitude = zv, angle = zθ, varianceMagnitude = vv,
             varianceAngle = vθ, correlated = true
         )
         covariance[5,5] = vv * (cos(zθ))^2 + vθ * (zv * sin(zθ))^2
@@ -292,7 +291,7 @@ system30 = powerSystem(path * "case30test.m")
         covariance[5,6] = cos(zθ) * sin(zθ) * (vv - vθ * zv^2)
         covariance[6,5] = covariance[5,6]
 
-        analysis = gaussNewton(system, device)
+        analysis = gaussNewton(monitoring)
         @test inv(covariance) ≈ Matrix(analysis.method.precision)
     end
 end
@@ -311,57 +310,57 @@ system30 = powerSystem(path * "case30test.m")
 
     acModel!(system14)
     pf = newtonRaphson(system14)
-    powerFlow!(system14, pf; power = true, current = true)
+    powerFlow!(pf; power = true, current = true)
 
-    device = measurement()
+    monitoring = measurement(system14)
 
     @testset "IEEE 14: Uncorrelated PMU Measurements" begin
-        addPmu!(system14, device, pf)
-        testPmuEstimation(system14, device, pf)
+        addPmu!(monitoring, pf)
+        testPmuEstimation(monitoring, pf)
     end
 
     @testset "IEEE 14: QR Factorization" begin
-        analysisQR = pmuStateEstimation(system14, device, QR)
-        stateEstimation!(system14, analysisQR; power = true)
+        analysisQR = pmuStateEstimation(monitoring, QR)
+        stateEstimation!(analysisQR; power = true)
 
-        compstruct(analysisQR.voltage, pf.voltage; atol = 1e-10)
-        compstruct(analysisQR.power, pf.power; atol = 1e-10)
+        teststruct(analysisQR.voltage, pf.voltage; atol = 1e-10)
+        teststruct(analysisQR.power, pf.power; atol = 1e-10)
     end
 
     @testset "IEEE 14: Orthogonal Method" begin
-        orthogonal = pmuStateEstimation(system14, device, Orthogonal)
-        stateEstimation!(system14, orthogonal; power = true)
+        orthogonal = pmuStateEstimation(monitoring, Orthogonal)
+        stateEstimation!(orthogonal; power = true)
 
-        compstruct(orthogonal.voltage, pf.voltage; atol = 1e-10)
-        compstruct(orthogonal.power, pf.power; atol = 1e-10)
+        teststruct(orthogonal.voltage, pf.voltage; atol = 1e-10)
+        teststruct(orthogonal.power, pf.power; atol = 1e-10)
     end
 
     @testset "IEEE 14: Correlated PMU Measurements" begin
-        device = measurement()
+        monitoring = measurement(system14)
 
-        addPmu!(system14, device, pf; correlated = true)
-        testPmuEstimation(system14, device, pf)
+        addPmu!(monitoring, pf; correlated = true)
+        testPmuEstimation(monitoring, pf)
     end
 
     ########## IEEE 30-bus Test Case ##########
     acModel!(system30)
     pf = newtonRaphson(system30)
-    powerFlow!(system30, pf; power = true, current = true)
+    powerFlow!(pf; power = true, current = true)
 
     @testset "IEEE 30: Uncorrelated PMU Measurements" begin
-        device = measurement()
+        monitoring = measurement(system30)
 
-        addPmu!(system30, device, pf)
-        testPmuEstimation(system30, device, pf)
+        addPmu!(monitoring, pf)
+        testPmuEstimation(monitoring, pf)
     end
 
     @testset "IEEE 30: Correlated PMU Measurements" begin
-        device = measurement()
+        monitoring = measurement(system30)
 
         @pmu(varianceMagnitudeFrom = 1e-4, varianceAngleFrom = 1e-4)
         @pmu(varianceMagnitudeTo = 1e-4, varianceAngleTo = 1e-4)
-        addPmu!(system30, device, pf; correlated = true)
-        testPmuEstimation(system30, device, pf)
+        addPmu!(monitoring, pf; correlated = true)
+        testPmuEstimation(monitoring, pf)
     end
 end
 
@@ -377,210 +376,213 @@ system30 = powerSystem(path * "case30test.m")
 
     dcModel!(system14)
     pf = dcPowerFlow(system14)
-    powerFlow!(system14, pf; power = true)
-
-    device = measurement()
+    powerFlow!(pf; power = true)
 
     @testset "IEEE 14: Bus Wattmeter Measurements" begin
-        device = measurement()
+        monitoring = measurement(system14)
 
         for (key, idx) in system14.bus.label
-            addPmu!(system14, device; bus = key, magnitude = 1.0, angle = pf.voltage.angle[idx])
-            addWattmeter!(system14, device; bus = key, active = pf.power.injection.active[idx])
+            addPmu!(monitoring; bus = key, magnitude = 1.0, angle = pf.voltage.angle[idx])
+            addWattmeter!(monitoring; bus = key, active = pf.power.injection.active[idx])
         end
-        testDCEstimation(system14, device, pf)
+        testDcEstimation(monitoring, pf)
     end
 
     @testset "IEEE 14: Branch Wattmeter Measurements" begin
-        device = measurement()
+        monitoring = measurement(system14)
 
         for (key, idx) in system14.bus.label
-            addPmu!(system14, device; bus = key, magnitude = 1.0, angle = pf.voltage.angle[idx])
+            addPmu!(monitoring; bus = key, magnitude = 1.0, angle = pf.voltage.angle[idx])
         end
         for (key, idx) in system14.branch.label
-            addWattmeter!(system14, device; from = key, active = pf.power.from.active[idx])
-            addWattmeter!(system14, device; to = key, active = pf.power.to.active[idx])
+            addWattmeter!(monitoring; from = key, active = pf.power.from.active[idx])
+            addWattmeter!(monitoring; to = key, active = pf.power.to.active[idx])
         end
-        testDCEstimation(system14, device, pf)
+        testDcEstimation(monitoring, pf)
     end
 
-    device = measurement()
+    monitoring = measurement(system14)
 
     @testset "IEEE 14: Wattmeter Measurements" begin
         for (key, idx) in system14.bus.label
-            addWattmeter!(system14, device; bus = key, active = pf.power.injection.active[idx])
+            addWattmeter!(monitoring; bus = key, active = pf.power.injection.active[idx])
         end
         for (key, idx) in system14.branch.label
-            addWattmeter!(system14, device; from = key, active = pf.power.from.active[idx])
-            addWattmeter!(system14, device; to = key, active = pf.power.to.active[idx])
+            addWattmeter!(monitoring; from = key, active = pf.power.from.active[idx])
+            addWattmeter!(monitoring; to = key, active = pf.power.to.active[idx])
         end
-        testDCEstimation(system14, device, pf)
+        testDcEstimation(monitoring, pf)
     end
 
     @testset "IEEE 14: QR Factorization" begin
-        analysisQR = dcStateEstimation(system14, device, QR)
-        solve!(system14, analysisQR)
+        analysisQR = dcStateEstimation(monitoring, QR)
+        solve!(analysisQR)
         @test analysisQR.voltage.angle ≈ pf.voltage.angle
     end
 
     @testset "IEEE 14: Orthogonal Method" begin
-        orthogonal = dcStateEstimation(system14, device, Orthogonal)
-        stateEstimation!(system14, orthogonal; power = true)
+        orthogonal = dcStateEstimation(monitoring, Orthogonal)
+        stateEstimation!(orthogonal; power = true)
 
         @test orthogonal.voltage.angle ≈ pf.voltage.angle
-        compstruct(orthogonal.power, pf.power; atol = 1e-10)
+        teststruct(orthogonal.power, pf.power; atol = 1e-10)
     end
 
     ########## IEEE 30-bus Test Case ##########
     dcModel!(system30)
     pf = dcPowerFlow(system30)
-    powerFlow!(system30, pf; power = true)
+    powerFlow!(pf; power = true)
 
-    device = measurement()
+    monitoring = measurement(system30)
 
     @testset "IEEE 30: Wattmeter Measurements" begin
         for (key, idx) in system30.bus.label
-            addWattmeter!(system30, device; bus = key, active = pf.power.injection.active[idx])
+            addWattmeter!(monitoring; bus = key, active = pf.power.injection.active[idx])
         end
         for (key, idx) in system30.branch.label
-            addWattmeter!(system30, device; from = key, active = pf.power.from.active[idx])
-            addWattmeter!(system30, device; to = key, active = pf.power.to.active[idx])
+            addWattmeter!(monitoring; from = key, active = pf.power.from.active[idx])
+            addWattmeter!(monitoring; to = key, active = pf.power.to.active[idx])
         end
-        testDCEstimation(system30, device, pf)
+        testDcEstimation(monitoring, pf)
     end
 
     @testset "IEEE 30: Orthogonal Method" begin
-        orthogonal = dcStateEstimation(system30, device, Orthogonal)
-        stateEstimation!(system30, orthogonal; power = true)
+        orthogonal = dcStateEstimation(monitoring, Orthogonal)
+        stateEstimation!(orthogonal; power = true)
 
         @test orthogonal.voltage.angle ≈ pf.voltage.angle
-        compstruct(orthogonal.power, pf.power; atol = 1e-10)
+        teststruct(orthogonal.power, pf.power; atol = 1e-10)
     end
 end
 
 @testset "Print Data in Per-Units" begin
-    system = powerSystem(path * "case14test.m")
-    device = measurement("measurement14.h5")
-    addPmu!(system, device; bus = 1, magnitude = 1.0, angle = 0.0)
-    addPmu!(system, device; bus = 3, magnitude = 1.1, angle = -0.3)
+    system, monitoring = ems(path * "case14test.m", "measurement14.h5")
+
+    addPmu!(monitoring; bus = 1, magnitude = 1.0, angle = 0.0)
+    addPmu!(monitoring; bus = 3, magnitude = 1.1, angle = -0.3)
 
     ########## Print AC Data ##########
-    analysis = gaussNewton(system, device)
-    stateEstimation!(system, analysis; power = true, current = true)
+    analysis = gaussNewton(monitoring)
+    stateEstimation!(analysis; power = true, current = true)
 
     @suppress @testset "Print Voltmeter AC Data" begin
         width = Dict("Voltage Magnitude Residual" => 10)
         show = Dict("Voltage Magnitude Estimate" => false)
         fmt = Dict("Voltage Magnitude" => "%.2f")
 
-        printVoltmeterData(system, device, analysis; width, show, fmt, repeat = 10)
-        printVoltmeterData(system, device, analysis; label = 1, header = true)
-        printVoltmeterData(system, device, analysis; label = 2, footer = true)
-        printVoltmeterData(system, device, analysis; style = false)
+        printVoltmeterData(analysis; width, show, fmt, repeat = 10)
+        printVoltmeterData(analysis; label = 1, header = true)
+        printVoltmeterData(analysis; label = 2, footer = true)
+        printVoltmeterData(analysis; style = false)
+        printVoltmeterData(monitoring)
     end
 
     @suppress @testset "Print Ammeter AC Data" begin
         show = Dict("Current Magnitude Status" => false)
 
-        printAmmeterData(system, device, analysis; show, repeat = 10)
-        printAmmeterData(system, device, analysis; label = "From 1", header = true)
-        printAmmeterData(system, device, analysis; label = "From 2", footer = true)
-        printAmmeterData(system, device, analysis; style = false)
+        printAmmeterData(analysis; show, repeat = 10)
+        printAmmeterData(analysis; label = "From 1", header = true)
+        printAmmeterData(analysis; label = "From 2", footer = true)
+        printAmmeterData(analysis; style = false)
+        printAmmeterData(monitoring)
     end
 
     @suppress @testset "Print Wattmeter AC Data" begin
-        printWattmeterData(system, device, analysis; repeat = 10)
-        printWattmeterData(system, device, analysis; label = 1, header = true)
-        printWattmeterData(system, device, analysis; label = 4, footer = true)
-        printWattmeterData(system, device, analysis; style = false)
+        printWattmeterData(analysis; repeat = 10)
+        printWattmeterData(analysis; label = 1, header = true)
+        printWattmeterData(analysis; label = 4, footer = true)
+        printWattmeterData(analysis; style = false)
+        printWattmeterData(monitoring)
     end
 
     @suppress @testset "Print Varmeter AC Data" begin
-        printVarmeterData(system, device, analysis; repeat = 10)
-        printVarmeterData(system, device, analysis; label = 1, header = true)
-        printVarmeterData(system, device, analysis; label = 4, footer = true)
-        printVarmeterData(system, device, analysis; style = false)
+        printVarmeterData(analysis; repeat = 10)
+        printVarmeterData(analysis; label = 1, header = true)
+        printVarmeterData(analysis; label = 4, footer = true)
+        printVarmeterData(analysis; style = false)
+        printVarmeterData(monitoring; style = false)
     end
 
     @suppress @testset "Print PMU AC Data" begin
-        printPmuData(system, device, analysis; repeat = 10)
-        printPmuData(system, device, analysis; label = "From 1", header = true)
-        printPmuData(system, device, analysis; label = "From 4", footer = true)
-        printPmuData(system, device, analysis; style = false)
-        printPmuData(system, device, analysis; label = "From 1", style = false)
-        printPmuData(system, device, analysis; label = 10, style = false)
+        printPmuData(analysis; repeat = 10)
+        printPmuData(analysis; label = "From 1", header = true)
+        printPmuData(analysis; label = "From 4", footer = true)
+        printPmuData(analysis; style = false)
+        printPmuData(analysis; label = "From 1", style = false)
+        printPmuData(analysis; label = 10, style = false)
+        printPmuData(monitoring)
     end
 
     ########## Print DC Data ##########
-    analysis = dcStateEstimation(system, device)
-    stateEstimation!(system, analysis; power = true)
+    analysis = dcStateEstimation(monitoring)
+    stateEstimation!(analysis; power = true)
 
     @suppress @testset "Print Wattmeter DC Data" begin
-        printWattmeterData(system, device, analysis; repeat = 10)
-        printWattmeterData(system, device, analysis; label = 1, header = true)
-        printWattmeterData(system, device, analysis; label = 4, footer = true)
-        printWattmeterData(system, device, analysis; style = false)
+        printWattmeterData(analysis; repeat = 10)
+        printWattmeterData(analysis; label = 1, header = true)
+        printWattmeterData(analysis; label = 4, footer = true)
+        printWattmeterData(analysis; style = false)
     end
 
     @suppress @testset "Print PMU DC Data" begin
-        printPmuData(system, device, analysis; repeat = 10)
-        printPmuData(system, device, analysis; label = 10, header = true)
-        printPmuData(system, device, analysis; label = 12, footer = true)
-        printPmuData(system, device, analysis; style = false)
+        printPmuData(analysis; repeat = 10)
+        printPmuData(analysis; label = 10, header = true)
+        printPmuData(analysis; label = 12, footer = true)
+        printPmuData(analysis; style = false)
     end
 end
 
 @testset "Print Data in SI Units" begin
-    system = powerSystem(path * "case14test.m")
-    device = measurement("measurement14.h5")
-    addPmu!(system, device; bus = 1, magnitude = 1.0, angle = 0.0)
-    addPmu!(system, device; bus = 3, magnitude = 1.1, angle = -0.3)
+    system, monitoring = ems(path * "case14test.m", "measurement14.h5")
+
+    addPmu!(monitoring; bus = 1, magnitude = 1.0, angle = 0.0)
+    addPmu!(monitoring; bus = 3, magnitude = 1.1, angle = -0.3)
 
     @power(GW, MVAr, MVA)
     @voltage(kV, deg, V)
     @current(MA, deg)
 
     ########## Print AC Data ##########
-    analysis = gaussNewton(system, device)
-    stateEstimation!(system, analysis; power = true, current = true)
+    analysis = gaussNewton(monitoring)
+    stateEstimation!(analysis; power = true, current = true)
 
     @suppress @testset "Print Voltmeter AC Data" begin
-        printVoltmeterData(system, device, analysis)
-        printVoltmeterData(system, device, analysis; label = 1)
+        printVoltmeterData(analysis)
+        printVoltmeterData(analysis; label = 1)
     end
 
     @suppress @testset "Print Ammeter AC Data" begin
-        printAmmeterData(system, device, analysis)
-        printAmmeterData(system, device, analysis; label = "From 1")
+        printAmmeterData(analysis)
+        printAmmeterData(analysis; label = "From 1")
     end
 
     @suppress @testset "Print Wattmeter AC Data" begin
-        printWattmeterData(system, device, analysis)
-        printWattmeterData(system, device, analysis; label = 1)
+        printWattmeterData(analysis)
+        printWattmeterData(analysis; label = 1)
     end
 
     @suppress @testset "Print Varmeter AC Data" begin
-        printVarmeterData(system, device, analysis)
-        printVarmeterData(system, device, analysis; label = 1)
+        printVarmeterData(analysis)
+        printVarmeterData(analysis; label = 1)
     end
 
     @suppress @testset "Print PMU AC Data" begin
-        printPmuData(system, device, analysis)
-        printPmuData(system, device, analysis; label = "From 1")
-        printPmuData(system, device, analysis; label = 9)
+        printPmuData(analysis)
+        printPmuData(analysis; label = "From 1")
+        printPmuData(analysis; label = 9)
     end
 
     ########## Print DC Data ##########
-    analysis = dcStateEstimation(system, device)
-    stateEstimation!(system, analysis; power = true)
+    analysis = dcStateEstimation(monitoring)
+    stateEstimation!(analysis; power = true)
 
     @suppress @testset "Print Wattmeter DC Data" begin
-        printWattmeterData(system, device, analysis)
-        printWattmeterData(system, device, analysis; label = 1)
+        printWattmeterData(analysis)
+        printWattmeterData(analysis; label = 1)
     end
 
     @suppress @testset "Print PMU DC Data" begin
-        printPmuData(system, device, analysis)
-        printPmuData(system, device, analysis; label = 9)
+        printPmuData(analysis)
+        printPmuData(analysis; label = 9)
     end
 end

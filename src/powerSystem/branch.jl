@@ -1,17 +1,11 @@
 """
-    addBranch!(system::PowerSystem, [analysis::Analysis];
+    addBranch!(system::PowerSystem;
         label, from, to, status,
         resistance, reactance, conductance, susceptance, turnsRatio, shiftAngle,
         minDiffAngle, maxDiffAngle, minFromBus, maxFromBus, minToBus, maxToBus, type)
 
-The function adds a new branch to the `PowerSystem` type. A branch can be added between
-already defined buses.
-
-# Arguments
-If the `Analysis` type is omitted, the function applies changes to the `PowerSystem` type
-only. However, when including the `Analysis` type, it updates both the `PowerSystem` and
-`Analysis` types. This streamlined approach circumvents the necessity for completely
-reconstructing vectors and matrices when adding a new branch.
+The function adds a new branch to the `PowerSystem` type. A branch can be added between already
+defined buses.
 
 # Keywords
 The branch is defined with the following keywords:
@@ -43,22 +37,19 @@ The branch is defined with the following keywords:
 Note that when powers are given in SI units, they correspond to three-phase power.
 
 # Updates
-The function updates the `branch` field within the `PowerSystem` type, and in cases where
-parameters impact variables in the `ac` and `dc` fields, it automatically adjusts the
-fields. Furthermore, it guarantees that any modifications to the parameters are transmitted
-to the `Analysis` type.
+The function updates the `branch` field within the `PowerSystem` type, and in cases where parameters
+impact variables in the `ac` and `dc` fields, it automatically adjusts the fields.
 
 # Default Settings
 By default, certain keywords are assigned default values: `status = 1`, `turnsRatio = 1.0`,
-`type = 3`, `minDiffAngle = -2pi`, and `maxDiffAngle = 2pi`. The rest of the keywords are
-initialized with a value of zero. However, the user can modify these default settings by
-utilizing the [`@branch`](@ref @branch) macro.
+`type = 3`, `minDiffAngle = -2pi`, and `maxDiffAngle = 2pi`. The rest of the keywords are initialized
+with a value of zero. However, the user can modify these default settings by utilizing the
+[`@branch`](@ref @branch) macro.
 
 # Units
-The default units for the keyword parameters are per-units and radians. However, the user
-can choose to use other units besides per-units and radians by utilizing macros such as
-[`@power`](@ref @power), [`@voltage`](@ref @voltage), [`@current`](@ref @current), and
-[`@parameter`](@ref @parameter).
+The default units for the keyword parameters are per-units and radians. However, the user can choose
+to use other units besides per-units and radians by utilizing macros such as [`@power`](@ref @power),
+[`@voltage`](@ref @voltage), [`@current`](@ref @current), and [`@parameter`](@ref @parameter).
 
 # Examples
 Adding a branch using the default unit system:
@@ -74,6 +65,7 @@ addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.12, shiftAngle = 
 Adding a branch using a custom unit system:
 ```jldoctest
 @voltage(pu, deg)
+
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.25, reactive = -0.04)
@@ -102,8 +94,8 @@ function addBranch!(
         throw(ErrorException("Invalid value for from or to keywords."))
     end
 
-    push!(branch.layout.from, system.bus.label[getLabel(system.bus, from, "bus")])
-    push!(branch.layout.to, system.bus.label[getLabel(system.bus, to, "bus")])
+    push!(branch.layout.from, getIndex(system.bus, from, "bus"))
+    push!(branch.layout.to, getIndex(system.bus, to, "bus"))
 
     add!(branch.layout.status, key.status, def.status)
     checkStatus(branch.layout.status[end])
@@ -159,125 +151,131 @@ function addBranch!(
     end
 end
 
+"""
+    addBranch!(analysis::Analysis; kwargs...)
+
+The function extends the [`addBranch!`](@ref addBranch!(::PowerSystem)) function. When the `Analysis`
+type is passed, the function first adds the specified branch to the `PowerSystem` type using the
+provided `kwargs`, and then adds the same branch to the `Analysis` type.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+analysis = newtonRaphson(system)
+
+addBranch!(analysis; label = 21, reactance = 0.21, susceptance = 0.06)
+```
+"""
 function addBranch!(
-    system::PowerSystem,
-    analysis::ACPowerFlow{T};
+    analysis::AcPowerFlow{T};
     label::IntStrMiss = missing,
     from::IntStrMiss,
     to::IntStrMiss,
     kwargs...
 ) where T <: Union{NewtonRaphson, GaussSeidel}
 
-    addBranch!(system; label, from, to, kwargs...)
+    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
+    addBranch!(analysis.system; label, from, to, kwargs...)
 end
 
 function addBranch!(
-    system::PowerSystem,
-    analysis::ACPowerFlow{FastNewtonRaphson};
+    analysis::AcPowerFlow{FastNewtonRaphson};
     label::IntStrMiss = missing,
     from::IntStrMiss,
     to::IntStrMiss,
     kwargs...
 )
-    addBranch!(system; label, from, to, kwargs...)
+    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
+    addBranch!(analysis.system; label, from, to, kwargs...)
 
-    if system.branch.layout.status[system.branch.number] == 1
-        fastNewtonRaphsonJacobian(system, analysis, system.branch.number, 1)
+    if analysis.system.branch.layout.status[analysis.system.branch.number] == 1
+        jacobian(analysis.system, analysis, analysis.system.branch.number)
     end
 end
 
 function addBranch!(
-    system::PowerSystem,
-    ::DCPowerFlow;
+    analysis::DcPowerFlow;
     label::IntStrMiss = missing,
     from::IntStrMiss,
     to::IntStrMiss,
     kwargs...
 )
-    addBranch!(system; label, from, to, kwargs...)
+    errorTypeConversion(analysis.system.bus.layout.slack, analysis.method.signature[:slack])
+    addBranch!(analysis.system; label, from, to, kwargs...)
 end
 
 function addBranch!(
-    system::PowerSystem,
-    analysis::ACOptimalPowerFlow;
+    analysis::AcOptimalPowerFlow;
     label::IntStrMiss = missing,
     from::IntStrMiss,
     to::IntStrMiss,
     kwargs...
 )
-    branch = system.branch
+    system = analysis.system
     jump = analysis.method.jump
-    constr = analysis.method.constraint
-    variable = analysis.method.variable
+    var = analysis.method.variable
+    con = analysis.method.constraint
 
     addBranch!(system; label, from, to, kwargs...)
 
-    if branch.layout.status[end] == 1
-        from = branch.layout.from[end]
-        to = branch.layout.to[end]
+    if system.branch.layout.status[end] == 1
+        i, j = fromto(system, system.branch.number)
 
-        updateBalance(system, analysis, from; active = true, reactive = true)
-        updateBalance(system, analysis, to; active = true, reactive = true)
+        remove!(jump, con.balance.active, i)
+        remove!(jump, con.balance.reactive, i)
+        addBalance(system, jump, var, con, i)
 
-        addFlow(
-            system, jump, variable.magnitude, variable.angle,
-            constr.flow.from, constr.flow.to, branch.number
-        )
-        addAngle(system, jump, variable.angle, constr.voltage.angle, branch.number)
+        remove!(jump, con.balance.active, j)
+        remove!(jump, con.balance.reactive, j)
+        addBalance(system, jump, var, con, j)
+
+        addFlow(system, jump, var.voltage, con, system.branch.number)
+        addAngle(system, jump, var.voltage.angle, con.voltage.angle, system.branch.number)
     end
 end
 
 function addBranch!(
-    system::PowerSystem,
-    analysis::DCOptimalPowerFlow;
+    analysis::DcOptimalPowerFlow;
     label::IntStrMiss = missing,
     from::IntStrMiss,
     to::IntStrMiss,
     kwargs...
 )
-    branch = system.branch
+    system = analysis.system
     jump = analysis.method.jump
-    constr = analysis.method.constraint
-    variable = analysis.method.variable
-    key = branchkwargs(; kwargs...)
+    var = analysis.method.variable
+    con = analysis.method.constraint
 
     addBranch!(system; label, from, to, kwargs...)
 
-    if branch.layout.status[end] == 1
-        from = branch.layout.from[end]
-        to = branch.layout.to[end]
+    if system.branch.layout.status[end] == 1
+        i, j = fromto(system, system.branch.number)
 
-        rhs = isset(key.shiftAngle)
-        updateBalance(system, analysis, from; voltage = true, rhs = rhs)
-        updateBalance(system, analysis, to; voltage = true, rhs = rhs)
+        remove!(jump, con.balance.active, i)
+        addBalance(system, jump, var, con, i)
 
-        addFlow(system, jump, variable.angle, constr.flow.active, branch.number)
-        addAngle(system, jump, variable.angle, constr.voltage.angle, branch.number)
+        remove!(jump, con.balance.active, j)
+        addBalance(system, jump, var, con, j)
+
+        addFlow(system, jump, var.voltage.angle, con.flow.active, system.branch.number)
+        addAngle(system, jump, var.voltage.angle, con.voltage.angle, system.branch.number)
     end
 end
 
 """
-    updateBranch!(system::PowerSystem, [analysis::Analysis]; kwargs...)
+    updateBranch!(system::PowerSystem; kwargs...)
 
 The function allows for the alteration of parameters for an existing branch.
 
-# Arguments
-If the `Analysis` type is omitted, the function applies changes to the `PowerSystem` type
-only. However, when including the `Analysis` type, it updates both the `PowerSystem` and
-`Analysis` types. This streamlined process avoids the need to completely rebuild vectors
-and matrices when adjusting these parameter.
-
 # Keywords
-To update a specific branch, provide the necessary `kwargs` input arguments in accordance
-with the keywords specified in the [`addBranch!`](@ref addBranch!) function, along with
-their respective values. Ensure that the `label` keyword matches the label of the existing
-branch. If any keywords are omitted, their corresponding values will remain unchanged.
+To update a specific branch, provide the necessary `kwargs` input arguments in accordance with the
+keywords specified in the [`addBranch!`](@ref addBranch!) function, along with their respective
+values. Ensure that the `label` keyword matches the label of the existing branch. If any keywords
+are omitted, their corresponding values will remain unchanged.
 
 # Updates
-The function updates the `branch` field within the `PowerSystem` type, and in cases where
-parameters impact variables in the `ac` and `dc` fields, it automatically adjusts the fields.
-Furthermore, it guarantees that any modifications to the parameters are transmitted to the
-`Analysis` type.
+The function updates the `branch` field within the `PowerSystem` type, and in cases where parameters
+impact variables in the `ac` and `dc` fields, it automatically adjusts the fields.
 
 # Units
 Units for input parameters can be changed using the same method as described for the
@@ -291,7 +289,7 @@ addBus!(system; label = "Bus 1", type = 3, active = 0.25, reactive = -0.04)
 addBus!(system; label = "Bus 2", type = 1, active = 0.15, reactive = 0.08)
 
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
-updateBranch!(system; label = "Branch 1", reactance = 0.02, susceptance = 0.062)
+updateBranch!(system; label = "Branch 1", reactance = 0.22, susceptance = 0.06)
 ```
 """
 function updateBranch!(system::PowerSystem; label::IntStrMiss, kwargs...)
@@ -302,7 +300,7 @@ function updateBranch!(system::PowerSystem; label::IntStrMiss, kwargs...)
     baseVoltg = system.base.voltage
     key = branchkwargs(; kwargs...)
 
-    idx = branch.label[getLabel(branch, label, "branch")]
+    idx = getIndex(branch, label, "branch")
 
     statusNew = key.status
     statusOld = branch.layout.status[idx]
@@ -392,175 +390,199 @@ function updateBranch!(system::PowerSystem; label::IntStrMiss, kwargs...)
     end
 end
 
+"""
+    updateBranch!(analysis::Analysis; kwargs...)
+
+The function extends the [`updateBranch!`](@ref updateBranch!(::PowerSystem)) function. By passing
+the `Analysis` type, the function first updates the specific branch within the `PowerSystem` type
+using the provided `kwargs`, and then updates the `Analysis` type with all parameters associated
+with that branch.
+
+A key feature of this function is that any prior modifications made to the specified branch are
+preserved and applied to the `Analysis` type when the function is executed, ensuring consistency
+throughout the update process.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+analysis = newtonRaphson(system)
+
+updateBranch!(analysis; label = 2, reactance = 0.32, susceptance = 0.07)
+```
+"""
 function updateBranch!(
-    system::PowerSystem,
-    analysis::ACPowerFlow{T};
+    analysis::AcPowerFlow{T};
     label::IntStrMiss,
     kwargs...
 ) where T <: Union{NewtonRaphson, GaussSeidel}
 
-    updateBranch!(system; label, kwargs...)
+    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
+    updateBranch!(analysis.system; label, kwargs...)
 end
 
-function updateBranch!(
-    system::PowerSystem,
-    analysis::ACPowerFlow{FastNewtonRaphson};
-    label::IntStrMiss,
-    kwargs...
-)
-    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+function updateBranch!(analysis::AcPowerFlow{FastNewtonRaphson}; label::IntStrMiss, kwargs...)
+    system = analysis.system
+    jcbP = analysis.method.active.jacobian
+    jcbQ = analysis.method.reactive.jacobian
+
+    errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
+    updateBranch!(system; label, kwargs...)
+
+    idx = getIndex(system.branch, label, "branch")
+    from, to = fromto(system, idx)
+
+    if from != system.bus.layout.slack && to != system.bus.layout.slack
+        jcbP[analysis.method.pvpq[from], analysis.method.pvpq[to]] = 0.0
+        jcbP[analysis.method.pvpq[to], analysis.method.pvpq[from]] = 0.0
+    end
+    if from != system.bus.layout.slack
+        jcbP[analysis.method.pvpq[from], analysis.method.pvpq[from]] = 0.0
+    end
+    if to != system.bus.layout.slack
+        jcbP[analysis.method.pvpq[to], analysis.method.pvpq[to]] = 0.0
+    end
+
+    if analysis.method.pq[from] != 0 && analysis.method.pq[to] != 0
+        jcbQ[analysis.method.pq[from], analysis.method.pq[to]] = 0.0
+        jcbQ[analysis.method.pq[to], analysis.method.pq[from]] = 0.0
+    end
+    if system.bus.layout.type[from] == 1
+        jcbQ[analysis.method.pq[from], analysis.method.pq[from]] = 0.0
+    end
+    if system.bus.layout.type[to] == 1
+        jcbQ[analysis.method.pq[to], analysis.method.pq[to]] = 0.0
+    end
+
+    @inbounds for idx = 1:system.branch.number
+        if system.branch.layout.status[idx] == 1
+            i, j = fromto(system, idx)
+
+            if i ∉ (from, to) && j ∉ (from, to)
+                continue
+            end
+
+            p, q = jacobianCoefficient(system, analysis.method, idx)
+
+            if (from, to) == (i, j) || (to, from) == (i, j)
+                Pijθij(system, analysis.method, p, i, j)
+                QijVij(analysis.method, q, i, j)
+            end
+            if i in (from, to)
+                Pijθi(system, analysis.method, p, i)
+                QijVi(system, analysis.method, q, i)
+            end
+            if j in (from, to)
+                Pijθj(system, analysis.method, p, j)
+                QijVj(system, analysis.method, q, j)
+            end
+        end
+    end
+
+    @inbounds for i in (from, to)
+        if system.bus.layout.type[i] == 1
+            jcbQ[analysis.method.pq[i], analysis.method.pq[i]] += system.bus.shunt.susceptance[i]
+        end
+    end
+end
+
+function updateBranch!(analysis::DcPowerFlow; label::IntStrMiss, kwargs...)
+    errorTypeConversion(analysis.system.bus.layout.slack, analysis.method.signature[:slack])
+    updateBranch!(analysis.system; label, kwargs...)
+end
+
+function updateBranch!(analysis::AcOptimalPowerFlow; label::IntStrMiss, kwargs...)
+    system = analysis.system
+    jump = analysis.method.jump
+    var = analysis.method.variable
+    con = analysis.method.constraint
+
+    updateBranch!(system; label, kwargs...)
+
+    idx = getIndex(system.branch, label, "branch")
+    i, j = fromto(system, idx)
+
+    remove!(jump, con.balance.active, i)
+    remove!(jump, con.balance.reactive, i)
+    addBalance(system, jump, var, con, i)
+
+    remove!(jump, con.balance.active, j)
+    remove!(jump, con.balance.reactive, j)
+    addBalance(system, jump, var, con, j)
+
+    remove!(jump, con.flow.from, idx)
+    remove!(jump, con.flow.to, idx)
+    remove!(jump, con.voltage.angle, idx)
 
     if system.branch.layout.status[idx] == 1
-        fastNewtonRaphsonJacobian(system, analysis, idx, -1)
+        addFlow(system, jump, var.voltage, con, idx)
+        addAngle(system, jump, var.voltage.angle, con.voltage.angle, idx)
     end
+end
+
+function updateBranch!(analysis::DcOptimalPowerFlow; label::IntStrMiss, kwargs...)
+    system = analysis.system
+    jump = analysis.method.jump
+    var = analysis.method.variable
+    con = analysis.method.constraint
 
     updateBranch!(system; label, kwargs...)
+
+    idx = getIndex(system.branch, label, "branch")
+    i, j = fromto(system, idx)
+
+    remove!(jump, con.balance.active, i)
+    addBalance(system, jump, var, con, i)
+
+    remove!(jump, con.balance.active, j)
+    addBalance(system, jump, var, con, j)
+
+    remove!(jump, con.flow.active, idx)
+    remove!(jump, con.voltage.angle, idx)
 
     if system.branch.layout.status[idx] == 1
-        fastNewtonRaphsonJacobian(system, analysis, idx, 1)
-    end
-end
-
-function updateBranch!(system::PowerSystem, ::DCPowerFlow; label::IntStrMiss, kwargs...)
-    updateBranch!(system; label, kwargs...)
-end
-
-function updateBranch!(
-    system::PowerSystem,
-    analysis::ACOptimalPowerFlow;
-    label::IntStrMiss,
-    kwargs...
-)
-    jump = analysis.method.jump
-    constr = analysis.method.constraint
-    variable = analysis.method.variable
-    key = branchkwargs(; kwargs...)
-
-    idx = system.branch.label[getLabel(system.branch, label, "branch")]
-    statusOld = system.branch.layout.status[idx]
-
-    updateBranch!(system; label, kwargs...)
-
-    statusNew = system.branch.layout.status[idx]
-    diffAngle = isset(key.minDiffAngle, key.maxDiffAngle)
-    flow = isset(key.minFromBus, key.maxFromBus, key.minToBus, key.maxToBus, key.type)
-    pimodel = isset(
-        key.resistance, key.reactance, key.conductance,
-        key.susceptance, key.turnsRatio, key.shiftAngle
-    )
-
-    if pimodel || statusNew != statusOld
-        from, to = fromto(system, idx)
-        updateBalance(system, analysis, from; active = true, reactive = true)
-        updateBalance(system, analysis, to; active = true, reactive = true)
-    end
-
-    if statusOld == 1
-        if statusNew == 0 || (statusNew == 1 && (pimodel || flow))
-            remove!(jump, constr.flow.from, idx)
-            remove!(jump, constr.flow.to, idx)
-        end
-        if statusNew == 0 || (statusNew == 1 && diffAngle)
-            remove!(jump, constr.voltage.angle, idx)
-        end
-    end
-
-    if statusNew == 1
-        if statusOld == 0 || (statusOld == 1 && (pimodel || flow))
-            addFlow(
-                system, jump, variable.magnitude, variable.angle,
-                constr.flow.from, constr.flow.to, idx
-            )
-        end
-        if statusOld == 0 || (statusOld == 1 && diffAngle)
-            addAngle(system, jump, variable.angle, constr.voltage.angle, idx)
-        end
-    end
-end
-
-function updateBranch!(
-    system::PowerSystem,
-    analysis::DCOptimalPowerFlow;
-    label::IntStrMiss,
-    kwargs...
-)
-    jump = analysis.method.jump
-    constr = analysis.method.constraint
-    variable = analysis.method.variable
-    key = branchkwargs(; kwargs...)
-
-    idx = system.branch.label[getLabel(system.branch, label, "branch")]
-    statusOld = system.branch.layout.status[idx]
-
-    updateBranch!(system; label, kwargs...)
-
-    statusNew = system.branch.layout.status[idx]
-    pimodel = isset(key.reactance, key.turnsRatio, key.shiftAngle)
-    diffAngle = isset(key.minDiffAngle, key.maxDiffAngle)
-    flow = isset(key.minFromBus, key.maxFromBus, key.minToBus, key.maxToBus)
-
-    if pimodel || statusNew != statusOld
-        from, to = fromto(system, idx)
-        updateBalance(system, analysis, from; voltage = true, rhs = true)
-        updateBalance(system, analysis, to; voltage = true, rhs = true)
-    end
-
-    if statusOld == 1
-        if statusNew == 0 || (statusNew == 1 && (pimodel || flow))
-            remove!(jump, constr.flow.active, idx)
-        end
-        if statusNew == 0 || (statusNew == 1 && diffAngle)
-            remove!(jump, constr.voltage.angle, idx)
-        end
-    end
-
-    if statusNew == 1
-        if statusOld == 0 || (statusOld == 1 && (pimodel || flow))
-            addFlow(system, jump, variable.angle, constr.flow.active, idx)
-        end
-        if statusOld == 0 || (statusOld == 1 && diffAngle)
-            addAngle(system, jump, variable.angle, constr.voltage.angle, idx)
-        end
+        addFlow(system, jump, var.voltage.angle, con.flow.active, idx)
+        addAngle(system, jump, var.voltage.angle, con.voltage.angle, idx)
     end
 end
 
 """
     @branch(kwargs...)
 
-The macro generates a template for a branch, which can be utilized to define a branch using
-the [`addBranch!`](@ref addBranch!) function.
+The macro generates a template for a branch.
 
 # Keywords
-To define the branch template, the `kwargs` input arguments must be provided in accordance
-with the keywords specified within the [`addBranch!`](@ref addBranch!) function, along with
-their corresponding values.
+To define the branch template, the `kwargs` input arguments must be provided in accordance with the
+keywords specified within the [`addBranch!`](@ref addBranch!) function, along with their
+corresponding values.
 
 # Units
-The default units for the keyword parameters are per-units and radians. However, the user
-can choose to use other units besides per-units and radians by utilizing macros such as
-[`@power`](@ref @power), [`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
+The default units for the keyword parameters are per-units and radians. However, the user can choose
+to use other units besides per-units and radians by utilizing macros such as [`@power`](@ref @power),
+[`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
 
 # Examples
 Adding a branch template using the default unit system:
 ```jldoctest
+@branch(reactance = 0.12, shiftAngle = 0.1745)
+
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.25, reactive = -0.04)
 addBus!(system; label = "Bus 2", type = 1, active = 0.15, reactive = 0.08)
 
-@branch(reactance = 0.12, shiftAngle = 0.1745)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2")
 ```
 
 Adding a branch template using a custom unit system:
 ```jldoctest
 @voltage(pu, deg)
+@branch(shiftAngle = 10)
+
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.25, reactive = -0.04)
 addBus!(system; label = "Bus 2", type = 1,  active = 0.15, reactive = 0.08)
 
-@branch(shiftAngle = 10)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 ```
 """
@@ -623,31 +645,26 @@ macro branch(kwargs...)
 end
 
 ##### Branch Flow Rating Type #####
-function flowType(system::PowerSystem, pfx::PrefixLive, basePowerInv::Float64, i::Int64)
+function flowType(system::PowerSystem, pfx::PrefixLive, basePowerInv::Float64, idx::Int64)
     branch = system.branch
     baseVoltg = system.base.voltage
+    type = branch.flow.type[idx]
 
-    if branch.flow.type[i] == 1
+    if type == 1
         pfxLive = pfx.activePower
         baseInvFrom = basePowerInv
         baseInvTo = basePowerInv
-    elseif branch.flow.type[i] == 2 || branch.flow.type[i] == 3
+    elseif type == 2 || type == 3
         pfxLive = pfx.apparentPower
         baseInvFrom = basePowerInv
         baseInvTo = basePowerInv
-    elseif branch.flow.type[i] == 4 || branch.flow.type[i] == 5
+    elseif type == 4 || type == 5
         pfxLive = pfx.currentMagnitude
-        baseInvFrom = baseCurrentInv(
-            basePowerInv, baseVoltg.value[branch.layout.from[i]] * baseVoltg.prefix
-        )
-        baseInvTo = baseCurrentInv(
-            basePowerInv, baseVoltg.value[branch.layout.to[i]] * baseVoltg.prefix
-        )
+        i, j = fromto(system, idx)
+        baseInvFrom = baseCurrentInv(basePowerInv, baseVoltg.value[i] * baseVoltg.prefix)
+        baseInvTo = baseCurrentInv(basePowerInv, baseVoltg.value[j] * baseVoltg.prefix)
     else
-        throw(ErrorException(
-            "The value $(branch.flow.type[i]) of " *
-            "the branch flow rating type is illegal.")
-        )
+        throw(ErrorException("The value $type of the branch flow rating type is illegal."))
     end
 
     return pfxLive, baseInvFrom, baseInvTo

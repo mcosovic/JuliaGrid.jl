@@ -1,10 +1,8 @@
 """
-    addVoltmeter!(system::PowerSystem, device::Measurement;
-        label, bus, magnitude, variance, noise, status)
+    addVoltmeter!(monitoring::Measurement; label, bus, magnitude, variance, noise, status)
 
-The function adds a voltmeter that measures bus voltage magnitude to the `Measurement`
-type within a given `PowerSystem` type. The voltmeter can be added to an already
-defined bus.
+The function adds a voltmeter that measures bus voltage magnitude to the `Measurement` type. The
+voltmeter can be added to an already defined bus.
 
 # Keywords
 The voltmeter is defined with the following keywords:
@@ -22,49 +20,49 @@ The voltmeter is defined with the following keywords:
 Note that all voltage values are referenced to line-to-neutral voltages.
 
 # Updates
-The function updates the `voltmeter` field of the `Measurement` composite type.
+The function updates the `voltmeter` field of the `Measurement` type.
 
 # Default Settings
 Default settings for certain keywords are as follows: `variance = 1e-4`, `noise = false`,
-`status = 1`, and users can modify these default settings using the
-[`@voltmeter`](@ref @voltmeter) macro.
-
-# Units
-The default units for the `magnitude` and `variance` keywords are per-units. However,
-users can choose to use volts as the units by applying the [`@voltage`](@ref @voltage)
+`status = 1`, and users can modify these default settings using the [`@voltmeter`](@ref @voltmeter)
 macro.
 
+# Units
+The default units for the `magnitude` and `variance` keywords are per-units. However, users can
+choose to use volts as the units by applying the [`@voltage`](@ref @voltage) macro.
+
 # Examples
-Adding a voltmeter using the default unit system:
+Adding voltmeters using the default unit system:
 ```jldoctest
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 132e3)
 
-addVoltmeter!(system, device; label = "Voltmeter 1", bus = "Bus 1", magnitude = 1.1)
+addVoltmeter!(monitoring; label = "Voltmeter 1", bus = "Bus 1", magnitude = 1.1)
+addVoltmeter!(monitoring; label = "Voltmeter 2", bus = "Bus 1", magnitude = 1.0)
 ```
 
-Adding a voltmeter using a custom unit system:
+Adding voltmeters using a custom unit system:
 ```jldoctest
 @voltage(kV, rad, kV)
-system = powerSystem()
-device = measurement()
+
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 132.0)
 
-addVoltmeter!(system, device; label = "Voltmeter 1", bus = "Bus 1", magnitude = 145.2)
+addVoltmeter!(monitoring; label = "Voltmeter 1", bus = "Bus 1", magnitude = 145.2)
+addVoltmeter!(monitoring; label = "Voltmeter 2", bus = "Bus 1", magnitude = 132.0)
 ```
 """
 function addVoltmeter!(
-    system::PowerSystem,
-    device::Measurement;
+    monitoring::Measurement;
     label::IntStrMiss = missing,
     bus::IntStrMiss,
     magnitude::FltIntMiss,
     kwargs...
 )
-    volt = device.voltmeter
+    system = monitoring.system
+    volt = monitoring.voltmeter
     def = template.voltmeter
     key = meterkwargs(template.voltmeter.noise; kwargs...)
 
@@ -84,16 +82,15 @@ function addVoltmeter!(
 end
 
 """
-    addVoltmeter!(system::PowerSystem, device::Measurement, analysis::AC;
-        variance, noise, status)
+    addVoltmeter!(monitoring::Measurement, analysis::AC; variance, noise, status)
 
 The function incorporates voltmeters into the `Measurement` type for every bus within the
-`PowerSystem` type. These measurements are derived from the exact bus voltage magnitudes
-defined in the `AC` type.
+`PowerSystem` type from which `Measurement` was created. These measurements are derived from the
+exact bus voltage magnitudes defined in the `AC` type.
 
 # Keywords
 Voltmeters can be configured using:
-* `variance` (pu or V): Measurements Variance.
+* `variance` (pu or V): Measurements variance.
 * `noise`: Defines the method for generating the measurement means:
   * `noise = true`: adds white Gaussian noise to the voltage magnitudes using the defined variance,
   * `noise = false`: uses the exact voltage magnitude values without adding noise.
@@ -102,37 +99,31 @@ Voltmeters can be configured using:
   * `status = 0`: out-of-service.
 
 # Updates
-The function updates the `voltmeter` field of the `Measurement` composite type.
+The function updates the `voltmeter` field of the `Measurement` type.
 
 # Default Settings
-Default settings for keywords are as follows: `variance = 1e-4`, `noise = false`, and
-`status = 1`, and users can modify these default settings using the
-[`@voltmeter`](@ref @voltmeter) macro.
+Default settings for keywords are as follows: `variance = 1e-4`, `noise = false`, and `status = 1`,
+and users can modify these default settings using the [`@voltmeter`](@ref @voltmeter) macro.
 
 # Units
-By default, the unit for `variance` is per-unit. However, users can choose to use
-volts as the units by applying the [`@voltage`](@ref @voltage) macro.
+By default, the unit for `variance` is per-unit. However, users can choose to use volts as the units
+by applying the [`@voltage`](@ref @voltage) macro.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement()
-
-acModel!(system)
-analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
-
 @voltmeter(label = "Voltmeter ?")
-addVoltmeter!(system, device, analysis; variance = 1e-3, noise = true)
+
+system, monitoring = ems("case14.h5")
+
+analysis = newtonRaphson(system)
+powerFlow!(analysis)
+
+addVoltmeter!(monitoring, analysis; variance = 1e-3, noise = true)
 ```
 """
-function addVoltmeter!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::AC;
-    kwargs...
-)
-    volt = device.voltmeter
+function addVoltmeter!(monitoring::Measurement, analysis::AC; kwargs...)
+    system = monitoring.system
+    volt = monitoring.voltmeter
     def = template.voltmeter
     baseVoltg = system.base.voltage
     key = meterkwargs(template.voltmeter.noise; kwargs...)
@@ -142,7 +133,7 @@ function addVoltmeter!(
 
     if status != -1
         volt.layout.index = collect(1:system.bus.number)
-        volt.label = OrderedDict{template.config.device, Int64}()
+        volt.label = OrderedDict{template.config.monitoring, Int64}()
         sizehint!(volt.label, volt.number)
 
         volt.magnitude.mean = similar(analysis.voltage.magnitude)
@@ -168,27 +159,18 @@ function addVoltmeter!(
 end
 
 """
-    updateVoltmeter!(system::PowerSystem, device::Measurement, [analysis::Analysis];
-        kwargs...)
+    updateVoltmeter!(monitoring::Measurement; kwargs...)
 
 The function allows for the alteration of parameters for a voltmeter.
 
-# Arguments
-If the `Analysis` type is omitted, the function applies changes to the `Measurement`
-type only. However, when including the `Analysis` type, it updates both the `Measurement`
-and `Analysis` types. This streamlined process avoids the need to completely rebuild
-vectors and matrices when adjusting these parameters.
-
 # Keywords
-To update a specific voltmeter, provide the necessary `kwargs` input arguments in
-accordance with the keywords specified in the [`addVoltmeter!`](@ref addVoltmeter!)
-function, along with their respective values. Ensure that the `label` keyword matches the
-`label` of the existing voltmeter. If any keywords are omitted, their corresponding values
-will remain unchanged.
+To update a specific voltmeter, provide the necessary `kwargs` input arguments in accordance with
+the keywords specified in the [`addVoltmeter!`](@ref addVoltmeter!) function, along with their
+respective values. Ensure that the `label` keyword matches the `label` of the existing voltmeter.
+If any keywords are omitted, their corresponding values will remain unchanged.
 
 # Updates
-The function updates the `voltmeter` field within the `Measurement` type. Furthermore, it
-guarantees that any modifications to the parameters are transmitted to the `Analysis` type.
+The function updates the `voltmeter` field within the `Measurement` type.
 
 # Units
 Units for input parameters can be changed using the same method as described for the
@@ -196,26 +178,25 @@ Units for input parameters can be changed using the same method as described for
 
 # Example
 ```jldoctest
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 132e3)
 
-addVoltmeter!(system, device; label = "Voltmeter 1", bus = "Bus 1", magnitude = 1.1)
-updateVoltmeter!(system, device; label = "Voltmeter 1", magnitude = 0.9)
+addVoltmeter!(monitoring; label = "Voltmeter 1", bus = "Bus 1", magnitude = 1.1)
+updateVoltmeter!(monitoring; label = "Voltmeter 1", magnitude = 0.9)
 ```
 """
 function updateVoltmeter!(
-    system::PowerSystem,
-    device::Measurement;
+    monitoring::Measurement;
     label::IntStrMiss,
     magnitude::FltIntMiss = missing,
     kwargs...
 )
-    volt = device.voltmeter
+    system = monitoring.system
+    volt = monitoring.voltmeter
     key = meterkwargs(template.voltmeter.noise; kwargs...)
 
-    idx = volt.label[getLabel(volt, label, "voltmeter")]
+    idx = getIndex(volt, label, "voltmeter")
     idxBus = volt.layout.index[idx]
     baseInv = sqrt(3) / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
 
@@ -225,110 +206,110 @@ function updateVoltmeter!(
     )
 end
 
+"""
+    updateVoltmeter!(analysis::Analysis; kwargs...)
+
+The function extends the [`updateVoltmeter!`](@ref updateVoltmeter!(::Measurement)) function. By
+passing the `Analysis` type, the function first updates the specific voltmeter within the
+`Measurement` type using the provided `kwargs`, and then updates the `Analysis` type with all
+parameters associated with that voltmeter.
+
+A key feature of this function is that any prior modifications made to the specified voltmeter are
+preserved and applied to the `Analysis` type when the function is executed, ensuring consistency
+throughout the update process.
+
+# Example
+```jldoctest
+system, monitoring = ems("case14.h5", "monitoring.h5")
+
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis)
+
+updateVoltmeter!(analysis; label = 2, magnitude = 0.9)
+```
+"""
 function updateVoltmeter!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::ACStateEstimation{GaussNewton{T}};
+    analysis::AcStateEstimation{GaussNewton{T}};
     label::IntStrMiss,
     magnitude::FltIntMiss = missing,
     kwargs...
 ) where T <: Union{Normal, Orthogonal}
 
-    voltmeter = device.voltmeter
-    se = analysis.method
-    key = meterkwargs(template.voltmeter.noise; kwargs...)
+    volt = analysis.monitoring.voltmeter
+    wls = analysis.method
 
-    idx = voltmeter.label[getLabel(voltmeter, label, "voltmeter")]
-    idxBus = voltmeter.layout.index[idx]
-    baseInv = sqrt(3) / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
+    updateVoltmeter!(analysis.monitoring; label, magnitude, kwargs...)
 
-    updateMeter(
-        voltmeter.magnitude, idx, magnitude, key.variance,
-        key.status, key.noise, pfx.voltageMagnitude, baseInv
-    )
+    idx = getIndex(volt, label, "voltmeter")
+    idxBus = volt.layout.index[idx]
 
-    idxBus += system.bus.number
-    if voltmeter.magnitude.status[idx] == 1
-        se.jacobian[idx, idxBus] = 1.0
-        se.mean[idx] = voltmeter.magnitude.mean[idx]
-        se.type[idx] = 1
-    else
-        se.jacobian[idx, idxBus] = 0.0
-        se.mean[idx] = 0.0
-        se.residual[idx] = 0.0
-        se.type[idx] = 0
-    end
+    idxBus += analysis.system.bus.number
+    status = volt.magnitude.status[idx]
 
-    if isset(key.variance)
-        se.precision[idx, idx] = 1 / voltmeter.magnitude.variance[idx]
-    end
+    wls.mean[idx] = status * volt.magnitude.mean[idx]
+    wls.precision[idx, idx] = 1 / volt.magnitude.variance[idx]
+    wls.jacobian[idx, idxBus] = status * 1.0
+    wls.residual[idx] = 0.0
+
+    wls.type[idx] = status * 1
 end
 
 function updateVoltmeter!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::ACStateEstimation{LAV};
+    analysis::AcStateEstimation{LAV};
     label::IntStrMiss,
     magnitude::FltIntMiss = missing,
     kwargs...
 )
-    volt = device.voltmeter
-    se = analysis.method
-    key = meterkwargs(template.voltmeter.noise; kwargs...)
+    volt = analysis.monitoring.voltmeter
+    lav = analysis.method
 
-    idx = volt.label[getLabel(volt, label, "voltmeter")]
+    updateVoltmeter!(analysis.monitoring; label, magnitude, kwargs...)
+
+    idx = getIndex(volt, label, "voltmeter")
     idxBus = volt.layout.index[idx]
-    baseInv = sqrt(3) / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
 
-    updateMeter(
-        volt.magnitude, idx, magnitude, key.variance,
-        key.status, key.noise, pfx.voltageMagnitude, baseInv
-    )
-
+    remove!(lav, idx)
     if volt.magnitude.status[idx] == 1
-        add!(se, idx)
-        addConstrLav!(se, se.state.magnitude[idxBus], volt.magnitude.mean[idx], idx)
-    else
-        remove!(se, idx)
+        add!(lav, idx)
+        addConstrLav!(lav, lav.variable.voltage.magnitude[idxBus], volt.magnitude.mean[idx], idx)
     end
 end
 
 """
     @voltmeter(label, variance, noise, status)
 
-The macro generates a template for a voltmeter, which can be utilized to define a voltmeter
-using the [`addVoltmeter!`](@ref addVoltmeter!) function.
+The macro generates a template for a voltmeter.
 
 # Keywords
-To establish the voltmeter template, users can specify default values for the `variance`,
-`noise`, and `status` keywords, along with pattern for labels using the `label` keyword.
+To establish the voltmeter template, users can specify default values for the `variance`, `noise`,
+and `status` keywords, along with pattern for labels using the `label` keyword.
 
 # Units
-By default, the unit for `variance` is per-unit. However, users can choose to use volts
-as the units by applying the [`@voltage`](@ref @voltage) macro.
+By default, the unit for `variance` is per-unit. However, users can choose to use volts as the units
+by applying the [`@voltage`](@ref @voltage) macro.
 
 # Examples
 Adding a voltmeter using the default unit system:
 ```jldoctest
-system = powerSystem()
-device = measurement()
+@voltmeter(label = "Voltmeter ?", variance = 1e-5)
+
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 132e3)
 
-@voltmeter(label = "Voltmeter ?", variance = 1e-5)
-addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.1)
+addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 1.1)
 ```
 
 Adding a voltmeter using a custom unit system:
 ```jldoctest
 @voltage(kV, rad, kV)
-system = powerSystem()
-device = measurement()
+@voltmeter(label = "Voltmeter ?", variance = 0.00132)
+
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 132.0)
 
-@voltmeter(label = "Voltmeter ?", variance = 0.00132)
-addVoltmeter!(system, device; bus = "Bus 1", magnitude = 145.2)
+addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 145.2)
 ```
 """
 macro voltmeter(kwargs...)

@@ -1,25 +1,25 @@
 # [DC State Estimation](@id DCStateEstimationManual)
-To perform the DC state estimation, we first need to have the `PowerSystem` type that has been created with the DC model, alongside the `Measurement` type that retains measurement data. Subsequently, we can formulate either the weighted least-squares (WLS) or the least absolute value (LAV) DC state estimation model encapsulated within the type `DCStateEstimation` using:
+To perform the DC state estimation, we first need to have the `PowerSystem` type that has been created with the DC model, alongside the `Measurement` type that retains measurement data. Subsequently, we can formulate either the weighted least-squares (WLS) or the least absolute value (LAV) DC state estimation model encapsulated within the type `DcStateEstimation` using:
 * [`dcStateEstimation`](@ref dcStateEstimation),
 * [`dcLavStateEstimation`](@ref dcLavStateEstimation).
 
 ---
 
 To obtain bus voltage angles and solve the DC state estimation problem, users can use the wrapper function:
-* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{WLS{Normal}})).
+* [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})).
 
 After solving the DC state estimation, JuliaGrid provides function for computing powers:
-* [`power!`](@ref power!(::PowerSystem, ::DCStateEstimation)).
+* [`power!`](@ref power!(::DcStateEstimation)).
 
 Alternatively, instead of using functions responsible for solving state estimation and computing powers, users can use the wrapper function:
-* [`stateEstimation!`](@ref stateEstimation!(::PowerSystem, ::DCStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal}).
+* [`stateEstimation!`](@ref stateEstimation!(::DcStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal}).
 
 Users can also access specialized functions for computing specific types of [powers](@ref DCPowerAnalysisAPI) for individual buses, branches, or generators within the power system.
 
 ---
 
 ## [Bus Type Modification](@id DCSEBusTypeModificationManual)
-Just like in the [Bus Type Modification](@ref DCBusTypeModificationManual) section, when establishing the `DCStateEstimation` type, the initially assigned slack bus is evaluated and may be altered. If the designated slack bus (`type = 3`) lacks a connected in-service generator, it will be changed to a demand bus (`type = 1`). Conversely, the first generator bus (`type = 2`) with an active in-service generator linked to it will be reassigned as the new slack bus (`type = 3`).
+Just like in the [Bus Type Modification](@ref DCBusTypeModificationManual) section, when establishing the `DcStateEstimation` type, the initially assigned slack bus is evaluated and may be altered. If the designated slack bus (`type = 3`) lacks a connected in-service generator, it will be changed to a demand bus (`type = 1`). Conversely, the first generator bus (`type = 2`) with an active in-service generator linked to it will be reassigned as the new slack bus (`type = 3`).
 
 ---
 
@@ -30,8 +30,7 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.2)
@@ -44,28 +43,28 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
 @wattmeter(label = "Wattmeter ?")
-addWattmeter!(system, device; bus = "Bus 1", active = 0.6, variance = 1e-3)
-addWattmeter!(system, device; bus = "Bus 3", active = -0.4, variance = 1e-2)
-addWattmeter!(system, device; from = "Branch 1", active = 0.18, variance = 1e-4)
-addWattmeter!(system, device; to = "Branch 2", active = -0.42, variance = 1e-4)
+addWattmeter!(monitoring; bus = "Bus 1", active = 0.6, variance = 1e-3)
+addWattmeter!(monitoring; bus = "Bus 3", active = -0.4, variance = 1e-2)
+addWattmeter!(monitoring; from = "Branch 1", active = 0.18, variance = 1e-4)
+addWattmeter!(monitoring; to = "Branch 2", active = -0.42, variance = 1e-4)
 nothing # hide
 ```
 
 The [`dcStateEstimation`](@ref dcStateEstimation) function serves to establish the DC state estimation problem:
 ```@example WLSDCStateEstimationSolution
-analysis = dcStateEstimation(system, device)
+analysis = dcStateEstimation(monitoring)
 nothing # hide
 ```
 
 !!! tip "Tip"
     Here, the user triggers LU factorization as the default method for solving the DC state estimation problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`:
     ```julia WLSDCStateEstimationSolution
-    analysis = dcStateEstimation(system, device, LDLt)
+    analysis = dcStateEstimation(monitoring, LDLt)
     ```
 
-To obtain the bus voltage angles, the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{WLS{Normal}})) function can be invoked as shown:
+To obtain the bus voltage angles, the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function can be invoked as shown:
 ```@example WLSDCStateEstimationSolution
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -85,8 +84,8 @@ The resolution of the WLS state estimation problem using the conventional method
 
 Specifically, by specifying the `Orthogonal` argument in the [`dcStateEstimation`](@ref dcStateEstimation) function, JuliaGrid implements a more robust approach to obtain the WLS estimator, which proves particularly beneficial when substantial differences exist among measurement variances:
 ```@example WLSDCStateEstimationSolution
-analysis = dcStateEstimation(system, device, Orthogonal)
-solve!(system, analysis)
+analysis = dcStateEstimation(monitoring, Orthogonal)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -96,15 +95,15 @@ nothing # hide
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example WLSDCStateEstimationSolution
 @voltage(pu, deg)
-printBusData(system, analysis)
+printBusData(analysis)
 @default(unit) # hide
 ```
 
 Next, users can easily customize the print results for specific buses, for example:
 ```julia
-printBusData(system, analysis; label = "Bus 1", header = true)
-printBusData(system, analysis; label = "Bus 2")
-printBusData(system, analysis; label = "Bus 3", footer = true)
+printBusData(analysis; label = "Bus 1", header = true)
+printBusData(analysis; label = "Bus 2")
+printBusData(analysis; label = "Bus 3", footer = true)
 ```
 
 ---
@@ -113,7 +112,7 @@ printBusData(system, analysis; label = "Bus 3", footer = true)
 Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
 ```julia
 open("bus.txt", "w") do file
-    printBusData(system, analysis, file)
+    printBusData(analysis, file)
 end
 ```
 
@@ -130,25 +129,25 @@ To obtain an LAV estimator, users need to employ one of the [solvers](https://ju
 using Ipopt
 using JuMP  # hide
 
-analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer; verbose = 1)
+analysis = dcLavStateEstimation(monitoring, Ipopt.Optimizer; verbose = 1)
 nothing # hide
 ```
 
 ---
 
 ##### Setup Initial Primal Values
-In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{WLS{Normal}})) function is executed. Initial primal values are determined based on the `voltage` fields within the `DCStateEstimation` type. By default, these values are initially established using the initial bus voltage angles from `PowerSystem` type:
+In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function is executed. Initial primal values are determined based on the `voltage` fields within the `DcStateEstimation` type. By default, these values are initially established using the initial bus voltage angles from `PowerSystem` type:
 ```@repl WLSDCStateEstimationSolution
 print(system.bus.label, analysis.voltage.angle)
 ```
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{WLS{Normal}})) function.
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function.
 
 ---
 
 ##### Solution
 To solve the formulated LAV state estimation model, simply execute the following function:
 ```@example WLSDCStateEstimationSolution
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -166,14 +165,13 @@ nothing # hide
 ## [Measurement Set Update](@id DCMeasurementsAlterationManual)
 After establishing the `Measurement` type using the [`measurement`](@ref measurement) function, users gain the capability to incorporate new measurement devices or update existing ones.
 
-Once updates are completed, users can seamlessly progress towards generating the `DCStateEstimation` type using the [`dcStateEstimation`](@ref dcStateEstimation) or [`dcLavStateEstimation`](@ref dcLavStateEstimation) function. Ultimately, resolving the DC state estimation is achieved through the utilization of the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{WLS{Normal}})) function:
+Once updates are completed, users can seamlessly progress towards generating the `DcStateEstimation` type using the [`dcStateEstimation`](@ref dcStateEstimation) or [`dcLavStateEstimation`](@ref dcLavStateEstimation) function. Ultimately, resolving the DC state estimation is achieved through the utilization of the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem()
-device = measurement() # <- Initialize the Measurement instance
+system, monitoring = ems() # <- Initialize the Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1)
@@ -183,18 +181,18 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
 
 @wattmeter(label = "Wattmeter ?")
-addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
-addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
+addWattmeter!(monitoring; bus = "Bus 2", active = -0.11, variance = 1e-3)
+addWattmeter!(monitoring; from = "Branch 1", active = 0.09, variance = 1e-4)
 
-analysis = dcStateEstimation(system, device) # <- Build DCStateEstimation for the model
-solve!(system, analysis)
+analysis = dcStateEstimation(monitoring) # <- Build DcStateEstimation for the model
+solve!(analysis)
 
-addWattmeter!(system, device; to = "Branch 1", active = -0.12, variance = 1e-4)
-updateWattmeter!(system, device; label = "Wattmeter 1", status = 0)
-updateWattmeter!(system, device; label = "Wattmeter 2", active = 0.1, noise = false)
+addWattmeter!(monitoring; to = "Branch 1", active = -0.12, variance = 1e-4)
+updateWattmeter!(monitoring; label = "Wattmeter 1", status = 0)
+updateWattmeter!(monitoring; label = "Wattmeter 2", active = 0.1, noise = false)
 
-analysis = dcStateEstimation(system, device) # <- Build DCStateEstimation for new model
-solve!(system, analysis)
+analysis = dcStateEstimation(monitoring) # <- Build DcStateEstimation for new model
+solve!(analysis)
 nothing # hide
 ```
 
@@ -204,21 +202,20 @@ nothing # hide
 ---
 
 ## [State Estimation Update](@id DCStateEstimationUpdateManual)
-An advanced methodology involves users establishing the `DCStateEstimation` type using [`dcStateEstimation`](@ref dcStateEstimation) or [`dcLavStateEstimation`](@ref dcLavStateEstimation) just once. After this initial setup, users can seamlessly modify existing measurement devices without the need to recreate the `DCStateEstimation` type.
+An advanced methodology involves users establishing the `DcStateEstimation` type using [`dcStateEstimation`](@ref dcStateEstimation) or [`dcLavStateEstimation`](@ref dcLavStateEstimation) just once. After this initial setup, users can seamlessly modify existing measurement devices without the need to recreate the `DcStateEstimation` type.
 
-This advancement extends beyond the previous scenario where recreating the `Measurement` type was unnecessary, to now include the scenario where `DCStateEstimation` also does not need to be recreated. Such efficiency can be particularly advantageous in cases where JuliaGrid can reuse gain matrix factorization.
+This advancement extends beyond the previous scenario where recreating the `Measurement` type was unnecessary, to now include the scenario where `DcStateEstimation` also does not need to be recreated. Such efficiency can be particularly advantageous in cases where JuliaGrid can reuse gain matrix factorization.
 
 !!! tip "Tip"
-    The addition of new measurements after the creation of `DCStateEstimation` is not practical in terms of reusing this type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
+    The addition of new measurements after the creation of `DcStateEstimation` is not practical in terms of reusing this type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
 
-We can modify the prior example to achieve the same model without establishing `DCStateEstimation` twice:
+We can modify the prior example to achieve the same model without establishing `DcStateEstimation` twice:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem()
-device = measurement() # <- Initialize the Measurement instance
+system, monitoring = ems() # <- Initialize the Measurement instance
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.1)
@@ -228,35 +225,35 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.1)
 
 @wattmeter(label = "Wattmeter ?")
-addWattmeter!(system, device; bus = "Bus 2", active = -0.11, variance = 1e-3)
-addWattmeter!(system, device; from = "Branch 1", active = 0.09, variance = 1e-4)
-addWattmeter!(system, device; to = "Branch 1", active = -0.12, variance = 1e-4, status = 0)
+addWattmeter!(monitoring; bus = "Bus 2", active = -0.11, variance = 1e-3)
+addWattmeter!(monitoring; from = "Branch 1", active = 0.09, variance = 1e-4)
+addWattmeter!(monitoring; to = "Branch 1", active = -0.12, variance = 1e-4, status = 0)
 
-analysis = dcStateEstimation(system, device) # <- Build DCStateEstimation for the model
-solve!(system, analysis)
+analysis = dcStateEstimation(monitoring) # <- Build DcStateEstimation for the model
+solve!(analysis)
 
-updateWattmeter!(system, device, analysis; label = "Wattmeter 1", status = 0)
-updateWattmeter!(system, device, analysis; label = "Wattmeter 2", active = 0.1)
-updateWattmeter!(system, device, analysis; label = "Wattmeter 3", status = 1, noise = false)
+updateWattmeter!(analysis; label = "Wattmeter 1", status = 0)
+updateWattmeter!(analysis; label = "Wattmeter 2", active = 0.1)
+updateWattmeter!(analysis; label = "Wattmeter 3", status = 1, noise = false)
 
-# <- No need for re-build; we have already updated the existing DCStateEstimation instance
-solve!(system, analysis)
+# <- No need for re-build; we have already updated the existing DcStateEstimation instance
+solve!(analysis)
 nothing # hide
 ```
 
 !!! note "Info"
-    This concept removes the need to rebuild both the `Measurement` and the `DCStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse the symbolic factorizations of LU or LDLt, provided that the nonzero pattern of the gain matrix remains unchanged.
+    This concept removes the need to rebuild both the `Measurement` and the `DcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse the symbolic factorizations of LU or LDLt, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 
 ##### Reusing Weighted Least-Squares Matrix Factorization
-Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the measurement value of the `Wattmeter 2`. It is important to note that these adjustments do not impact the variance or status of the measurement device, which can affect the gain matrix. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{WLS{Normal}})) function:
+Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the measurement value of the `Wattmeter 2`. It is important to note that these adjustments do not impact the variance or status of the measurement device, which can affect the gain matrix. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-updateWattmeter!(system, device, analysis; label = "Wattmeter 2", active = 0.091)
+updateWattmeter!(analysis; label = "Wattmeter 2", active = 0.091)
 
 solve!(system, analysis)
 nothing # hide
@@ -268,14 +265,13 @@ nothing # hide
 ---
 
 ## [Power Analysis](@id DCSEPowerAnalysisManual)
-After obtaining the solution from the DC state estimation, calculating powers related to buses and branches is facilitated by using the [`power!`](@ref power!(::PowerSystem, ::DCStateEstimation)) function. For instance, let us consider the model for which we obtained the DC state estimation solution:
+After obtaining the solution from the DC state estimation, calculating powers related to buses and branches is facilitated by using the [`power!`](@ref power!(::DcStateEstimation)) function. For instance, let us consider the model for which we obtained the DC state estimation solution:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", type = 3, conductance = 1e-3)
 addBus!(system; label = "Bus 2", type = 1, active = 0.2)
@@ -287,19 +283,19 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance =
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
-addWattmeter!(system, device; bus = "Bus 1", active = 0.6, variance = 1e-3)
-addWattmeter!(system, device; bus = "Bus 3", active = -0.4, variance = 1e-2)
-addWattmeter!(system, device; from = "Branch 1", active = 0.18, variance = 1e-4)
-addWattmeter!(system, device; to = "Branch 2", active = -0.42, variance = 1e-4)
+addWattmeter!(monitoring; bus = "Bus 1", active = 0.6, variance = 1e-3)
+addWattmeter!(monitoring; bus = "Bus 3", active = -0.4, variance = 1e-2)
+addWattmeter!(monitoring; from = "Branch 1", active = 0.18, variance = 1e-4)
+addWattmeter!(monitoring; to = "Branch 2", active = -0.42, variance = 1e-4)
 
-analysis = dcStateEstimation(system, device)
-solve!(system, analysis)
+analysis = dcStateEstimation(monitoring)
+solve!(analysis)
 nothing # hide
 ```
 
 We can compute active powers using the following function:
 ```@example WLSDCStateEstimationSolution
-power!(system, analysis)
+power!(analysis)
 nothing # hide
 ```
 
@@ -309,7 +305,7 @@ print(system.bus.label, analysis.power.injection.active)
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses, and branches that are calculated by the [`power!`](@ref power!(::PowerSystem, ::DCStateEstimation)) function, we suggest referring to the tutorials on.
+    To better understand the powers associated with buses, and branches that are calculated by the [`power!`](@ref power!(::DcStateEstimation)) function, we suggest referring to the tutorials on.
 
 ---
 
@@ -317,7 +313,7 @@ print(system.bus.label, analysis.power.injection.active)
 Users can utilize any of the print functions outlined in the [Print API](@ref setupPrintAPI) related to the DC analysis. For example, to print state estimation data related to wattmeters, we can use:
 ```@example WLSDCStateEstimationSolution
 @power(MW, pu)
-printWattmeterData(system, device, analysis)
+printWattmeterData(analysis)
 @default(unit) # hide
 ```
 
@@ -329,7 +325,7 @@ For CSV output, users should first generate a simple table with `style = false`,
 using CSV
 
 io = IOBuffer()
-printWattmeterData(system, device, analysis, io; style = false)
+printWattmeterData(analysis, io; style = false)
 CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ```
 
@@ -338,7 +334,7 @@ CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ##### Active Power Injection
 To calculate active power injection associated with a specific bus, the function can be used:
 ```@repl WLSDCStateEstimationSolution
-active = injectionPower(system, analysis; label = "Bus 1")
+active = injectionPower(analysis; label = "Bus 1")
 ```
 
 ---
@@ -346,7 +342,7 @@ active = injectionPower(system, analysis; label = "Bus 1")
 ##### Active Power Injection from Generators
 To calculate active power injection from the generators at a specific bus, the function can be used:
 ```@repl WLSDCStateEstimationSolution
-active = supplyPower(system, analysis; label = "Bus 1")
+active = supplyPower(analysis; label = "Bus 1")
 ```
 
 ---
@@ -354,6 +350,6 @@ active = supplyPower(system, analysis; label = "Bus 1")
 ##### Active Power Flow
 Similarly, we can compute the active power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
 ```@repl WLSDCStateEstimationSolution
-active = fromPower(system, analysis; label = "Branch 1")
-active = toPower(system, analysis; label = "Branch 1")
+active = fromPower(analysis; label = "Branch 1")
+active = toPower(analysis; label = "Branch 1")
 ```

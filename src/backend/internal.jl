@@ -276,7 +276,7 @@ macro config(kwargs...)
                     end
                     setfield!(template.config, :label, datatype)
                     setfield!(template.config, :system, datatype)
-                    setfield!(template.config, :device, datatype)
+                    setfield!(template.config, :monitoring, datatype)
                 end
                 if parameter == :verbose
                     setfield!(template.config, :verbose, Int64(eval(kwarg.args[2])))
@@ -303,7 +303,7 @@ end
 
 ##### Parse Prefix #####
 function parsePrefix(input::String, suffix::String)
-    if suffix in ["pu"; "rad"]
+    if suffix in ("pu", "rad")
         scale = 0.0
     elseif suffix == "deg"
         scale = pi / 180
@@ -311,7 +311,7 @@ function parsePrefix(input::String, suffix::String)
         scale = 1.0
         if suffix != input
             prefix = split(input, suffix)[1]
-            if !(prefix in keys(prefixList))
+            if prefix ∉ keys(prefixList)
                 throw(ErrorException("The unit prefix " * prefix * " is illegal."))
             else
                 scale = prefixList[prefix]
@@ -344,7 +344,7 @@ The `mode` argument can take on the following values:
 
 # Example
 ```jldoctest
-@default(unit)
+@default(template)
 ```
 """
 macro default(mode::Symbol)
@@ -570,7 +570,7 @@ macro default(mode::Symbol)
         if mode == :template
             template.config.label = String
             template.config.system = String
-            template.config.device = String
+            template.config.monitoring = String
             template.config.verbose = 0
         end
     end

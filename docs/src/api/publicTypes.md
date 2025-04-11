@@ -33,24 +33,24 @@ using JuliaGrid
 * [`QR`](@ref JuliaGrid.QR)
 
 ###### Power Flow
-* [`ACPowerFlow`](@ref ACPowerFlow)
+* [`AcPowerFlow`](@ref AcPowerFlow)
 * [`NewtonRaphson`](@ref NewtonRaphson)
 * [`FastNewtonRaphson`](@ref FastNewtonRaphson)
 * [`GaussSeidel`](@ref GaussSeidel)
-* [`DCPowerFlow`](@ref DCPowerFlow)
+* [`DcPowerFlow`](@ref DcPowerFlow)
 
 ###### Optimal Power Flow
-* [`ACOptimalPowerFlow`](@ref ACOptimalPowerFlow)
-* [`DCOptimalPowerFlow`](@ref DCOptimalPowerFlow)
+* [`AcOptimalPowerFlow`](@ref AcOptimalPowerFlow)
+* [`DcOptimalPowerFlow`](@ref DcOptimalPowerFlow)
 
 ###### Observability Analysis
 * [`Island`](@ref Island)
-* [`PMUPlacement`](@ref PMUPlacement)
+* [`PmuPlacement`](@ref PmuPlacement)
 
 ###### State Estimation
-* [`ACStateEstimation`](@ref ACStateEstimation)
-* [`PMUStateEstimation`](@ref PMUStateEstimation)
-* [`DCStateEstimation`](@ref DCStateEstimation)
+* [`AcStateEstimation`](@ref AcStateEstimation)
+* [`PmuStateEstimation`](@ref PmuStateEstimation)
+* [`DcStateEstimation`](@ref DcStateEstimation)
 * [`GaussNewton`](@ref GaussNewton)
 * [`WLS`](@ref WLS)
 * [`LAV`](@ref LAV)
@@ -101,19 +101,19 @@ JuliaGrid.QR
 
 ## Power Flow
 ```@docs
-ACPowerFlow
+AcPowerFlow
 NewtonRaphson
 FastNewtonRaphson
 GaussSeidel
-DCPowerFlow
+DcPowerFlow
 ```
 
 ---
 
 ## Optimal Power Flow
 ```@docs
-ACOptimalPowerFlow
-DCOptimalPowerFlow
+AcOptimalPowerFlow
+DcOptimalPowerFlow
 ```
 
 ---
@@ -121,16 +121,16 @@ DCOptimalPowerFlow
 ## Observability Analysis
 ```@docs
 Island
-PMUPlacement
+PmuPlacement
 ```
 
 ---
 
 ## State Estimation
 ```@docs
-ACStateEstimation
-PMUStateEstimation
-DCStateEstimation
+AcStateEstimation
+PmuStateEstimation
+DcStateEstimation
 GaussNewton
 WLS
 LAV

@@ -1,147 +1,149 @@
 ##### Power System Statistics #####
-function printTop(
-    system::PowerSystem,
-    analysis::Union{ACPowerFlow, DCPowerFlow},
-    verbose::Int64,
-)
-    if verbose == 3
-        bus = system.bus
-        brc = system.branch
-        gen = system.generator
-
-        shunt = fill(0.0, 3)
-        @inbounds for i = 1:system.bus.number
-            if bus.shunt.susceptance[i] != 0.0 || bus.shunt.conductance[i] != 0.0
-                shunt[1] += 1
-                if bus.shunt.susceptance[i] > 0.0
-                    shunt[2] += 1
-                elseif bus.shunt.susceptance[i] < 0.0
-                    shunt[3] += 1
-                end
-            end
-        end
-
-        tran = fill(0.0, 3)
-        @inbounds for i = 1:brc.number
-            if brc.parameter.turnsRatio[i] != 1.0 || brc.parameter.shiftAngle[i] != 0.0
-                tran[1] += 1
-                if brc.layout.status[i] == 1
-                    tran[2] += 1
-                end
-            end
-        end
-        tran[3] = tran[1] - tran[2]
-
-        pq = npq(system, analysis)
-
-        col1 = max(textwidth(string(bus.number)), textwidth(string(brc.number)))
-        col2 = max(textwidth(string(shunt[1])), textwidth(string(brc.number - tran[1])))
-        col3 = max(textwidth(string(gen.number)), textwidth(string(tran[1])))
-
-        print("Number of buses:    ")
-        print(format(Format("%*i"), col1, bus.number))
-
-        print("   Number of shunts: ")
-        print(format(Format("%*i"), col2, shunt[1]))
-
-        print("   Number of generators:   ")
-        print(format(Format("%*i\n"), col3, gen.number))
-
-        print("  Demand:           ")
-        print(format(Format("%*i"), col1, pq))
-
-        print("     Capacitor:      ")
-        print(format(Format("%*i"), col2, shunt[2]))
-
-        print("     In-service:           ")
-        print(format(Format("%*i\n"), col3, gen.layout.inservice))
-
-        print("  Generator:        ")
-        print(format(Format("%*i"), col1, bus.number - 1 - pq))
-
-        print("     Reactor:        ")
-        print(format(Format("%*i"), col2, shunt[3]))
-
-        print("     Out-of-service:       ")
-        print(format(Format("%*i\n\n"), col3, gen.number - gen.layout.inservice))
-
-        print("Number of branches: ")
-        print(format(Format("%*i"), col1, brc.number))
-
-        print("   Number of lines:  ")
-        print(format(Format("%*i"), col2, brc.number - tran[1]))
-
-        print("   Number of transformers: ")
-        print(format(Format("%*i\n"), col3, tran[1]))
-
-        print("  In-service:       ")
-        print(format(Format("%*i"), col1, brc.layout.inservice))
-
-        print("     In-service:     ")
-        print(format(Format("%*i"), col2, brc.layout.inservice - tran[2]))
-
-        print("     In-service:           ")
-        print(format(Format("%*i\n"), col3, tran[2]))
-
-        print("  Out-of-service:   ")
-        print(format(Format("%*i"), col1, brc.number - brc.layout.inservice))
-
-        print("     Out-of-service: ")
-        print(format(Format("%*i"), col2, brc.number - brc.layout.inservice - tran[3]))
-
-        print("     Out-of-service:       ")
-        print(format(Format("%*i\n\n"), col3, tran[3]))
+function printTop(system::PowerSystem, analysis::Union{AcPowerFlow, DcPowerFlow}, verbose::Int64)
+    if verbose != 3
+        return
     end
+
+    bus = system.bus
+    brc = system.branch
+    gen = system.generator
+
+    shunt = fill(0.0, 3)
+    @inbounds for i = 1:system.bus.number
+        if bus.shunt.susceptance[i] != 0.0 || bus.shunt.conductance[i] != 0.0
+            shunt[1] += 1
+            if bus.shunt.susceptance[i] > 0.0
+                shunt[2] += 1
+            elseif bus.shunt.susceptance[i] < 0.0
+                shunt[3] += 1
+            end
+        end
+    end
+
+    tran = fill(0.0, 3)
+    @inbounds for i = 1:brc.number
+        if brc.parameter.turnsRatio[i] != 1.0 || brc.parameter.shiftAngle[i] != 0.0
+            tran[1] += 1
+            if brc.layout.status[i] == 1
+                tran[2] += 1
+            end
+        end
+    end
+    tran[3] = tran[1] - tran[2]
+
+    pq = npq(system, analysis)
+
+    col1 = max(textwidth(string(bus.number)), textwidth(string(brc.number)))
+    col2 = max(textwidth(string(shunt[1])), textwidth(string(brc.number - tran[1])))
+    col3 = max(textwidth(string(gen.number)), textwidth(string(tran[1])))
+
+    print("Number of buses:    ")
+    print(format(Format("%*i"), col1, bus.number))
+
+    print("   Number of shunts: ")
+    print(format(Format("%*i"), col2, shunt[1]))
+
+    print("   Number of generators:   ")
+    print(format(Format("%*i\n"), col3, gen.number))
+
+    print("  Demand:           ")
+    print(format(Format("%*i"), col1, pq))
+
+    print("     Capacitor:      ")
+    print(format(Format("%*i"), col2, shunt[2]))
+
+    print("     In-service:           ")
+    print(format(Format("%*i\n"), col3, gen.layout.inservice))
+
+    print("  Generator:        ")
+    print(format(Format("%*i"), col1, bus.number - 1 - pq))
+
+    print("     Reactor:        ")
+    print(format(Format("%*i"), col2, shunt[3]))
+
+    print("     Out-of-service:       ")
+    print(format(Format("%*i\n\n"), col3, gen.number - gen.layout.inservice))
+
+    print("Number of branches: ")
+    print(format(Format("%*i"), col1, brc.number))
+
+    print("   Number of lines:  ")
+    print(format(Format("%*i"), col2, brc.number - tran[1]))
+
+    print("   Number of transformers: ")
+    print(format(Format("%*i\n"), col3, tran[1]))
+
+    print("  In-service:       ")
+    print(format(Format("%*i"), col1, brc.layout.inservice))
+
+    print("     In-service:     ")
+    print(format(Format("%*i"), col2, brc.layout.inservice - tran[2]))
+
+    print("     In-service:           ")
+    print(format(Format("%*i\n"), col3, tran[2]))
+
+    print("  Out-of-service:   ")
+    print(format(Format("%*i"), col1, brc.number - brc.layout.inservice))
+
+    print("     Out-of-service: ")
+    print(format(Format("%*i"), col2, brc.number - brc.layout.inservice - tran[3]))
+
+    print("     Out-of-service:       ")
+    print(format(Format("%*i\n\n"), col3, tran[3]))
 end
 
-function npq(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
+function npq(system::PowerSystem, analysis::AcPowerFlow{NewtonRaphson})
     lastindex(analysis.method.increment) - system.bus.number + 1
 end
 
-function npq(::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
+function npq(::PowerSystem, analysis::AcPowerFlow{FastNewtonRaphson})
     lastindex(analysis.method.reactive.increment)
 end
 
-function npq(::PowerSystem, analysis::ACPowerFlow{GaussSeidel})
+function npq(::PowerSystem, analysis::AcPowerFlow{GaussSeidel})
     lastindex(analysis.method.pq)
 end
 
-function npq(system::PowerSystem, ::DCPowerFlow)
+function npq(system::PowerSystem, ::DcPowerFlow)
     count(x -> x == 1, system.bus.layout.type)
 end
 
 ##### Measurement Statistics #####
 function printTop(
-    analysis::ACStateEstimation{GaussNewton{T}},
+    analysis::AcStateEstimation{GaussNewton{T}},
     verbose::Int64
 ) where T <: Union{Normal, Orthogonal}
 
-    if verbose == 3
-        range = analysis.method.range
-        type = analysis.method.type
-
-        vol = count(x -> x == 0, type[range[1]:range[2] - 1])
-        amp = count(x -> x == 0, type[range[2]:range[3] - 1])
-        wat = count(x -> x == 0, type[range[3]:range[4] - 1])
-        var = count(x -> x == 0, type[range[4]:range[5] - 1])
-        pmu = Int64(floor(eps() + count(x -> x == 0, type[range[5]:range[6] - 1]) / 2))
-        printTopData(range, vol, amp, wat, var, pmu, verbose)
+    if verbose != 3
+        return
     end
+
+    range = analysis.method.range
+    type = analysis.method.type
+
+    vol = count(x -> x == 0, type[range[1]:range[2] - 1])
+    amp = count(x -> x == 0, type[range[2]:range[3] - 1])
+    wat = count(x -> x == 0, type[range[3]:range[4] - 1])
+    var = count(x -> x == 0, type[range[4]:range[5] - 1])
+    pmu = Int64(floor(eps() + count(x -> x == 0, type[range[5]:range[6] - 1]) / 2))
+    printTopData(range, vol, amp, wat, var, pmu, verbose)
 end
 
-function printTop(analysis::ACStateEstimation{LAV}, verbose::Int64)
-    if verbose == 3
-        range = analysis.method.range
-        type = is_fixed.(analysis.method.deviation.positive)
-
-        vol = count(x -> x == 1, type[range[1]:range[2] - 1])
-        amp = count(x -> x == 1, type[range[2]:range[3] - 1])
-        wat = count(x -> x == 1, type[range[3]:range[4] - 1])
-        var = count(x -> x == 1, type[range[4]:range[5] - 1])
-        display(count(x -> x == 1, type[range[5]:range[6] - 1]) / 2)
-        pmu = Int64(floor(eps() + count(x -> x == 1, type[range[5]:range[6] - 1]) / 2))
-        printTopData(range, vol, amp, wat, var, pmu, verbose)
+function printTop(analysis::AcStateEstimation{LAV}, verbose::Int64)
+    if verbose != 3
+        return
     end
+
+    range = analysis.method.range
+    type = is_fixed.(analysis.method.deviation.positive)
+
+    vol = count(x -> x == 1, type[range[1]:range[2] - 1])
+    amp = count(x -> x == 1, type[range[2]:range[3] - 1])
+    wat = count(x -> x == 1, type[range[3]:range[4] - 1])
+    var = count(x -> x == 1, type[range[4]:range[5] - 1])
+    display(count(x -> x == 1, type[range[5]:range[6] - 1]) / 2)
+    pmu = Int64(floor(eps() + count(x -> x == 1, type[range[5]:range[6] - 1]) / 2))
+    printTopData(range, vol, amp, wat, var, pmu, verbose)
 end
 
 function printTopData(
@@ -153,76 +155,78 @@ function printTopData(
     pmuo::Int64,
     verbose::Int64
 )
-    if verbose == 3
-        vol = range[2] - range[1]
-        amp = range[3] - range[2]
-        wat = range[4] - range[3]
-        var = range[5] - range[4]
-        pmu = Int64((range[6] - range[5]) / 2)
-        dev = vol + amp + wat + var + pmu
-
-        col1 = max(textwidth(string(wat)), textwidth(string(amp)))
-        col2 = max(textwidth(string(var)),textwidth(string(pmu)))
-        col3 = textwidth(string(dev))
-
-        print("Number of wattmeters: ")
-        print(format(Format("%*i"), col1, wat))
-
-        print("   Number of varmeters: ")
-        print(format(Format("%*i"), col2, var))
-
-        print("   Number of voltmeters: ")
-        print(format(Format("%*i\n"), col3, vol))
-
-        print("  In-service:         ")
-        print(format(Format("%*i"), col1, wat - wato))
-
-        print("     In-service:        ")
-        print(format(Format("%*i"), col2, var - varo))
-
-        print("     In-service:         ")
-        print(format(Format("%*i\n"), col3, vol - volo))
-
-        print("  Out-of-service:     ")
-        print(format(Format("%*i"), col1, wato))
-
-        print("     Out-of-service:    ")
-        print(format(Format("%*i"), col2, varo))
-
-        print("     Out-of-service:     ")
-        print(format(Format("%*i\n\n"), col3, volo))
-
-        print("Number of ammeters:   ")
-        print(format(Format("%*i"), col1, amp))
-
-        print("   Number of PMUs:      ")
-        print(format(Format("%*i"), col2, pmu))
-
-        print("   Number of devices:    ")
-        print(format(Format("%*i\n"), col3, dev))
-
-        print("  In-service:         ")
-        print(format(Format("%*i"), col1, amp - ampo))
-
-        print("     In-service:        ")
-        print(format(Format("%*i"), col2, pmu - pmuo))
-
-        print("     In-service:         ")
-        print(format(Format("%*i\n"), col3, dev - volo - ampo - wato - varo - pmuo))
-
-        print("  Out-of-service:     ")
-        print(format(Format("%*i"), col1, ampo))
-
-        print("     Out-of-service:    ")
-        print(format(Format("%*i"), col2, pmuo))
-
-        print("     Out-of-service:     ")
-        print(format(Format("%*i\n\n"), col3, volo + ampo + wato + varo + pmuo))
+    if verbose != 3
+        return
     end
+
+    vol = range[2] - range[1]
+    amp = range[3] - range[2]
+    wat = range[4] - range[3]
+    var = range[5] - range[4]
+    pmu = Int64((range[6] - range[5]) / 2)
+    dev = vol + amp + wat + var + pmu
+
+    col1 = max(textwidth(string(wat)), textwidth(string(amp)))
+    col2 = max(textwidth(string(var)),textwidth(string(pmu)))
+    col3 = textwidth(string(dev))
+
+    print("Number of wattmeters: ")
+    print(format(Format("%*i"), col1, wat))
+
+    print("   Number of varmeters: ")
+    print(format(Format("%*i"), col2, var))
+
+    print("   Number of voltmeters: ")
+    print(format(Format("%*i\n"), col3, vol))
+
+    print("  In-service:         ")
+    print(format(Format("%*i"), col1, wat - wato))
+
+    print("     In-service:        ")
+    print(format(Format("%*i"), col2, var - varo))
+
+    print("     In-service:         ")
+    print(format(Format("%*i\n"), col3, vol - volo))
+
+    print("  Out-of-service:     ")
+    print(format(Format("%*i"), col1, wato))
+
+    print("     Out-of-service:    ")
+    print(format(Format("%*i"), col2, varo))
+
+    print("     Out-of-service:     ")
+    print(format(Format("%*i\n\n"), col3, volo))
+
+    print("Number of ammeters:   ")
+    print(format(Format("%*i"), col1, amp))
+
+    print("   Number of PMUs:      ")
+    print(format(Format("%*i"), col2, pmu))
+
+    print("   Number of devices:    ")
+    print(format(Format("%*i\n"), col3, dev))
+
+    print("  In-service:         ")
+    print(format(Format("%*i"), col1, amp - ampo))
+
+    print("     In-service:        ")
+    print(format(Format("%*i"), col2, pmu - pmuo))
+
+    print("     In-service:         ")
+    print(format(Format("%*i\n"), col3, dev - volo - ampo - wato - varo - pmuo))
+
+    print("  Out-of-service:     ")
+    print(format(Format("%*i"), col1, ampo))
+
+    print("     Out-of-service:    ")
+    print(format(Format("%*i"), col2, pmuo))
+
+    print("     Out-of-service:     ")
+    print(format(Format("%*i\n\n"), col3, volo + ampo + wato + varo + pmuo))
 end
 
 ##### Model Statistics #####
-function printMiddle(analysis::ACPowerFlow{NewtonRaphson}, verbose::Int64)
+function printMiddle(analysis::AcPowerFlow{NewtonRaphson}, verbose::Int64)
     if verbose == 2 || verbose == 3
         entri = nnz(analysis.method.jacobian)
         state = lastindex(analysis.method.increment)
@@ -239,7 +243,7 @@ function printMiddle(analysis::ACPowerFlow{NewtonRaphson}, verbose::Int64)
     end
 end
 
-function printMiddle(analysis::ACPowerFlow{FastNewtonRaphson}, verbose::Int64)
+function printMiddle(analysis::AcPowerFlow{FastNewtonRaphson}, verbose::Int64)
     if verbose == 2 || verbose == 3
         method = analysis.method
 
@@ -266,7 +270,7 @@ function printMiddle(analysis::ACPowerFlow{FastNewtonRaphson}, verbose::Int64)
     end
 end
 
-function printMiddle(analysis::ACPowerFlow{GaussSeidel}, verbose::Int64)
+function printMiddle(analysis::AcPowerFlow{GaussSeidel}, verbose::Int64)
     if verbose == 2 || verbose == 3
         stapq = lastindex(analysis.method.pq)
         stapv = lastindex(analysis.method.pv)
@@ -284,7 +288,7 @@ function printMiddle(analysis::ACPowerFlow{GaussSeidel}, verbose::Int64)
     end
 end
 
-function printMiddle(system::PowerSystem, ::DCPowerFlow, verbose::Int64)
+function printMiddle(system::PowerSystem, ::DcPowerFlow, verbose::Int64)
     if verbose == 2 || verbose == 3
         entries = nnz(system.model.dc.nodalMatrix)
         maxmess = "Number of entries in the nodal matrix:"
@@ -300,7 +304,7 @@ function printMiddle(system::PowerSystem, ::DCPowerFlow, verbose::Int64)
     end
 end
 
-function printMiddle(system::PowerSystem, analysis::ACStateEstimation, verbose::Int64)
+function printMiddle(system::PowerSystem, analysis::AcStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         wd = textwidth(string(nnz(analysis.method.jacobian))) + 1
         mwd = textwidth("Number of entries in the Jacobian:")
@@ -323,7 +327,7 @@ function printMiddle(system::PowerSystem, analysis::ACStateEstimation, verbose::
     end
 end
 
-function printMiddle(system::PowerSystem, analysis::DCStateEstimation, verbose::Int64)
+function printMiddle(system::PowerSystem, analysis::DcStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         entries = nnz(analysis.method.coefficient)
         maxmess = "Number of entries in the coefficient matrix:"
@@ -342,7 +346,7 @@ function printMiddle(system::PowerSystem, analysis::DCStateEstimation, verbose::
     end
 end
 
-function printMiddle(system::PowerSystem, analysis::PMUStateEstimation, verbose::Int64)
+function printMiddle(system::PowerSystem, analysis::PmuStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         entries = nnz(analysis.method.coefficient)
         maxmess = "Number of entries in the coefficient matrix:"
@@ -362,7 +366,7 @@ function printMiddle(system::PowerSystem, analysis::PMUStateEstimation, verbose:
 end
 
 ##### Solver Data #####
-function printSolver(analysis::ACPowerFlow, delP::Float64, delQ::Float64, verbose::Int64)
+function printSolver(analysis::AcPowerFlow, delP::Float64, delQ::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if analysis.method.iteration % 10 == 0
             println("-"^63)
@@ -377,7 +381,7 @@ end
 
 function printSolver(
     system::PowerSystem,
-    analysis::ACPowerFlow{T},
+    analysis::AcPowerFlow{T},
     verbose::Int64,
 ) where T <: Union{NewtonRaphson, FastNewtonRaphson}
 
@@ -396,23 +400,23 @@ function printSolver(
     end
 end
 
-function printSolver(::PowerSystem, ::ACPowerFlow{GaussSeidel}, verbose::Int64)
+function printSolver(::PowerSystem, ::AcPowerFlow{GaussSeidel}, verbose::Int64)
     if verbose == 2 || verbose == 3
         print("\n")
     end
 end
 
-function minmaxIncrement(system::PowerSystem, analysis::ACPowerFlow{NewtonRaphson})
+function minmaxIncrement(system::PowerSystem, analysis::AcPowerFlow{NewtonRaphson})
     extrema(abs, analysis.method.increment[1:(system.bus.number - 1)]),
     extrema(abs, analysis.method.increment[system.bus.number:end])
 end
 
-function minmaxIncrement(::PowerSystem, analysis::ACPowerFlow{FastNewtonRaphson})
+function minmaxIncrement(::PowerSystem, analysis::AcPowerFlow{FastNewtonRaphson})
     extrema(abs, analysis.method.active.increment),
     extrema(abs, analysis.method.reactive.increment)
 end
 
-function printSolver(analysis::ACStateEstimation, inc::Float64, verbose::Int64)
+function printSolver(analysis::AcStateEstimation, inc::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if analysis.method.iteration % 10 == 0
             println("-"^47)
@@ -426,7 +430,7 @@ function printSolver(analysis::ACStateEstimation, inc::Float64, verbose::Int64)
     end
 end
 
-function printSolver(system::PowerSystem, analysis::ACStateEstimation, verbose::Int64)
+function printSolver(system::PowerSystem, analysis::AcStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         slack = copy(analysis.method.increment[system.bus.layout.slack])
 
@@ -446,12 +450,7 @@ function printSolver(system::PowerSystem, analysis::ACStateEstimation, verbose::
 end
 
 ##### Print Exit Messages #####
-function printExit(
-    analysis::AC,
-    maxExceeded::Bool,
-    converged::Bool,
-    verbose::Int64,
-)
+function printExit(analysis::AC, maxExceeded::Bool, converged::Bool, verbose::Int64)
     if verbose != 0
         method = printMethodName(analysis)
         if converged
@@ -490,36 +489,36 @@ function printExit(jump::JuMP.Model, verbose::Int64)
     end
 end
 
-function printExit(::DCPowerFlow, verbose::Int64)
+function printExit(::DcPowerFlow, verbose::Int64)
     if verbose != 0
         println("EXIT: The solution of the DC power flow was found.")
     end
 end
 
-function printExit(::DCStateEstimation, verbose::Int64)
+function printExit(::DcStateEstimation, verbose::Int64)
     if verbose != 0
         println("EXIT: The solution of the DC state estimation was found.")
     end
 end
 
-function printExit(::PMUStateEstimation, verbose::Int64)
+function printExit(::PmuStateEstimation, verbose::Int64)
     if verbose != 0
         println("EXIT: The solution of the PMU state estimation was found.")
     end
 end
 
-function printMethodName(::ACPowerFlow{NewtonRaphson})
+function printMethodName(::AcPowerFlow{NewtonRaphson})
     "Newton-Raphson"
 end
 
-function printMethodName(::ACPowerFlow{FastNewtonRaphson})
+function printMethodName(::AcPowerFlow{FastNewtonRaphson})
     "fast Newton-Raphson"
 end
 
-function printMethodName(::ACPowerFlow{GaussSeidel})
+function printMethodName(::AcPowerFlow{GaussSeidel})
     "Gauss-Seidel"
 end
 
-function printMethodName(::ACStateEstimation)
+function printMethodName(::AcStateEstimation)
     "Gauss-Newton"
 end

@@ -31,7 +31,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 Following that, we will introduce the `Measurement` type and incorporate a set of measurement devices ``\mathcal{M}`` into the graph ``\mathcal{G}``. In typical scenarios, the DC state estimation model relies solely on active power measurements  originating from the set of wattmeters ``\mathcal{P}``. However, we provide the option for users to include measurements from the set of PMUs ``\bar{\mathcal{P}}``. Specifically, we utilize only the PMUs installed at the buses ``\bar{\mathcal{P}}_\text{b} \subset \bar{\mathcal{P}}`` that measure bus voltage angles. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref DCSEModelTutorials) section. Currently, we are only initializing the `Measurement` type:
 ```@example DCSETutorial
-device = measurement()
+monitoring = measurement(system)
 nothing # hide
 ```
 
@@ -79,7 +79,7 @@ When adding a wattmeter ``P_i \in \mathcal{P}`` at bus ``i \in \mathcal{N}``, us
 
 For example:
 ```@example DCSETutorial
-addWattmeter!(system, device; label = "P₃", bus = 3, active = -1.30, variance = 1e-3)
+addWattmeter!(monitoring; label = "P₃", bus = 3, active = -1.30, variance = 1e-3)
 nothing # hide
 ```
 
@@ -105,7 +105,7 @@ Additionally, when introducing a wattmeter at branch ``(i,j) \in \mathcal{E}``, 
 
 For example:
 ```@example DCSETutorial
-addWattmeter!(system, device; label = "P₁₂", from = 1, active = 0.28, variance = 1e-4)
+addWattmeter!(monitoring; label = "P₁₂", from = 1, active = 0.28, variance = 1e-4)
 nothing # hide
 ```
 
@@ -131,7 +131,7 @@ Similarly, a wattmeter can be placed at the to-bus end, denoted as ``P_{ji} \in 
 
 For example:
 ```@example DCSETutorial
-addWattmeter!(system, device; label = "P₂₁", to = 1, active = -0.28, variance = 1e-4)
+addWattmeter!(monitoring; label = "P₂₁", to = 1, active = -0.28, variance = 1e-4)
 nothing # hide
 ```
 
@@ -155,8 +155,9 @@ If the user opts to include phasor measurements that measure bus voltage angle a
 
 For example:
 ```@example DCSETutorial
-addPmu!(system, device; label = "V₁, θ₁", bus = 1, magnitude = 1.0, angle = 0,
-varianceMagnitude = 1e-5, varianceAngle = 1e-6)
+addPmu!(
+  monitoring; label = "V₁, θ₁", bus = 1, magnitude = 1.0, angle = 0,
+  varianceMagnitude = 1e-5, varianceAngle = 1e-6)
 nothing # hide
 ```
 
@@ -186,7 +187,7 @@ The inclusion of the vector ``\mathbf{c}`` is necessary due to the fact that mea
 ##### Implementation
 JuliaGrid initiates the DC state estimation framework by setting up the WLS model, as illustrated in the following:
 ```@example DCSETutorial
-analysis = dcStateEstimation(system, device)
+analysis = dcStateEstimation(monitoring)
 nothing # hide
 ```
 
@@ -224,7 +225,7 @@ Once the model is established, we solve the WLS equation to derive the estimate 
 	\hat{\bm {\Theta}} = [\mathbf H^{T} \bm \Sigma^{-1} \mathbf H]^{-1} \mathbf H^{T} \bm \Sigma^{-1} (\mathbf z - \mathbf{c}).
 ```
 
-This process is executed using the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{WLS{Normal}})) function:
+This process is executed using the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function:
 ```@example DCSETutorial
 solve!(system, analysis)
 ```
@@ -257,7 +258,7 @@ The resolution of the WLS state estimation problem using the conventional method
 
 To address ill-conditioned situations arising from significant differences in measurement variances, users can employ an alternative approach:
 ```@example DCSETutorial
-analysis = dcStateEstimation(system, device, Orthogonal)
+analysis = dcStateEstimation(monitoring, Orthogonal)
 nothing # hide
 ```
 
@@ -284,9 +285,9 @@ At this point, QR factorization is performed on the rectangular matrix:
   \bar{\mathbf{H}} = {\mathbf W^{1/2}} \mathbf H = \mathbf{Q}\mathbf{R}.
 ```
 
-Executing this procedure involves the [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{WLS{Normal}})) function:
+Executing this procedure involves the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function:
 ```@example DCSETutorial
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -334,14 +335,14 @@ To form the above optimization problem, the user can call the following function
 using Ipopt
 using JuMP # hide
 
-analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
+analysis = dcLavStateEstimation(monitoring, Ipopt.Optimizer)
 nothing # hide
 ```
 
 Then the user can solve the optimization problem by:
 ```@example DCSETutorial
 JuMP.set_silent(analysis.method.jump) # hide
-solve!(system, analysis)
+solve!(analysis)
 nothing # hide
 ```
 
@@ -353,9 +354,9 @@ Users can retrieve the estimated bus voltage angles ``\hat{\bm {\Theta}} = [\hat
 ---
 
 ## [Power Analysis](@id DCSEPowerAnalysisTutorials)
-After obtaining the solution from the DC state estimation, we can calculate powers related to buses and branches using the [`power!`](@ref power!(::PowerSystem, ::DC)) function:
+After obtaining the solution from the DC state estimation, we can calculate powers related to buses and branches using the [`power!`](@ref power!(::DC)) function:
 ```@example DCSETutorial
-power!(system, analysis)
+power!(analysis)
 nothing # hide
 ```
 

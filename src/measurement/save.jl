@@ -1,13 +1,13 @@
 """
-    saveMeasurement(device::Measurement; path::String, reference::String, note::String)
+    saveMeasurement(monitoring::Measurement; path::String, reference::String, note::String)
 
-The function saves the measurement's data in the HDF5 file using the fields `voltmeter`,
-`ammeter`, `wattmeter`, `varmeter`, and `pmu` from the `Measurement` type.
+The function saves the measurement's data in the HDF5 file using the fields `voltmeter`, `ammeter`,
+`wattmeter`, `varmeter`, and `pmu` from the `Measurement` type.
 
 # Keywords
-The location and file name of the HDF5 file is specified by the mandatory keyword `path`
-in the format of `"path/name.h5"`. Additional information can be provided by the optional
-keywords `reference` and `note`, which can be saved along with the power system data.
+The location and file name of the HDF5 file is specified by the mandatory keyword `path` in the
+format of `"path/name.h5"`. Additional information can be provided by the optional keywords
+`reference` and `note`, which can be saved along with the power system data.
 
 # View HDF5 File
 To view the saved HDF5 file, you can use the [HDFView](https://www.hdfgroup.org/downloads/hdfview/)
@@ -17,32 +17,30 @@ software.
 ```jldoctest
 using Ipopt
 
-system = powerSystem("case14.m")
-device = measurement()
+system, monitoring = ems("case14.m")
 
-acModel!(system)
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
-addVoltmeter!(system, device, analysis)
-addWattmeter!(system, device, analysis)
+addVoltmeter!(monitoring, analysis)
+addWattmeter!(monitoring, analysis)
 
-saveMeasurement(device; path = "D:/measurement14.h5")
+saveMeasurement(monitoring; path = "D:/monitoring.h5")
 ```
 """
 function saveMeasurement(
-    device::Measurement;
+    monitoring::Measurement;
     path::String,
     reference::String = "",
     note::String = ""
 )
     file = h5open(path, "w")
-        saveVoltmeter(device.voltmeter, file)
-        saveAmmeter(device.ammeter, file)
-        saveWattmeter(device.wattmeter, file)
-        saveVarmeter(device.varmeter, file)
-        savePmu(device.pmu, file)
-        saveAttribute(device, file, reference, note)
+        saveVoltmeter(monitoring.voltmeter, file)
+        saveAmmeter(monitoring.ammeter, file)
+        saveWattmeter(monitoring.wattmeter, file)
+        saveVarmeter(monitoring.varmeter, file)
+        savePmu(monitoring.pmu, file)
+        saveAttribute(monitoring, file, reference, note)
     close(file)
 end
 
@@ -108,12 +106,12 @@ function savePmu(pmu::PMU, file::File)
 end
 
 ##### Save Main Attributes #####
-function saveAttribute(device::Measurement, file::File, reference::String, note::String)
-    attrs(file)["number of voltmeters"] = device.voltmeter.number
-    attrs(file)["number of ammeters"] = device.ammeter.number
-    attrs(file)["number of wattmeters"] = device.wattmeter.number
-    attrs(file)["number of varmeters"] = device.varmeter.number
-    attrs(file)["number of pmus"] = device.pmu.number
+function saveAttribute(monitoring::Measurement, file::File, reference::String, note::String)
+    attrs(file)["number of voltmeters"] = monitoring.voltmeter.number
+    attrs(file)["number of ammeters"] = monitoring.ammeter.number
+    attrs(file)["number of wattmeters"] = monitoring.wattmeter.number
+    attrs(file)["number of varmeters"] = monitoring.varmeter.number
+    attrs(file)["number of pmus"] = monitoring.pmu.number
 
     if !isempty(reference)
         attrs(file)["reference"] = reference
@@ -126,13 +124,13 @@ end
 
 
 ##### Save Label #####
-function saveLabel(device::M, file::File; fid::String = "")
+function saveLabel(monitoring::M, file::File; fid::String = "")
     fidLabel = fid * "/label"
 
-    write(file, fidLabel, collect(keys(device.label)))
+    write(file, fidLabel, collect(keys(monitoring.label)))
     attrs(file[fidLabel])["format"] = "expand"
 
-    write(file, fid * "/layout/label", device.layout.label)
+    write(file, fid * "/layout/label", monitoring.layout.label)
 end
 
 ##### Save Layout #####

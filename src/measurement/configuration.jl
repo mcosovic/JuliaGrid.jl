@@ -1,8 +1,8 @@
 """
-    status!(system::PowerSystem, device::Measurement; inservice, outservice, redundancy)
+    status!(monitoring::Measurement; inservice, outservice, redundancy)
 
-The function generates a set of measurements, assigning measurement devices randomly to
-either in-service or out-of-service states based on specified keywords.
+The function generates a set of measurements, assigning measurement devices randomly to either
+in-service or out-of-service states based on specified keywords.
 
 # Keywords
 Only one of the following keywords can be used at a time to configure the measurement set:
@@ -16,57 +16,51 @@ The function updates all the `status` fields within the `Measurement` type.
 # Examples
 Creating a measurement set with a specific number of in-service devices:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement()
+system, monitoring = ems("case14.h5")
 
-acModel!(system)
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
-addVoltmeter!(system, device, analysis)
-addWattmeter!(system, device, analysis)
+addVoltmeter!(monitoring, analysis)
+addWattmeter!(monitoring, analysis)
 
-status!(system, device; inservice = 30)
+status!(monitoring; inservice = 30)
 ```
 
 Creating a measurement set using redundancy:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement()
+system, monitoring = ems("case14.h5")
 
-acModel!(system)
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
-addVoltmeter!(system, device, analysis)
-addWattmeter!(system, device, analysis)
-addVarmeter!(system, device, analysis)
+addVoltmeter!(monitoring, analysis)
+addWattmeter!(monitoring, analysis)
+addVarmeter!(monitoring, analysis)
 
-status!(system, device; redundancy = 2.5)
+status!(monitoring; redundancy = 2.5)
 ```
 """
 function status!(
-    system::PowerSystem,
-    device::Measurement;
+    monitoring::Measurement;
     inservice::IntMiss = missing,
     outservice::IntMiss = missing,
     redundancy::FltIntMiss = missing
 )
     if isset(inservice)
-        statusAll(device, inservice; initial = 0, final = 1)
+        statusAll(monitoring, inservice; initial = 0, final = 1)
     elseif isset(outservice)
-        statusAll(device, outservice; initial = 1, final = 0)
+        statusAll(monitoring, outservice; initial = 1, final = 0)
     elseif isset(redundancy)
-        redundacyAll(device, system.bus.number, redundancy)
+        redundacyAll(monitoring, monitoring.system.bus.number, redundancy)
     end
 end
 
 """
-    statusVoltmeter!(system::PowerSystem, device::Measurement;
-        inservice, outservice, redundancy)
+    statusVoltmeter!(monitoring::Measurement; inservice, outservice, redundancy)
 
-The function generates a set of voltmeters, assigning voltmeters randomly to either
-in-service or out-of-service states based on specified keywords.
+The function generates a set of voltmeters, assigning voltmeters randomly to either in-service or
+out-of-service states based on specified keywords.
 
 # Keywords
 Only one of the following keywords can be used at a time to configure the measurement set:
@@ -79,47 +73,45 @@ The function updates the `status` field within the `Voltmeter` type.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement()
+system, monitoring = ems("case14.h5")
 
-acModel!(system)
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 
-addVoltmeter!(system, device, analysis)
-statusVoltmeter!(system, device; inservice = 10)
+addVoltmeter!(monitoring, analysis)
+
+statusVoltmeter!(monitoring; inservice = 10)
 ```
 """
 function statusVoltmeter!(
-    system::PowerSystem,
-    device::Measurement;
+    monitoring::Measurement;
     inservice::IntMiss = missing,
     outservice::IntMiss = missing,
     redundancy::FltIntMiss = missing
 )
-    status = device.voltmeter.magnitude.status
+    status = monitoring.voltmeter.magnitude.status
 
     if isset(inservice)
-        statusAll(status, device.voltmeter.number, inservice; initial = 0, final = 1)
+        statusAll(status, monitoring.voltmeter.number, inservice; initial = 0, final = 1)
     elseif isset(outservice)
-        statusAll(status, device.voltmeter.number, outservice; initial = 1, final = 0)
+        statusAll(status, monitoring.voltmeter.number, outservice; initial = 1, final = 0)
     elseif isset(redundancy)
-        redundancyAll(status, device.voltmeter.number, system.bus.number, redundancy)
+        redundancyAll(status, monitoring.voltmeter.number, monitoring.system.bus.number, redundancy)
     end
 end
 
 """
-    statusAmmeter!(system::PowerSystem, ammeter::Ammeter;
+    statusAmmeter!(monitoring::Measurement;
         inservice, inserviceFrom, inserviceTo,
         outservice, outserviceFrom, outserviceTo,
         redundancy, redundancyFrom, redundancyTo)
 
-The function generates a set of ammeters, assigning ammeters randomly to either in-service
-or out-of-service states based on specified keywords.
+The function generates a set of ammeters, assigning ammeters randomly to either in-service or
+out-of-service states based on specified keywords.
 
 # Keywords
-Users can use one main keyword or two fine-tuning keywords to specify distinct locations
-per function call:
+Users can use one main keyword or two fine-tuning keywords to specify distinct locations per
+function call:
 * `inservice`: Sets the number of in-service ammeters or allows fine-tuning:
   * `inserviceFrom`: sets only ammeters loacted at the from-bus end,
   * `inserviceTo`: sets only ammeters loacted at the to-bus end.
@@ -135,20 +127,18 @@ The function updates the `status` field within the `Ammeter` type.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement()
+system, monitoring = ems("case14.h5")
 
-acModel!(system)
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; current = true)
+powerFlow!(analysis; current = true)
 
-addAmmeter!(system, device, analysis)
-statusAmmeter!(system, device; inserviceFrom = 5, inserviceTo = 10)
+addAmmeter!(monitoring, analysis)
+
+statusAmmeter!(monitoring; inserviceFrom = 5, inserviceTo = 10)
 ```
 """
 function statusAmmeter!(
-    system::PowerSystem,
-    device::Measurement;
+    monitoring::Measurement;
     inservice::IntMiss = missing,
     inserviceFrom::IntMiss = missing,
     inserviceTo::IntMiss = missing,
@@ -159,23 +149,23 @@ function statusAmmeter!(
     redundancyFrom::FltIntMiss = missing,
     redundancyTo::FltIntMiss = missing
 )
-    status = device.ammeter.magnitude.status
-    from = device.ammeter.layout.from
-    to = device.ammeter.layout.to
+    status = monitoring.ammeter.magnitude.status
+    from = monitoring.ammeter.layout.from
+    to = monitoring.ammeter.layout.to
 
     if isset(inservice)
-        statusAll(status, device.ammeter.number, inservice; initial = 0, final = 1)
+        statusAll(status, monitoring.ammeter.number, inservice; initial = 0, final = 1)
     elseif isset(outservice)
-        statusAll(status, device.ammeter.number, outservice; initial = 1, final = 0)
+        statusAll(status, monitoring.ammeter.number, outservice; initial = 1, final = 0)
     elseif isset(redundancy)
-        redundancyAll(status, device.ammeter.number, system.bus.number, redundancy)
+        redundancyAll(status, monitoring.ammeter.number, monitoring.system.bus.number, redundancy)
     else
         if isset(inserviceFrom)
             statusLocation(status, from, inserviceFrom; initial = 0, final = 1)
         elseif isset(outserviceFrom)
             statusLocation(status, from, outserviceFrom; initial = 1, final = 0)
         elseif isset(redundancyFrom)
-            redundancyLocation(status, from, system.bus.number, redundancyFrom)
+            redundancyLocation(status, from, monitoring.system.bus.number, redundancyFrom)
         end
 
         if isset(inserviceTo)
@@ -183,23 +173,23 @@ function statusAmmeter!(
         elseif isset(outserviceTo)
             statusLocation(status, to, outserviceTo; initial = 1, final = 0)
         elseif isset(redundancyTo)
-            redundancyLocation(status, to, system.bus.number, redundancyTo)
+            redundancyLocation(status, to, monitoring.system.bus.number, redundancyTo)
         end
     end
 end
 
 """
-    statusWattmeter!(system::PowerSystem, device::Measurement;
+    statusWattmeter!(monitoring::Measurement;
         inservice, inserviceBus, inserviceFrom, inserviceTo,
         outservice, outserviceBus outserviceFrom, outserviceTo,
         redundancy, redundancyBus, redundancyFrom, redundancyTo)
 
-The function generates a set of wattmeters, assigning wattmeters randomly to either
-in-service or out-of-service states based on specified keywords.
+The function generates a set of wattmeters, assigning wattmeters randomly to either in-service or
+out-of-service states based on specified keywords.
 
 # Keywords
-Users can use one main keyword or three fine-tuning keywords to specify distinct locations
-per function call:
+Users can use one main keyword or three fine-tuning keywords to specify distinct locations per
+function call:
 * `inservice`: Sets the number of in-service wattmeters or allows fine-tuning:
   * `inserviceBus`: sets only wattmeters loacted at the bus,
   * `inserviceFrom`: sets only wattmeters loacted at the from-bus end,
@@ -218,20 +208,18 @@ The function updates the `status` field within the `Wattmeter` type.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement()
+system, monitoring = ems("case14.h5")
 
-acModel!(system)
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
-addWattmeter!(system, device, analysis)
-statusWattmeter!(system, device; outserviceBus = 14, inserviceFrom = 10, outserviceTo = 2)
+addWattmeter!(monitoring, analysis)
+
+statusWattmeter!(monitoring; outserviceBus = 14, inserviceFrom = 10, outserviceTo = 2)
 ```
 """
 function statusWattmeter!(
-    system::PowerSystem,
-    device::Measurement;
+    monitoring::Measurement;
     inservice::IntMiss = missing,
     inserviceBus::IntMiss = missing,
     inserviceFrom::IntMiss = missing,
@@ -245,24 +233,24 @@ function statusWattmeter!(
     redundancyFrom::FltIntMiss = missing,
     redundancyTo::FltIntMiss = missing
 )
-    status = device.wattmeter.active.status
-    bus = device.wattmeter.layout.bus
-    from = device.wattmeter.layout.from
-    to = device.wattmeter.layout.to
+    status = monitoring.wattmeter.active.status
+    bus = monitoring.wattmeter.layout.bus
+    from = monitoring.wattmeter.layout.from
+    to = monitoring.wattmeter.layout.to
 
     if isset(inservice)
-        statusAll(status, device.wattmeter.number, inservice; initial = 0, final = 1)
+        statusAll(status, monitoring.wattmeter.number, inservice; initial = 0, final = 1)
     elseif isset(outservice)
-        statusAll(status, device.wattmeter.number, outservice; initial = 1, final = 0)
+        statusAll(status, monitoring.wattmeter.number, outservice; initial = 1, final = 0)
     elseif isset(redundancy)
-        redundancyAll(status, device.wattmeter.number, system.bus.number, redundancy)
+        redundancyAll(status, monitoring.wattmeter.number, monitoring.system.bus.number, redundancy)
     else
         if isset(inserviceBus)
             statusLocation(status, bus, inserviceBus; initial = 0, final = 1)
         elseif isset(outserviceBus)
             statusLocation(status, bus, outserviceBus; initial = 1, final = 0)
         elseif isset(redundancyBus)
-            redundancyLocation(status, bus, system.bus.number, redundancyBus)
+            redundancyLocation(status, bus, monitoring.system.bus.number, redundancyBus)
         end
 
         if isset(inserviceFrom)
@@ -270,7 +258,7 @@ function statusWattmeter!(
         elseif isset(outserviceFrom)
             statusLocation(status, from, outserviceFrom; initial = 1, final = 0)
         elseif isset(redundancyFrom)
-            redundancyLocation(status, from, system.bus.number, redundancyFrom)
+            redundancyLocation(status, from, monitoring.system.bus.number, redundancyFrom)
         end
 
         if isset(inserviceTo)
@@ -278,23 +266,23 @@ function statusWattmeter!(
         elseif isset(outserviceTo)
             statusLocation(status, to, outserviceTo; initial = 1, final = 0)
         elseif isset(redundancyTo)
-            redundancyLocation(status, to, system.bus.number, redundancyTo)
+            redundancyLocation(status, to, monitoring.system.bus.number, redundancyTo)
         end
     end
 end
 
 """
-    statusVarmeter!(system::PowerSystem, device::Measurement;
+    statusVarmeter!(monitoring::Measurement;
         inservice, inserviceBus, inserviceFrom, inserviceTo,
         outservice, outserviceBus outserviceFrom, outserviceTo,
         redundancy, redundancyBus, redundancyFrom, redundancyTo)
 
-The function generates a set of varmeters, assigning varmeters randomly to either
-in-service or out-of-service states based on specified keywords.
+The function generates a set of varmeters, assigning varmeters randomly to either in-service or
+out-of-service states based on specified keywords.
 
 # Keywords
-Users can use one main keyword or three fine-tuning keywords to specify distinct locations
-per function call:
+Users can use one main keyword or three fine-tuning keywords to specify distinct locations per
+function call:
 * `inservice`: Sets the number of in-service varmeters or allows fine-tuning:
   * `inserviceBus`: sets only varmeters loacted at the bus,
   * `inserviceFrom`: sets only varmeters loacted at the from-bus end,
@@ -313,20 +301,18 @@ The function updates the `status` field within the `Varmeter` type.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement()
+system, monitoring = ems("case14.h5")
 
-acModel!(system)
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
-addVarmeter!(system, device, analysis)
-statusVarmeter!(system, device; inserviceFrom = 20)
+addVarmeter!(monitoring, analysis)
+
+statusVarmeter!(monitoring; inserviceFrom = 20)
 ```
 """
 function statusVarmeter!(
-    system::PowerSystem,
-    device::Measurement;
+    monitoring::Measurement;
     inservice::IntMiss = missing,
     inserviceBus::IntMiss = missing,
     inserviceFrom::IntMiss = missing,
@@ -341,24 +327,24 @@ function statusVarmeter!(
     redundancyTo::FltIntMiss = missing
 )
 
-    status = device.varmeter.reactive.status
-    bus = device.varmeter.layout.bus
-    from = device.varmeter.layout.from
-    to = device.varmeter.layout.to
+    status = monitoring.varmeter.reactive.status
+    bus = monitoring.varmeter.layout.bus
+    from = monitoring.varmeter.layout.from
+    to = monitoring.varmeter.layout.to
 
     if isset(inservice)
-        statusAll(status, device.varmeter.number, inservice; initial = 0, final = 1)
+        statusAll(status, monitoring.varmeter.number, inservice; initial = 0, final = 1)
     elseif isset(outservice)
-        statusAll(status, device.varmeter.number, outservice; initial = 1, final = 0)
+        statusAll(status, monitoring.varmeter.number, outservice; initial = 1, final = 0)
     elseif isset(redundancy)
-        redundancyAll(status, device.varmeter.number, system.bus.number, redundancy)
+        redundancyAll(status, monitoring.varmeter.number, monitoring.system.bus.number, redundancy)
     else
         if isset(inserviceBus)
             statusLocation(status, bus, inserviceBus; initial = 0, final = 1)
         elseif isset(outserviceBus)
             statusLocation(status, bus, outserviceBus; initial = 1, final = 0)
         elseif isset(redundancyBus)
-            redundancyLocation(status, bus, system.bus.number, redundancyBus)
+            redundancyLocation(status, bus, monitoring.system.bus.number, redundancyBus)
         end
 
         if isset(inserviceFrom)
@@ -366,7 +352,7 @@ function statusVarmeter!(
         elseif isset(outserviceFrom)
             statusLocation(status, from, outserviceFrom; initial = 1, final = 0)
         elseif isset(redundancyFrom)
-            redundancyLocation(status, from, system.bus.number, redundancyFrom)
+            redundancyLocation(status, from, monitoring.system.bus.number, redundancyFrom)
         end
 
         if isset(inserviceTo)
@@ -374,24 +360,24 @@ function statusVarmeter!(
         elseif isset(outserviceTo)
             statusLocation(status, to, outserviceTo; initial = 1, final = 0)
         elseif isset(redundancyTo)
-            redundancyLocation(status, to, system.bus.number, redundancyTo)
+            redundancyLocation(status, to, monitoring.system.bus.number, redundancyTo)
         end
     end
 end
 
 """
-    statusPmu!(system::PowerSystem, device::Measurement;
+    statusPmu!(monitoring::Measurement;
         inservice, inserviceBus, inserviceFrom, inserviceTo,
         outservice, outserviceBus outserviceFrom, outserviceTo,
         redundancy, redundancyBus, redundancyFrom, redundancyTo)
 
-The function generates a set of PMUs, assigning PMUs randomly to either in-service or
-out-of-service states based on specified keywords. It is important to note that when we
-refer to PMU, we encompass both magnitude and angle measurements.
+The function generates a set of PMUs, assigning PMUs randomly to either in-service or out-of-service
+states based on specified keywords. It is important to note that when we refer to PMU, we encompass
+both magnitude and angle measurements.
 
 # Keywords
-Users may use either one main keyword or three fine-tuning keywords that specify distinct
-locations per function call:
+Users may use either one main keyword or three fine-tuning keywords that specify distinct locations
+per function call:
 * `inservice`: Sets the number of in-service PMUs or allows fine-tuning:
   * `inserviceBus`: sets only PMUs loacted at the bus,
   * `inserviceFrom`: sets only PMUs loacted at the from-bus end,
@@ -410,20 +396,18 @@ The function updates the `status` fields within the `PMU` type.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement()
+system, monitoring = ems("case14.h5")
 
-acModel!(system)
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; current = true)
+powerFlow!(analysis; current = true)
 
-addPmu!(system, device, analysis)
-statusPmu!(system, device; inserviceBus = 14)
+addPmu!(monitoring, analysis)
+
+statusPmu!(monitoring; inserviceBus = 10)
 ```
 """
 function statusPmu!(
-    system::PowerSystem,
-    device::Measurement;
+    monitoring::Measurement;
     inservice::IntMiss = missing,
     inserviceBus::IntMiss = missing,
     inserviceFrom::IntMiss = missing,
@@ -437,21 +421,21 @@ function statusPmu!(
     redundancyFrom::FltIntMiss = missing,
     redundancyTo::FltIntMiss = missing
 )
-    pmu = device.pmu
+    pmu = monitoring.pmu
 
     if isset(inservice)
         statusAll(pmu, inservice; initial = 0, final = 1)
     elseif isset(outservice)
         statusAll(pmu, outservice; initial = 1, final = 0)
     elseif isset(redundancy)
-        redundancyAll(pmu, system.bus.number, redundancy)
+        redundancyAll(pmu, monitoring.system.bus.number, redundancy)
     else
         if isset(inserviceBus)
             statusLocation(pmu, pmu.layout.bus, inserviceBus; initial = 0, final = 1)
         elseif isset(outserviceBus)
             statusLocation(pmu, pmu.layout.bus, outserviceBus; initial = 1, final = 0)
         elseif isset(redundancyBus)
-            redundancyLocation(pmu, pmu.layout.bus, system.bus.number, redundancyBus)
+            redundancyLocation(pmu, pmu.layout.bus, monitoring.system.bus.number, redundancyBus)
         end
 
         if isset(inserviceFrom)
@@ -459,7 +443,7 @@ function statusPmu!(
         elseif isset(outserviceFrom)
             statusLocation(pmu, pmu.layout.from, outserviceFrom; initial = 1, final = 0)
         elseif isset(redundancyFrom)
-            redundancyLocation(pmu, pmu.layout.from, system.bus.number, redundancyFrom)
+            redundancyLocation(pmu, pmu.layout.from, monitoring.system.bus.number, redundancyFrom)
         end
 
         if isset(inserviceTo)
@@ -467,7 +451,7 @@ function statusPmu!(
         elseif isset(outserviceTo)
             statusLocation(pmu, pmu.layout.to, outserviceTo; initial = 1, final = 0)
         elseif isset(redundancyTo)
-            redundancyLocation(pmu, pmu.layout.to, system.bus.number, redundancyTo)
+            redundancyLocation(pmu, pmu.layout.to, monitoring.system.bus.number, redundancyTo)
         end
     end
 end
@@ -488,12 +472,7 @@ function statusAll(
     status[indices] .= final
 end
 
-function statusAll(
-    pmu::PMU,
-    service::IntMiss;
-    initial::Int64,
-    final::Int64
-)
+function statusAll(pmu::PMU, service::IntMiss; initial::Int64, final::Int64)
     if service > pmu.number
         errorStatusDevice()
     end
@@ -511,17 +490,12 @@ function statusAll(
     end
 end
 
-function statusAll(
-    device::Measurement,
-    service::IntMiss;
-    initial::Int64,
-    final::Int64
-)
-    volt = device.voltmeter
-    amp = device.ammeter
-    watt = device.wattmeter
-    var = device.varmeter
-    pmu = device.pmu
+function statusAll(monitoring::Measurement, service::IntMiss; initial::Int64, final::Int64)
+    volt = monitoring.voltmeter
+    amp = monitoring.ammeter
+    watt = monitoring.wattmeter
+    var = monitoring.varmeter
+    pmu = monitoring.pmu
 
     n = volt.number + amp.number + watt.number + var.number + pmu.number
     if service > n
@@ -623,11 +597,7 @@ function redundancyAll(
     status[indices] .= 1
 end
 
-function redundancyAll(
-    pmu::PMU,
-    busNumber::Int64,
-    redundancy::FltIntMiss
-)
+function redundancyAll(pmu::PMU, busNumber::Int64, redundancy::FltIntMiss)
     maxRedundancy = pmu.number / (2 * busNumber - 1)
     if redundancy > maxRedundancy
         redundancy = maxRedundancy
@@ -646,16 +616,12 @@ function redundancyAll(
     end
 end
 
-function redundacyAll(
-    device::Measurement,
-    busNumber::Int64,
-    redundancy::FltIntMiss
-)
-    volt = device.voltmeter
-    amp = device.ammeter
-    watt = device.wattmeter
-    var = device.varmeter
-    pmu = device.pmu
+function redundacyAll(monitoring::Measurement, busNumber::Int64, redundancy::FltIntMiss)
+    volt = monitoring.voltmeter
+    amp = monitoring.ammeter
+    watt = monitoring.wattmeter
+    var = monitoring.varmeter
+    pmu = monitoring.pmu
 
     n = volt.number + amp.number + watt.number + var.number + pmu.number
     maxRedundancy = n / (2 * busNumber - 1)

@@ -184,13 +184,13 @@ For example, we can perform AC power flow analysis on our defined power system:
 ```@example power
 analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, analysis)
+    stopping = mismatch!(analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, analysis)
+    solve!(analysis)
 end
-power!(system, analysis)
+power!(analysis)
 nothing # hide
 ```
 
@@ -203,7 +203,7 @@ Now, we can examine some results in SI units:
 @power(MW, MVAr)
 
 show = Dict("Power Generation" => false, "Shunt Power" => false)
-printBusData(system, analysis; show)
+printBusData(analysis; show)
 ```
 
 Here, the voltage magnitudes in kV represent line-to-neutral voltages for each bus, while the powers in MW and MVAr represent three-phase powers.
@@ -295,13 +295,13 @@ As before, we can perform AC power flow analysis on our defined power system:
 ```@example power
 analysis = newtonRaphson(system)
 for i = 1:10
-    stopping = mismatch!(system, analysis)
+    stopping = mismatch!(analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, analysis)
+    solve!(analysis)
 end
-power!(system, analysis)
+power!(analysis)
 nothing # hide
 ```
 
@@ -314,7 +314,7 @@ Now, we will examine the results in per-units:
 @power(pu, pu)
 
 show = Dict("Power Generation" => false, "Shunt Power" => false)
-printBusData(system, analysis; show)
+printBusData(analysis; show)
 ```
 
 Here, the voltage magnitudes in per-units represent line-to-neutral voltages for each bus, while the powers are independent of whether they are three-phase or single-phase, since they are expressed in per-units.

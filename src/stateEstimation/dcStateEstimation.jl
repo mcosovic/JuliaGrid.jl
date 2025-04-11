@@ -1,62 +1,51 @@
 """
-    dcStateEstimation(system::PowerSystem, device::Measurement, [method = LU])
+    dcStateEstimation(monitoring::Measurement, [method = LU])
 
-The function establishes the WLS model for DC state estimation, where the vector of state
-variables contains only bus voltage angles.
+The function establishes the WLS model for DC state estimation, where the vector of state variables
+contains only bus voltage angles.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` types to establish the WLS state
-estimation model.
+This function requires the `Measurement` type to establish the WLS state estimation model.
 
-Moreover, the presence of the `method` parameter is not mandatory. To address the WLS
-state estimation method, users can opt to utilize factorization techniques to decompose
-the gain matrix, such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric.
-Opting for the `Orthogonal` method is advisable for a more robust solution in scenarios
-involving ill-conditioned data, particularly when substantial variations in variances are
-present.
+Moreover, the presence of the `method` parameter is not mandatory. To address the WLS state
+estimation method, users can opt to utilize factorization techniques to decompose the gain matrix,
+such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. Opting for the
+`Orthogonal` method is advisable for a more robust solution in scenarios involving ill-conditioned
+data, particularly when substantial variations in variances are present.
 
-If the user does not provide the `method`, the default method for solving the estimation
-model will be `LU` factorization.
+If the user does not provide the `method`, the default method for solving the estimation model will
+be `LU` factorization.
 
 # Updates
-If the DC model was not created, the function will automatically initiate an update of the
-`dc` field within the `PowerSystem` composite type. Additionally, if the slack bus lacks
-an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as
-the first generator bus with an in-service generator in the bus type list.
+If the DC model was not created, the function will automatically initiate an update of the `dc` field
+within the `PowerSystem` composite type. Additionally, if the slack bus lacks an in-service generator,
+JuliaGrid considers it a mistake and defines a new slack bus as the first generator bus with an
+in-service generator in the bus type list.
 
 # Returns
-The function returns an instance of the `DCStateEstimation` type, which includes the
-following fields:
-- `voltage`: The variable allocated to store the bus voltage angles.
-- `power`: The variable allocated to store the active powers.
-- `method`: The system model vectors and matrices.
+The function returns an instance of the [`DcStateEstimation`](@ref DcStateEstimation) type.
 
 # Examples
 Set up the DC state estimation model to be solved using the default LU factorization:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = dcStateEstimation(system, device)
+analysis = dcStateEstimation(monitoring)
 ```
 
 Set up the DC state estimation model to be solved using the orthogonal method:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = dcStateEstimation(system, device, Orthogonal)
+analysis = dcStateEstimation(monitoring, Orthogonal)
 ```
 """
-function dcStateEstimation(
-    system::PowerSystem,
-    device::Measurement,
-    factorization::Type{<:Union{QR, LDLt, LU}} = LU
-)
-    coeff, mean, precision, power, idx, numDevice, inservice = dcStateEstimationWls(system, device)
+function dcStateEstimation(monitoring::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
+    system = monitoring.system
+    coeff, mean, precision, power, idx, numDevice, inservice = dcStateEstimationWls(system, monitoring)
 
-    DCStateEstimation(
-        PolarAngle(Float64[]),
+    DcStateEstimation(
+        Angle(Float64[]),
         power,
         WLS{Normal}(
             coeff,
@@ -66,21 +55,19 @@ function dcStateEstimation(
             idx,
             numDevice,
             inservice,
-            -1,
-            true,
-        )
+            Dict(:pattern => -1, :run => true)
+        ),
+        system,
+        monitoring
     )
 end
 
-function dcStateEstimation(
-    system::PowerSystem,
-    device::Measurement,
-    ::Type{<:Orthogonal}
-)
-    coeff, mean, precision, power, idx, numDevice, inservice = dcStateEstimationWls(system, device)
+function dcStateEstimation(monitoring::Measurement, ::Type{<:Orthogonal})
+    system = monitoring.system
+    coeff, mean, precision, power, idx, numDevice, inservice = dcStateEstimationWls(system, monitoring)
 
-    DCStateEstimation(
-        PolarAngle(
+    DcStateEstimation(
+        Angle(
             Float64[]
         ),
         power,
@@ -92,18 +79,19 @@ function dcStateEstimation(
             idx,
             numDevice,
             inservice,
-            -1,
-            true,
-        )
+            Dict(:pattern => -1, :run => true)
+        ),
+        system,
+        monitoring
     )
 end
 
-function dcStateEstimationWls(system::PowerSystem, device::Measurement)
+function dcStateEstimationWls(system::PowerSystem, monitoring::Measurement)
     dc = system.model.dc
     bus = system.bus
     branch = system.branch
-    wattmeter = device.wattmeter
-    pmu = device.pmu
+    wattmeter = monitoring.wattmeter
+    pmu = monitoring.pmu
 
     checkSlackBus(system)
     model!(system, dc)
@@ -175,32 +163,32 @@ function dcStateEstimationWls(system::PowerSystem, device::Measurement)
 
     coefficient = sparse(cff.row, cff.col, cff.val, numDevice, bus.number)
 
-    power = DCPower(
-        CartesianReal(Float64[]),
-        CartesianReal(Float64[]),
-        CartesianReal(Float64[]),
-        CartesianReal(Float64[]),
-        CartesianReal(Float64[])
+    power = DcPower(
+        Real(Float64[]),
+        Real(Float64[]),
+        Real(Float64[]),
+        Real(Float64[]),
+        Real(Float64[])
     )
 
    return coefficient, mean, pcs, power, pmuIdx, numDevice, inservice
 end
 
 """
-    dcLavStateEstimation(system::PowerSystem, device::Measurement, optimizer;
+    dcLavStateEstimation(monitoring::Measurement, optimizer;
         iteration, tolerance, bridge, name, angle, positive, negative, verbose)
 
-The function establishes the LAV model for DC state estimation, where the vector of state
-variables contains only bus voltage angles.
+The function establishes the LAV model for DC state estimation, where the vector of state variables
+contains only bus voltage angles.
 
 # Arguments
-This function requires the `PowerSystem` and `Measurement` types to establish the LAV state
-estimation model. The LAV method offers increased robustness compared to WLS, ensuring
-unbiasedness even in the presence of various measurement errors and outliers.
+This function requires the `Measurement` type to establish the LAV state estimation model. The LAV
+method offers increased robustness compared to WLS, ensuring unbiasedness even in the presence of
+various measurement errors and outliers.
 
 Users can employ the LAV method to find an estimator by choosing one of the available
-[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically,
-`Ipopt` suffices for most scenarios.
+[optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically, `Ipopt`
+suffices for most scenarios.
 
 # Keywords
 The function accepts the following keywords:
@@ -210,36 +198,30 @@ The function accepts the following keywords:
 * `name`: Handles the creation of string names (default: `true`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
-Additionally, users can modify variable names used for printing and writing through the
-keywords `angle`, `positive`, and `negative`. For instance, users can choose `angle = "θ"`,
-`positive = "u"`, and `negative = "v"` to display equations in a more readable format.
+Additionally, users can modify variable names used for printing and writing through the keywords
+`angle`, `positive`, and `negative`. For instance, users can choose `angle = "θ"`, `positive = "u"`,
+and `negative = "v"` to display equations in a more readable format.
 
 # Updates
-If the DC model was not created, the function will automatically initiate an update of the
-`dc` field within the `PowerSystem` composite type. Additionally, if the slack bus lacks
-an in-service generator, JuliaGrid considers it a mistake and defines a new slack bus as
-the first generator bus with an in-service generator in the bus type list.
+If the DC model was not created, the function will automatically initiate an update of the `dc` field
+within the `PowerSystem` composite type. Additionally, if the slack bus lacks an in-service generator,
+JuliaGrid considers it a mistake and defines a new slack bus as the first generator bus with an
+in-service generator in the bus type list.
 
 # Returns
-The function returns an instance of the `DCStateEstimation` type, which includes the
-following fields:
-- `voltage`: The variable allocated to store the bus voltage angles.
-- `power`: The variable allocated to store the active powers.
-- `method`: The optimization model.
+The function returns an instance of the [`DcStateEstimation`](@ref DcStateEstimation) type.
 
 # Example
 ```jldoctest
 using Ipopt
 
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
+analysis = dcLavStateEstimation(monitoring, Ipopt.Optimizer)
 ```
 """
 function dcLavStateEstimation(
-    system::PowerSystem,
-    device::Measurement,
+    monitoring::Measurement,
     (@nospecialize optimizerFactory);
     iteration::IntMiss = missing,
     tolerance::FltIntMiss = missing,
@@ -250,11 +232,12 @@ function dcLavStateEstimation(
     negative::String = "negative",
     verbose::Int64 = template.config.verbose
 )
+    system = monitoring.system
     bus = system.bus
     branch = system.branch
     dc = system.model.dc
-    wattmeter = device.wattmeter
-    pmu = device.pmu
+    wattmeter = monitoring.wattmeter
+    pmu = monitoring.pmu
 
     checkSlackBus(system)
     model!(system, dc)
@@ -275,12 +258,14 @@ function dcLavStateEstimation(
 
     lav = LAV(
         jump,
-        DCState(
-            @variable(jump, angle[i = 1:bus.number], base_name = angle)
-        ),
-        Deviation(
-            @variable(jump, 0 <= positive[i = 1:total], base_name = positive),
-            @variable(jump, 0 <= negative[i = 1:total], base_name = negative)
+        LavVariableRef(
+            AngleVariableRef(
+                @variable(jump, angle[i = 1:bus.number], base_name = angle)
+            ),
+            DeviationVariableRef(
+                @variable(jump, 0 <= positive[i = 1:total], base_name = positive),
+                @variable(jump, 0 <= negative[i = 1:total], base_name = negative)
+            )
         ),
         Dict{Int64, ConstraintRef}(),
         pmuIdx,
@@ -289,13 +274,16 @@ function dcLavStateEstimation(
     )
     objective = @expression(lav.jump, AffExpr())
 
-    fix(lav.state.angle[bus.layout.slack], 0.0; force = true)
+    voltage = lav.variable.voltage
+    deviation = lav.variable.deviation
+
+    fix(voltage.angle[bus.layout.slack], 0.0; force = true)
 
     @inbounds for (i, k) in enumerate(wattmeter.layout.index)
-        if device.wattmeter.active.status[i] == 1
+        if monitoring.wattmeter.active.status[i] == 1
             if wattmeter.layout.bus[i]
                 mean = meanPi(bus, dc, wattmeter, i, k)
-                expr = Pi(dc, lav, k)
+                expr = Pi(system, voltage, k)
             else
                 if wattmeter.layout.from[i]
                     admittance = dc.admittance[k]
@@ -304,13 +292,12 @@ function dcLavStateEstimation(
                 end
 
                 mean = meanPij(branch, wattmeter, admittance, i, k)
-                expr = Pij(system, lav.state, admittance, k)
+                expr = Pij(system, voltage, admittance, k)
             end
             addConstrLav!(lav, expr, mean, i)
             addObjectLav!(lav, objective, i)
         else
-            fix(lav.deviation.positive[i], 0.0; force = true)
-            fix(lav.deviation.negative[i], 0.0; force = true)
+            fix!(deviation, i)
         end
     end
     lav.range[2] = wattmeter.number + 1
@@ -319,77 +306,76 @@ function dcLavStateEstimation(
         if pmu.angle.status[i] == 1
             mean = meanθi(pmu, bus, i)
 
-            addConstrLav!(lav, lav.state.angle[pmu.layout.index[i]], mean, k)
+            addConstrLav!(lav, voltage.angle[pmu.layout.index[i]], mean, k)
             addObjectLav!(lav, objective, k)
         else
-            fix(lav.deviation.positive[k], 0.0; force = true)
-            fix(lav.deviation.negative[k], 0.0; force = true)
+            fix!(deviation, k)
         end
     end
     lav.range[3] = total + 1
 
     @objective(lav.jump, Min, objective)
 
-    DCStateEstimation(
-        PolarAngle(
+    DcStateEstimation(
+        Angle(
             copy(bus.voltage.angle)
         ),
-        DCPower(
-            CartesianReal(Float64[]),
-            CartesianReal(Float64[]),
-            CartesianReal(Float64[]),
-            CartesianReal(Float64[]),
-            CartesianReal(Float64[])
+        DcPower(
+            Real(Float64[]),
+            Real(Float64[]),
+            Real(Float64[]),
+            Real(Float64[]),
+            Real(Float64[])
         ),
-        lav
+        lav,
+        system,
+        monitoring
     )
 end
 
 """
-    solve!(system::PowerSystem, analysis::DCStateEstimation)
+    solve!(analysis::DcStateEstimation)
 
 By computing the bus voltage angles, the function solves the DC state estimation model.
 
 # Updates
-The resulting bus voltage angles are stored in the `voltage` field of the `DCStateEstimation`
-type.
+The resulting bus voltage angles are stored in the `voltage` field of the `DcStateEstimation` type.
 
 # Examples
 Solving the DC state estimation model and obtaining the WLS estimator:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = dcStateEstimation(system, device)
-solve!(system, analysis)
+analysis = dcStateEstimation(monitoring)
+solve!(analysis)
 ```
 
 Solving the DC state estimation model and obtaining the LAV estimator:
 ```jldoctest
 using Ipopt
 
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer; verbose = 1)
-solve!(system, analysis)
+analysis = dcLavStateEstimation(monitoring, Ipopt.Optimizer; verbose = 1)
+solve!(analysis)
 ```
 """
-function solve!(system::PowerSystem, analysis::DCStateEstimation{WLS{Normal}})
+function solve!(analysis::DcStateEstimation{WLS{Normal}})
+    system = analysis.system
     se = analysis.method
     bus = system.bus
     slackAngle = bus.voltage.angle[bus.layout.slack]
 
     slackRange, elementsRemove = delSlackCoeff(analysis, bus.layout.slack)
 
-    if se.run
-        analysis.method.run = false
+    if se.signature[:run]
+        se.signature[:run] = false
 
         gain = transpose(se.coefficient) * se.precision * se.coefficient
         gain[bus.layout.slack, bus.layout.slack] = 1.0
 
-        if analysis.method.pattern == -1
-            analysis.method.pattern = 0
+        if se.signature[:pattern] == -1
+            se.signature[:pattern] = 0
             se.factorization = factorization(gain, se.factorization)
         else
             se.factorization = factorization!(gain, se.factorization)
@@ -409,7 +395,8 @@ function solve!(system::PowerSystem, analysis::DCStateEstimation{WLS{Normal}})
     addSlackCoeff(analysis, slackRange, elementsRemove, bus.layout.slack)
 end
 
-function solve!(system::PowerSystem, analysis::DCStateEstimation{WLS{Orthogonal}})
+function solve!(analysis::DcStateEstimation{WLS{Orthogonal}})
+    system = analysis.system
     bus = system.bus
     voltage = analysis.voltage
     se = analysis.method
@@ -420,8 +407,8 @@ function solve!(system::PowerSystem, analysis::DCStateEstimation{WLS{Orthogonal}
         se.precision.nzval[i] = sqrt(se.precision.nzval[i])
     end
 
-    if se.run
-        analysis.method.run = false
+    if se.signature[:run]
+        se.signature[:run] = false
         coefficientScale = se.precision * se.coefficient
         se.factorization = factorization(coefficientScale, se.factorization)
     end
@@ -441,10 +428,8 @@ function solve!(system::PowerSystem, analysis::DCStateEstimation{WLS{Orthogonal}
     addSlackCoeff(analysis, slackRange, elementsRemove, bus.layout.slack)
 end
 
-function solve!(
-    system::PowerSystem,
-    analysis::DCStateEstimation{LAV};
-)
+function solve!(analysis::DcStateEstimation{LAV})
+    system = analysis.system
     lav = analysis.method
     verbose = lav.jump.ext[:verbose]
     slackAngle = system.bus.voltage.angle[system.bus.layout.slack]
@@ -452,16 +437,24 @@ function solve!(
     silentJump(lav.jump, verbose)
 
     @inbounds for i = 1:system.bus.number
-        set_start_value(lav.state.angle[i]::VariableRef, analysis.voltage.angle[i] - slackAngle)
+        set_start_value(lav.variable.voltage.angle[i]::VariableRef, analysis.voltage.angle[i] - slackAngle)
     end
 
     optimize!(lav.jump)
 
     @inbounds for i = 1:system.bus.number
-        analysis.voltage.angle[i] = value(lav.state.angle[i]::VariableRef) + slackAngle
+        analysis.voltage.angle[i] = value(lav.variable.voltage.angle[i]::VariableRef) + slackAngle
     end
 
     printExit(lav.jump, verbose)
+end
+
+function setInitialPoint!(analysis::DcStateEstimation{LAV})
+    errorTransfer(system.bus.voltage.angle, analysis.voltage.angle)
+
+    @inbounds for i = 1:system.bus.number
+        analysis.voltage.angle[i] = system.bus.voltage.angle[i]
+    end
 end
 
 ##### Indices of the Coefficient Matrix #####
@@ -473,7 +466,7 @@ function dcIndices(cff::SparseModel, row::Int64, col::Int64)
 end
 
 ##### Remove Slack Bus Coefficents #####
-function delSlackCoeff(analysis::DCStateEstimation, slack::Int64)
+function delSlackCoeff(analysis::DcStateEstimation, slack::Int64)
     se = analysis.method
 
     slackRange = se.coefficient.colptr[slack]:(se.coefficient.colptr[slack + 1] - 1)
@@ -487,7 +480,7 @@ end
 
 ##### Restore Slack Bus Coefficents #####
 function addSlackCoeff(
-    analysis::DCStateEstimation,
+    analysis::DcStateEstimation,
     slackRange::UnitRange{Int64},
     elementsRemove::Vector{Float64},
     slack::Int64
@@ -500,12 +493,11 @@ function addSlackCoeff(
 end
 
 """
-    stateEstimation!(system::PowerSystem, analysis::DCStateEstimation;
-        iteration, tolerance, power, verbose)
+    stateEstimation!(analysis::DcStateEstimation; iteration, tolerance, power, verbose)
 
 The function serves as a wrapper for solving DC state estimation and includes the functions:
-* [`solve!`](@ref solve!(::PowerSystem, ::DCStateEstimation{WLS{Normal}})),
-* [`power!`](@ref power!(::PowerSystem, ::DCPowerFlow)).
+* [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})),
+* [`power!`](@ref power!(::DcPowerFlow)).
 
 It computes bus voltage angles using the WLS or LAV model with the option to compute powers.
 
@@ -521,45 +513,44 @@ If `iteration` and `tolerance` are not specified, the optimization solver settin
 # Examples
 Use the wrapper function to obtain the WLS estimator:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = dcStateEstimation(system, device)
-stateEstimation!(system, analysis; power = true, verbose = 3)
+analysis = dcStateEstimation(monitoring)
+stateEstimation!(analysis; power = true, verbose = 3)
 ```
 
 Use the wrapper function to obtain the LAV estimator:
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+using Ipopt
 
-analysis = dcLavStateEstimation(system, device, Ipopt.Optimizer)
-stateEstimation!(system, analysis; iteration = 30, tolerance = 1e-6, verbose = 1)
+system, monitoring = ems("case14.h5", "monitoring.h5")
+
+analysis = dcLavStateEstimation(monitoring, Ipopt.Optimizer)
+stateEstimation!(analysis; iteration = 30, tolerance = 1e-6, verbose = 1)
 ```
 """
 function stateEstimation!(
-    system::PowerSystem,
-    analysis::DCStateEstimation{WLS{T}};
+    analysis::DcStateEstimation{WLS{T}};
     iteration::IntMiss = missing,
     tolerance::FltIntMiss = missing,
     power::Bool = false,
     verbose::Int64 = template.config.verbose
 )  where T <: Union{Normal, Orthogonal}
 
+    system = analysis.system
     printMiddle(system, analysis, verbose)
 
-    solve!(system, analysis)
+    solve!(analysis)
 
     printExit(analysis, verbose)
 
     if power
-        power!(system, analysis)
+        power!(analysis)
     end
 end
 
 function stateEstimation!(
-    system::PowerSystem,
-    analysis::DCStateEstimation{LAV};
+    analysis::DcStateEstimation{LAV};
     iteration::IntMiss = missing,
     tolerance::FltIntMiss = missing,
     power::Bool = false,
@@ -568,9 +559,9 @@ function stateEstimation!(
     verbose = setJumpVerbose(analysis.method.jump, template, verbose)
     setAttribute(analysis.method.jump, iteration, tolerance, verbose)
 
-    solve!(system, analysis)
+    solve!(analysis)
 
     if power
-        power!(system, analysis)
+        power!(analysis)
     end
 end

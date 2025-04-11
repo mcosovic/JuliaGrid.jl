@@ -1,63 +1,56 @@
 """
-    residualTest!(system::PowerSystem, device::Measurement, analysis::StateEstimation;
-        threshold)
+    residualTest!(analysis::StateEstimation; threshold)
 
-The function conducts bad data detection and identification using the largest normalized
-residual test, subsequently removing measurement outliers from the measurement set. It can
-be executed after obtaining WLS estimator.
+The function conducts bad data detection and identification using the largest normalized residual
+test, subsequently removing measurement outliers from the measurement set. It can be executed after
+obtaining WLS estimator.
 
 # Arguments
-This function requires the types `PowerSystem`, `Measurement`, and `StateEstimation`. The
-abstract type `StateEstimation` can have the following subtypes:
-- `ACStateEstimation`: Conducts bad data analysis within AC state estimation.
-- `PMUStateEstimation`: Conducts bad data analysis within PMU state estimation.
-- `DCStateEstimation`: Conducts bad data analysis within DC state estimation.
+The abstract type `StateEstimation` can have the following subtypes:
+- `AcStateEstimation`: Conducts bad data analysis within AC state estimation.
+- `PmuStateEstimation`: Conducts bad data analysis within PMU state estimation.
+- `DcStateEstimation`: Conducts bad data analysis within DC state estimation.
 
 # Keyword
-The keyword `threshold` establishes the identification threshold. If the largest
-normalized residual surpasses this threshold, the measurement is flagged as bad data. The
-default threshold value is set to `threshold = 3.0`.
+The keyword `threshold` establishes the identification threshold. If the largest normalized residual
+surpasses this threshold, the measurement is flagged as bad data. The default threshold value is set
+to `threshold = 3.0`.
 
 # Updates
-If bad data is detected, the function flags the corresponding measurement within the
-`Measurement` type as out-of-service.
+If bad data is detected, the function flags the corresponding measurement within the `Measurement`
+type as out-of-service.
 
-Moreover, for `DCStateEstimation` and `PMUStateEstimation` types, the function removes
-the corresponding measurement from the coefficient matrix and mean vector. This facilitates
-direct progress to the function that solves the state estimation problem.
+Moreover, for `DcStateEstimation` and `PmuStateEstimation` types, the function removes the
+corresponding measurement from the coefficient matrix and mean vector. This facilitates direct
+progress to the function that solves the state estimation problem.
 
 # Returns
-The function returns an instance of the `ResidualTest` type, which includes:
-- `detect`: Returns `true` after the function's execution if bad data is detected.
-- `maxNormalizedResidual`: Denotes the value of the largest normalized residual.
-- `label`: Signifies the label of the bad data.
-- `index`: Represents the index of the bad data.
+The function returns an instance of the [`ResidualTest`](@ref ResidualTest) type.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = dcStateEstimation(system, device)
-solve!(system, analysis)
+analysis = dcStateEstimation(monitoring)
+stateEstimation!(analysis)
 
-outlier = residualTest!(system, device, analysis; threshold = 4.0)
-solve!(system, analysis)
+outlier = residualTest!(analysis; threshold = 4.0)
+stateEstimation!(analysis)
 ```
 """
 function residualTest!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::DCStateEstimation{WLS{T}};
+    analysis::DcStateEstimation{WLS{T}};
     threshold::Float64 = 3.0
 ) where T <: Union{Normal, Orthogonal}
 
     errorVoltage(analysis.voltage.angle)
 
+    system = analysis.system
+    monitoring = analysis.monitoring
     bus = system.bus
     se = analysis.method
-    watt = device.wattmeter
-    pmu = device.pmu
+    watt = monitoring.wattmeter
+    pmu = monitoring.pmu
 
     bad = ResidualTest(false, 0.0, "", 0)
 
@@ -98,7 +91,7 @@ function residualTest!(
     addSlackCoeff(analysis, slackRange, elementsRemove, bus.layout.slack)
 
     if bad.maxNormalizedResidual > threshold
-        se.run = true
+        se.signature[:run] = true
         bad.detect = true
 
         removeRow(se.coefficient, bad.index)
@@ -130,14 +123,14 @@ function residualTest!(
 end
 
 function residualTest!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::PMUStateEstimation{WLS{T}};
+    analysis::PmuStateEstimation{WLS{T}};
     threshold::Float64 = 3.0
 )  where T <: Union{Normal, Orthogonal}
 
     errorVoltage(analysis.voltage.angle)
 
+    system = analysis.system
+    monitoring = analysis.monitoring
     bus = system.bus
     se = analysis.method
 
@@ -198,33 +191,33 @@ function residualTest!(
     end
 
     if bad.index != 0
-        (bad.label, ),_ = iterate(device.pmu.label, pmuIndex)
+        (bad.label, ),_ = iterate(monitoring.pmu.label, pmuIndex)
     end
     if bad.detect
-        device.pmu.magnitude.status[pmuIndex] = 0
-        device.pmu.angle.status[pmuIndex] = 0
+        monitoring.pmu.magnitude.status[pmuIndex] = 0
+        monitoring.pmu.angle.status[pmuIndex] = 0
     end
 
     return bad
 end
 
 function residualTest!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::ACStateEstimation{GaussNewton{T}};
+    analysis::AcStateEstimation{GaussNewton{T}};
     threshold::Float64 = 3.0
 )  where T <: Union{Normal, Orthogonal}
 
     errorVoltage(analysis.voltage.angle)
 
+    system = analysis.system
+    monitoring = analysis.monitoring
     bus = system.bus
     se = analysis.method
     jcb = se.jacobian
 
-    volt = device.voltmeter
-    amp = device.ammeter
-    watt = device.wattmeter
-    var = device.varmeter
+    volt = monitoring.voltmeter
+    amp = monitoring.ammeter
+    watt = monitoring.wattmeter
+    var = monitoring.varmeter
 
     bad = ResidualTest(false, 0.0, "", 0)
 
@@ -304,17 +297,17 @@ function residualTest!(
                 alsoBad = bad.index + 1
             end
 
-            (bad.label, idx),_ = iterate(device.pmu.label, pmuIndex)
+            (bad.label, idx),_ = iterate(monitoring.pmu.label, pmuIndex)
             if bad.detect
-                if device.pmu.layout.polar[idx]
+                if monitoring.pmu.layout.polar[idx]
                     if se.type[bad.index] in [2; 3; 4; 5; 12]
-                        device.pmu.magnitude.status[idx] = 0
+                        monitoring.pmu.magnitude.status[idx] = 0
                     else
-                        device.pmu.angle.status[idx] = 0
+                        monitoring.pmu.angle.status[idx] = 0
                     end
                 else
-                    device.pmu.magnitude.status[idx] = 0
-                    device.pmu.angle.status[idx] = 0
+                    monitoring.pmu.magnitude.status[idx] = 0
+                    monitoring.pmu.angle.status[idx] = 0
 
                     removeRow(se.jacobian, alsoBad)
                     se.mean[alsoBad] = 0.0
@@ -559,44 +552,39 @@ function removeRow(A::SparseMatrixCSC{Float64, Int64}, idx::Int64)
 end
 
 """
-    chiTest(system::PowerSystem, device::Measurement, analysis::StateEstimation;
-        confidence)
+    chiTest(analysis::StateEstimation; confidence)
 
-The function performs a Chi-squared bad data detection test. This test can be applied after
-obtaining WLS estimator.
+The function performs a Chi-squared bad data detection test. This test can be applied after obtaining
+WLS estimator.
 
 # Arguments
-This function requires the types `PowerSystem`, `Measurement`, and `StateEstimation`. The
-abstract type `StateEstimation` can have the following subtypes:
-- `ACStateEstimation`: Conducts bad data analysis within AC state estimation.
-- `PMUStateEstimation`: Conducts bad data analysis within PMU state estimation.
-- `DCStateEstimation`: Conducts bad data analysis within DC state estimation.
+The abstract type `StateEstimation` can have the following subtypes:
+- `AcStateEstimation`: Conducts bad data analysis within AC state estimation.
+- `PmuStateEstimation`: Conducts bad data analysis within PMU state estimation.
+- `DcStateEstimation`: Conducts bad data analysis within DC state estimation.
 
 # Keyword
-The keyword `confidence` specifies the detection confidence level, with a default value
-of `0.95`.
+The keyword `confidence` specifies the detection confidence level, with a default value of `0.95`.
 
 # Returns
-Returns `true` if bad data is detected; otherwise, returns `false`.
+The function returns an instance of the [`ChiTest`](@ref ChiTest) type.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement("measurement14.h5")
+system, monitoring = ems("case14.h5", "monitoring.h5")
 
-analysis = gaussNewton(system, device)
-solve!(system, analysis)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis)
 
-bad = chiTest(system, device, analysis; confidence = 0.96)
+bad = chiTest(analysis; confidence = 0.96)
 ```
 """
 function chiTest(
-    system::PowerSystem,
-    ::Measurement,
-    analysis::ACStateEstimation{GaussNewton{T}};
+    analysis::AcStateEstimation{GaussNewton{T}};
     confidence::Float64 = 0.95
 )  where T <: Union{Normal, Orthogonal}
 
+    system = analysis.system
     se = analysis.method
 
     df = lastindex(se.type) - count(==(0), se.type) - 2 * system.bus.number + 1
@@ -606,12 +594,11 @@ function chiTest(
 end
 
 function chiTest(
-    system::PowerSystem,
-    ::Measurement,
-    analysis::DCStateEstimation{WLS{T}};
+    analysis::DcStateEstimation{WLS{T}};
     confidence::Float64 = 0.95
 )  where T <: Union{Normal, Orthogonal}
 
+    system = analysis.system
     se = analysis.method
 
     residual = se.mean - se.coefficient * analysis.voltage.angle
@@ -624,12 +611,11 @@ function chiTest(
 end
 
 function chiTest(
-    system::PowerSystem,
-    ::Measurement,
-    analysis::PMUStateEstimation{WLS{T}};
+    analysis::PmuStateEstimation{WLS{T}};
     confidence::Float64 = 0.95
 )  where T <: Union{Normal, Orthogonal}
 
+    system = analysis.system
     se = analysis.method
     volt = analysis.voltage
 

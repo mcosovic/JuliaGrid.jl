@@ -1,10 +1,9 @@
 """
-    addAmmeter!(system::PowerSystem, device::Measurement;
+    addAmmeter!(monitoring::Measurement;
         label, from, to, magnitude, variance, noise, square, status)
 
-The function adds an ammeter that measures branch current magnitude to the `Measurement`
-type within a given `PowerSystem` type. The ammeter can be added to an already defined
-branch.
+The function adds an ammeter that measures branch current magnitude to the `Measurement` type. The
+ammeter can be added to an already defined branch.
 
 # Keywords
 The ammeter is defined with the following keywords:
@@ -27,47 +26,45 @@ The ammeter is defined with the following keywords:
 The function updates the `ammeter` field of the `Measurement` type.
 
 # Default Settings
-Default settings for certain keywords are as follows: `variance = 1e-4`, `square = false`,
-`noise = false`, `status = 1`, which apply to ammeters located at both the from-bus and
-to-bus ends. Users can fine-tune these settings by explicitly specifying the variance and
-status for ammeters positioned on either the from-bus or to-bus ends of branches using the
+Default settings for certain keywords are as follows: `variance = 1e-4`, `noise = false`,
+`square = false`, and `status = 1`, which apply to ammeters located at both the from-bus and to-bus
+ends. Users can fine-tune these settings by explicitly specifying the variance and status for
+ammeters positioned on either the from-bus or to-bus ends of branches using the
 [`@ammeter`](@ref @ammeter) macro.
 
 # Units
-The default units for the `magnitude` and `variance` keywords are per-units. However, users
-can choose to use amperes as the units by applying the [`@current`](@ref @current) macro.
+The default units for the `magnitude` and `variance` keywords are per-units. However, users can
+choose to use amperes as the units by applying the [`@current`](@ref @current) macro.
 
 # Examples
 Adding ammeters using the default unit system:
 ```jldoctest
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 132e3)
 addBus!(system; label = "Bus 2", base = 132e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-addAmmeter!(system, device; label = "Ammeter 1", from = "Branch 1", magnitude = 1.1)
-addAmmeter!(system, device; label = "Ammeter 2", to = "Branch 1", magnitude = 1.0)
+addAmmeter!(monitoring; label = "Ammeter 1", from = "Branch 1", magnitude = 1.1)
+addAmmeter!(monitoring; label = "Ammeter 2", to = "Branch 1", magnitude = 1.0)
 ```
 
 Adding ammeters using a custom unit system:
 ```jldoctest
 @current(A, rad)
-system = powerSystem()
-device = measurement()
+
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 132e3)
 addBus!(system; label = "Bus 2", base = 132e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-addAmmeter!(system, device; label = "Ammeter 1", from = "Branch 1", magnitude = 481.125)
-addAmmeter!(system, device; label = "Ammeter 2", to = "Branch 1", magnitude = 437.386)
+addAmmeter!(monitoring; label = "Ammeter 1", from = "Branch 1", magnitude = 481.125)
+addAmmeter!(monitoring; label = "Ammeter 2", to = "Branch 1", magnitude = 437.386)
 ```
 """
 function addAmmeter!(
-    system::PowerSystem,
-    device::Measurement;
+    monitoring::Measurement;
     label::IntStrMiss = missing,
     from::IntStrMiss = missing,
     to::IntStrMiss = missing,
@@ -75,6 +72,7 @@ function addAmmeter!(
     square::Bool = template.ammeter.square,
     kwargs...
 )
+    system = monitoring.system
     branch = system.branch
     baseVoltg = system.base.voltage
     def = template.ammeter
@@ -85,21 +83,21 @@ function addAmmeter!(
     idxBrch = branch.label[getLabel(branch, location, "branch")]
 
     if branch.layout.status[idxBrch] == 1
-        device.ammeter.number += 1
-        push!(device.ammeter.layout.index, idxBrch)
-        push!(device.ammeter.layout.from, fromFlag)
-        push!(device.ammeter.layout.to, toFlag)
-        push!(device.ammeter.layout.square, square)
+        monitoring.ammeter.number += 1
+        push!(monitoring.ammeter.layout.index, idxBrch)
+        push!(monitoring.ammeter.layout.from, fromFlag)
+        push!(monitoring.ammeter.layout.to, toFlag)
+        push!(monitoring.ammeter.layout.square, square)
 
         from, to = fromto(system, idxBrch)
         basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
         if fromFlag
-            setLabel(device.ammeter, label, def.label, lblBrch; prefix = "From ")
+            setLabel(monitoring.ammeter, label, def.label, lblBrch; prefix = "From ")
             defVariance = def.varianceFrom
             defStatus = def.statusFrom
             baseVoltage = baseVoltg.value[from] * baseVoltg.prefix
         else
-            setLabel(device.ammeter, label, def.label, lblBrch; prefix = "To ")
+            setLabel(monitoring.ammeter, label, def.label, lblBrch; prefix = "To ")
             defVariance = def.varianceTo
             defStatus = def.statusTo
             baseVoltage = baseVoltg.value[to] * baseVoltg.prefix
@@ -108,19 +106,19 @@ function addAmmeter!(
         baseInv = baseCurrentInv(basePowerInv, baseVoltage)
 
         setMeter(
-            device.ammeter.magnitude, magnitude, key.variance, key.status, key.noise,
+            monitoring.ammeter.magnitude, magnitude, key.variance, key.status, key.noise,
             defVariance, defStatus, pfx.currentMagnitude, baseInv
         )
     end
 end
 
 """
-    addAmmeter!(system::PowerSystem, device::Measurement, analysis::AC;
+    addAmmeter!(monitoring::Measurement, analysis::AC;
         varianceFrom, statusFrom, varianceTo, statusTo, noise, square)
 
 The function incorporates ammeters into the `Measurement` type for every branch within the
-`PowerSystem` type. These measurements are derived from the exact branch current magnitude
-values defined in the `AC` type.
+`PowerSystem` type from which `Measurement` was created. These measurements are derived from the
+exact branch current magnitudes defined in the `AC` type.
 
 # Keywords
 Ammeters at the from-bus ends of the branches can be configured using:
@@ -140,39 +138,36 @@ Settings for generating measurements include:
   * `noise = true`: adds white Gaussian noise to the current magnitudes using defined variances,
   * `noise = false`: uses the exact current magnitude values without adding noise.
 Settings for including measurements:
-* `square`: Specifies how the measurement is included in the state estimation model:
+* `square`: Specifies how measurements are included in the state estimation model:
   * `square = true`: included in squared form,
   * `square = false`: included in its original form.
 
 # Updates
-The function updates the `ammeter` field of the `Measurement` composite type.
+The function updates the `ammeter` field of the `Measurement` type.
 
 # Default Settings
 Default settings for keywords are as follows: `varianceFrom = 1e-4`, `statusFrom = 1`,
-`varianceTo = 1e-4`, `statusTo = 1`, `noise = false`, and `square = false`. Users can
-change these default settings using the [`@ammeter`](@ref @ammeter) macro.
+`varianceTo = 1e-4`, `statusTo = 1`, `noise = false`, and `square = false`. Users can change these
+default settings using the [`@ammeter`](@ref @ammeter) macro.
 
 # Units
-The default units for the `varianceFrom` and `varianceTo` keywords are per-units. However,
-users can choose to use amperes as the units by applying the [`@current`](@ref @current)
-macro.
+The default units for the `varianceFrom` and `varianceTo` keywords are per-units. However, users can
+choose to use amperes as the units by applying the [`@current`](@ref @current) macro.
 
 # Example
 ```jldoctest
-system = powerSystem("case14.h5")
-device = measurement()
-
-acModel!(system)
-analysis = newtonRaphson(system)
-powerFlow!(system, analysis; current = true)
-
 @ammeter(label = "Ammeter ?")
-addAmmeter!(system, device, analysis; varianceFrom = 1e-3, statusTo = 0, square = true)
+
+system, monitoring = ems("case14.h5")
+
+analysis = newtonRaphson(system)
+powerFlow!(analysis; current = true)
+
+addAmmeter!(monitoring, analysis; varianceFrom = 1e-3, statusTo = 0, square = true)
 ```
 """
 function addAmmeter!(
-    system::PowerSystem,
-    device::Measurement,
+    monitoring::Measurement,
     analysis::AC;
     varianceFrom::FltIntMiss = missing,
     varianceTo::FltIntMiss = missing,
@@ -183,9 +178,10 @@ function addAmmeter!(
 )
     errorCurrent(analysis.current.from.magnitude)
 
+    system = monitoring.system
     baseVoltg = system.base.voltage
     current = analysis.current
-    amp = device.ammeter
+    amp = monitoring.ammeter
     def = template.ammeter
 
     amp.number = 0
@@ -203,7 +199,7 @@ function addAmmeter!(
             ammNumber = system.branch.layout.inservice
         end
 
-        amp.label = OrderedDict{template.config.device, Int64}()
+        amp.label = OrderedDict{template.config.monitoring, Int64}()
         sizehint!(amp.label, ammNumber)
 
         amp.layout.index = fill(0, ammNumber)
@@ -256,27 +252,18 @@ function addAmmeter!(
 end
 
 """
-    updateAmmeter!(system::PowerSystem, device::Measurement, [analysis::Analysis];
-        kwargs...)
+    updateAmmeter!(monitoring::Measurement; kwargs...)
 
 The function allows for the alteration of parameters for an ammeter.
 
-# Arguments
-If the `Analysis` type is omitted, the function applies changes to the `Measurement`
-type only. However, when including the `Analysis` type, it updates both the `Measurement`
-and `Analysis` types. This streamlined process avoids the need to completely rebuild vectors
-and matrices when adjusting these parameters.
-
 # Keywords
-To update a specific ammeter, provide the necessary `kwargs` input arguments in accordance
-with the keywords specified in the [`addAmmeter!`](@ref addAmmeter!) function, along with
-their respective values. Ensure that the `label` keyword matches the `label` of the
-existing ammeter you want to modify. If any keywords are omitted, their corresponding
-values will remain unchanged.
+To update a specific ammeter, provide the necessary `kwargs` input arguments in accordance with the
+keywords specified in the [`addAmmeter!`](@ref addAmmeter!) function, along with their respective
+values. Ensure that the `label` keyword matches the `label` of the existing ammeter you want to
+modify. If any keywords are omitted, their corresponding values will remain unchanged.
 
 # Updates
-The function updates the `ammeter` field within the `Measurement` type. Furthermore, it
-guarantees that any modifications to the parameters are transmitted to the `Analysis` type.
+The function updates the `ammeter` field within the `Measurement` type.
 
 # Units
 Units for input parameters can be changed using the same method as described for the
@@ -284,30 +271,29 @@ Units for input parameters can be changed using the same method as described for
 
 # Example
 ```jldoctest
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 132e3)
 addBus!(system; label = "Bus 2", base = 132e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-addAmmeter!(system, device; label = "Ammeter 1", from = "Branch 1", magnitude = 1.1)
-updateAmmeter!(system, device; label = "Ammeter 1", magnitude = 1.2, variance = 1e-4)
+addAmmeter!(monitoring; label = "Ammeter 1", from = "Branch 1", magnitude = 1.1)
+updateAmmeter!(monitoring; label = "Ammeter 1", magnitude = 1.2, variance = 1e-3)
 ```
 """
 function updateAmmeter!(
-    system::PowerSystem,
-    device::Measurement;
+    monitoring::Measurement;
     label::IntStrMiss,
     magnitude::FltIntMiss = missing,
     square::BoolMiss = missing,
     kwargs...
 )
+    system = monitoring.system
     baseVoltg = system.base.voltage
-    amp = device.ammeter
+    amp = monitoring.ammeter
     key = meterkwargs(template.ammeter.noise; kwargs...)
 
-    idx = amp.label[getLabel(amp, label, "ammeter")]
+    idx = getIndex(amp, label, "ammeter")
     idxBrch = amp.layout.index[idx]
 
     if isset(square)
@@ -321,162 +307,143 @@ function updateAmmeter!(
         amp.magnitude, idx, magnitude, key.variance, key.status, key.noise,
         pfx.currentMagnitude, baseCurrentInv(basePowerInv, baseVoltage)
     )
+
+    amp.magnitude.status[idx] &= system.branch.layout.status[idxBrch]
 end
 
+"""
+    updateAmmeter!(analysis::Analysis; kwargs...)
+
+The function extends the [`updateAmmeter!`](@ref updateAmmeter!(::Measurement)) function. By passing
+the `Analysis` type, the function first updates the specific ammeter within the `Measurement` type
+using the provided `kwargs`, and then updates the `Analysis` type with all parameters associated with
+that ammeter.
+
+A key feature of this function is that any prior modifications made to the specified ammeter are
+preserved and applied to the `Analysis` type when the function is executed, ensuring consistency
+throughout the update process.
+
+# Example
+```jldoctest
+system, monitoring = ems("case14.h5", "monitoring.h5")
+
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis)
+
+updateAmmeter!(analysis; label = "From 1", magnitude = 0.9, variance = 1e-5)
+```
+"""
 function updateAmmeter!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::ACStateEstimation{GaussNewton{T}};
+    analysis::AcStateEstimation{GaussNewton{T}};
     label::IntStrMiss,
     magnitude::FltIntMiss = missing,
     square::BoolMiss = missing,
     kwargs...
 ) where T <: Union{Normal, Orthogonal}
 
-    baseVoltg = system.base.voltage
-    amp = device.ammeter
-    se = analysis.method
-    key = meterkwargs(template.ammeter.noise; kwargs...)
+    amp = analysis.monitoring.ammeter
+    wls = analysis.method
 
-    idxAmp = amp.label[getLabel(amp, label, "ammeter")]
+    updateAmmeter!(analysis.monitoring; label, magnitude, square, kwargs...)
+
+    idxAmp = getIndex(amp, label, "ammeter")
     idxBrch = amp.layout.index[idxAmp]
-    idx = device.voltmeter.number + idxAmp
+    idx = analysis.monitoring.voltmeter.number + idxAmp
 
-    if isset(square)
-        amp.layout.square[idxAmp] = square
-    end
+    status = amp.magnitude.status[idxAmp] == 1
+    sq = if2exp(amp.layout.square[idxAmp])
+    ty = if2type(amp.layout.square[idxAmp])
+    i, j = fromto(analysis.system, idxBrch)
 
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    baseVoltage = baseVoltageEnd(system, baseVoltg, amp.layout.from[idxAmp], idxBrch)
+    wls.mean[idx] = status * (amp.magnitude.mean[idxAmp]^sq)
+    wls.precision[idx, idx] = 1 / (sq * amp.magnitude.variance[idxAmp])
+    wls.residual[idx] = 0.0
 
-    updateMeter(
-        amp.magnitude, idxAmp, magnitude, key.variance, key.status, key.noise,
-        pfx.currentMagnitude, baseCurrentInv(basePowerInv, baseVoltage)
-    )
+    wls.jacobian[idx, i] = 0.0
+    wls.jacobian[idx, analysis.system.bus.number + i] = 0.0
+    wls.jacobian[idx, j] = 0.0
+    wls.jacobian[idx, analysis.system.bus.number + j] = 0.0
 
-    sq = if2(amp.layout.square[idxAmp])
-    se.precision[idx, idx] = 1 / (sq * amp.magnitude.variance[idxAmp])
-
-    if amp.magnitude.status[idxAmp] == 1
-        if amp.layout.from[idxAmp]
-            if amp.layout.square[idxAmp]
-                se.type[idx] = 4
-            else
-                se.type[idx] = 2
-            end
-        else
-            if amp.layout.square[idxAmp]
-                se.type[idx] = 5
-            else
-                se.type[idx] = 3
-            end
-        end
-        se.mean[idx] = amp.magnitude.mean[idxAmp]^sq
+    if amp.layout.from[idxAmp]
+        wls.type[idx] = status * (2 + ty)
     else
-        i, j = fromto(system, idxBrch)
-
-        se.jacobian[idx, i] = 0.0
-        se.jacobian[idx, system.bus.number + i] = 0.0
-        se.jacobian[idx, j] = 0.0
-        se.jacobian[idx, system.bus.number + j] = 0.0
-
-        se.mean[idx] = 0.0
-        se.residual[idx] = 0.0
-        se.type[idx] = 0
+        wls.type[idx] = status * (3 + ty)
     end
 end
 
 function updateAmmeter!(
-    system::PowerSystem,
-    device::Measurement,
-    analysis::ACStateEstimation{LAV};
+    analysis::AcStateEstimation{LAV};
     label::IntStrMiss,
     magnitude::FltIntMiss = missing,
     square::BoolMiss = missing,
     kwargs...
 )
-    baseVoltg = system.base.voltage
-    amp = device.ammeter
-    se = analysis.method
-    key = meterkwargs(template.ammeter.noise; kwargs...)
+    amp = analysis.monitoring.ammeter
+    lav = analysis.method
 
-    idxAmp = amp.label[getLabel(amp, label, "ammeter")]
+    updateAmmeter!(analysis.monitoring; label, magnitude, square, kwargs...)
+
+    idxAmp = getIndex(amp, label, "ammeter")
     idxBrch = amp.layout.index[idxAmp]
-    idx = device.voltmeter.number + idxAmp
+    idx = analysis.monitoring.voltmeter.number + idxAmp
 
-    if isset(square)
-        amp.layout.square[idx] = square
-    end
-
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    baseVoltage = baseVoltageEnd(system, baseVoltg, amp.layout.from[idxAmp], idxBrch)
-
-    updateMeter(
-        amp.magnitude, idxAmp, magnitude, key.variance, key.status, key.noise,
-        pfx.currentMagnitude, baseCurrentInv(basePowerInv, baseVoltage)
-    )
-
+    remove!(lav, idx)
     if amp.magnitude.status[idxAmp] == 1
-        add!(se, idx)
+        add!(lav, idx)
 
         if amp.layout.from[idxAmp]
-            expr = Iij(system, se, amp.layout.square[idxAmp], idxBrch)
+            expr = Iij(analysis.system, lav.variable.voltage, amp.layout.square[idxAmp], idxBrch)
         else
-            expr = Iji(system, se, amp.layout.square[idxAmp], idxBrch)
+            expr = Iji(analysis.system, lav.variable.voltage, amp.layout.square[idxAmp], idxBrch)
         end
 
-        sq = if2(amp.layout.square[idxAmp])
-        addConstrLav!(se, expr, amp.magnitude.mean[idxAmp]^sq, idx)
-    else
-        remove!(se, idx)
+        sq = if2exp(amp.layout.square[idxAmp])
+        addConstrLav!(lav, expr, amp.magnitude.mean[idxAmp]^sq, idx)
     end
 end
 
 """
     @ammeter(label, varianceFrom, statusFrom, varianceTo, statusTo, noise, square)
 
-The macro generates a template for an ammeter, which can be utilized to define an ammeter
-using the [`addAmmeter!`](@ref addAmmeter!) function.
+The macro generates a template for an ammeter.
 
 # Keywords
-To establish the ammeter template, users can set default variance and status values for
-ammeters at both the from-bus and to-bus ends of branches, using `varianceFrom` and
-`statusFrom` for the former and `varianceTo` and `statusTo` for the latter. Users can also
-configure label patterns with the `label` keyword, as well as specify the `noise` type.
-Finally, the `square` keyword enables including the measurement in squared form for the
-state estimation model.
+To establish the ammeter template, users can set default variance and status values for ammeters at
+both the from-bus and to-bus ends of branches, using `varianceFrom` and `statusFrom` for the former
+and `varianceTo` and `statusTo` for the latter. Users can also configure label patterns with the
+`label` keyword, as well as specify the `noise` type. Finally, the `square` keyword enables including
+the measurement in squared form for the state estimation model.
 
 # Units
-The default units for the `varianceFrom` and `varianceTo` keywords are per-units. However,
-users can choose to use amperes as the units by applying the [`@current`](@ref @current)
-macro.
+The default units for the `varianceFrom` and `varianceTo` keywords are per-units. However, users can
+choose to use amperes as the units by applying the [`@current`](@ref @current) macro.
 
 # Examples
 Adding an ammeter using the default unit system:
 ```jldoctest
-system = powerSystem()
-device = measurement()
+@ammeter(label = "Ammeter ?", varianceTo = 1e-3, statusTo = 0, square = true)
+
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 132e3)
 addBus!(system; label = "Bus 2", base = 132e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-@ammeter(label = "Ammeter ?", varianceTo = 1e-3, statusTo = 0, square = true)
-addAmmeter!(system, device; to = "Branch 1", magnitude = 1.1)
+addAmmeter!(monitoring; to = "Branch 1", magnitude = 1.1)
 ```
 
 Adding an ammeter using a custom unit system:
 ```jldoctest
 @current(A, rad)
-system = powerSystem()
-device = measurement()
+@ammeter(label = "Ammeter ?", varianceTo = 0.004374, statusTo = 0, square = true)
+
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 132e3)
 addBus!(system; label = "Bus 2", base = 132e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
-@ammeter(label = "Ammeter ?", varianceTo = 0.004374, statusTo = 0, square = true)
-addAmmeter!(system, device; label = "Ammeter 1", to = "Branch 1", magnitude = 481.125)
+addAmmeter!(monitoring; label = "Ammeter 1", to = "Branch 1", magnitude = 481.125)
 ```
 """
 macro ammeter(kwargs...)

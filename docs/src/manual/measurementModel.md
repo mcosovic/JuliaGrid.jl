@@ -3,6 +3,10 @@ The JuliaGrid supports the type `Measurement` to preserve measurement data, with
 
 The type `Measurement` can be created using a function:
 * [`measurement`](@ref measurement).
+
+Additionally, the user can create both the `PowerSystem` and `Measurement` types using the wrapper function:
+* [`ems`](@ref ems).
+
 JuliaGrid supports two modes for populating the `Measurement` type: using built-in functions or using HDF5 files.
 
 To work with HDF5 files, JuliaGrid provides the function:
@@ -54,7 +58,7 @@ The [`measurement`](@ref measurement) function generates the `Measurement` type 
 ##### HDF5 File
 In order to use the HDF5 file as input to create the `Measurement` type, it is necessary to have saved the data using the [`saveMeasurement`](@ref saveMeasurement) function beforehand. Let us say we saved the measurements as `measurements14.h5` in the directory `C:\hdf5`. Then, the following code can be used to construct the `Measurement` type:
 ```julia
-device = measurement("C:/hdf5/measurements14.h5")
+monitoring = measurement("C:/hdf5/measurements14.h5")
 ```
 
 ---
@@ -64,25 +68,24 @@ To start building a model from the ground up, the initial step involves construc
 ```@example buildModelScratch
 using JuliaGrid # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
-addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0, variance = 1e-3)
-addWattmeter!(system, device; from = "Branch 1", active = 0.2, variance = 1e-4, noise = true)
+addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 1.0, variance = 1e-3)
+addWattmeter!(monitoring; from = "Branch 1", active = 0.2, variance = 1e-4, noise = true)
 ```
 
 In this context, we have created the voltmeter responsible for measuring the bus voltage magnitude at `Bus 1`, with associated mean and variance values expressed in per-units:
 ```@repl buildModelScratch
-[device.voltmeter.magnitude.mean device.voltmeter.magnitude.variance]
+[monitoring.voltmeter.magnitude.mean monitoring.voltmeter.magnitude.variance]
 ```
 
 Furthermore, we have established the wattmeter to measure the active power flow at the from-bus end of `Branch 1`, with corresponding mean and variance values also expressed in per-units:
 ```@repl buildModelScratch
-[device.wattmeter.active.mean device.wattmeter.active.variance]
+[monitoring.wattmeter.active.mean monitoring.wattmeter.active.variance]
 ```
 
 !!! tip "Tip"
@@ -93,7 +96,7 @@ Furthermore, we have established the wattmeter to measure the active power flow 
 ## [Save Model](@id SaveMeasurementModelManual)
 Once the `Measurement` type has been created using one of the methods outlined in [Build Model](@ref BuildMeasurementModelManual), the current data can be stored in the HDF5 file by using [`saveMeasurement`](@ref saveMeasurement) function:
 ```julia
-saveMeasurement(device; path = "C:/hdf5/measurement.h5")
+saveMeasurement(monitoring; path = "C:/hdf5/measurement.h5")
 ```
 All electrical quantities saved in the HDF5 file are in per-units and radians.
 
@@ -104,18 +107,17 @@ We have the option to add voltmeters to a loaded measurement type or to one crea
 ```@example addVoltmeter
 using JuliaGrid # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1")
 
-addVoltmeter!(system, device; bus = "Bus 1", magnitude = 0.9, variance = 1e-4)
-addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0, variance = 1e-3, noise = true)
+addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 0.9, variance = 1e-4)
+addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 1.0, variance = 1e-3, noise = true)
 ```
 
 In this example, we have established two voltmeters designed to measure the bus voltage magnitude at `Bus 1`. In the case of the second voltmeter, the measurement value is generated internally by introducing white Gaussian noise with the `variance` added to the `magnitude` value. As a result, we obtain the following data:
 ```@repl addVoltmeter
-[device.voltmeter.magnitude.mean device.voltmeter.magnitude.variance]
+[monitoring.voltmeter.magnitude.mean monitoring.voltmeter.magnitude.variance]
 ```
 
 !!! note "Info"
@@ -130,18 +132,17 @@ using JuliaGrid # hide
 
 @voltage(kV, rad, V)
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = sqrt(3) * 135e3)
 
-addVoltmeter!(system, device; bus = "Bus 1", magnitude = 121.5, variance = 0.0135)
-addVoltmeter!(system, device; bus = "Bus 1", magnitude = 135, variance = 0.135, noise = true)
+addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 121.5, variance = 0.0135)
+addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 135, variance = 0.135, noise = true)
 ```
 
 In this example, we have chosen to specify `magnitude` and `variance` in kilovolts (kV). It is important to note that even though we have used kilovolts as the input units, these keywords will still be stored in the per-units:
 ```@repl addVoltmeterSI
-[device.voltmeter.magnitude.mean device.voltmeter.magnitude.variance]
+[monitoring.voltmeter.magnitude.mean monitoring.voltmeter.magnitude.variance]
 ```
 
 !!! note "Info"
@@ -152,7 +153,7 @@ In this example, we have chosen to specify `magnitude` and `variance` in kilovol
 ##### Print Data in the REPL
 Users have the option to print the voltmeter data in the REPL using any units that have been configured:
 ```@example addVoltmeterSI
-printVoltmeterData(system, device)
+printVoltmeterData(monitoring)
 nothing # hide
 ```
 
@@ -163,22 +164,21 @@ Users can introduce ammeters into either an existing measurement type or one tha
 ```@example addAmmeter
 using JuliaGrid # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
-addAmmeter!(system, device; from = "Branch 1", magnitude = 0.8, variance = 0.1, noise = true)
-addAmmeter!(system, device; to = "Branch 1", magnitude = 0.9, variance = 1e-3, square = true)
+addAmmeter!(monitoring; from = "Branch 1", magnitude = 0.8, variance = 0.1, noise = true)
+addAmmeter!(monitoring; to = "Branch 1", magnitude = 0.9, variance = 1e-3, square = true)
 ```
 
 In this scenario, we have established one ammeter to measure the branch current magnitude at the from-bus end of `Branch 1`, as indicated by the use of the `from` keyword. Similarly, we have added an ammeter to measure the branch current magnitude at the to-bus end of the branch by utilizing the `to` keyword.
 
 For the first ammeter, the measurement value is generated by adding white Gaussian noise with the `variance` to the `magnitude` value. In contrast, for the second ammeter, we assume that the measurement value is already known, defined by the `magnitude`. These actions result in the following outcomes:
 ```@repl addAmmeter
-[device.ammeter.magnitude.mean device.ammeter.magnitude.variance]
+[monitoring.ammeter.magnitude.mean monitoring.ammeter.magnitude.variance]
 ```
 
 The `square` keyword is used for the second ammeter to indicate that the measurement will be included in AC state estimation in squared form. This means the corresponding equation is introduced without a square root, while the measurement mean is squared, and the variance is doubled. This approach enhances the robustness of state estimation when handling such measurements.
@@ -195,20 +195,19 @@ using JuliaGrid # hide
 @default(unit)  # hide
 @current(A, rad)
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 135e3)
 addBus!(system; label = "Bus 2", base = 135e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
-addAmmeter!(system, device; from = "Branch 1", magnitude = 342, variance = 43, noise = true)
-addAmmeter!(system, device; to = "Branch 1", magnitude = 385, variance = 0.43, square = true)
+addAmmeter!(monitoring; from = "Branch 1", magnitude = 342, variance = 43, noise = true)
+addAmmeter!(monitoring; to = "Branch 1", magnitude = 385, variance = 0.43, square = true)
 ```
 
 In this example, we have opted to specify the `magnitude` and `variance` in amperes. It is worth noting that, despite using amperes as the input units, these keywords will still be stored in the per-unit system:
 ```@repl addAmmeterSI
-[device.ammeter.magnitude.mean device.ammeter.magnitude.variance]
+[monitoring.ammeter.magnitude.mean monitoring.ammeter.magnitude.variance]
 ```
 
 ---
@@ -216,7 +215,7 @@ In this example, we have opted to specify the `magnitude` and `variance` in ampe
 ##### Print Data in the REPL
 Users have the option to print the ammeter data in the REPL using any units that have been configured:
 ```@example addAmmeterSI
-printAmmeterData(system, device)
+printAmmeterData(monitoring)
 nothing # hide
 ```
 
@@ -227,23 +226,22 @@ Users can include wattmeters in either an existing measurement type or one that 
 ```@example addWattmeter
 using JuliaGrid # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
-addWattmeter!(system, device; bus = "Bus 1", active = 0.6, variance = 1e-3)
-addWattmeter!(system, device; from = "Branch 1", active = 0.3, variance = 1e-2)
-addWattmeter!(system, device; to = "Branch 1", active = 0.1, variance = 1e-3, noise = true)
+addWattmeter!(monitoring; bus = "Bus 1", active = 0.6, variance = 1e-3)
+addWattmeter!(monitoring; from = "Branch 1", active = 0.3, variance = 1e-2)
+addWattmeter!(monitoring; to = "Branch 1", active = 0.1, variance = 1e-3, noise = true)
 ```
 
 In this scenario, one wattmeter has been added to measure the active power injection at `Bus 1`, as indicated by the use of the `bus` keyword. Additionally, two wattmeters have been introduced to measure the active power flow on both sides of `Branch 1` using the `from` and `to` keywords.
 
 For the first and second wattmeters, we assume that the measurement values are already known, defined by the `active`. In contrast, for the third wattmeter, the measurement value is generated by adding white Gaussian noise with the `variance` to the `active` value. As a result, the measurement data is as follows:
 ```@repl addWattmeter
-[device.wattmeter.active.mean device.wattmeter.active.variance]
+[monitoring.wattmeter.active.mean monitoring.wattmeter.active.variance]
 ```
 
 !!! note "Info"
@@ -258,21 +256,20 @@ using JuliaGrid # hide
 @default(unit)  # hide
 @power(MW, pu)
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
-addWattmeter!(system, device; bus = "Bus 1", active = 60, variance = 1e-1)
-addWattmeter!(system, device; from = "Branch 1", active = 30, variance = 1)
-addWattmeter!(system, device; to = "Branch 1", active = 10, variance = 1e-1, noise = true)
+addWattmeter!(monitoring; bus = "Bus 1", active = 60, variance = 1e-1)
+addWattmeter!(monitoring; from = "Branch 1", active = 30, variance = 1)
+addWattmeter!(monitoring; to = "Branch 1", active = 10, variance = 1e-1, noise = true)
 ```
 
 In this example, we have chosen to specify the `active` and `variance` in megawatts (MW), but even though we have used megawatts as the input units, these keywords will still be stored in the per-unit system:
 ```@repl addWattmeterSI
-[device.wattmeter.active.mean device.wattmeter.active.variance]
+[monitoring.wattmeter.active.mean monitoring.wattmeter.active.variance]
 ```
 
 ---
@@ -280,7 +277,7 @@ In this example, we have chosen to specify the `active` and `variance` in megawa
 ##### Print Data in the REPL
 Users have the option to print the wattmeter data in the REPL using any units that have been configured:
 ```@example addWattmeterSI
-printWattmeterData(system, device)
+printWattmeterData(monitoring)
 nothing # hide
 ```
 
@@ -291,21 +288,20 @@ To include varmeters, the same approach as described in the [Add Wattmeter](@ref
 ```@example addVarmeter
 using JuliaGrid # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
-addVarmeter!(system, device; bus = "Bus 1", reactive = 0.2, variance = 1e-3)
-addVarmeter!(system, device; from = "Branch 1", reactive = 0.1, variance = 1e-2)
-addVarmeter!(system, device; to = "Branch 1", reactive = 0.05, variance = 1e-3, noise = true)
+addVarmeter!(monitoring; bus = "Bus 1", reactive = 0.2, variance = 1e-3)
+addVarmeter!(monitoring; from = "Branch 1", reactive = 0.1, variance = 1e-2)
+addVarmeter!(monitoring; to = "Branch 1", reactive = 0.05, variance = 1e-3, noise = true)
 ```
 
 In this context, one varmeter has been added to measure the reactive power injection at `Bus 1`, as indicated by the use of the `bus` keyword. Additionally, two varmeters have been introduced to measure the reactive power flow on both sides of `Branch 1` using the `from` and `to` keywords. As a result, the following outcomes are observed:
 ```@repl addVarmeter
-[device.varmeter.reactive.mean device.varmeter.reactive.variance]
+[monitoring.varmeter.reactive.mean monitoring.varmeter.reactive.variance]
 ```
 
 !!! note "Info"
@@ -320,21 +316,20 @@ using JuliaGrid # hide
 @default(unit)  # hide
 @power(pu, MVAr)
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
-addVarmeter!(system, device; bus = "Bus 1", reactive = 20, variance = 1e-1)
-addVarmeter!(system, device; from = "Branch 1", reactive = 10, variance = 1)
-addVarmeter!(system, device; to = "Branch 1", reactive = 5, variance = 1e-1, noise = true)
+addVarmeter!(monitoring; bus = "Bus 1", reactive = 20, variance = 1e-1)
+addVarmeter!(monitoring; from = "Branch 1", reactive = 10, variance = 1)
+addVarmeter!(monitoring; to = "Branch 1", reactive = 5, variance = 1e-1, noise = true)
 ```
 
 JuliaGrid will still store the values in the per-unit system:
 ```@repl addVarmeterSI
-[device.varmeter.reactive.mean device.varmeter.reactive.variance]
+[monitoring.varmeter.reactive.mean monitoring.varmeter.reactive.variance]
 ```
 
 ---
@@ -342,7 +337,7 @@ JuliaGrid will still store the values in the per-unit system:
 ##### Print Data in the REPL
 Users have the option to print the varmeter data in the REPL using any units that have been configured:
 ```@example addVarmeterSI
-printVarmeterData(system, device)
+printVarmeterData(monitoring)
 nothing # hide
 ```
 
@@ -353,16 +348,15 @@ Users have the capability to incorporate PMUs into either an existing measuremen
 ```@example addPmu
 using JuliaGrid # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
-addPmu!(system, device; bus = "Bus 1", magnitude = 1.1, angle = 0.1, varianceMagnitude = 0.1)
-addPmu!(system, device; from = "Branch 1", magnitude = 1.0, angle = -0.2, noise = true)
-addPmu!(system, device; to = "Branch 1", magnitude = 0.9, angle = 0.0, varianceAngle = 0.001)
+addPmu!(monitoring; bus = "Bus 1", magnitude = 1.1, angle = 0.1, varianceMagnitude = 0.1)
+addPmu!(monitoring; from = "Branch 1", magnitude = 1.0, angle = -0.2, noise = true)
+addPmu!(monitoring; to = "Branch 1", magnitude = 0.9, angle = 0.0, varianceAngle = 0.001)
 ```
 
 !!! note "Info"
@@ -372,8 +366,8 @@ In this context, one PMU has been added to measure the bus voltage phasor at `Bu
 
 For the first and third PMUs, we assume that the measurement values are already known, defined by the `magnitude` and `angle` keywords. However, for the second PMU, we generate the measurement value by adding white Gaussian noise with `varianceMagnitude` and `varianceAngle` to the `magnitude` and `angle` values, respectively. It is important to note that when we omit specifying variance values, we rely on their default settings, both of which are equal to `1e-8`. As a result, we observe the following outcomes:
 ```@repl addPmu
-[device.pmu.magnitude.mean device.pmu.magnitude.variance]
-[device.pmu.angle.mean device.pmu.angle.variance]
+[monitoring.pmu.magnitude.mean monitoring.pmu.magnitude.variance]
+[monitoring.pmu.angle.mean monitoring.pmu.angle.variance]
 ```
 
 !!! note "Info"
@@ -382,26 +376,26 @@ For the first and third PMUs, we assume that the measurement values are already 
 ---
 
 ##### PMU State Estimation and Coordinate System
-When users add PMUs and create a `PMUStateEstimation` type, they specify that the estimation model should rely only on PMUs. In this case, phasor measurements are always incorporated in the rectangular coordinate system. Here, the real and imaginary components of the phasor measurements become correlated, but these correlations are typically ignored [gomez2011use](@cite). To account for them, users can set the keyword `correlated = true`. For example:
+When users add PMUs and create a `PmuStateEstimation` type, they specify that the estimation model should rely only on PMUs. In this case, phasor measurements are always incorporated in the rectangular coordinate system. Here, the real and imaginary components of the phasor measurements become correlated, but these correlations are typically ignored [gomez2011use](@cite). To account for them, users can set the keyword `correlated = true`. For example:
 ```@example addPmu
 using JuliaGrid # hide
 
-addPmu!(system, device; bus = "Bus 2", magnitude = 1, angle = 0)
-addPmu!(system, device; from = "Branch 1", magnitude = 0.9, angle = -0.3, correlated = true)
+addPmu!(monitoring; bus = "Bus 2", magnitude = 1, angle = 0)
+addPmu!(monitoring; from = "Branch 1", magnitude = 0.9, angle = -0.3, correlated = true)
 ```
 For the first phasor measurement, correlation is neglected, whereas for the second, it is considered.
 
 ---
 
 ##### AC State Estimation and Coordinate Systems
-In AC state estimation, when users create an `ACStateEstimation` type, PMUs are by default integrated into the rectangular coordinate system, where correlations are neglected. Users can also set `correlated = true` to account for the correlation between the real and imaginary components of the phasor measurements. Additionally, in the AC state estimation model, users have the flexibility to incorporate phasor measurements in the polar coordinate system by specifying `polar = true`.
+In AC state estimation, when users create an `AcStateEstimation` type, PMUs are by default integrated into the rectangular coordinate system, where correlations are neglected. Users can also set `correlated = true` to account for the correlation between the real and imaginary components of the phasor measurements. Additionally, in the AC state estimation model, users have the flexibility to incorporate phasor measurements in the polar coordinate system by specifying `polar = true`.
 
 For example, let us add PMUs:
 ```@example addPmu
 using JuliaGrid # hide
 
-addPmu!(system, device; bus = "Bus 2", magnitude = 1, angle = 0, polar = true, square = true)
-addPmu!(system, device; from = "Branch 1", magnitude = 0.9, angle = -0.3, correlated = true)
+addPmu!(monitoring; bus = "Bus 2", magnitude = 1, angle = 0, polar = true, square = true)
+addPmu!(monitoring; from = "Branch 1", magnitude = 0.9, angle = -0.3, correlated = true)
 ```
 
 The first phasor measurement will be incorporated into the AC state estimation model using the polar coordinate system. Additionally, by setting `square = true`, the current magnitude measurement will be included in its squared form. The second PMU will be integrated into the rectangular coordinate system, where a correlation exists between the real and imaginary components.
@@ -419,22 +413,21 @@ using JuliaGrid # hide
 @voltage(kV, deg, V)
 @current(A, deg)
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", base = 135e3)
 addBus!(system; label = "Bus 2", base = 135e3)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
-addPmu!(system, device; bus = "Bus 1", magnitude = 85.74, angle = 5.73, varianceAngle = 0.06)
-addPmu!(system, device; from = "Branch 1", magnitude = 427.67, angle = -11.46, noise = true)
-addPmu!(system, device; to = "Branch 1", magnitude = 384.91, angle = 0.0)
+addPmu!(monitoring; bus = "Bus 1", magnitude = 85.74, angle = 5.73, varianceAngle = 0.06)
+addPmu!(monitoring; from = "Branch 1", magnitude = 427.67, angle = -11.46, noise = true)
+addPmu!(monitoring; to = "Branch 1", magnitude = 384.91, angle = 0.0)
 ```
 
 In this example, we have opted to specify kilovolts (kV) and degrees (deg) for the PMU located at `Bus 1`, and amperes (A) and degrees (deg) for the PMUs located at `Branch 1`. It is important to note that regardless of the units used, the values will still be stored in per-units and radians:
 ```@repl addPmuSI
-[device.pmu.magnitude.mean device.pmu.magnitude.variance]
-[device.pmu.angle.mean device.pmu.angle.variance]
+[monitoring.pmu.magnitude.mean monitoring.pmu.magnitude.variance]
+[monitoring.pmu.angle.mean monitoring.pmu.angle.variance]
 ```
 
 ---
@@ -442,7 +435,7 @@ In this example, we have opted to specify kilovolts (kV) and degrees (deg) for t
 ##### Print Data in the REPL
 Users have the option to print the PMU data in the REPL using any units that have been configured:
 ```@example addPmuSI
-printPmuData(system, device)
+printPmuData(monitoring)
 nothing # hide
 ```
 
@@ -471,34 +464,33 @@ In JuliaGrid, users have the flexibility to customize default values and assign 
 ```@example changeDefault
 using JuliaGrid # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
 @voltmeter(variance = 1e-4, noise = true)
-addVoltmeter!(system, device; label = "Voltmeter 1", bus = "Bus 1", magnitude = 1.0)
+addVoltmeter!(monitoring; label = "Voltmeter 1", bus = "Bus 1", magnitude = 1.0)
 
 @ammeter(varianceFrom = 1e-3, varianceTo = 1e-4, statusTo = 0)
-addAmmeter!(system, device; label = "Ammeter 1", from = "Branch 1", magnitude = 1.1)
-addAmmeter!(system, device; label = "Ammeter 2", to = "Branch 1", magnitude = 0.9)
+addAmmeter!(monitoring; label = "Ammeter 1", from = "Branch 1", magnitude = 1.1)
+addAmmeter!(monitoring; label = "Ammeter 2", to = "Branch 1", magnitude = 0.9)
 
 @wattmeter(varianceBus = 1e-3, statusFrom = 0, noise = true)
-addWattmeter!(system, device; label = "Wattmeter 1", bus = "Bus 1", active = 0.6)
-addWattmeter!(system, device; label = "Wattmeter 2", from = "Branch 1", active = 0.3)
-addWattmeter!(system, device; label = "Wattmeter 3", to = "Branch 1", active = 0.1)
+addWattmeter!(monitoring; label = "Wattmeter 1", bus = "Bus 1", active = 0.6)
+addWattmeter!(monitoring; label = "Wattmeter 2", from = "Branch 1", active = 0.3)
+addWattmeter!(monitoring; label = "Wattmeter 3", to = "Branch 1", active = 0.1)
 
 @varmeter(varianceFrom = 1e-3, varianceTo = 1e-3, statusBus = 0)
-addVarmeter!(system, device; label = "Varmeter 1", bus = "Bus 1", reactive = 0.2)
-addVarmeter!(system, device; label = "Varmeter 2", from = "Branch 1", reactive = 0.1)
-addVarmeter!(system, device; label = "Varmeter 3", to = "Branch 1", reactive = 0.05)
+addVarmeter!(monitoring; label = "Varmeter 1", bus = "Bus 1", reactive = 0.2)
+addVarmeter!(monitoring; label = "Varmeter 2", from = "Branch 1", reactive = 0.1)
+addVarmeter!(monitoring; label = "Varmeter 3", to = "Branch 1", reactive = 0.05)
 
 @pmu(varianceMagnitudeBus = 1e-4, statusBus = 0, varianceAngleFrom = 1e-3)
-addPmu!(system, device; label = "PMU 1", bus = "Bus 1", magnitude = 1.1, angle = -0.1)
-addPmu!(system, device; label = "PMU 2", from = "Branch 1", magnitude = 1.0, angle = -0.2)
-addPmu!(system, device; label = "PMU 3", to = "Branch 1", magnitude = 0.9, angle = 0.0)
+addPmu!(monitoring; label = "PMU 1", bus = "Bus 1", magnitude = 1.1, angle = -0.1)
+addPmu!(monitoring; label = "PMU 2", from = "Branch 1", magnitude = 1.0, angle = -0.2)
+addPmu!(monitoring; label = "PMU 3", to = "Branch 1", magnitude = 0.9, angle = 0.0)
 ```
 
 For instance, when adding a wattmeter to the bus, the `varianceBus = 1e-3` will be applied, or if it is added to the from-bus end of the branch, these wattmeters will be set as out-of-service according to `statusFrom = 0`.
@@ -551,17 +543,16 @@ using JuliaGrid # hide
 @default(template) # hide
 @config(label = Integer)
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = 1)
 addBus!(system; label = 2)
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.12)
 
-addVoltmeter!(system, device; label = 1, bus = 1, magnitude = 1.0)
+addVoltmeter!(monitoring; label = 1, bus = 1, magnitude = 1.0)
 
-addAmmeter!(system, device; label = 1, from = 1, magnitude = 1.1)
-addAmmeter!(system, device; label = 2, to = 1, magnitude = 0.9)
+addAmmeter!(monitoring; label = 1, from = 1, magnitude = 1.1)
+addAmmeter!(monitoring; label = 2, to = 1, magnitude = 0.9)
 nothing # hide
 ```
 
@@ -576,40 +567,39 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 
 @voltmeter(label = "Voltmeter ?")
-addVoltmeter!(system, device; bus = "Bus 1", magnitude = 1.0)
-addVoltmeter!(system, device; bus = "Bus 2", magnitude = 0.9)
+addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 1.0)
+addVoltmeter!(monitoring; bus = "Bus 2", magnitude = 0.9)
 
 @ammeter(label = "!")
-addAmmeter!(system, device; from = "Branch 1", magnitude = 1.1)
-addAmmeter!(system, device; to = "Branch 1", magnitude = 0.9)
+addAmmeter!(monitoring; from = "Branch 1", magnitude = 1.1)
+addAmmeter!(monitoring; to = "Branch 1", magnitude = 0.9)
 
 @wattmeter(label = "Wattmeter ?: !")
-addWattmeter!(system, device; bus = "Bus 1", active = 0.6)
-addWattmeter!(system, device; from = "Branch 1", active = 0.3)
+addWattmeter!(monitoring; bus = "Bus 1", active = 0.6)
+addWattmeter!(monitoring; from = "Branch 1", active = 0.3)
 nothing # hide
 ```
 
 To illustrate, the voltmeter labels are defined with incremental integers as follows:
 ```@repl LabelAutomaticTemplate
-device.voltmeter.label
+monitoring.voltmeter.label
 ```
 
 Moreover, for ammeter labels, location information is employed:
 ```@repl LabelAutomaticTemplate
-device.ammeter.label
+monitoring.ammeter.label
 ```
 
 Lastly, for wattmeters, a combination of both approaches is used:
 ```@repl LabelAutomaticTemplate
-device.wattmeter.label
+monitoring.wattmeter.label
 ```
 
 ---
@@ -619,51 +609,50 @@ Let us explore how to retrieve stored labels. Consider the following model:
 ```@example retrievingLabels
 using JuliaGrid # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1")
 addBus!(system; label = "Bus 2")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
 addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 1", reactance = 0.14)
 
-addWattmeter!(system, device; label = "Wattmeter 2", bus = "Bus 2", active = 0.6)
-addWattmeter!(system, device; label = "Wattmeter 1", bus = "Bus 1", active = 0.2)
-addWattmeter!(system, device; label = "Wattmeter 4", from = "Branch 1", active = 0.3)
-addWattmeter!(system, device; label = "Wattmeter 3", to = "Branch 1", active = 0.1)
-addWattmeter!(system, device; label = "Wattmeter 5", from = "Branch 2", active = 0.1)
+addWattmeter!(monitoring; label = "Wattmeter 2", bus = "Bus 2", active = 0.6)
+addWattmeter!(monitoring; label = "Wattmeter 1", bus = "Bus 1", active = 0.2)
+addWattmeter!(monitoring; label = "Wattmeter 4", from = "Branch 1", active = 0.3)
+addWattmeter!(monitoring; label = "Wattmeter 3", to = "Branch 1", active = 0.1)
+addWattmeter!(monitoring; label = "Wattmeter 5", from = "Branch 2", active = 0.1)
 nothing # hide
 ```
 
 To access the wattmeter labels, we can use the variable:
 ```@repl retrievingLabels
-device.wattmeter.label
+monitoring.wattmeter.label
 ```
 
 If we need to obtain only labels, we can use the following code:
 ```@repl retrievingLabels
-label = collect(keys(device.wattmeter.label))
+label = collect(keys(monitoring.wattmeter.label))
 ```
 
 To isolate the wattmeters positioned either at the buses or at the ends of branches (from-bus or to-bus), users can achieve this using the following code:
 ```@repl retrievingLabels
-label[device.wattmeter.layout.bus]
-label[device.wattmeter.layout.from]
-label[device.wattmeter.layout.to]
+label[monitoring.wattmeter.layout.bus]
+label[monitoring.wattmeter.layout.from]
+label[monitoring.wattmeter.layout.to]
 ```
 
 Furthermore, when using the [`addWattmeter!`](@ref addWattmeter!) function, the labels for the keywords `bus`, `from`, and `to` are stored internally as numerical values. To retrieve bus labels, we can follow this procedure:
 ```@repl retrievingLabels
 label = collect(keys(system.bus.label));
-label[device.wattmeter.layout.index[device.wattmeter.layout.bus]]
+label[monitoring.wattmeter.layout.index[monitoring.wattmeter.layout.bus]]
 ```
 
 Similarly, to obtain labels for branches, we can use the following code:
 ```@repl retrievingLabels
 label = collect(keys(system.branch.label));
 
-label[device.wattmeter.layout.index[device.wattmeter.layout.from]]
-label[device.wattmeter.layout.index[device.wattmeter.layout.to]]
+label[monitoring.wattmeter.layout.index[monitoring.wattmeter.layout.from]]
+label[monitoring.wattmeter.layout.index[monitoring.wattmeter.layout.to]]
 ```
 
 This procedure is applicable to all measurement devices, including voltmeters, ammeters, varmeters, and PMUs.
@@ -671,7 +660,7 @@ This procedure is applicable to all measurement devices, including voltmeters, a
 !!! tip "Tip"
     JuliaGrid offers the capability to print labels alongside various types of data. For instance, users can use the following code to print labels in combination with specific data:
     ```@repl retrievingLabels
-    print(device.wattmeter.label, device.wattmeter.active.mean)
+    print(monitoring.wattmeter.label, monitoring.wattmeter.active.mean)
     ```
 
 ---
@@ -689,8 +678,7 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
@@ -706,29 +694,29 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.2)
 
 analysis = newtonRaphson(system)
 for iteration = 1:100
-    stopping = mismatch!(system, analysis)
+    stopping = mismatch!(analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, analysis)
+    solve!(analysis)
 end
-power!(system, analysis)
-current!(system, analysis)
+power!(analysis)
+current!(analysis)
 
 @voltmeter(label = "!", noise = true)
-addVoltmeter!(system, device, analysis; variance = 1e-3)
+addVoltmeter!(monitoring, analysis; variance = 1e-3)
 
 @ammeter(label = "!")
-addAmmeter!(system, device, analysis; varianceFrom = 1e-3, statusTo = 0, noise = true)
+addAmmeter!(monitoring, analysis; varianceFrom = 1e-3, statusTo = 0, noise = true)
 
 @wattmeter(label = "!")
-addWattmeter!(system, device, analysis; varianceBus = 1e-3, statusFrom = 0)
+addWattmeter!(monitoring, analysis; varianceBus = 1e-3, statusFrom = 0)
 
 @varmeter(label = "!")
-addVarmeter!(system, device, analysis; varianceFrom = 1e-3, statusBus = 0)
+addVarmeter!(monitoring, analysis; varianceFrom = 1e-3, statusBus = 0)
 
 @pmu(label = "!", polar = true)
-addPmu!(system, device, analysis; varianceMagnitudeBus = 1e-3)
+addPmu!(monitoring, analysis; varianceMagnitudeBus = 1e-3)
 nothing  # hide
 ```
 
@@ -745,14 +733,14 @@ Users have the option to employ an alternative method for adding groups of measu
 ```@example addDeviceGroups
 Pᵢ = analysis.power.injection.active
 for (label, idx) in system.bus.label
-    addWattmeter!(system, device; bus = label, active = Pᵢ[idx], variance = 1e-3)
+    addWattmeter!(monitoring; bus = label, active = Pᵢ[idx], variance = 1e-3)
 end
 
 Pᵢⱼ = analysis.power.from.active
 Pⱼᵢ = analysis.power.to.active
 for (label, idx) in system.branch.label
-    addWattmeter!(system, device; from = label, active = Pᵢⱼ[idx], status = 0)
-    addWattmeter!(system, device; to = label, active = Pⱼᵢ[idx])
+    addWattmeter!(monitoring; from = label, active = Pᵢⱼ[idx], status = 0)
+    addWattmeter!(monitoring; to = label, active = Pⱼᵢ[idx])
 end
 nothing  # hide
 ```
@@ -767,7 +755,7 @@ After the addition of measurement devices to the `Measurement` type, users posse
 ##### [Update Voltmeter](@id UpdateVoltmeterManual)
 Users have the flexibility to modify all parameters as defined within the [`addVoltmeter!`](@ref addVoltmeter!) function. For illustration, let us continue with the example from the [Add Device Groups](@ref AddDeviceGroupsManual) section:
 ```@example addDeviceGroups
-updateVoltmeter!(system, device; label = "Bus 2", magnitude = 0.9, noise = false)
+updateVoltmeter!(monitoring; label = "Bus 2", magnitude = 0.9, noise = false)
 nothing  # hide
 ```
 In this example, we update the measurement value of the voltmeter located at `Bus 2`, and this measurement is now generated without the inclusion of white Gaussian noise.
@@ -777,8 +765,8 @@ In this example, we update the measurement value of the voltmeter located at `Bu
 ##### [Update Ammeter](@id UpdateAmmeterManual)
 Similarly, users have the flexibility to modify all parameters defined within the [`addAmmeter!`](@ref addAmmeter!) function. Using the same example from the [Add Device Groups](@ref AddDeviceGroupsManual) section, for example, we have:
 ```@example addDeviceGroups
-updateAmmeter!(system, device; label = "From Branch 2", magnitude = 1.2, variance = 1e-4)
-updateAmmeter!(system, device; label = "To Branch 2", status = 0)
+updateAmmeter!(monitoring; label = "From Branch 2", magnitude = 1.2, variance = 1e-4)
+updateAmmeter!(monitoring; label = "To Branch 2", status = 0)
 nothing  # hide
 ```
 In this example, we make adjustments to the measurement and variance values of the ammeter located at `Branch 2`, specifically at the from-bus end. Next, we deactivate the ammeter at the same branch on the to-bus end.
@@ -788,8 +776,8 @@ In this example, we make adjustments to the measurement and variance values of t
 ##### [Update Wattmeter](@id UpdateWattmeterManual)
 Following the same logic, users can modify all parameters defined within the [`addWattmeter!`](@ref addWattmeter!) function:
 ```@example addDeviceGroups
-updateWattmeter!(system, device; label = "Bus 1", active = 1.2, variance = 1e-4)
-updateWattmeter!(system, device; label = "To Branch 1", variance = 1e-6)
+updateWattmeter!(monitoring; label = "Bus 1", active = 1.2, variance = 1e-4)
+updateWattmeter!(monitoring; label = "To Branch 1", variance = 1e-6)
 nothing  # hide
 ```
 In this case, we modify the measurement and variance values for the wattmeter located at `Bus 1`. The wattmeter at `Branch 1` on the to-bus end retains its measurement value, while only the measurement variance is adjusted.
@@ -799,8 +787,8 @@ In this case, we modify the measurement and variance values for the wattmeter lo
 ##### [Update Varmeter](@id UpdateVarmeterManual)
 Following the same logic, users can modify all parameters defined within the [`addVarmeter!`](@ref addVarmeter!) function:
 ```@example addDeviceGroups
-updateVarmeter!(system, device; label = "Bus 1", reactive = 1.2)
-updateVarmeter!(system, device; label = "Bus 2", status = 0)
+updateVarmeter!(monitoring; label = "Bus 1", reactive = 1.2)
+updateVarmeter!(monitoring; label = "Bus 2", status = 0)
 nothing  # hide
 ```
 In this instance, we make adjustments to the measurement value of the varmeter located at `Bus 1`, while utilizing a previously defined variance. Furthermore, we deactivate the varmeter at `Bus 2` and designate it as out-of-service.
@@ -810,8 +798,8 @@ In this instance, we make adjustments to the measurement value of the varmeter l
 ##### [Update PMU](@id UpdatePMUrManual)
 Finally, users can modify all PMU parameters defined within the [`addPmu!`](@ref addPmu!) function:
 ```@example addDeviceGroups
-updatePmu!(system, device; label = "Bus 1", magnitude = 1.05, noise = true)
-updatePmu!(system, device; label = "From Branch 1", varianceAngle = 1e-6, polar = false)
+updatePmu!(monitoring; label = "Bus 1", magnitude = 1.05, noise = true)
+updatePmu!(monitoring; label = "From Branch 1", varianceAngle = 1e-6, polar = false)
 nothing  # hide
 ```
 
@@ -826,8 +814,7 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.5, magnitude = 0.9, angle = 0.0)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, magnitude = 1.1, angle = -0.1)
@@ -843,18 +830,18 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.2)
 
 analysis = newtonRaphson(system)
 for iteration = 1:100
-    stopping = mismatch!(system, analysis)
+    stopping = mismatch!(analysis)
     if all(stopping .< 1e-8)
         break
     end
-    solve!(system, analysis)
+    solve!(analysis)
 end
-power!(system, analysis)
-current!(system, analysis)
+power!(analysis)
+current!(analysis)
 
-addVoltmeter!(system, device, analysis)
-addAmmeter!(system, device, analysis)
-addPmu!(system, device, analysis)
+addVoltmeter!(monitoring, analysis)
+addAmmeter!(monitoring, analysis)
+addPmu!(monitoring, analysis)
 nothing  # hide
 ```
 
@@ -865,21 +852,21 @@ As a starting point, we create the measurement set where all devices are set to 
 
 Subsequently, we offer users the ability to manipulate the status of in-service devices using the [`status!`](@ref status!) function. For example, within this set, if we wish to have only 12 out of the total 18 devices in-service while the rest are out-of-service, we can accomplish this as follows:
 ```@example measurementSet
-status!(system, device; inservice = 12)
+status!(monitoring; inservice = 12)
 nothing  # hide
 ```
 Upon executing this function, 12 devices will be randomly selected to be in-service, while the remaining 6 will be set to out-of-service.
 
 Furthermore, users can fine-tune the manipulation of specific measurements. Let us say we want to activate only 2 ammeters while deactivating the remaining ammeters:
 ```@example measurementSet
-statusAmmeter!(system, device; inservice = 2)
+statusAmmeter!(monitoring; inservice = 2)
 nothing  # hide
 ```
 This action will result in 2 ammeters being in-service and 4 being out-of-service.
 
 Users also have the option to further refine these actions by specifying devices at particular locations within the power system. For instance, we can enable 3 PMUs at buses to measure bus voltage phasors while deactivating all PMUs at branches that measure current phasors:
 ```@example measurementSet
-statusPmu!(system, device; inserviceBus = 3, inserviceFrom = 0, inserviceTo = 0)
+statusPmu!(monitoring; inserviceBus = 3, inserviceFrom = 0, inserviceTo = 0)
 nothing  # hide
 ```
 The outcome will be that 3 PMUs are set to in-service at buses for voltage phasor measurements, while all PMUs at branches measuring current phasors will be in out-of-service mode.
@@ -889,7 +876,7 @@ The outcome will be that 3 PMUs are set to in-service at buses for voltage phaso
 ##### Deactivating Devices
 Likewise, we empower users to specify the number of devices to be set as out-of-service rather than defining the number of in-service devices. For instance, if the intention is to deactivate just 2 devices from the total measurement set, it can be achieved as follows:
 ```@example measurementSet
-status!(system, device; outservice = 2)
+status!(monitoring; outservice = 2)
 nothing  # hide
 ```
 In this scenario 2 devices will be randomly deactivated, while the rest will remain in in-service status. Similar to the previous approach, users can apply this to specific devices or employ fine-tuning as needed.
@@ -899,7 +886,7 @@ In this scenario 2 devices will be randomly deactivated, while the rest will rem
 ##### Activating Devices Using Redundancy
 Furthermore, users can take advantage of redundancy, which represents the ratio between measurement devices and state variables. For example, if we wish to have the number of measurement devices be 1.2 times greater than the number of state variables, we can utilize the following command:
 ```@example measurementSet
-status!(system, device; redundancy = 1.2)
+status!(monitoring; redundancy = 1.2)
 nothing  # hide
 ```
 Considering that the number of state variables is 5 (excluding the voltage angle related to the slack bus), using a redundancy value of 1.2 will result in 6 devices being set to in-service, while the remainder will be deactivated. As before, users can target specific devices or adjust settings as needed.

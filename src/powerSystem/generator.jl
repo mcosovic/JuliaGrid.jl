@@ -1,18 +1,12 @@
 """
-    addGenerator!(system::PowerSystem, [analysis::Analysis];
+    addGenerator!(system::PowerSystem;
         label, bus, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive,
         lowActive, minLowReactive, maxLowReactive, upActive, minUpReactive, maxUpReactive,
         loadFollowing, reactiveRamp, reserve10min, reserve30min, area)
 
-The function adds a new generator to the `PowerSystem` type. The generator can be added to
-an already defined bus.
-
-# Arguments
-If the `Analysis` type is omitted, the function applies changes to the `PowerSystem`
-type only. However, when including the `Analysis` type, it updates both the `PowerSystem`
-and `Analysis` types. This streamlined approach circumvents the necessity for completely
-reconstructing vectors and matrices when adding a new generator.
+The function adds a new generator to the `PowerSystem` type. The generator can be added to an already
+defined bus.
 
 # Keywords
 The generator is defined with the following keywords:
@@ -40,24 +34,22 @@ The generator is defined with the following keywords:
 * `reactiveRamp` (pu/min or VAr/min): Ramp rate for reactive power, two seconds timescale.
 * `area`: Area participation factor.
 
-Note that voltage magnitude values are referenced to line-to-neutral voltages, while powers,
-when given in SI units, correspond to three-phase power.
+Note that voltage magnitude values are referenced to line-to-neutral voltages, while powers, when
+given in SI units, correspond to three-phase power.
 
 # Updates
-The function updates the `generator` field within the `PowerSystem` type, and in cases
-where parameters impact variables in the `bus` field, it automatically adjusts the field.
-Furthermore, it guarantees that any modifications to the parameters are transmitted to the
-`Analysis` type.
+The function updates the `generator` field within the `PowerSystem` type, and in cases where
+parameters impact variables in the `bus` field, it automatically adjusts the field.
 
 # Default Settings
 By default, certain keywords are assigned default values: `status = 1` and `magnitude = 1.0`
-per-unit. The rest of the keywords are initialized with a value of zero. However, the user
-can modify these default settings by utilizing the [`@generator`](@ref @generator) macro.
+per-unit. The rest of the keywords are initialized with a value of zero. However, the user can modify
+these default settings by utilizing the [`@generator`](@ref @generator) macro.
 
 # Units
-By default, the input units are associated with per-units as shown. However, users have
-the option to use other units instead of per-units using the [`@power`](@ref @power)
-and [`@voltage`](@ref @voltage) macros.
+By default, the input units are associated with per-units as shown. However, users have the option to
+use other units instead of per-units using the [`@power`](@ref @power) and [`@voltage`](@ref @voltage)
+macros.
 
 # Examples
 Adding a generator using the default unit system:
@@ -73,6 +65,7 @@ Adding a generator using a custom unit system:
 ```jldoctest
 @power(MW, MVAr)
 @voltage(kV, deg, kV)
+
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 2, active = 20, base = 132)
@@ -80,12 +73,7 @@ addBus!(system; label = "Bus 1", type = 2, active = 20, base = 132)
 addGenerator!(system; bus = "Bus 1", active = 50, magnitude = 145.2)
 ```
 """
-function addGenerator!(
-    system::PowerSystem;
-    label::IntStrMiss = missing,
-    bus::IntStrMiss,
-    kwargs...
-)
+function addGenerator!(system::PowerSystem; label::IntStrMiss = missing, bus::IntStrMiss, kwargs...)
     gen = system.generator
     cbt = gen.capability
     rmp = gen.ramping
@@ -94,7 +82,7 @@ function addGenerator!(
 
     gen.number += 1
     setLabel(gen, label, def.label, "generator")
-    busIdx = system.bus.label[getLabel(system.bus, bus, "bus")]
+    busIdx = getIndex(system.bus, bus, "bus")
 
     add!(gen.layout.status, key.status, def.status)
     checkStatus(gen.layout.status[end])
@@ -137,116 +125,122 @@ function addGenerator!(
     push!(gen.cost.reactive.model, 0)
 end
 
-function addGenerator!(
-    system::PowerSystem,
-    ::ACPowerFlow;
-    label::IntStrMiss = missing,
-    bus::IntStrMiss,
-    kwargs...
-)
-    addGenerator!(system; label, bus, kwargs...)
+"""
+    addGenerator!(analysis::Analysis; kwargs...)
+
+The function extends the [`addGenerator!`](@ref addGenerator!(::PowerSystem)) function. When the
+`Analysis` type is passed, the function first adds the specified generator to the `PowerSystem` type
+using the provided `kwargs`, and then adds the same generator to the `Analysis` type.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+analysis = newtonRaphson(system)
+
+addGenerator!(analysis; bus = 1, active = 0.5, reactive = 0.2)
+```
+"""
+function addGenerator!(analysis::AcPowerFlow; label::IntStrMiss = missing, bus::IntStrMiss, kwargs...)
+    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
+    addGenerator!(analysis.system; label, bus, kwargs...)
+end
+
+function addGenerator!(analysis::DcPowerFlow; label::IntStrMiss = missing, bus::IntStrMiss, kwargs...)
+    errorTypeConversion(analysis.system.bus.layout.slack, analysis.method.signature[:slack])
+    addGenerator!(analysis.system; label, bus, kwargs...)
 end
 
 function addGenerator!(
-    system::PowerSystem,
-    ::DCPowerFlow;
+    analysis::AcOptimalPowerFlow;
     label::IntStrMiss = missing,
     bus::IntStrMiss,
     kwargs...
 )
-    addGenerator!(system; label, bus, kwargs...)
-end
-
-function addGenerator!(
-    system::PowerSystem,
-    analysis::ACOptimalPowerFlow;
-    label::IntStrMiss = missing,
-    bus::IntStrMiss,
-    kwargs...
-)
+    system = analysis.system
     gen = system.generator
     jump = analysis.method.jump
-    constr = analysis.method.constraint
-    variable = analysis.method.variable
+    var = analysis.method.variable
+    con = analysis.method.constraint
 
     addGenerator!(system; label, bus, kwargs...)
 
     idx = gen.number
+    idxBus = gen.layout.bus[end]
 
-    push!(variable.active, @variable(jump, base_name = "active[$idx]"))
-    push!(variable.reactive, @variable(jump, base_name = "reactive[$idx]"))
+    push!(var.power.active, @variable(jump, base_name = "$(jump.ext[:active])[$idx]"))
+    push!(var.power.reactive, @variable(jump, base_name = "$(jump.ext[:reactive])[$idx]"))
 
     push!(analysis.power.generator.active, gen.output.active[end])
     push!(analysis.power.generator.reactive, gen.output.reactive[end])
 
     if gen.layout.status[end] == 1
-        updateBalance(system, analysis, gen.layout.bus[end]; active = true, reactive = true)
+        capabilityCurve(system, jump, var, con, idx)
+
         addCapability(
-            jump, variable.active, constr.capability.active,
+            jump, var.power.active, con.capability.active,
             gen.capability.minActive, gen.capability.maxActive, idx
         )
         addCapability(
-            jump, variable.reactive, constr.capability.reactive,
+            jump, var.power.reactive, con.capability.reactive,
             gen.capability.minReactive, gen.capability.maxReactive, idx
         )
     else
-        fix!(variable.active[idx], 0.0, constr.capability.active, idx)
-        fix!(variable.reactive[idx], 0.0, constr.capability.reactive, idx)
+        fix!(var.power.active[idx], 0.0, con.capability.active, idx)
+        fix!(var.power.reactive[idx], 0.0, con.capability.reactive, idx)
     end
+
+    remove!(jump, con.balance.active, idxBus)
+    remove!(jump, con.balance.reactive, idxBus)
+    addBalance(system, jump, var, con, idxBus)
 end
 
 function addGenerator!(
-    system::PowerSystem,
-    analysis::DCOptimalPowerFlow;
+    analysis::DcOptimalPowerFlow;
     label::IntStrMiss = missing,
     bus::IntStrMiss,
     kwargs...
 )
+    system = analysis.system
     gen = system.generator
     jump = analysis.method.jump
-    constr = analysis.method.constraint
-    variable = analysis.method.variable
+    var = analysis.method.variable
+    con = analysis.method.constraint
 
     addGenerator!(system; label, bus, kwargs...)
 
     idx = gen.number
+    idxBus =  gen.layout.bus[end]
 
-    push!(variable.active, @variable(jump, base_name = "active[$idx]"))
+    push!(var.power.active, @variable(jump, base_name = "$(jump.ext[:active])[$idx]"))
     push!(analysis.power.generator.active, gen.output.active[end])
 
     if gen.layout.status[end] == 1
-        updateBalance(system, analysis, gen.layout.bus[end]; power = 1, idxGen = idx)
         addCapability(
-            jump, variable.active, constr.capability.active,
+            jump, var.power.active, con.capability.active,
             gen.capability.minActive, gen.capability.maxActive, idx
         )
     else
-        fix!(variable.active[idx], 0.0, constr.capability.active, idx)
+        fix!(var.power.active[idx], 0.0, con.capability.active, idx)
     end
+
+    remove!(jump, con.balance.active, idxBus)
+    addBalance(system, jump, var, con, idxBus)
 end
 
 """
-    updateGenerator!(system::PowerSystem, [analysis::Analysis]; kwargs...)
+    updateGenerator!(system::PowerSystem; kwargs...)
 
 The function allows for the alteration of parameters for an existing generator.
 
-# Arguments
-If the `Analysis` type is omitted, the function applies changes to the `PowerSystem` type
-only. However, when including the `Analysis` type, it updates both the `PowerSystem` and
-`Analysis` types. This streamlined process avoids the need to completely rebuild vectors
-and matrices when adjusting these parameter.
-
 # Keywords
-To update a specific generator, provide the necessary `kwargs` input arguments in accordance
-with the keywords specified in the [`addGenerator!`](@ref addGenerator!) function, along with
-their respective values. Ensure that the `label` keyword matches the label of the existing
-generator. If any keywords are omitted, their corresponding values will remain unchanged.
+To update a specific generator, provide the necessary `kwargs` input arguments in accordance with the
+keywords specified in the [`addGenerator!`](@ref addGenerator!) function, along with their respective
+values. Ensure that the `label` keyword matches the label of the existing generator. If any keywords
+are omitted, their corresponding values will remain unchanged.
 
 # Updates
 The function updates the `generator` field within the `PowerSystem` type, and in cases where
 parameters impact variables in the `bus` field, it automatically adjusts the field.
-Furthermore, it guarantees that any modifications to the parameters are transmitted to the
-`Analysis` type.
 
 # Units
 Units for input parameters can be changed using the same method as described for the
@@ -343,28 +337,46 @@ function updateGenerator!(system::PowerSystem; label::IntStrMiss, kwargs...)
     update!(gen.layout.area, key.area, idx)
 end
 
+"""
+    updateGenerator!(analysis::Analysis; kwargs...)
+
+The function extends the [`updateGenerator!`](@ref updateGenerator!(::PowerSystem)) function. By
+passing the `Analysis` type, the function first updates the specific generator within the
+`PowerSystem` type using the provided `kwargs`, and then updates the `Analysis` type with parameters
+associated with that generator.
+
+A key feature of this function is that any prior modifications made to the specified generator are
+preserved and applied to the `Analysis` type when the function is executed, ensuring consistency
+throughout the update process.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+analysis = newtonRaphson(system)
+
+updateGenerator!(analysis; label = 2, active = 0.35)
+```
+"""
 function updateGenerator!(
-    system::PowerSystem,
-    analysis::ACPowerFlow{T};
+    analysis::AcPowerFlow{T};
     label::IntStrMiss,
     kwargs...
 ) where T <: Union{NewtonRaphson, FastNewtonRaphson}
 
+    system = analysis.system
     gen = system.generator
-    key = generatorkwargs(; kwargs...)
+
+    errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
+    updateGenerator!(system; label, kwargs...)
 
     idx = gen.label[getLabel(gen, label, "generator")]
     idxBus = gen.layout.bus[idx]
-    if isset(key.status)
-        checkStatus(key.status)
-        if key.status == 0 && system.bus.layout.type[idxBus] in [2, 3]
-            if length(system.bus.supply.generator[idxBus]) == 1
-                errorTypeConversion()
-            end
+
+    if gen.layout.status[idx] == 0 && system.bus.layout.type[idxBus] in [2, 3]
+        if length(system.bus.supply.generator[idxBus]) == 0
+            errorTypeConversion()
         end
     end
-
-    updateGenerator!(system; label, kwargs...)
 
     if system.bus.layout.type[idxBus] in [2, 3]
         idx = system.bus.supply.generator[idxBus][1]
@@ -372,28 +384,22 @@ function updateGenerator!(
     end
 end
 
-function updateGenerator!(
-    system::PowerSystem,
-    analysis::ACPowerFlow{GaussSeidel};
-    label::IntStrMiss,
-    kwargs...
-)
+function updateGenerator!(analysis::AcPowerFlow{GaussSeidel}; label::IntStrMiss, kwargs...)
+    system = analysis.system
     bus = system.bus
     gen = system.generator
-    key = generatorkwargs(; kwargs...)
+
+    errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
+    updateGenerator!(system; label, kwargs...)
 
     idx = gen.label[getLabel(gen, label, "generator")]
     idxBus = gen.layout.bus[idx]
-    if isset(key.status)
-        checkStatus(key.status)
-        if key.status == 0 && bus.layout.type[idxBus] in [2, 3]
-            if length(bus.supply.generator[idxBus]) == 1
-                errorTypeConversion()
-            end
+
+    if gen.layout.status[idx] == 0 && bus.layout.type[idxBus] in [2, 3]
+        if length(bus.supply.generator[idxBus]) == 0
+            errorTypeConversion()
         end
     end
-
-    updateGenerator!(system; label, kwargs...)
 
     if bus.layout.type[idxBus] in [2, 3]
         idx = bus.supply.generator[idxBus][1]
@@ -403,283 +409,152 @@ function updateGenerator!(
      end
 end
 
-function updateGenerator!(
-    system::PowerSystem,
-    analysis::DCPowerFlow;
-    label::IntStrMiss,
-    kwargs...
-)
+function updateGenerator!(analysis::DcPowerFlow; label::IntStrMiss, kwargs...)
+    system = analysis.system
     gen = system.generator
-    key = generatorkwargs(; kwargs...)
 
-    if isset(key.status)
-        checkStatus(key.status)
-        idx = gen.label[getLabel(gen, label, "generator")]
-        idxBus = gen.layout.bus[idx]
-        if key.status == 0 && system.bus.layout.slack == idxBus
-            if length(system.bus.supply.generator[idxBus]) == 1
-                errorTypeConversion()
-            end
+    errorTypeConversion(system.bus.layout.slack, analysis.method.signature[:slack])
+    updateGenerator!(system; label, kwargs...)
+
+    idx = gen.label[getLabel(gen, label, "generator")]
+    idxBus = gen.layout.bus[idx]
+
+    if gen.layout.status[idx] == 0 && system.bus.layout.slack == idxBus
+        if length(system.bus.supply.generator[idxBus]) == 0
+            errorTypeConversion()
         end
     end
-
-    updateGenerator!(system; label, kwargs...)
 end
 
-function updateGenerator!(
-    system::PowerSystem,
-    analysis::ACOptimalPowerFlow;
-    label::IntStrMiss,
-    kwargs...
-)
-    gen = system.generator
+function updateGenerator!(analysis::AcOptimalPowerFlow; label::IntStrMiss, kwargs...)
+    system = analysis.system
+    cbt = system.generator.capability
+
     jump = analysis.method.jump
-    constr = analysis.method.constraint
-    variable = analysis.method.variable
+    var = analysis.method.variable
+    con = analysis.method.constraint
     obj = analysis.method.objective
-    key = generatorkwargs(; kwargs...)
+    quad = analysis.method.objective.quadratic
 
-    idx = gen.label[getLabel(gen, label, "generator")]
-    idxBus = gen.layout.bus[idx]
-    statusOld = gen.layout.status[idx]
+    P = var.power.active
+    Q = var.power.reactive
+    H = var.power.actwise
+    G = var.power.reactwise
 
-    costActive = gen.cost.active
-    costReactive = gen.cost.reactive
+    freeP = analysis.method.signature[:freeP]
+    freeQ = analysis.method.signature[:freeQ]
 
     updateGenerator!(system; label, kwargs...)
 
-    if isset(key.active)
-        analysis.power.generator.active[idx] = gen.output.active[idx]
-    end
-    if isset(key.reactive)
-        analysis.power.generator.reactive[idx] = gen.output.reactive[idx]
-    end
+    idx = getIndex(system.generator, label, "generator")
+    idxBus = system.generator.layout.bus[idx]
 
-    if statusOld == 1 && gen.layout.status[idx] == 0
-        actCost, isActwise, isActNonlin = costExpr(
-            costActive, variable.active[idx], idx, label; ac = true
-        )
-        ReactCost, isReactwise, isReactNonlin = costExpr(
-            costReactive, variable.reactive[idx], idx, label; ac = true
-        )
+    if lastindex(analysis.power.generator.active) == system.generator.number
+        analysis.power.generator.active[idx] = system.generator.output.active[idx]
+        analysis.power.generator.reactive[idx] = system.generator.output.reactive[idx]
+    else
+        push!(var.power.active, @variable(jump, base_name = "$(jump.ext[:active])[$idx]"))
+        push!(var.power.reactive, @variable(jump, base_name = "$(jump.ext[:reactive])[$idx]"))
 
-        @objective(jump, Min, 0.0)
-
-        if isActwise
-            remove!(jump, constr.piecewise.active, idx)
-            add_to_expression!(obj.quadratic, -variable.actwise[idx])
-            remove!(jump, variable.actwise, idx)
-        else
-            obj.quadratic -= actCost
-        end
-        if isReactwise
-            remove!(jump, constr.piecewise.reactive, idx)
-            add_to_expression!(obj.quadratic, -variable.reactwise[idx])
-            remove!(jump, variable.reactwise, idx)
-        else
-            obj.quadratic -= ReactCost
-        end
-        drop_zeros!(obj.quadratic)
-
-        if isActNonlin
-            delete!(obj.nonlinear.active, idx)
-        end
-        if isReactNonlin
-            delete!(obj.nonlinear.reactive, idx)
-        end
-
-        @objective(
-            jump, Min,
-            obj.quadratic +
-            sum(obj.nonlinear.active[i] for i in keys(obj.nonlinear.active)) +
-            sum(obj.nonlinear.reactive[i] for i in keys(obj.nonlinear.reactive))
-        )
-
-        remove!(jump, constr.capability.active, idx)
-        remove!(jump, constr.capability.reactive, idx)
-        fix!(variable.active[idx], 0.0, constr.capability.active, idx)
-        fix!(variable.reactive[idx], 0.0, constr.capability.reactive, idx)
-        updateBalance(system, analysis, idxBus; active = true, reactive = true)
+        push!(analysis.power.generator.active, system.generator.output.active[idx])
+        push!(analysis.power.generator.reactive, system.generator.output.reactive[idx])
     end
 
-    if statusOld == 0 && gen.layout.status[idx] == 1
-        actCost, isActwise, isActNonlin = costExpr(
-            costActive, variable.active[idx], idx, label; ac = true
-        )
-        ReactCost, isReactwise, isReactNonlin = costExpr(
-            costReactive, variable.reactive[idx], idx, label; ac = true
-        )
+    remove!(jump, con.capability.active, idx)
+    remove!(jump, con.capability.reactive, idx)
+    remove!(jump, con.capability.lower, idx)
+    remove!(jump, con.capability.upper, idx)
 
-        if isActwise
-            addPowerwise(jump, obj.quadratic, variable.actwise, idx, "actwise")
-            addPiecewise(
-                jump, variable.active, variable.actwise,
-                constr.piecewise.active, gen.cost.active.piecewise,
-                size(gen.cost.active.piecewise[idx], 1), idx
-            )
-        else
-            obj.quadratic += actCost
-        end
-        if isReactwise
-            addPowerwise(jump, obj.quadratic, variable.reactwise, idx, "reactwise")
-            addPiecewise(
-                jump, variable.reactive, variable.reactwise,
-                constr.piecewise.reactive, gen.cost.reactive.piecewise,
-                size(gen.cost.reactive.piecewise[idx], 1), idx
-            )
-        else
-            obj.quadratic += ReactCost
-        end
+    @objective(jump, Min, 0.0)
 
-        if isActNonlin
-            term = length(costActive.polynomial[idx])
-            obj.nonlinear.active[idx] = @expression(
-                jump, sum(costActive.polynomial[idx][term - degree] *
-                variable.active[idx]^degree for degree = term-1:-1:3)
-            )
-        end
-        if isReactNonlin
-            term = length(costReactive.polynomial[idx])
-            obj.nonlinear.reactive[idx] = @expression(
-                jump, sum(costReactive.polynomial[idx][term - degree] *
-                variable.reactive[idx]^degree for degree = term-1:-1:3)
-            )
-        end
+    removeObjective!(jump, P, H, con.piecewise.active, quad, freeP, idx)
+    removeObjective!(jump, Q, G, con.piecewise.reactive, quad, freeQ, idx)
+    removeNonlinear!(analysis.method.objective, idx)
 
-        @objective(
-            jump, Min,
-            obj.quadratic +
-            sum(obj.nonlinear.active[i] for i in keys(obj.nonlinear.active)) +
-            sum(obj.nonlinear.reactive[i] for i in keys(obj.nonlinear.reactive))
-        )
+    if system.generator.layout.status[idx] == 1
+        addObjective(system, jump, var, con, obj, freeP, freeQ, idx)
 
-        remove!(jump, constr.capability.active, idx)
-        remove!(jump, constr.capability.reactive, idx)
-        addCapability(
-            jump, variable.active, constr.capability.active,
-            gen.capability.minActive, gen.capability.maxActive, idx
-        )
-        addCapability(
-            jump, variable.reactive, constr.capability.reactive,
-            gen.capability.minReactive, gen.capability.maxReactive, idx
-        )
-        updateBalance(system, analysis, idxBus; active = true, reactive = true)
+        capabilityCurve(system, jump, var, con, idx)
+        addCapability(jump, P, con.capability.active, cbt.minActive, cbt.maxActive, idx)
+        addCapability(jump, Q, con.capability.reactive, cbt.minReactive, cbt.maxReactive, idx)
+    else
+        fix!(var.power.active[idx], 0.0, con.capability.active, idx)
+        fix!(var.power.reactive[idx], 0.0, con.capability.reactive, idx)
     end
 
-    if statusOld == 1 && gen.layout.status[idx] == 1
-        if isset(key.minActive, key.maxActive)
-            remove!(jump, constr.capability.active, idx)
-            addCapability(
-                jump, variable.active, constr.capability.active,
-                gen.capability.minActive, gen.capability.maxActive, idx
-            )
-        end
-        if isset(key.minReactive, key.maxReactive)
-            remove!(jump, constr.capability.reactive, idx)
-            addCapability(
-                jump, variable.reactive, constr.capability.reactive,
-                gen.capability.minReactive, gen.capability.maxReactive, idx
-            )
-        end
-    end
+    setObjective(jump, obj)
+
+    remove!(jump, con.balance.active, idxBus)
+    remove!(jump, con.balance.reactive, idxBus)
+    addBalance(system, jump, var, con, idxBus)
 end
 
-function updateGenerator!(
-    system::PowerSystem,
-    analysis::DCOptimalPowerFlow;
-    label::IntStrMiss,
-    kwargs...
-)
-    gen = system.generator
-    jump = analysis.method.jump
-    constr = analysis.method.constraint
-    variable = analysis.method.variable
-    key = generatorkwargs(; kwargs...)
+function updateGenerator!(analysis::DcOptimalPowerFlow; label::IntStrMiss, kwargs...)
+    system = analysis.system
+    cbt = system.generator.capability
+    cost = system.generator.cost.active
 
-    idx = gen.label[getLabel(gen, label, "generator")]
-    idxBus = gen.layout.bus[idx]
-    statusOld = gen.layout.status[idx]
+    jump = analysis.method.jump
+    power = analysis.method.variable.power.active
+    helper = analysis.method.variable.power.actwise
+    con = analysis.method.constraint
+    obj = analysis.method.objective
+
+    free = analysis.method.signature[:free]
+    actwise = jump.ext[:actwise]
 
     updateGenerator!(system; label, kwargs...)
 
-    if isset(key.active)
-        analysis.power.gen.active[idx] = gen.output.active[idx]
+    idx = getIndex(system.generator, label, "generator")
+    idxBus = system.generator.layout.bus[idx]
+
+    if lastindex(analysis.power.generator.active) == system.generator.number
+        analysis.power.generator.active[idx] = system.generator.output.active[idx]
+    else
+        push!(power, @variable(jump, base_name = "$(jump.ext[:active])[$idx]"))
+        push!(analysis.power.generator.active, system.generator.output.active[idx])
     end
 
-    if statusOld == 1 && gen.layout.status[idx] == 0
-        cost, isPowerwise = costExpr(gen.cost.active, variable.active[idx], idx, label)
+    remove!(jump, con.capability.active, idx)
+    removeObjective!(jump, power, helper, con.piecewise.active, obj, free, idx)
 
-        if isPowerwise
-            remove!(jump, constr.piecewise.active, idx)
-            add_to_expression!(analysis.method.objective, -variable.actwise[idx])
-            remove!(jump, variable.actwise, idx)
-        else
-            analysis.method.objective -= cost
-        end
-        drop_zeros!(analysis.method.objective)
-        set_objective_function(jump, analysis.method.objective)
-
-        remove!(jump, constr.capability.active, idx)
-        updateBalance(system, analysis, idxBus; power = 0, idxGen = idx)
-        fix!(variable.active[idx], 0.0, constr.capability.active, idx)
+    if system.generator.layout.status[idx] == 1
+        addObjective(system, cost, jump, power, helper, con, obj, actwise, free, idx)
+        addCapability(jump, power, con.capability.active, cbt.minActive, cbt.maxActive, idx)
+    else
+        fix!(power[idx], 0.0, con.capability.active, idx)
     end
 
-    if statusOld == 0 && gen.layout.status[idx] == 1
-        cost, isPowerwise = costExpr(gen.cost.active, variable.active[idx], idx, label)
+    set_objective_function(jump, obj)
 
-        if isPowerwise
-            addPowerwise(jump, analysis.method.objective, variable.actwise, idx, "actwise")
-            addPiecewise(
-                jump, variable.active, variable.actwise,
-                constr.piecewise.active, gen.cost.active.piecewise,
-                size(gen.cost.active.piecewise[idx], 1), idx
-            )
-        else
-            analysis.method.objective += cost
-        end
-        set_objective_function(jump, analysis.method.objective)
-
-        updateBalance(system, analysis, idxBus; power = 1, idxGen = idx)
-        remove!(jump, constr.capability.active, idx)
-        addCapability(
-            jump, variable.active, constr.capability.active,
-            gen.capability.minActive, gen.capability.maxActive, idx
-        )
-    end
-
-    if statusOld == 1 && gen.layout.status[idx] == 1 && isset(key.minActive, key.maxActive)
-        remove!(jump, constr.capability.active, idx)
-        addCapability(
-            jump, variable.active, constr.capability.active,
-            gen.capability.minActive, gen.capability.maxActive, idx
-        )
-    end
+    remove!(jump, con.balance.active, idxBus)
+    addBalance(system, jump, analysis.method.variable, con, idxBus)
 end
 
 """
     @generator(kwargs...)
 
-The macro generates a template for a generator, which can be utilized to define a generator
-using the [`addGenerator!`](@ref addGenerator!) function.
+The macro generates a template for a generator.
 
 # Keywords
-To define the generator template, the `kwargs` input arguments must be provided in accordance
-with the keywords specified within the [`addGenerator!`](@ref addGenerator!) function, along
-with their corresponding values.
+To define the generator template, the `kwargs` input arguments must be provided in accordance with
+the keywords specified within the [`addGenerator!`](@ref addGenerator!) function, along with their
+corresponding values.
 
 # Units
-By default, the input units are associated with per-units. However, users have the option
-to use other units instead of per-units using the [`@power`](@ref @power) and
-[`@voltage`](@ref @voltage) macros.
+By default, the input units are associated with per-units. However, users have the option to use
+other units instead of per-units using the [`@power`](@ref @power) and [`@voltage`](@ref @voltage)
+macros.
 
 # Examples
 Adding a generator using the default unit system:
 ```jldoctest
+@generator(magnitude = 1.1)
+
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 2, active = 0.25, reactive = -0.04, base = 132e3)
 
-@generator(magnitude = 1.1)
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.5, reactive = 0.1)
 ```
 
@@ -687,11 +562,12 @@ Adding a generator using a custom unit system:
 ```jldoctest
 @power(MW, MVAr)
 @voltage(kV, deg, kV)
+@generator(magnitude = 145.2)
+
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 2, active = 25, reactive = -4, base = 132)
 
-@generator(magnitude = 145.2)
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 50, reactive = 10)
 ```
 """
@@ -746,17 +622,11 @@ macro generator(kwargs...)
 end
 
 """
-    cost!(system::PowerSystem, [analysis::Analysis];
-        generator, active, reactive, piecewise, polynomial)
+    cost!(system::PowerSystem; generator, active, reactive, piecewise, polynomial)
 
-The function either adds a new cost or modifies an existing one for the active or reactive
-power generated by the corresponding generator within the `PowerSystem` type. It has the
-capability to append a cost to an already defined generator.
-
-# Arguments
-If the `Analysis` type is omitted, the function applies changes to the `PowerSystem` type
-only. However, when including the `Analysis` type, it updates both the `PowerSystem` and
-`Analysis` types.
+The function either adds a new cost or modifies an existing one for the active or reactive power
+generated by the corresponding generator within the `PowerSystem` type. It has the capability to
+append a cost to an already defined generator.
 
 # Keywords
 The function accepts five keywords:
@@ -776,9 +646,7 @@ The function accepts five keywords:
   * last element (\\\$/hr): constant coefficient.
 
 # Updates
-The function updates the `generator.cost` field within the `PowerSystem` type. Furthermore,
-it guarantees that any modifications to the parameters are transmitted to the `Analysis`
-type.
+The function updates the `generator.cost` field within the `PowerSystem` type.
 
 # Units
 By default, the input units related with active powers are per-units, but they can be
@@ -798,6 +666,7 @@ cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.0; 500.0
 Adding a cost using a custom unit system:
 ```jldoctest
 @power(MW, MVAr)
+
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", active = 25, reactive = -4, base = 132e3)
@@ -816,8 +685,7 @@ function cost!(
 )
     if isset(active) && isset(reactive)
         throw(ErrorException(
-            "The concurrent definition of the keywords " *
-            "active and reactive is not allowed.")
+            "The concurrent definition of the keywords active and reactive is not allowed.")
         )
     elseif ismissing(active) && ismissing(reactive)
         throw(ErrorException("The cost model is missing."))
@@ -868,190 +736,97 @@ function cost!(
     end
 end
 
+"""
+    cost!(analysis::Analysis; kwargs...)
+
+The function extends the [`cost!`](@ref cost!(::PowerSystem)) function. When the `Analysis` type is
+passed, the function first adds or modifies an existing cost in the `PowerSystem` type using the
+provided `kwargs` and then applies the same changes to the `Analysis` type.
+
+A key feature of this function is that any prior modifications to the specified cost are preserved
+and applied to the `Analysis` type when the function is executed, ensuring consistency throughout
+the update process.
+
+# Example
+```jldoctest
+using Ipopt
+
+system = powerSystem("case14.h5")
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+
+cost!(analysis; generator = 2, active = 2, polynomial = [1100.0; 500.0; 150.0])
+```
+"""
 function cost!(
-    system::PowerSystem,
-    analysis::ACOptimalPowerFlow;
+    analysis::AcOptimalPowerFlow;
     generator::IntStrMiss,
     active::FltIntMiss = missing,
     reactive::FltIntMiss = missing,
     polynomial::Vector{Float64} = Float64[],
     piecewise::Matrix{Float64} = Array{Float64}(undef, 0, 0)
 )
-    gen = system.generator
+    system = analysis.system
+
     jump = analysis.method.jump
-    constr = analysis.method.constraint
-    variable = analysis.method.variable
+    var = analysis.method.variable
+    con = analysis.method.constraint
     obj = analysis.method.objective
 
-    dropZero = false
-    idx = gen.label[getLabel(gen, generator, "generator")]
+    P = var.power.active
+    Q = var.power.reactive
+    H = var.power.actwise
+    G = var.power.reactwise
 
-    if gen.layout.status[idx] == 1
-        actCost, isActwiseOld, isActNonlin = costExpr(
-            gen.cost.active, variable.active[idx], idx, generator; ac = true
-        )
-        reactCost, isReactwisOld, isReactNonlin = costExpr(
-            gen.cost.reactive, variable.reactive[idx], idx, generator; ac = true
-        )
-
-        @objective(jump, Min, 0.0)
-
-        if isActwiseOld
-            remove!(jump, constr.piecewise.active, idx)
-        else
-            dropZero = true
-            obj.quadratic -= actCost
-        end
-        if isReactwisOld
-            remove!(jump, constr.piecewise.reactive, idx)
-        else
-            dropZero = true
-            obj.quadratic -= reactCost
-        end
-
-        if isActNonlin
-            delete!(obj.nonlinear.active, idx)
-        end
-        if isReactNonlin
-            delete!(obj.nonlinear.reactive, idx)
-        end
-    end
+    freeP = analysis.method.signature[:freeP]
+    freeQ = analysis.method.signature[:freeQ]
 
     cost!(system; generator, active, reactive, polynomial, piecewise)
 
-    if gen.layout.status[idx] == 1
-        actCost, isActwiseNew, isActNonlin = costExpr(
-            gen.cost.active, variable.active[idx], idx, generator; ac = true
-        )
-        reactCost, isReactwiseNew, isReactNonlin = costExpr(
-            gen.cost.reactive, variable.reactive[idx], idx, generator; ac = true
-        )
+    idx = getIndex(system.generator, generator, "generator")
 
-        if isActwiseNew
-            if !isActwiseOld
-                addPowerwise(jump, obj.quadratic, variable.actwise, idx, "actwise")
-            end
-            addPiecewise(
-                jump, variable.active, variable.actwise,
-                constr.piecewise.active, gen.cost.active.piecewise,
-                size(gen.cost.active.piecewise[idx], 1), idx
-            )
-        else
-            if isActwiseOld
-                dropZero = true
-                add_to_expression!(obj.quadratic, -variable.actwise[idx])
-                remove!(jump, variable.actwise, idx)
-            end
-            obj.quadratic += actCost
-        end
+    if system.generator.layout.status[idx] == 1
+        @objective(jump, Min, 0.0)
 
-        if isReactwiseNew
-            if !isReactwisOld
-                addPowerwise(jump, obj.quadratic, variable.reactwise, idx, "reactwise")
-            end
-            addPiecewise(
-                jump, variable.reactive, variable.reactwise,
-                constr.piecewise.reactive, gen.cost.reactive.piecewise,
-                size(gen.cost.reactive.piecewise[idx], 1), idx
-            )
-        else
-            if isReactwisOld
-                dropZero = true
-                add_to_expression!(obj.quadratic, -variable.reactwise[idx])
-                remove!(jump, variable.reactwise, idx)
-            end
-            obj.quadratic += reactCost
-        end
+        removeObjective!(jump, P, H, con.piecewise.active, obj.quadratic, freeP, idx)
+        removeObjective!(jump, Q, G, con.piecewise.reactive, obj.quadratic, freeQ, idx)
+        removeNonlinear!(analysis.method.objective, idx)
 
-        if isActNonlin
-            delete!(obj.nonlinear.active, idx)
-            term = length(gen.cost.active.polynomial[idx])
-            obj.nonlinear.active[idx] = @expression(
-                jump, sum(gen.cost.active.polynomial[idx][term - degree] *
-                variable.active[idx]^degree for degree = term-1:-1:3)
-            )
-        end
-        if isReactNonlin
-            delete!(obj.nonlinear.reactive, idx)
-            term = length(gen.cost.reactive.polynomial[idx])
-            obj.nonlinear.reactive[idx] = @expression(
-                jump, sum(gen.cost.reactive.polynomial[idx][term - degree] *
-                variable.reactive[idx]^degree for degree = term-1:-1:3)
-            )
-        end
+        addObjective(system, jump, var, con, obj, freeP, freeQ, idx)
     end
 
-    if dropZero
-        drop_zeros!(obj.quadratic)
-    end
-
-    @objective(
-        jump, Min,
-        obj.quadratic +
-        sum(obj.nonlinear.active[i] for i in keys(obj.nonlinear.active)) +
-        sum(obj.nonlinear.reactive[i] for i in keys(obj.nonlinear.reactive))
-    )
+    setObjective(jump, obj)
 end
 
 function cost!(
-    system::PowerSystem,
-    analysis::DCOptimalPowerFlow;
+    analysis::DcOptimalPowerFlow;
     generator::IntStrMiss,
     active::FltIntMiss = missing,
     reactive::FltIntMiss = missing,
     polynomial::Vector{Float64} = Float64[],
     piecewise::Matrix{Float64} = Array{Float64}(undef, 0, 0)
 )
-    gen = system.generator
+    system = analysis.system
+    cost = system.generator.cost.active
+
     jump = analysis.method.jump
-    constr = analysis.method.constraint
-    variable = analysis.method.variable
+    power = analysis.method.variable.power.active
+    helper = analysis.method.variable.power.actwise
+    con = analysis.method.constraint
+    obj = analysis.method.objective
 
-    dropZero = false
-    idx = gen.label[getLabel(gen, generator, "generator")]
-
-    if gen.layout.status[idx] == 1
-        costOld, isPowerwiseOld = costExpr(gen.cost.active, variable.active[idx], idx, generator)
-
-        if isPowerwiseOld
-            remove!(jump, constr.piecewise.active, idx)
-        else
-            dropZero = true
-            analysis.method.objective -= costOld
-        end
-    end
+    free = analysis.method.signature[:free]
+    actwise = jump.ext[:actwise]
 
     cost!(system; generator, active, reactive, polynomial, piecewise)
 
-    if gen.layout.status[idx] == 1
-        costNew, isWiseNew = costExpr(gen.cost.active, variable.active[idx], idx, generator)
+    idx = getIndex(system.generator, generator, "generator")
 
-        if isWiseNew
-            if !isPowerwiseOld
-                addPowerwise(
-                    jump, analysis.method.objective,
-                    variable.actwise, idx, "actwise"
-                )
-            end
-            addPiecewise(
-                jump, variable.active, variable.actwise,
-                constr.piecewise.active, gen.cost.active.piecewise,
-                size(gen.cost.active.piecewise[idx], 1), idx
-            )
-        else
-            if isPowerwiseOld
-                dropZero = true
-                add_to_expression!(analysis.method.objective, -variable.actwise[idx])
-                remove!(jump, variable.actwise, idx)
-            end
-            analysis.method.objective += costNew
-        end
-    end
+    if system.generator.layout.status[idx] == 1
+        removeObjective!(jump, power, helper, con.piecewise.active, obj, free, idx)
 
-    if dropZero
-        drop_zeros!(analysis.method.objective)
+        addObjective(system, cost, jump, power, helper, con, obj, actwise, free, idx)
+        set_objective_function(jump, obj)
     end
-    set_objective_function(jump, analysis.method.objective)
 end
 
 ##### Generator Keywords #####

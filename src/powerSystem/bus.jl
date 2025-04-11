@@ -24,23 +24,23 @@ The bus is defined with the following keywords:
 * `area`: Area number.
 * `lossZone`: Loss zone.
 
-Note that all voltage values, except for base voltages, are referenced to line-to-neutral
-voltages, while powers, when given in SI units, correspond to three-phase power.
+Note that all voltage values, except for base voltages, are referenced to line-to-neutral voltages,
+while powers, when given in SI units, correspond to three-phase power.
 
 # Updates
 The function updates the `bus` field of the `PowerSystem` type.
 
 # Default Settings
 The default settings for certain keywords are as follows: `type = 1`, `magnitude = 1.0`,
-`minMagnitude = 0.9`, `maxMagnitude = 1.1`, and `base = 138e3`. The rest of the keywords
-are initialized with a value of zero. However, the user can modify these default settings
-by utilizing the [`@bus`](@ref @bus) macro.
+`minMagnitude = 0.9`, `maxMagnitude = 1.1`, and `base = 138e3`. The rest of the keywords are
+initialized with a value of zero. However, the user can modify these default settings by utilizing
+the [`@bus`](@ref @bus) macro.
 
 # Units
-By default, the keyword parameters use per-units and radians as units, with the
-exception of the `base` keyword argument, which is in volts. However, users have the
-option to use other units instead of per-units and radians, or to specify prefixes for base
-voltage by using the [`@power`](@ref @power) and [`@voltage`](@ref @voltage) macros.
+By default, the keyword parameters use per-units and radians as units, with the exception of the
+`base` keyword argument, which is in volts. However, users have the option to use other units instead
+of per-units and radians, or to specify prefixes for base voltage by using the [`@power`](@ref @power)
+and [`@voltage`](@ref @voltage) macros.
 
 # Examples
 Adding a bus using the default unit system:
@@ -54,6 +54,7 @@ Adding a bus using a custom unit system:
 ```jldoctest
 @power(MW, MVAr)
 @voltage(pu, deg, kV)
+
 system = powerSystem()
 
 addBus!(system; label = "Bus 1", active = 25.0, angle = 10.026, base = 132.0)
@@ -119,34 +120,26 @@ end
 
 function addBus!(
     system::PowerSystem,
-    analysis::Union{ACPowerFlow, DCPowerFlow, ACOptimalPowerFlow, DCOptimalPowerFlow};
+    analysis::Union{AcPowerFlow, DcPowerFlow, AcOptimalPowerFlow, DcOptimalPowerFlow};
     kwargs...
 )
     throw(ErrorException("The analysis model cannot be reused when adding a bus."))
 end
 
 """
-    updateBus!(system::PowerSystem, [analysis::Analysis]; kwargs...)
+    updateBus!(system::PowerSystem; kwargs...)
 
 The function allows for the alteration of parameters for an existing bus.
 
-# Arguments
-If the `Analysis` type is omitted, the function applies changes to the `PowerSystem` type
-only. However, when including the `Analysis` type, it updates both the `PowerSystem` and
-`Analysis` types. This streamlined process avoids the need to completely rebuild vectors
-and matrices when adjusting these parameters.
-
 # Keywords
-To update a specific bus, provide the necessary `kwargs` input arguments in accordance with
-the keywords specified in the [`addBus!`](@ref addBus!) function, along with their
-respective values. Ensure that the `label` keyword matches the `label` of the existing bus.
-If any keywords are omitted, their corresponding values will remain unchanged.
+To update a specific bus, provide the necessary `kwargs` input arguments in accordance with the
+keywords specified in the [`addBus!`](@ref addBus!) function, along with their respective values.
+Ensure that the `label` keyword matches the `label` of the existing bus. If any keywords are omitted,
+their corresponding values will remain unchanged.
 
 # Updates
-The function updates the `bus` field within the `PowerSystem` type, and in cases where
-parameters impact variables in the `ac` field, it automatically adjusts the field.
-Furthermore, it guarantees that any modifications to the parameters are transmitted to the
-`Analysis` type.
+The function updates the `bus` field within the `PowerSystem` type, and in cases where parameters
+impact variables in the `ac` field, it automatically adjusts the field.
 
 # Units
 Units for input parameters can be changed using the same method as described for the
@@ -162,19 +155,22 @@ updateBus!(system; label = "Bus 1", active = 0.15, susceptance = 0.15)
 """
 function updateBus!(system::PowerSystem; label::IntStrMiss, kwargs...)
     bus = system.bus
-    baseVoltg = system.base.voltage
     ac = system.model.ac
     key = buskwargs(; kwargs...)
-
-    idx = bus.label[getLabel(bus, label, "bus")]
+    idx = getIndex(bus, label, "bus")
 
     if isset(key.type)
+        if bus.layout.type[idx] != key.type
+            bus.layout.pattern += 1
+        end
+
         if key.type in [1; 2]
             if bus.layout.slack == idx
                 bus.layout.slack = 0
             end
             bus.layout.type[idx] = key.type
         end
+
         if key.type == 3
             if bus.layout.slack != 0 && bus.layout.slack != idx
                 throw(ErrorException(
@@ -211,10 +207,10 @@ function updateBus!(system::PowerSystem; label::IntStrMiss, kwargs...)
     end
 
     if isset(key.base)
-        baseVoltg.value[idx] = key.base * pfx.baseVoltage / baseVoltg.prefix
+        system.base.voltage.value[idx] = key.base * pfx.baseVoltage / system.base.voltage.prefix
     end
 
-    baseInv = sqrt(3) / (baseVoltg.value[idx] * baseVoltg.prefix)
+    baseInv = sqrt(3) / (system.base.voltage.value[idx] * system.base.voltage.prefix)
     update!(bus.voltage.magnitude, key.magnitude, pfx.voltageMagnitude, baseInv, idx)
     update!(bus.voltage.angle, key.angle, pfx.voltageAngle, 1.0, idx)
     update!(bus.voltage.minMagnitude, key.minMagnitude, pfx.voltageMagnitude, baseInv, idx)
@@ -224,217 +220,172 @@ function updateBus!(system::PowerSystem; label::IntStrMiss, kwargs...)
     update!(bus.layout.lossZone, key.lossZone, idx)
 end
 
-function updateBus!(
-    system::PowerSystem,
-    analysis::ACPowerFlow{NewtonRaphson};
-    label::IntStrMiss,
-    kwargs...
-)
-    key = buskwargs(; kwargs...)
+"""
+    updateBus!(analysis::Analysis; kwargs...)
 
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
+The function extends the [`updateBus!`](@ref updateBus!(::PowerSystem)) function. By passing the
+`Analysis` type, the function first updates the specific bus within the `PowerSystem` type using the
+provided `kwargs`, and then updates the `Analysis` type with all parameters associated with that bus.
 
-    if isset(key.type) && key.type != system.bus.layout.type[idx]
-        errorTypeConversion()
-    end
+A key feature of this function is that any prior modifications made to the specified bus are
+preserved and applied to the `Analysis` type when the function is executed, ensuring consistency
+throughout the update process.
 
-    updateBus!(system; label, key...)
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+analysis = newtonRaphson(system)
 
-    if isset(key.magnitude) && system.bus.layout.type[idx] == 1
+updateBus!(analysis; label = 2, active = 0.15, susceptance = 0.15)
+```
+"""
+function updateBus!(analysis::AcPowerFlow{NewtonRaphson}; label::IntStrMiss, kwargs...)
+    system = analysis.system
+
+    updateBus!(system; label, kwargs...)
+    errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
+
+    idx = getIndex(system.bus, label, "bus")
+
+    if system.bus.layout.type[idx] == 1
         analysis.voltage.magnitude[idx] = system.bus.voltage.magnitude[idx]
     end
-    if isset(key.angle)
-        analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
-    end
-    analysis.method.iteration = 0
+    analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
 end
 
-function updateBus!(
-    system::PowerSystem,
-    analysis::ACPowerFlow{FastNewtonRaphson};
-    label::IntStrMiss,
-    kwargs...
-)
-    bus = system.bus
-    key = buskwargs(; kwargs...)
+function updateBus!(analysis::AcPowerFlow{FastNewtonRaphson}; label::IntStrMiss, kwargs...)
+    system = analysis.system
 
-    idx = bus.label[getLabel(bus, label, "bus")]
+    updateBus!(system; label, kwargs...)
+    errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
 
-    if isset(key.type) && key.type != bus.layout.type[idx]
-        errorTypeConversion()
-    end
+    idx = getIndex(system.bus, label, "bus")
 
-    if isset(key.susceptance) && bus.layout.type[idx] == 1
-        oldSusceptance = bus.shunt.susceptance[idx]
-    end
+    if system.bus.layout.type[idx] == 1
+        analysis.voltage.magnitude[idx] = system.bus.voltage.magnitude[idx]
 
-    updateBus!(system; label, key...)
+        if haskey(analysis.method.signature[:susceptance], idx)
+            oldSusceptance = analysis.method.signature[:susceptance][idx]
+        else
+            oldSusceptance = 0.0
+        end
 
-    if isset(key.magnitude) && bus.layout.type[idx] == 1
-        analysis.voltage.magnitude[idx] = bus.voltage.magnitude[idx]
-    end
-    if isset(key.angle)
-        analysis.voltage.angle[idx] = bus.voltage.angle[idx]
-    end
-
-    if isset(key.susceptance) && bus.layout.type[idx] == 1
-        if oldSusceptance != bus.shunt.susceptance[idx]
+        if system.bus.shunt.susceptance[idx] != oldSusceptance
             i = analysis.method.pq[idx]
+
             analysis.method.reactive.jacobian[i, i] -= oldSusceptance
-            analysis.method.reactive.jacobian[i, i] += bus.shunt.susceptance[idx]
+            analysis.method.reactive.jacobian[i, i] += system.bus.shunt.susceptance[idx]
+
+            analysis.method.signature[:susceptance][idx] = system.bus.shunt.susceptance[idx]
         end
     end
-    analysis.method.iteration = 0
+
+    analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
 end
 
-function updateBus!(
-    system::PowerSystem,
-    analysis::ACPowerFlow{GaussSeidel};
-    label::IntStrMiss,
-    kwargs...
-)
+function updateBus!(analysis::AcPowerFlow{GaussSeidel}; label::IntStrMiss, kwargs...)
+    system = analysis.system
     bus = system.bus
     volt = analysis.voltage
-    key = buskwargs(; kwargs...)
 
-    idx = bus.label[getLabel(bus, label, "bus")]
+    updateBus!(system; label, kwargs...)
+    errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
 
-    if isset(key.type) && key.type != bus.layout.type[idx]
-        errorTypeConversion()
+    idx = getIndex(bus, label, "bus")
+
+    if bus.layout.type[idx] == 1
+        volt.magnitude[idx] = bus.voltage.magnitude[idx]
     end
 
-    updateBus!(system; label, key...)
-
-    if isset(key.magnitude, key.angle)
-        if isset(key.magnitude) && bus.layout.type[idx] == 1
-            volt.magnitude[idx] = bus.voltage.magnitude[idx]
-        end
-        if isset(key.angle)
-            volt.angle[idx] = bus.voltage.angle[idx]
-        end
-        analysis.method.voltage[idx] = volt.magnitude[idx] * cis(volt.angle[idx])
-    end
+    volt.angle[idx] = bus.voltage.angle[idx]
+    analysis.method.voltage[idx] = volt.magnitude[idx] * cis(volt.angle[idx])
 end
 
-function updateBus!(
-    system::PowerSystem,
-    analysis::DCPowerFlow;
-    label::IntStrMiss,
-    kwargs...
-)
-    key = buskwargs(; kwargs...)
+function updateBus!(analysis::DcPowerFlow; label::IntStrMiss, kwargs...)
+    system = analysis.system
 
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
-
-    if isset(key.type) && system.bus.layout.slack == idx && key.type != 3
-        errorTypeConversion()
-    end
-
-    updateBus!(system; label, key...)
+    updateBus!(system; label, kwargs...)
+    errorTypeConversion(system.bus.layout.slack, analysis.method.signature[:slack])
 end
 
-function updateBus!(
-    system::PowerSystem,
-    analysis::ACOptimalPowerFlow;
-    label::IntStrMiss,
-    kwargs...
-)
+function updateBus!(analysis::AcOptimalPowerFlow; label::IntStrMiss, kwargs...)
+    system = analysis.system
     bus = system.bus
     jump = analysis.method.jump
-    constr = analysis.method.constraint
-    variable = analysis.method.variable
-    key = buskwargs(; kwargs...)
+    var = analysis.method.variable
+    con = analysis.method.constraint
 
-    idx = bus.label[getLabel(bus, label, "bus")]
-    typeOld = bus.layout.type[idx]
+    updateBus!(system; label, kwargs...)
 
-    updateBus!(system; label, key...)
+    idx = getIndex(bus, label, "bus")
 
-    activeupd = isset(key.conductance, key.susceptance, key.active)
-    reactvupd = isset(key.conductance, key.susceptance, key.reactive)
+    remove!(jump, con.balance.active, idx)
+    remove!(jump, con.balance.reactive, idx)
+    addBalance(system, jump, var, con, idx)
 
-    if activeupd || reactvupd
-        updateBalance(system, analysis, idx; active = activeupd, reactive = reactvupd)
-    end
+    remove!(jump, con.voltage.magnitude, idx)
+    addMagnitude(system, jump, var.voltage.magnitude, con.voltage.magnitude, idx)
 
-    if isset(key.magnitude)
-        analysis.voltage.magnitude[idx] = bus.voltage.magnitude[idx]
-    end
-    if isset(key.angle)
-        analysis.voltage.angle[idx] = bus.voltage.angle[idx]
-    end
-
-    if isset(key.minMagnitude, key.maxMagnitude)
-        remove!(jump, constr.voltage.magnitude, idx)
-        addMagnitude(system, jump, variable.magnitude, constr.voltage.magnitude, idx)
-    end
-
-    if typeOld == 3 && bus.layout.type[idx] != 3
-        unfix!(jump, variable.angle[idx], constr.slack.angle, idx)
+    if analysis.method.signature[:slack] == idx && bus.layout.type[idx] != 3
+        unfix!(jump, var.voltage.angle[idx], con.slack.angle, idx)
+        analysis.method.signature[:slack] = 0
     end
 
     if bus.layout.type[idx] == 3
-        fix!(variable.angle[idx], bus.voltage.angle[idx], constr.slack.angle, idx)
+        fix!(var.voltage.angle[idx], bus.voltage.angle[idx], con.slack.angle, idx)
+        analysis.method.signature[:slack] = idx
     end
 end
 
-function updateBus!(
-    system::PowerSystem,
-    analysis::DCOptimalPowerFlow;
-    label::IntStrMiss,
-    kwargs...
-)
-    bus = system.bus
-    constr = analysis.method.constraint
-    variable = analysis.method.variable
+function updateBus!(analysis::DcOptimalPowerFlow; label::IntStrMiss, kwargs...)
+    system = analysis.system
+    jump = analysis.method.jump
+    var = analysis.method.variable
+    con = analysis.method.constraint
 
-    key = buskwargs(; kwargs...)
+    updateBus!(system; label, kwargs...)
 
-    idx = bus.label[getLabel(bus, label, "bus")]
-    typeOld = bus.layout.type[idx]
+    idx = getIndex(system.bus, label, "bus")
 
-    updateBus!(system; label, key...)
+    remove!(jump, con.balance.active, idx)
+    addBalance(system, jump, var, con, idx)
 
-    if isset(key.conductance, key.active)
-        updateBalance(system, analysis, idx; rhs = true)
+    analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
+
+    if analysis.method.signature[:slack] == idx && system.bus.layout.type[idx] != 3
+        unfix!(jump, var.voltage.angle[idx], con.slack.angle, idx)
+        analysis.method.signature[:slack] = 0
     end
 
-    if isset(key.angle)
-        analysis.voltage.angle[idx] = bus.voltage.angle[idx]
-    end
-
-    if typeOld == 3 && bus.layout.type[idx] != 3
-        unfix!(analysis.method.jump, variable.angle[idx], constr.slack.angle, idx)
-    end
-
-    if bus.layout.type[idx] == 3
-        fix!(variable.angle[idx], bus.voltage.angle[idx], constr.slack.angle, idx)
+    if system.bus.layout.type[idx] == 3
+        fix!(var.voltage.angle[idx], system.bus.voltage.angle[idx], con.slack.angle, idx)
+        analysis.method.signature[:slack] = idx
     end
 end
 
 """
     @bus(kwargs...)
 
-The macro generates a template for a bus, which can be utilized to define a bus using the
-[`addBus!`](@ref addBus!) function.
+The macro generates a template for a bus.
 
 # Keywords
-To define the bus template, the `kwargs` input arguments must be provided in accordance with
-the keywords specified within the [`addBus!`](@ref addBus!) function, along with their
-corresponding values.
+To define the bus template, the `kwargs` input arguments must be provided in accordance with the
+keywords specified within the [`addBus!`](@ref addBus!) function, along with their corresponding
+values.
 
 # Units
-By default, the keyword parameters use per-units and radians as units, with the exception
-of the `base` keyword argument, which is in volts. However, users have the option to use
-other units instead of per-units and radians, or to specify prefixes for base voltage by
-using the [`@power`](@ref @power) and [`@voltage`](@ref @voltage) macros.
+By default, the keyword parameters use per-units and radians as units, with the exception of the
+`base` keyword argument, which is in volts. However, users have the option to use other units instead
+of per-units and radians, or to specify prefixes for base voltage by using the [`@power`](@ref @power)
+and [`@voltage`](@ref @voltage) macros.
 
 # Examples
 Adding a bus template using the default unit system:
 ```jldoctest
+@bus(type = 2, active = 0.25, angle = 0.1745)
+
 system = powerSystem()
 
-@bus(type = 2, active = 0.25, angle = 0.1745)
 addBus!(system; label = "Bus 1", reactive = -0.04, base = 132e3)
 ```
 
@@ -442,9 +393,10 @@ Adding a bus template using a custom unit system:
 ```jldoctest
 @power(MW, MVAr)
 @voltage(pu, deg, kV)
+@bus(type = 2, active = 25.0, angle = 10.0, base = 132.0)
+
 system = powerSystem()
 
-@bus(type = 2, active = 25.0, angle = 10.0, base = 132.0)
 addBus!(system; label = "Bus 1", reactive = -4.0)
 ```
 """

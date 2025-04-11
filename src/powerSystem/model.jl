@@ -1,12 +1,11 @@
 """
     acModel!(system::PowerSystem)
 
-The function generates vectors and matrices based on the power system topology and
-parameters associated with AC analyses.
+The function generates vectors and matrices based on the power system topology and parameters
+associated with AC analyses.
 
 # Updates
-The function updates the `model.ac` field within the `PowerSystem` type, populating the
-variables:
+The function updates the `model.ac` field within the `PowerSystem` type, populating the variables:
 - `nodalMatrix`: The nodal matrix.
 - `nodalMatrixTranspose`: The transpose of the nodal matrix.
 - `nodalFromFrom`: The Y-parameters of the two-port branches.
@@ -61,7 +60,7 @@ function acModel!(system::PowerSystem)
 end
 
 ##### Update AC Nodal Matrix #####
-@inline function acNodalUpdate!(system::PowerSystem, idx::Int64)
+function acNodalUpdate!(system::PowerSystem, idx::Int64)
     ac = system.model.ac
 
     filledElements = nnz(ac.nodalMatrix)
@@ -86,7 +85,7 @@ end
 end
 
 ##### Update AC Parameters #####
-@inline function acParameterUpdate!(system::PowerSystem, idx::Int64)
+function acParameterUpdate!(system::PowerSystem, idx::Int64)
     ac = system.model.ac
     param = system.branch.parameter
 
@@ -106,12 +105,11 @@ end
 """
     dcModel!(system::PowerSystem)
 
-The function generates vectors and matrices based on the power system topology and
-parameters associated with DC analyses.
+The function generates vectors and matrices based on the power system topology and parameters
+associated with DC analyses.
 
 # Updates
-The function updates the `model.dc` field within the `PowerSystem` type, populating the
-variables:
+The function updates the `model.dc` field within the `PowerSystem` type, populating the variables:
 - `nodalMatrix`: The nodal matrix.
 - `admittance`: The branch admittances.
 - `shiftPower`: The active powers related to phase-shifting transformers.
@@ -186,11 +184,7 @@ function dcShiftUpdate!(system::PowerSystem, idx::Int64)
 end
 
 ##### Update DC Admittance #####
-@inline function dcAdmittanceUpdate!(
-    system::PowerSystem,
-    status::Union{Int8, Int64},
-    idx::Int64
-)
+function dcAdmittanceUpdate!(system::PowerSystem, status::Union{Int8, Int64}, idx::Int64)
     dc = system.model.dc
     param = system.branch.parameter
 
@@ -198,7 +192,7 @@ end
 end
 
 ##### Expelling Elements from the AC or DC Model #####
-function acPushZeros!(ac::ACModel)
+function acPushZeros!(ac::AcModel)
     push!(ac.admittance, 0.0 + 0.0im)
     push!(ac.nodalToTo, 0.0 + 0.0im)
     push!(ac.nodalFromFrom, 0.0 + 0.0im)
@@ -206,7 +200,7 @@ function acPushZeros!(ac::ACModel)
     push!(ac.nodalToFrom, 0.0 + 0.0im)
 end
 
-function acSubtractAdmittances!(ac::ACModel, idx::Int64)
+function acSubtractAdmittances!(ac::AcModel, idx::Int64)
     ac.nodalFromFrom[idx] = -ac.nodalFromFrom[idx]
     ac.nodalFromTo[idx] = -ac.nodalFromTo[idx]
     ac.nodalToTo[idx] = -ac.nodalToTo[idx]
@@ -214,7 +208,7 @@ function acSubtractAdmittances!(ac::ACModel, idx::Int64)
     ac.admittance[idx] = -ac.admittance[idx]
 end
 
-function acSetZeros!(ac::ACModel, idx::Int64)
+function acSetZeros!(ac::AcModel, idx::Int64)
     ac.nodalFromFrom[idx] = 0.0 + 0.0im
     ac.nodalFromTo[idx] = 0.0 + 0.0im
     ac.nodalToTo[idx] = 0.0 + 0.0im
@@ -222,7 +216,7 @@ function acSetZeros!(ac::ACModel, idx::Int64)
     ac.admittance[idx] = 0.0 + 0.0im
 end
 
-function acModelEmpty!(ac::ACModel)
+function acModelEmpty!(ac::AcModel)
     ac.model += 1
     ac.pattern += 1
 
@@ -235,7 +229,7 @@ function acModelEmpty!(ac::ACModel)
     ac.admittance = ComplexF64[]
 end
 
-function dcModelEmpty!(dc::DCModel)
+function dcModelEmpty!(dc::DcModel)
     dc.model += 1
     dc.pattern += 1
 
@@ -245,7 +239,7 @@ function dcModelEmpty!(dc::DCModel)
 end
 
 ##### Drop Zeros #####
-function dropZeros!(dc::DCModel)
+function dropZeros!(dc::DcModel)
     filledElements = nnz(dc.nodalMatrix)
     dropzeros!(dc.nodalMatrix)
 
@@ -254,7 +248,7 @@ function dropZeros!(dc::DCModel)
     end
 end
 
-function dropZeros!(ac::ACModel)
+function dropZeros!(ac::AcModel)
     filledElements = nnz(ac.nodalMatrix)
     dropzeros!(ac.nodalMatrix)
     dropzeros!(ac.nodalMatrixTranspose)

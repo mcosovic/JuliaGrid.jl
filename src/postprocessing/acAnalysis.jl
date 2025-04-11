@@ -1,12 +1,12 @@
 """
-    power!(system::PowerSystem, analysis::AC)
+    power!(analysis::AC)
 
-The function computes the active and reactive powers associated with buses, branches, and
-generators for AC analysis.
+The function computes the active and reactive powers associated with buses, branches, and generators
+for AC analysis.
 
 # Updates
-This function updates the `power` field of the `AC` abstract type by computing the
-following electrical quantities:
+This function updates the `power` field of the `AC` abstract type by computing the following
+electrical quantities:
 - `injection`: Active and reactive power bus injections.
 - `supply`: Active and reactive power bus injections from the generators.
 - `shunt`: Active and reactive power values associated with shunt element at each bus.
@@ -22,14 +22,15 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 
-power!(system, analysis)
+power!(analysis)
 ```
 """
-function power!(system::PowerSystem, analysis::ACPowerFlow)
+function power!(analysis::AcPowerFlow)
     errorVoltage(analysis.voltage.magnitude)
 
+    system = analysis.system
     bus = system.bus
     branch = system.branch
     gen = system.generator
@@ -39,7 +40,7 @@ function power!(system::PowerSystem, analysis::ACPowerFlow)
     power = analysis.power
     slack = system.bus.layout.slack
 
-    initializePower(power, bus)
+    initialize!(power, bus.number, (:injection, :supply, :shunt))
     @inbounds for i = 1:bus.number
         power.shunt.active[i], power.shunt.reactive[i] = PsQs(bus, voltg, i)
         power.injection.active[i], power.injection.reactive[i] = PiQi(ac, voltg, i)
@@ -53,7 +54,7 @@ function power!(system::PowerSystem, analysis::ACPowerFlow)
     end
     power.supply.active[slack] = power.injection.active[slack] + bus.demand.active[slack]
 
-    initializePower(power, branch)
+    initialize!(power, branch.number, (:from, :to, :charging, :series))
     @inbounds for k = 1:branch.number
         if branch.layout.status[k] == 1
             Vi, Vj, Vij = ViVjVij(system, voltg, k)
@@ -65,8 +66,7 @@ function power!(system::PowerSystem, analysis::ACPowerFlow)
         end
     end
 
-    power.generator.active = fill(0.0, gen.number)
-    power.generator.reactive = fill(0.0, gen.number)
+    initialize!(power, gen.number, (:generator,))
     basePowerMVA = system.base.power.value * system.base.power.prefix * 1e-6
     @inbounds for i = 1:gen.number
         if gen.layout.status[i] == 1
@@ -147,9 +147,10 @@ function power!(system::PowerSystem, analysis::ACPowerFlow)
     end
 end
 
-function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
+function power!(analysis::AcOptimalPowerFlow)
     errorVoltage(analysis.voltage.magnitude)
 
+    system = analysis.system
     bus = system.bus
     branch = system.branch
 
@@ -157,16 +158,13 @@ function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     voltg = analysis.voltage
     power = analysis.power
 
-    power.injection.active = fill(0.0, bus.number)
-    power.injection.reactive = fill(0.0, bus.number)
-    power.shunt.active = fill(0.0, bus.number)
-    power.shunt.reactive = fill(0.0, bus.number)
+    initialize!(power, bus.number, (:injection, :supply, :shunt))
     @inbounds for i = 1:bus.number
         power.shunt.active[i], power.shunt.reactive[i] = PsQs(bus, voltg, i)
         power.injection.active[i], power.injection.reactive[i] = PiQi(ac, voltg, i)
     end
 
-    initializePower(power, branch)
+    initialize!(power, branch.number, (:from, :to, :charging, :series))
     @inbounds for k = 1:branch.number
         if branch.layout.status[k] == 1
             Vi, Vj, Vij = ViVjVij(system, voltg, k)
@@ -178,8 +176,6 @@ function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
         end
     end
 
-    power.supply.active = fill(0.0, bus.number)
-    power.supply.reactive = fill(0.0, bus.number)
     @inbounds for i = 1:system.generator.number
         idxBus = system.generator.layout.bus[i]
 
@@ -188,16 +184,17 @@ function power!(system::PowerSystem, analysis::ACOptimalPowerFlow)
     end
 end
 
-function power!(system::PowerSystem, analysis::Union{PMUStateEstimation, ACStateEstimation})
+function power!(analysis::Union{PmuStateEstimation, AcStateEstimation})
     errorVoltage(analysis.voltage.magnitude)
 
+    system = analysis.system
     bus = system.bus
     branch = system.branch
     ac = system.model.ac
     voltg = analysis.voltage
     power = analysis.power
 
-    initializePower(power, bus)
+    initialize!(power, bus.number, (:injection, :supply, :shunt))
     @inbounds for i = 1:bus.number
         power.shunt.active[i], power.shunt.reactive[i] = PsQs(bus, voltg, i)
         power.injection.active[i], power.injection.reactive[i] = PiQi(ac, voltg, i)
@@ -206,7 +203,7 @@ function power!(system::PowerSystem, analysis::Union{PMUStateEstimation, ACState
         power.supply.reactive[i] = power.injection.reactive[i] + bus.demand.reactive[i]
     end
 
-    initializePower(power, branch)
+    initialize!(power, branch.number, (:from, :to, :charging, :series))
     @inbounds for k = 1:branch.number
         if branch.layout.status[k] == 1
             Vi, Vj, Vij = ViVjVij(system, voltg, k)
@@ -220,10 +217,10 @@ function power!(system::PowerSystem, analysis::Union{PMUStateEstimation, ACState
 end
 
 """
-    injectionPower(system::PowerSystem, analysis::AC; label)
+    injectionPower(analysis::AC; label)
 
-The function returns the active and reactive power injections associated with a specific
-bus in the AC framework. The `label` keyword argument must match an existing bus label.
+The function returns the active and reactive power injections associated with a specific bus in the
+AC framework. The `label` keyword argument must match an existing bus label.
 
 # Example
 ```jldoctest
@@ -231,24 +228,25 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 
-active, reactive = injectionPower(system, analysis; label = 1)
+active, reactive = injectionPower(analysis; label = 1)
 ```
 """
-function injectionPower(system::PowerSystem, analysis::AC; label::IntStr)
+function injectionPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
+
+    system = analysis.system
     idx = system.bus.label[getLabel(system.bus, label, "bus")]
 
     PiQi(system.model.ac, analysis.voltage, idx)
 end
 
 """
-    supplyPower(system::PowerSystem, analysis::AC; label)
+    supplyPower(analysis::AC; label)
 
-The function returns the active and reactive power injections from the generators
-associated with a specific bus in the AC framework. The `label` keyword argument must
-match an existing bus label.
+The function returns the active and reactive power injections from the generators associated with a
+specific bus in the AC framework. The `label` keyword argument must match an existing bus label.
 
 # Example
 ```jldoctest
@@ -256,13 +254,15 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 
-active, reactive = supplyPower(system, analysis; label = 1)
+active, reactive = supplyPower(analysis; label = 1)
 ```
 """
-function supplyPower(system::PowerSystem, analysis::ACPowerFlow; label::IntStr)
+function supplyPower(analysis::AcPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
+
+    system = analysis.system
     idx = system.bus.label[getLabel(system.bus, label, "bus")]
 
     if system.bus.layout.type[idx] != 1
@@ -284,9 +284,10 @@ function supplyPower(system::PowerSystem, analysis::ACPowerFlow; label::IntStr)
     return supplyActive, supplyReactive
 end
 
-function supplyPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label::IntStr)
+function supplyPower(analysis::AcOptimalPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
+    system = analysis.system
     idx = system.bus.label[getLabel(system.bus, label, "bus")]
 
     supplyActive = 0.0
@@ -301,25 +302,22 @@ function supplyPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label::I
     return supplyActive, supplyReactive
 end
 
-function supplyPower(
-    system::PowerSystem,
-    analysis::Union{PMUStateEstimation, ACStateEstimation};
-    label::IntStr
-)
+function supplyPower(analysis::Union{PmuStateEstimation, AcStateEstimation}; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
+
+    system = analysis.system
     idx = system.bus.label[getLabel(system.bus, label, "bus")]
 
-    Pi, Qi = injectionPower(system, analysis; label = label)
+    Pi, Qi = injectionPower(analysis; label = label)
 
     return Pi + system.bus.demand.active[idx], Qi + system.bus.demand.reactive[idx]
 end
 
 """
-    shuntPower(system::PowerSystem, analysis::AC; label)
+    shuntPower(analysis::AC; label)
 
-The function returns the active and reactive power values of the shunt element associated
-with a specific bus in the AC framework. The `label` keyword argument must match an
-existing bus label.
+The function returns the active and reactive power values of the shunt element associated with a
+specific bus in the AC framework. The `label` keyword argument must match an existing bus label.
 
 # Example
 ```jldoctest
@@ -327,24 +325,25 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 
-active, reactive = shuntPower(system, analysis; label = 9)
+active, reactive = shuntPower(analysis; label = 9)
 ```
 """
-function shuntPower(system::PowerSystem, analysis::AC; label::IntStr)
+function shuntPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
+
+    system = analysis.system
     idx = system.bus.label[getLabel(system.bus, label, "bus")]
 
     PsQs(system.bus, analysis.voltage, idx)
 end
 
 """
-    fromPower(system::PowerSystem, analysis::AC; label)
+    fromPower(analysis::AC; label)
 
-The function returns the active and reactive power flows at the from-bus end associated
-with a specific branch in the AC framework. The `label` keyword argument must match an
-existing branch label.
+The function returns the active and reactive power flows at the from-bus end associated with a
+specific branch in the AC framework. The `label` keyword argument must match an existing branch label.
 
 # Example
 ```jldoctest
@@ -352,13 +351,15 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 
-active, reactive = fromPower(system, analysis; label = 2)
+active, reactive = fromPower(analysis; label = 2)
 ```
 """
-function fromPower(system::PowerSystem, analysis::AC; label::IntStr)
+function fromPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
+
+    system = analysis.system
     idx = system.branch.label[getLabel(system.branch, label, "branch")]
 
     if system.branch.layout.status[idx] == 1
@@ -370,11 +371,10 @@ function fromPower(system::PowerSystem, analysis::AC; label::IntStr)
 end
 
 """
-    toPower(system::PowerSystem, analysis::AC; label)
+    toPower(analysis::AC; label)
 
-The function returns the active and reactive power flows at the to-bus end associated
-with a specific branch in the AC framework. The `label` keyword argument must match an
-existing branch label.
+The function returns the active and reactive power flows at the to-bus end associated with a specific
+branch in the AC framework. The `label` keyword argument must match an existing branch label.
 
 # Example
 ```jldoctest
@@ -382,13 +382,15 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 
-active, reactive = toPower(system, analysis; label = 2)
+active, reactive = toPower(analysis; label = 2)
 ```
 """
-function toPower(system::PowerSystem, analysis::AC; label::IntStr)
+function toPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
+
+    system = analysis.system
     idx = system.branch.label[getLabel(system.branch, label, "branch")]
 
     if system.branch.layout.status[idx] == 1
@@ -400,11 +402,11 @@ function toPower(system::PowerSystem, analysis::AC; label::IntStr)
 end
 
 """
-    chargingPower(system::PowerSystem, analysis::AC; label)
+    chargingPower(analysis::AC; label)
 
-The function returns the active and reactive power values associated with the charging
-admittances of a specific branch in the AC framework. The `label` keyword argument must
-correspond to an existing branch label.
+The function returns the active and reactive power values associated with the charging admittances
+of a specific branch in the AC framework. The `label` keyword argument must correspond to an existing
+branch label.
 
 # Example
 ```jldoctest
@@ -412,13 +414,15 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 
-active, reactive = chargingPower(system, analysis; label = 2)
+active, reactive = chargingPower(analysis; label = 2)
 ```
 """
-function chargingPower(system::PowerSystem, analysis::AC; label::IntStr)
+function chargingPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
+
+    system = analysis.system
     idx = system.branch.label[getLabel(system.branch, label, "branch")]
 
     if system.branch.layout.status[idx] == 1
@@ -429,11 +433,11 @@ function chargingPower(system::PowerSystem, analysis::AC; label::IntStr)
 end
 
 """
-    seriesPower(system::PowerSystem, analysis::AC; label)
+    seriesPower(analysis::AC; label)
 
-The function returns the active and reactive power losses across the series impedance of
-a specific branch within the AC framework. The `label` keyword argument should correspond
-to an existing branch label.
+The function returns the active and reactive power losses across the series impedance of a specific
+branch within the AC framework. The `label` keyword argument should correspond to an existing branch
+label.
 
 # Example
 ```jldoctest
@@ -441,13 +445,15 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 
-active, reactive = seriesPower(system, analysis; label = 2)
+active, reactive = seriesPower(analysis; label = 2)
 ```
 """
-function seriesPower(system::PowerSystem, analysis::AC; label::IntStr)
+function seriesPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
+
+    system = analysis.system
     idx = system.branch.label[getLabel(system.branch, label, "branch")]
 
     if system.branch.layout.status[idx] == 1
@@ -458,10 +464,10 @@ function seriesPower(system::PowerSystem, analysis::AC; label::IntStr)
 end
 
 """
-    generatorPower(system::PowerSystem, analysis::AC; label)
+    generatorPower(analysis::AC; label)
 
-The function returns the active and reactive powers associated with a specific generator
-in the AC framework. The `label` keyword argument must match an existing generator label.
+The function returns the active and reactive powers associated with a specific generator in the AC
+framework. The `label` keyword argument must match an existing generator label.
 
 # Example
 ```jldoctest
@@ -469,14 +475,15 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis)
+powerFlow!(analysis)
 
-active, reactive = generatorPower(system, analysis; label = 1)
+active, reactive = generatorPower(analysis; label = 1)
 ```
 """
-function generatorPower(system::PowerSystem, analysis::ACPowerFlow; label::IntStr)
+function generatorPower(analysis::AcPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
+    system = analysis.system
     gen = system.generator
 
     idx = gen.label[getLabel(gen, label, "generator")]
@@ -565,22 +572,24 @@ function generatorPower(system::PowerSystem, analysis::ACPowerFlow; label::IntSt
     return Pg, Qg
 end
 
-function generatorPower(system::PowerSystem, analysis::ACOptimalPowerFlow; label::IntStr)
+function generatorPower(analysis::AcOptimalPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
+
+    system = analysis.system
     idx = system.generator.label[getLabel(system.generator, label, "generator")]
 
     return analysis.power.generator.active[idx], analysis.power.generator.reactive[idx]
 end
 
 """
-    current!(system::PowerSystem, analysis::AC)
+    current!(analysis::AC)
 
-The function computes the currents in the polar coordinate system associated with buses
-and branches in the AC framework.
+The function computes the currents in the polar coordinate system associated with buses and branches
+in the AC framework.
 
 # Updates
-This function updates the `current` field of the `AC` abstract type by computing the
-following electrical quantities:
+This function updates the `current` field of the `AC` abstract type by computing the following
+electrical quantities:
 - `injection`: Current injections at each bus.
 - `from`: Current flows at each from-bus end of the branch.
 - `to`: Current flows at each to-bus end of the branch.
@@ -594,31 +603,26 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
+powerFlow!(analysis)
 
-current!(system, analysis)
+current!(analysis)
 ```
 """
-function current!(system::PowerSystem, analysis::AC)
+function current!(analysis::AC)
     errorVoltage(analysis.voltage.magnitude)
 
+    system = analysis.system
     ac = system.model.ac
     prmtr = system.branch.parameter
     voltg = analysis.voltage
     current = analysis.current
 
-    current.injection.magnitude = fill(0.0, system.bus.number)
-    current.injection.angle = fill(0.0, system.bus.number)
+    initialize!(current, system.bus.number, (:injection,))
     @inbounds for i = 1:system.bus.number
         current.injection.magnitude[i], current.injection.angle[i] = absang(Ii(ac, voltg, i))
     end
 
-    current.from.magnitude = fill(0.0, system.branch.number)
-    current.from.angle = fill(0.0, system.branch.number)
-    current.to.magnitude = fill(0.0, system.branch.number)
-    current.to.angle = fill(0.0, system.branch.number)
-    current.series.magnitude = fill(0.0, system.branch.number)
-    current.series.angle = fill(0.0, system.branch.number)
+    initialize!(current, system.branch.number, (:from, :to, :series))
     @inbounds for k = 1:system.branch.number
         if system.branch.layout.status[k] == 1
             Vi, Vj, Vij = ViVjVij(system, voltg, k)
@@ -631,11 +635,10 @@ function current!(system::PowerSystem, analysis::AC)
 end
 
 """
-    injectionCurrent(system::PowerSystem, analysis::AC; label)
+    injectionCurrent(analysis::AC; label)
 
-The function returns the current injection in the polar coordinate system associated with
-a specific bus in the AC framework. The `label` keyword argument must match an existing
-bus label.
+The function returns the current injection in the polar coordinate system associated with a specific
+bus in the AC framework. The `label` keyword argument must match an existing bus label.
 
 # Example
 ```jldoctest
@@ -645,24 +648,26 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
+powerFlow!(analysis)
 
-magnitude, angle = injectionCurrent(system, analysis; label = 1)
+magnitude, angle = injectionCurrent(analysis; label = 1)
 ```
 """
-function injectionCurrent(system::PowerSystem, analysis::AC; label::IntStr)
+function injectionCurrent(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
+
+    system = analysis.system
     idx = system.bus.label[getLabel(system.bus, label, "bus")]
 
     absang(Ii(system.model.ac, analysis.voltage, idx))
 end
 
 """
-    fromCurrent(system::PowerSystem, analysis::AC; label)
+    fromCurrent(analysis::AC; label)
 
-The function returns the current in the polar coordinate system at the from-bus end
-associated with a specific branch in the AC framework. The `label` keyword argument must
-match an existing branch label.
+The function returns the current in the polar coordinate system at the from-bus end associated with
+a specific branch in the AC framework. The `label` keyword argument must match an existing branch
+label.
 
 # Example
 ```jldoctest
@@ -672,13 +677,15 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
+powerFlow!(analysis)
 
-magnitude, angle = fromCurrent(system, analysis; label = 2)
+magnitude, angle = fromCurrent(analysis; label = 2)
 ```
 """
-function fromCurrent(system::PowerSystem, analysis::AC; label::IntStr)
+function fromCurrent(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
+
+    system = analysis.system
     idx = system.branch.label[getLabel(system.branch, label, "branch")]
 
     if system.branch.layout.status[idx] == 1
@@ -690,11 +697,10 @@ function fromCurrent(system::PowerSystem, analysis::AC; label::IntStr)
 end
 
 """
-    toCurrent(system::PowerSystem, analysis::AC; label)
+    toCurrent(analysis::AC; label)
 
-The function returns the current in the polar coordinate system at the to-bus end
-associated with a specific branch in the AC framework. The `label` keyword argument must
-match an existing branch label.
+The function returns the current in the polar coordinate system at the to-bus end associated with a
+specific branch in the AC framework. The `label` keyword argument must match an existing branch label.
 
 # Example
 ```jldoctest
@@ -704,13 +710,15 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
+powerFlow!(analysis)
 
-magnitude, angle = toCurrent(system, analysis; label = 2)
+magnitude, angle = toCurrent(analysis; label = 2)
 ```
 """
-function toCurrent(system::PowerSystem, analysis::AC; label::IntStr)
+function toCurrent(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
+
+    system = analysis.system
     idx = system.branch.label[getLabel(system.branch, label, "branch")]
 
     if system.branch.layout.status[idx] == 1
@@ -722,12 +730,11 @@ function toCurrent(system::PowerSystem, analysis::AC; label::IntStr)
 end
 
 """
-    seriesCurrent(system::PowerSystem, analysis::AC; label)
+    seriesCurrent(analysis::AC; label)
 
-The function returns the current in the polar coordinate system through series impedance
-associated with a specific branch in the direction from the from-bus end to the to-bus
-end of the branch within the AC framework. The `label` keyword argument must  match an
-existing branch label.
+The function returns the current in the polar coordinate system through series impedance associated
+with a specific branch in the direction from the from-bus end to the to-bus end of the branch within
+the AC framework. The `label` keyword argument must  match an existing branch label.
 
 # Example
 ```jldoctest
@@ -737,13 +744,15 @@ system = powerSystem("case14.h5")
 acModel!(system)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
+powerFlow!(analysis)
 
-magnitude, angle = seriesCurrent(system, analysis; label = 2)
+magnitude, angle = seriesCurrent(analysis; label = 2)
 ```
 """
-function seriesCurrent(system::PowerSystem, analysis::AC; label::IntStr)
+function seriesCurrent(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
+
+    system = analysis.system
     idx = system.branch.label[getLabel(system.branch, label, "branch")]
 
     if system.branch.layout.status[idx] == 1
@@ -753,13 +762,11 @@ function seriesCurrent(system::PowerSystem, analysis::AC; label::IntStr)
     end
 end
 
-######### Privite AC Analysis Functions ##########
+######### AC Analysis Functions ##########
 function ViVj(system::PowerSystem, V::Polar, idx::Int64)
     i, j = fromto(system, idx)
-    Vi = V.magnitude[i] * cis(V.angle[i])
-    Vj = V.magnitude[j] * cis(V.angle[j])
 
-    return Vi, Vj
+    V.magnitude[i] * cis(V.angle[i]), V.magnitude[j] * cis(V.angle[j])
 end
 
 function ViVjVij(system::PowerSystem, V::Polar, idx::Int64)
@@ -768,39 +775,36 @@ function ViVjVij(system::PowerSystem, V::Polar, idx::Int64)
     tij = (1 / prmtr.turnsRatio[idx]) * cis(-prmtr.shiftAngle[idx])
     Vi, Vj = ViVj(system, V, idx)
 
-    return Vi, Vj, tij * Vi - Vj
+    Vi, Vj, tij * Vi - Vj
 end
 
-function Ii(ac::ACModel, V::Polar, i::Int64)
+function Ii(ac::AcModel, V::Polar, i::Int64)
     I = 0.0 + im * 0.0
     for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
         k = ac.nodalMatrix.rowval[j]
         I += ac.nodalMatrixTranspose.nzval[j] * (V.magnitude[k] * cis(V.angle[k]))
     end
 
-    return I
+    I
 end
 
 function PsQs(bus::Bus, V::Polar, i::Int64)
-    reim(
-        V.magnitude[i]^2 *
-        conj(bus.shunt.conductance[i] + im * bus.shunt.susceptance[i])
-    )
+    reim(V.magnitude[i]^2 * conj(bus.shunt.conductance[i] + im * bus.shunt.susceptance[i]))
 end
 
-function PiQi(ac::ACModel, V::Polar, idx::Int64)
+function PiQi(ac::AcModel, V::Polar, idx::Int64)
     reim(conj(Ii(ac, V, idx)) * (V.magnitude[idx] * cis(V.angle[idx])))
 end
 
-function PijQij(ac::ACModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
+function PijQij(ac::AcModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
     reim(Vi * conj(Vi * ac.nodalFromFrom[i] + Vj * ac.nodalFromTo[i]))
 end
 
-function PjiQji(ac::ACModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
+function PjiQji(ac::AcModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
     reim(Vj * conj(Vi * ac.nodalToFrom[i] + Vj * ac.nodalToTo[i]))
 end
 
-function PlQl(ac::ACModel, Vij::ComplexF64, i::Int64)
+function PlQl(ac::AcModel, Vij::ComplexF64, i::Int64)
     reim(Vij * conj(ac.admittance[i] * Vij))
 end
 
@@ -810,38 +814,35 @@ function PcQc(branch::Branch, V::Polar, i::Int64)
     Vi = V.magnitude[branch.layout.from[i]]
     Vj = V.magnitude[branch.layout.to[i]]
 
-    reim(
-        0.5 * conj(prmtr.conductance[i] + im * prmtr.susceptance[i]) *
-        ((τinv * Vi)^2 + Vj^2)
-    )
+    reim(0.5 * conj(prmtr.conductance[i] + im * prmtr.susceptance[i]) * ((τinv * Vi)^2 + Vj^2))
 end
 
-function IijΨij(ac::ACModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
+function IijΨij(ac::AcModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
     absang(Vi * ac.nodalFromFrom[i] + Vj * ac.nodalFromTo[i])
 end
 
-function IjiΨji(ac::ACModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
+function IjiΨji(ac::AcModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
     absang(Vi * ac.nodalToFrom[i] + Vj * ac.nodalToTo[i])
 end
 
-function IsΨs(ac::ACModel, Vij::ComplexF64, i::Int64)
+function IsΨs(ac::AcModel, Vij::ComplexF64, i::Int64)
     absang(ac.admittance[i] * Vij)
 end
 
-function initializePower(power::ACPower, bus::Bus)
-    @inbounds for field in (:injection, :supply, :shunt), component in (:active, :reactive)
-        setfield!(getfield(power, field), component, fill(0.0, bus.number))
-    end
-end
-
-function initializePower(power::ACPower, branch::Branch)
-    @inbounds for field in (:from, :to, :charging, :series), component in (:active, :reactive)
-        setfield!(getfield(power, field), component, fill(0.0, branch.number))
-    end
-end
-
-function initializeCurrent(current::ACCurrent, branch::Branch)
-    @inbounds for field in (:from, :to, :series), component in (:magnitude, :angle)
-        setfield!(getfield(current, field), component, fill(0.0, branch.number))
+function initialize!(power::Union{AcPower, AcCurrent, DcPower}, n::Int64, fields::Tuple{Vararg{Symbol}})
+    @inbounds for field in fields
+        fieldData = getfield(power, field)
+        for component in propertynames(fieldData)
+            compData = getfield(fieldData, component)
+            if isempty(compData)
+                setfield!(fieldData, component, fill(0.0, n))
+            else
+                fill!(compData, 0.0)
+                m = lastindex(compData)
+                if m != n
+                    append!(compData, fill(0.0, n - m))
+                end
+            end
+        end
     end
 end

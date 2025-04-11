@@ -17,8 +17,7 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem()
-device = measurement()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2")
@@ -31,28 +30,28 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance =
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1")
 
-addWattmeter!(system, device; label = "Wattmeter 1", from = "Branch 1", active = 0.71)
-addWattmeter!(system, device; label = "Wattmeter 2", bus = "Bus 3", active = -1.50)
+addWattmeter!(monitoring; label = "Wattmeter 1", from = "Branch 1", active = 0.71)
+addWattmeter!(monitoring; label = "Wattmeter 2", bus = "Bus 3", active = -1.50)
 
-addVarmeter!(system, device; label = "Varmeter 1", from = "Branch 1", reactive = 0.21)
-addVarmeter!(system, device; label = "Varmeter 2", bus = "Bus 3", reactive = -0.20)
+addVarmeter!(monitoring; label = "Varmeter 1", from = "Branch 1", reactive = 0.21)
+addVarmeter!(monitoring; label = "Varmeter 2", bus = "Bus 3", reactive = -0.20)
 
-addPmu!(system, device; label = "PMU 1", bus = "Bus 2", magnitude = 0.84, angle = -0.17)
-addPmu!(system, device; label = "PMU 2", bus = "Bus 3", magnitude = 0.85, angle = -0.17)
+addPmu!(monitoring; label = "PMU 1", bus = "Bus 2", magnitude = 0.84, angle = -0.17)
+addPmu!(monitoring; label = "PMU 2", bus = "Bus 3", magnitude = 0.85, angle = -0.17)
 nothing # hide
 ```
 ---
 
-Now, let us create the state estimation model `ACStateEstimation` and compute the WLS estimator:
+Now, let us create the state estimation model `AcStateEstimation` and compute the WLS estimator:
 ```@example ACSEWLS
-analysis = gaussNewton(system, device)
-stateEstimation!(system, analysis; verbose = 1)
+analysis = gaussNewton(monitoring)
+stateEstimation!(analysis; verbose = 1)
 nothing # hide
 ```
 
 Next, we aim to detect bad data in the measurement set using the Chi-squared test:
 ```@example ACSEWLS
-chi = chiTest(system, device, analysis)
+chi = chiTest(analysis)
 nothing # hide
 ```
 
@@ -74,7 +73,7 @@ The largest normalized residual test identifies bad data based on a predefined t
 
 After using the Chi-squared test to detect the presence of bad data in the measurement set, let us now identify outliers and remove them:
 ```@example ACSEWLS
-outlier = residualTest!(system, device, analysis; threshold = 4.0)
+outlier = residualTest!(analysis; threshold = 4.0)
 nothing # hide
 ```
 
@@ -87,7 +86,7 @@ outlier.label
 
 Hence, upon detecting bad data, the `detect` variable will be set to `true`. The `maxNormalizedResidual` variable will store the value of the largest normalized residual, and the `label` will contain the label of the measurement identified as bad data. JuliaGrid will mark the corresponding measurement as out-of-service within the `Measurement` type:
 ```@repl ACSEWLS
-print(device.wattmeter.label, device.wattmeter.active.status)
+print(monitoring.wattmeter.label, monitoring.wattmeter.active.status)
 ```
 
 Moreover, JuliaGrid resets the non-zero elements to zero in the Jacobian matrix and mean vector within the state estimation type for measurements now designated as out-of-service, effectively removing the impact of the corresponding measurement:
@@ -98,8 +97,8 @@ analysis.method.mean
 
 After removing bad data, a new estimate can be computed without considering the specific measurement, allowing direct continuation to the iteration loop. In this case, the Gauss-Newton method would take the initial point using voltages obtained with outlier presence, which could significantly impede algorithm convergence. To avoid this undesirable outcome, the user should first establish a new initial point and then commence the iteration procedure:
 ```@example ACSEWLS
-setInitialPoint!(system, analysis)
-stateEstimation!(system, analysis; verbose = 1)
+setInitialPoint!(analysis)
+stateEstimation!(analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -108,17 +107,17 @@ nothing # hide
 ##### PMU State Estimation
 In general, the procedures for AC state estimation also apply to PMU state estimation. Let us highlight some specific aspects of this estimation type. First, new phasor measurements are added to the system, and the WLS estimator is obtained using PMU data only:
 ```@example ACSEWLS
-addPmu!(system, device; label = "PMU 3", from = "Branch 1", magnitude = 0.73, angle = 0.35)
-addPmu!(system, device; label = "PMU 4", bus = "Bus 1", magnitude = 1.0, angle = 0.01)
+addPmu!(monitoring; label = "PMU 3", from = "Branch 1", magnitude = 0.73, angle = 0.35)
+addPmu!(monitoring; label = "PMU 4", bus = "Bus 1", magnitude = 1.0, angle = 0.01)
 
-analysis = pmuStateEstimation(system, device)
-stateEstimation!(system, analysis)
+analysis = pmuStateEstimation(monitoring)
+stateEstimation!(analysis)
 nothing # hide
 ```
 
 Next, perform bad data analysis:
 ```@example ACSEWLS
-outlier = residualTest!(system, device, analysis; threshold = 4.0)
+outlier = residualTest!(analysis; threshold = 4.0)
 nothing # hide
 ```
 
@@ -136,7 +135,7 @@ analysis.method.coefficient
 
 This allows the WLS estimator to be recomputed without the influence of the outlier phasor measurement:
 ```@example ACSEWLS
-stateEstimation!(system, analysis)
+stateEstimation!(analysis)
 nothing # hide
 ```
 
@@ -145,12 +144,12 @@ nothing # hide
 ##### DC State Estimation
 For DC state estimation, users can follow the same steps as previously described. To illustrate, let us restore `Wattmeter 2` and perform bad data analysis:
 ```@example ACSEWLS
-updateWattmeter!(system, device; label = "Wattmeter 2", status = 1)
+updateWattmeter!(monitoring; label = "Wattmeter 2", status = 1)
 
-analysis = dcStateEstimation(system, device)
-stateEstimation!(system, analysis)
+analysis = dcStateEstimation(monitoring)
+stateEstimation!(analysis)
 
-outlier = residualTest!(system, device, analysis; threshold = 2.0)
+outlier = residualTest!(analysis; threshold = 2.0)
 nothing # hide
 ```
 
@@ -165,6 +164,6 @@ As before, the state estimation model is updated, enabling the user to recompute
 analysis.method.mean
 analysis.method.coefficient
 
-stateEstimation!(system, analysis)
+stateEstimation!(analysis)
 nothing # hide
 ```

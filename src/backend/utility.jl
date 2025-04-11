@@ -4,9 +4,8 @@
     if pathtoJuliaGrid === nothing
         throw(ErrorException("JuliaGrid not found in install packages."))
     end
-    packagePath = abspath(joinpath(dirname(pathtoJuliaGrid), ".."))
 
-    return packagePath
+    return abspath(joinpath(dirname(pathtoJuliaGrid), ".."))
 end
 
 ##### Check File Format #####
@@ -34,7 +33,7 @@ end
         fullpath = joinpath(packagePath, "src/data/", dataname)
     end
 
-    if !(dataname in cd(readdir, path))
+    if dataname ∉ cd(readdir, path)
         throw(DomainError(dataname, "The input data " * dataname * " is not found."))
     end
 
@@ -54,7 +53,7 @@ function setLabel(
         throw(ErrorException("The label " * labelStr * " is not unique."))
     end
 
-    if labelInt !== nothing
+    if !isnothing(labelInt)
         if component.layout.label < labelInt
             component.layout.label = labelInt
         end
@@ -108,7 +107,7 @@ function setLabel(
 )
     component.layout.label += 1
 
-    if key in ["bus"; "branch"; "generator"]
+    if key in ("bus", "branch", "generator")
         label = typeLabel(component.label, default, component.layout.label)
     else
         label = typeLabel(component.label, default, component.layout.label, prefix, key)
@@ -132,9 +131,8 @@ function typeLabel(
     prefix::String,
     key::String
 )
-    label = replace(
-        default, r"\?" => string(idx), r"\!" => string(prefix, key)
-    )
+    label = replace(default, r"\?" => string(idx), r"\!" => string(prefix, key))
+
     if haskey(componentLabel, label)
         count = 1
         labelOld = label
@@ -153,30 +151,39 @@ end
 
 ##### Get Label #####
 function getLabel(container::Union{P, M}, label::String, name::String)
-    if !haskey(container.label, label)
+    if haskey(container.label, label)
+        return label
+    else
         errorGetLabel(name, label)
     end
-
-    return label
 end
 
 function getLabel(container::Union{P, M}, label::Int64, name::String)
     label = typeLabel(container.label, label)
-    if !haskey(container.label, label)
+    if haskey(container.label, label)
+        return label
+    else
         errorGetLabel(name, label)
     end
+end
 
-    return label
+##### Get Index #####
+function getIndex(container::Union{P, M}, label::String, name::String)
+    container.label[getLabel(container, label, name)]
+end
+
+function getIndex(container::Union{P, M}, label::Int64, name::String)
+    container.label[getLabel(container, label, name)]
 end
 
 ##### From-To Indices #####
 function fromto(system::PowerSystem, idx::Int64)
-    return system.branch.layout.from[idx], system.branch.layout.to[idx]
+    system.branch.layout.from[idx], system.branch.layout.to[idx]
 end
 
 ##### Find Angle and Magnitude #####
 function absang(z::ComplexF64)
-    return abs(z), angle(z)
+    abs(z), angle(z)
 end
 
 ##### To Per-Unit Values #####
@@ -263,27 +270,33 @@ function update!(
     end
 end
 
+##### Check if the Value is Stored #####
+function isstored(A::SparseMatrixCSC{Float64, Int64}, i::Int64, j::Int64)
+    startIdx = A.colptr[j]
+    endIdx = A.colptr[j+1] - 1
+
+    startIdx <= endIdx && i in A.rowval[startIdx:endIdx]
+end
+
 ##### Check if Values are Provided #####
-function isset(keys::Union{FltIntMiss, String, Bool}...)
-    return any(!ismissing(k) for k in keys)
+function isset(keys::Vararg{Union{FltIntMiss, String, Bool}})
+    any(!ismissing, keys)
 end
 
 ##### Check Status #####
 function checkStatus(status::Union{Int64, Int8})
-    if !(status in [0; 1])
+    if status ∉ (0, 1)
         throw(ErrorException(
-            "The status $status is not allowed; it should be " *
-            "in-service (1) or out-of-service (0).")
+            "The status $status is not allowed; it should be in-service (1) or out-of-service (0).")
         )
     end
 end
 
 function checkWideStatus(status::Union{Int64, Int8})
-    if !(status in [-1; 0; 1])
+    if status ∉ (-1, 0, 1)
         throw(ErrorException(
             "The status $status is not allowed; it should be " *
-            "in-service (1), out-of-service but retained (0), or " *
-            "out-of-service and removed (-1).")
+            "in-service (1), out-of-service but retained (0), or out-of-service and removed (-1).")
         )
     end
 end
@@ -307,13 +320,11 @@ function baseCurrentInv(basePowerInv::Float64, baseVoltage::Float64)
 end
 
 ##### Factorizations #####
-function factorization(A::SparseMatrixCSC{Float64, Int64}, ::UMFPACK.UmfpackLU{Float64, Int64}
-)
+function factorization(A::SparseMatrixCSC{Float64, Int64}, ::UMFPACK.UmfpackLU{Float64, Int64})
     lu(A)
 end
 
-function factorization!(A::SparseMatrixCSC{Float64, Int64}, F::UMFPACK.UmfpackLU{Float64, Int64}
-)
+function factorization!(A::SparseMatrixCSC{Float64, Int64}, F::UMFPACK.UmfpackLU{Float64, Int64})
     lu!(F, A)
 end
 
@@ -351,13 +362,13 @@ function solution(
 end
 
 ##### Check AC and DC Model #####
-function model!(system::PowerSystem, model::ACModel)
+function model!(system::PowerSystem, model::AcModel)
     if isempty(model.nodalMatrix)
         acModel!(system)
     end
 end
 
-function model!(system::PowerSystem, model::DCModel)
+function model!(system::PowerSystem, model::DcModel)
     if isempty(model.nodalMatrix)
         dcModel!(system)
     end
@@ -503,15 +514,11 @@ function errorPower(power::Vector{Float64})
 end
 
 function errorTemplateSymbol()
-    throw(ErrorException(
-        "The label template lacks the '?' symbol to indicate integer placement.")
-    )
+    throw(ErrorException("The label template lacks the '?' symbol to indicate integer placement."))
 end
 
 function errorTemplateLabel()
-    throw(ErrorException(
-        "The label template is missing the required '?' or '!' symbols.")
-    )
+    throw(ErrorException("The label template is missing the required '?' or '!' symbols."))
 end
 
 function errorTemplateKeyword(parameter::Symbol)
@@ -531,16 +538,22 @@ function errorAssignCost(cost::String)
     )
 end
 
+function errorTypeConversion(a::Int64, b::Int64)
+    if a != b
+        errorTypeConversion()
+    end
+end
+
 function errorTypeConversion()
     throw(ErrorException(
-        "The power flow model cannot be reused due to required bus type conversion.")
-    )
+            "The power flow model cannot be reused because the bus type configuration has changed.")
+        )
 end
+
 
 function errorStatusDevice()
     throw(ErrorException(
-        "The total number of available devices is less " *
-        "than the requested number for a status change.")
+        "The total number of available devices is less than the requested number for a status change.")
     )
 end
 
@@ -552,21 +565,27 @@ function errorSlackDefinition()
 end
 
 function errorOnePoint(label::Union{String, Int64})
-    throw(
-        ErrorException(
-            "The generator labeled $label has a piecewise " *
-            "linear cost function with only one defined point."
-        )
+    throw(ErrorException(
+        "The generator labeled $label has a piecewise linear cost function with only one defined point.")
     )
 end
 
-function errorInfSlope(label::Union{String, Int64})
-    throw(
-        ErrorException(
-            "The piecewise linear cost function's slope of the generator " *
-            "labeled $label has infinite value."
-        )
+function errorSlope(label::Union{String, Int64}, slope::Float64)
+    throw(ErrorException(
+        "The piecewise linear cost function's slope of the generator labeled $label has $slope value.")
     )
+end
+
+function errorTransfer(a::Vector{Float64}, b::Vector{Float64})
+    if lastindex(a) != lastindex(b)
+        throw(DimensionMismatch("Voltages could not be transferred because of mismatched array sizes."))
+    end
+end
+
+function errorPolar2Rectangular(polar::Bool)
+    if polar
+        throw(ErrorException("The transition from polar to rectangular is not possible."))
+    end
 end
 
 ##### Info Messages #####
@@ -582,14 +601,4 @@ function infoObjective(label::Union{String, Int64})
         "The generator labeled $label has an undefined polynomial " *
         "cost function, which is not included in the objective."
     )
-end
-
-function errorTransfer(a::Vector{Float64}, b::Vector{Float64})
-    if lastindex(a) != lastindex(b)
-        throw(
-            DimensionMismatch(
-                "Voltages could not be transferred because of mismatched array sizes."
-            )
-        )
-    end
 end

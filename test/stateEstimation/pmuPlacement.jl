@@ -1,6 +1,5 @@
 system14 = powerSystem(path * "case14test.m")
 system30 = powerSystem(path * "case30test.m")
-
 @testset "Optimal PMU Placement" begin
     @default(template)
     @default(unit)
@@ -23,78 +22,76 @@ system30 = powerSystem(path * "case30test.m")
 
     acModel!(system14)
     pf = newtonRaphson(system14)
-    powerFlow!(system14, pf; current = true)
+    powerFlow!(pf; current = true)
 
     placement = pmuPlacement(system14, GLPK.Optimizer)
 
-    device = measurement()
+    monitoring = measurement(system14)
     for (key, idx) in placement.bus
         addPmu!(
-            system14, device; bus = key,
+            monitoring; bus = key,
             magnitude = pf.voltage.magnitude[idx], angle = pf.voltage.angle[idx]
         )
     end
     for (key, idx) in placement.from
         addPmu!(
-            system14, device; from = key, magnitude = pf.current.from.magnitude[idx],
+            monitoring; from = key, magnitude = pf.current.from.magnitude[idx],
             angle = pf.current.from.angle[idx]
         )
     end
     for (key, idx) in placement.to
         addPmu!(
-            system14, device; to = key, magnitude = pf.current.to.magnitude[idx],
+            monitoring; to = key, magnitude = pf.current.to.magnitude[idx],
             angle = pf.current.to.angle[idx]
         )
     end
 
     @testset "IEEE 14: PMU State Estimation" begin
-        se = pmuStateEstimation(system14, device, LU)
-        stateEstimation!(system14, se)
-        compstruct(se.voltage, pf.voltage; atol = 1e-10)
+        se = pmuStateEstimation(monitoring, LU)
+        stateEstimation!(se)
+        teststruct(se.voltage, pf.voltage; atol = 1e-10)
     end
 
     @testset "IEEE 14: Wrapper PMU Placement" begin
-        pmu = measurement()
-        pmuPlacement!(system14, pmu, pf, GLPK.Optimizer)
-        compstruct(pmu.pmu, device.pmu)
+        pmu = measurement(system14)
+        pmuPlacement!(pmu, pf, GLPK.Optimizer)
+        teststruct(pmu.pmu, monitoring.pmu)
     end
 
     ########## IEEE 30-bus Test Case ##########
     acModel!(system30)
     pf = newtonRaphson(system30)
-    powerFlow!(system30, pf; current = true)
+    powerFlow!( pf; current = true)
 
     placement = pmuPlacement(system30, GLPK.Optimizer)
 
-    device = measurement()
+    monitoring = measurement(system30)
     for (key, idx) in placement.bus
         addPmu!(
-            system30, device; bus = key, magnitude = pf.voltage.magnitude[idx],
-            angle = pf.voltage.angle[idx]
+            monitoring; bus = key, magnitude = pf.voltage.magnitude[idx], angle = pf.voltage.angle[idx]
         )
     end
     for (key, idx) in placement.from
         addPmu!(
-            system30, device; from = key, magnitude = pf.current.from.magnitude[idx],
+            monitoring; from = key, magnitude = pf.current.from.magnitude[idx],
             angle = pf.current.from.angle[idx]
         )
     end
     for (key, idx) in placement.to
         addPmu!(
-            system30, device; to = key, magnitude = pf.current.to.magnitude[idx],
-            angle = pf.current.to.angle[idx]
+            monitoring; to = key, magnitude = pf.current.to.magnitude[idx], angle = pf.current.to.angle[idx]
         )
     end
 
     @testset "IEEE 30: PMU State Estimation" begin
-        se = pmuStateEstimation(system30, device, LU)
-        stateEstimation!(system30, se)
-        compstruct(se.voltage, pf.voltage; atol = 1e-10)
+        se = pmuStateEstimation(monitoring, LU)
+        stateEstimation!(se)
+        teststruct(se.voltage, pf.voltage; atol = 1e-10)
     end
 
     @testset "IEEE 30: Wrapper PMU Placement" begin
-        pmu = measurement()
-        pmuPlacement!(system30, pmu, pf, GLPK.Optimizer)
-        compstruct(pmu.pmu, device.pmu)
+        pmu = measurement(system30)
+        pmuPlacement!(pmu, pf, GLPK.Optimizer)
+        teststruct(pmu.pmu, monitoring.pmu)
     end
 end

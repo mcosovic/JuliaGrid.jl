@@ -70,7 +70,8 @@ makedocs(
         ],
         "Background" => [
             "Installation Guide" => "background/installation.md",
-            "Bibliography" => "background/bibliography.md"
+            "Bibliography" => "background/bibliography.md",
+            "Release Notes" => "background/releasenotes.md"
         ]
     ]
 )

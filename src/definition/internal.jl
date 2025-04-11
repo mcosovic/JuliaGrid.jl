@@ -1,6 +1,6 @@
 export LU, QR, LDLt
 
-##### Types #####
+##### Aliases #####
 const FltInt = Union{Float64, Int64}
 const FltIntMiss = Union{Float64, Int64, Missing}
 const BoolMiss = Union{Bool, Missing}
@@ -8,6 +8,7 @@ const IntMiss = Union{Int64, Missing}
 const IntStr = Union{Int64, String}
 const IntStrMiss = Union{Int64, String, Missing}
 const LabelDict = Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
+const Signature = Dict{Symbol, Union{Int64, Dict{Int64, Float64}}}
 
 ##### Polar Coordinate #####
 mutable struct Polar
@@ -15,11 +16,12 @@ mutable struct Polar
     angle::Vector{Float64}
 end
 
-mutable struct PolarAngle
-    angle::Vector{Float64}
+mutable struct PolarVariableRef
+    magnitude::Vector{VariableRef}
+    angle::Vector{VariableRef}
 end
 
-mutable struct PolarRef
+mutable struct PolarConstraintRef
     magnitude::Dict{Int64, ConstraintRef}
     angle::Dict{Int64, ConstraintRef}
 end
@@ -29,11 +31,19 @@ mutable struct PolarDual
     angle::Dict{Int64, Float64}
 end
 
-mutable struct PolarAngleRef
+mutable struct Angle
+    angle::Vector{Float64}
+end
+
+mutable struct AngleVariableRef
+    angle::Vector{VariableRef}
+end
+
+mutable struct AngleConstraintRef
     angle::Dict{Int64, ConstraintRef}
 end
 
-mutable struct PolarAngleDual
+mutable struct AngleDual
     angle::Dict{Int64, Float64}
 end
 
@@ -43,19 +53,14 @@ mutable struct Cartesian
     reactive::Vector{Float64}
 end
 
-mutable struct CartesianReal
-    active::Vector{Float64}
+mutable struct CartesianVariableRef
+    active::Vector{VariableRef}
+    reactive::Vector{VariableRef}
+    actwise::Dict{Int64, VariableRef}
+    reactwise::Dict{Int64, VariableRef}
 end
 
-mutable struct SimpleCartesianReal
-    active::Float64
-end
-
-mutable struct CartesianImag
-    reactive::Vector{Float64}
-end
-
-mutable struct CartesianRef
+mutable struct CartesianConstraintRef
     active::Dict{Int64, ConstraintRef}
     reactive::Dict{Int64, ConstraintRef}
 end
@@ -65,12 +70,26 @@ mutable struct CartesianDual
     reactive::Dict{Int64, Float64}
 end
 
-mutable struct CartesianRealDual
+mutable struct Real
+    active::Vector{Float64}
+end
+
+mutable struct RealVariableRef
+    active::Vector{VariableRef}
+    actwise::Dict{Int64, VariableRef}
+end
+
+mutable struct RealConstraintRef
+    active::Dict{Int64, ConstraintRef}
+end
+
+mutable struct RealDual
     active::Dict{Int64, Float64}
 end
 
-mutable struct CartesianRealRef
-    active::Dict{Int64, ConstraintRef}
+mutable struct RectangularVariableRef
+    real::Vector{VariableRef}
+    imag::Vector{VariableRef}
 end
 
 ##### Sparse Matrix Model #####
@@ -204,7 +223,7 @@ end
 Base.@kwdef mutable struct ConfigTemplate
     label::DataType = String
     system::DataType = String
-    device::DataType = String
+    monitoring::DataType = String
     verbose::Int64 = 0
 end
 
@@ -220,7 +239,7 @@ mutable struct Template
     config::ConfigTemplate
 end
 
-template = Template(
+const template = Template(
     BusTemplate(),
     BranchTemplate(),
     GeneratorTemplate(),
@@ -281,7 +300,7 @@ Base.@kwdef mutable struct UnitList
     currentMagnitudeLive::String     = "pu"
     currentAngleLive::String         = "rad"
 end
-unitList = UnitList()
+const unitList = UnitList()
 
 ##### Live Prefix Values #####
 Base.@kwdef mutable struct PrefixLive
@@ -296,7 +315,7 @@ Base.@kwdef mutable struct PrefixLive
     admittance::Float64 = 0.0
     baseVoltage::Float64 = 1.0
 end
-pfx = PrefixLive()
+const pfx = PrefixLive()
 
 """
     QR

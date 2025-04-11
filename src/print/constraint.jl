@@ -1,9 +1,9 @@
 """
-    printBusConstraint(system::PowerSystem, analysis::OptimalPowerFlow, [io::IO];
+    printBusConstraint(analysis::OptimalPowerFlow, [io::IO];
         label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
-The function prints constraint data related to buses. Optionally, an `IO` may be passed as the
-last argument to redirect the output.
+The function prints constraint data related to buses. Optionally, an `IO` may be passed as the last
+argument to redirect the output.
 
 # Keywords
 The following keywords control the printed data:
@@ -19,7 +19,7 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printBusConstraint`](@ref printBusConstraint) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Examples
 Print data for all buses:
@@ -29,12 +29,12 @@ using Ipopt
 system = powerSystem("case14.h5")
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
+powerFlow!(analysis)
 
 fmt = Dict("Active Power Balance" => "%.2e", "Reactive Power Balance Dual" => "%.4e")
 show = Dict("Voltage Magnitude" => false, "Reactive Power Balance Solution" => false)
 
-printBusConstraint(system, analysis; fmt, show, repeat = 10)
+printBusConstraint(analysis; fmt, show, repeat = 10)
 ```
 
 Print data for specific buses:
@@ -44,24 +44,24 @@ using Ipopt
 system = powerSystem("case14.h5")
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
+powerFlow!(analysis)
 
 delimiter = " "
 width = Dict("Voltage Magnitude" => 8, "Active Power Balance Solution" => 12)
 
-printBusConstraint(system, analysis; label = 2, delimiter, width, header = true)
-printBusConstraint(system, analysis; label = 10, delimiter, width)
-printBusConstraint(system, analysis; label = 14, delimiter, width, footer = true)
+printBusConstraint(analysis; label = 2, delimiter, width, header = true)
+printBusConstraint(analysis; label = 10, delimiter, width)
+printBusConstraint(analysis; label = 14, delimiter, width, footer = true)
 ```
 """
 function printBusConstraint(
-    system::PowerSystem,
-    analysis::ACOptimalPowerFlow,
+    analysis::AcOptimalPowerFlow,
     io::IO = stdout;
     label::IntStrMiss = missing,
     repeat::Int64 = typemax(Int64),
     kwargs...
 )
+    system = analysis.system
     bus = system.bus
     jump = analysis.method.jump
     cons = analysis.method.constraint
@@ -115,7 +115,7 @@ end
 
 function busCons(
     system::PowerSystem,
-    analysis::ACOptimalPowerFlow,
+    analysis::AcOptimalPowerFlow,
     unitList::UnitList,
     pfx::PrefixLive,
     scale::Dict{Symbol, Float64},
@@ -305,13 +305,13 @@ function busCons(
 end
 
 function printBusConstraint(
-    system::PowerSystem,
-    analysis::DCOptimalPowerFlow,
+    analysis::DcOptimalPowerFlow,
     io::IO = stdout;
     label::IntStrMiss = missing,
     repeat::Int64 = typemax(Int64),
     kwargs...
 )
+    system = analysis.system
     bus = system.bus
     cons = analysis.method.constraint
     dual = analysis.method.dual
@@ -345,7 +345,7 @@ end
 
 function busCons(
     system::PowerSystem,
-    analysis::DCOptimalPowerFlow,
+    analysis::DcOptimalPowerFlow,
     unitList::UnitList,
     scale::Dict{Symbol, Float64},
     label::IntStrMiss,
@@ -442,11 +442,11 @@ function busCons(
 end
 
 """
-    printBranchConstraint(system::PowerSystem, analysis::OptimalPowerFlow, [io::IO];
+    printBranchConstraint(analysis::OptimalPowerFlow, [io::IO];
         label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
-The function prints constraint data related to branches. Optionally, an `IO` may be passed as
-the last argument to redirect the output.
+The function prints constraint data related to branches. Optionally, an `IO` may be passed as the
+last argument to redirect the output.
 
 # Keywords
 The following keywords control the printed data:
@@ -462,7 +462,7 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printBranchConstraint`](@ref printBranchConstraint) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Examples
 Print data for all branches:
@@ -474,12 +474,12 @@ updateBranch!(system; label = 3, minDiffAngle = 0.05, maxDiffAngle = 1.5)
 updateBranch!(system; label = 9, minFromBus = 0.1, maxFromBus = 0.3)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
+powerFlow!(analysis)
 
 fmt = Dict("Voltage Angle Difference" => "%.2f")
 show = Dict("To-Bus Apparent Power Flow Dual" => false)
 
-printBranchConstraint(system, analysis; fmt, show)
+printBranchConstraint(analysis; fmt, show)
 ```
 
 Print data for specific branches:
@@ -491,23 +491,23 @@ updateBranch!(system; label = 3, minDiffAngle = 0.05, maxDiffAngle = 1.5)
 updateBranch!(system; label = 9, minFromBus = 0.1, maxFromBus = 0.3)
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
+powerFlow!(analysis)
 
 delimiter = " "
 width = Dict("From-Bus Apparent Power Flow" => 13, "Voltage Angle Difference Dual" => 12)
 
-printBranchConstraint(system, analysis; label = 3, delimiter, width, header = true)
-printBranchConstraint(system, analysis; label = 9, delimiter, width, footer = true)
+printBranchConstraint(analysis; label = 3, delimiter, width, header = true)
+printBranchConstraint(analysis; label = 9, delimiter, width, footer = true)
 ```
 """
 function printBranchConstraint(
-    system::PowerSystem,
-    analysis::ACOptimalPowerFlow,
+    analysis::AcOptimalPowerFlow,
     io::IO = stdout;
     label::IntStrMiss = missing,
     repeat::Int64 = typemax(Int64),
     kwargs...
 )
+    system = analysis.system
     brch = system.branch
     jump = analysis.method.jump
     cons = analysis.method.constraint
@@ -602,7 +602,7 @@ end
 
 function branchCons(
     system::PowerSystem,
-    analysis::ACOptimalPowerFlow,
+    analysis::AcOptimalPowerFlow,
     unitList::UnitList,
     pfx::PrefixLive,
     scale::Dict{Symbol, Float64},
@@ -855,13 +855,13 @@ function branchCons(
 end
 
 function printBranchConstraint(
-    system::PowerSystem,
-    analysis::DCOptimalPowerFlow,
+    analysis::DcOptimalPowerFlow,
     io::IO = stdout;
     label::IntStrMiss = missing,
     repeat::Int64 = typemax(Int64),
     kwargs...
 )
+    system = analysis.system
     brch = system.branch
     jump = analysis.method.jump
     cons = analysis.method.constraint
@@ -909,7 +909,7 @@ end
 
 function branchCons(
     system::PowerSystem,
-    analysis::DCOptimalPowerFlow,
+    analysis::DcOptimalPowerFlow,
     unitList::UnitList,
     scale::Dict{Symbol, Float64},
     label::IntStrMiss,
@@ -1073,11 +1073,11 @@ function branchCons(
 end
 
 """
-    printGeneratorConstraint(system::PowerSystem, analysis::OptimalPowerFlow, [io::IO];
+    printGeneratorConstraint(analysis::OptimalPowerFlow, [io::IO];
         label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
-The function prints constraint data related to generators. Optionally, an `IO` may be passed as
-the last argument to redirect the output.
+The function prints constraint data related to generators. Optionally, an `IO` may be passed asn the
+last argument to redirect the output.
 
 # Keywords
 The following keywords control the printed data:
@@ -1093,7 +1093,7 @@ The following keywords control the printed data:
 * `style`: Prints either a stylish table or a simple table suitable for easy export.
 
 !!! compat "Julia 1.10"
-    The function [`printGeneratorConstraint`](@ref printGeneratorConstraint) requires Julia 1.10 or later.
+    The function requires Julia 1.10 or later.
 
 # Examples
 Print data for all generators:
@@ -1103,12 +1103,12 @@ using Ipopt
 system = powerSystem("case14.h5")
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
+powerFlow!(analysis)
 
 fmt = Dict("Active Power Capability" => "%.2f")
 show = Dict("Reactive Power Capability" => false, "Active Power Capability Dual" => false)
 
-printGeneratorConstraint(system, analysis; fmt, show, repeat = 3)
+printGeneratorConstraint(analysis; fmt, show, repeat = 3)
 ```
 
 Print data for specific generator:
@@ -1118,24 +1118,24 @@ using Ipopt
 system = powerSystem("case14.h5")
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
-solve!(system, analysis)
+powerFlow!(analysis)
 
 delimiter = " "
 width = Dict("Active Power Capability" => 11, "Reactive Power Capability Dual" => 10)
 
-printGeneratorConstraint(system, analysis; label = 2, delimiter, width, header = true)
-printGeneratorConstraint(system, analysis; label = 3, delimiter, width)
-printGeneratorConstraint(system, analysis; label = 5, delimiter, width, footer = true)
+printGeneratorConstraint(analysis; label = 2, delimiter, width, header = true)
+printGeneratorConstraint(analysis; label = 3, delimiter, width)
+printGeneratorConstraint(analysis; label = 5, delimiter, width, footer = true)
 ```
 """
 function printGeneratorConstraint(
-    system::PowerSystem,
-    analysis::ACOptimalPowerFlow,
+    analysis::AcOptimalPowerFlow,
     io::IO = stdout;
     label::IntStrMiss = missing,
     repeat::Int64 = typemax(Int64),
     kwargs...
 )
+    system = analysis.system
     gen = system.generator
     jump = analysis.method.jump
     cons = analysis.method.constraint
@@ -1183,7 +1183,7 @@ end
 
 function genCons(
     system::PowerSystem,
-    analysis::ACOptimalPowerFlow,
+    analysis::AcOptimalPowerFlow,
     unitList::UnitList,
     pfx::PrefixLive,
     scale::Dict{Symbol, Float64},
@@ -1345,13 +1345,13 @@ function genCons(
 end
 
 function printGeneratorConstraint(
-    system::PowerSystem,
-    analysis::DCOptimalPowerFlow,
+    analysis::DcOptimalPowerFlow,
     io::IO = stdout;
     label::IntStrMiss = missing,
     repeat::Int64 = typemax(Int64),
     kwargs...
 )
+    system = analysis.system
     gen = system.generator
     jump = analysis.method.jump
     cons = analysis.method.constraint
@@ -1390,7 +1390,7 @@ end
 
 function genCons(
     system::PowerSystem,
-    analysis::DCOptimalPowerFlow,
+    analysis::DcOptimalPowerFlow,
     unitList::UnitList,
     scale::Dict{Symbol, Float64},
     label::IntStrMiss,
@@ -1535,7 +1535,7 @@ function anycons!(show::OrderedDict{String, Bool})
     end
 end
 
-function checkFlowType(system::PowerSystem, analysis::ACOptimalPowerFlow)
+function checkFlowType(system::PowerSystem, analysis::AcOptimalPowerFlow)
     jump = analysis.method.jump
     from = analysis.method.constraint.flow.from
     to = analysis.method.constraint.flow.to
