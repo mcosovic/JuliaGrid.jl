@@ -117,7 +117,6 @@ function acWLS(system::PowerSystem, monitoring::Measurement)
 
     checkSlackBus(system)
     model!(system, ac)
-    changeSlackBus!(system)
 
     total = volt.number + amp.number + watt.number + var.number + 2 * pmu.number
 
@@ -681,7 +680,6 @@ function acLavStateEstimation(
 
     checkSlackBus(system)
     model!(system, ac)
-    changeSlackBus!(system)
 
     total = volt.number + amp.number + watt.number + var.number + 2 * pmu.number
 

@@ -95,7 +95,6 @@ function dcStateEstimationWls(system::PowerSystem, monitoring::Measurement)
 
     checkSlackBus(system)
     model!(system, dc)
-    changeSlackBus!(system)
 
     nnzCff = 0
     @inbounds for (i, idx) in enumerate(wattmeter.layout.index)
@@ -241,7 +240,6 @@ function dcLavStateEstimation(
 
     checkSlackBus(system)
     model!(system, dc)
-    changeSlackBus!(system)
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
     set_string_names_on_creation(jump, name)
