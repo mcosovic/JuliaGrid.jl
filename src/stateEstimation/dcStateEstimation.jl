@@ -455,6 +455,14 @@ function setInitialPoint!(analysis::DcStateEstimation{LAV})
     end
 end
 
+function setInitialPoint!(target::DcStateEstimation{LAV}, source::Analysis)
+    errorTransfer(source.voltage.angle, target.voltage.angle)
+
+    @inbounds for i = 1:target.system.bus.number
+        target.voltage.angle[i] = source.voltage.angle[i]
+    end
+end
+
 ##### Indices of the Coefficient Matrix #####
 function dcIndices(cff::SparseModel, row::Int64, col::Int64)
     cff.row[cff.cnt] = row

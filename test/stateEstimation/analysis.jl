@@ -362,6 +362,22 @@ system30 = powerSystem(path * "case30test.m")
         addPmu!(monitoring, pf; correlated = true)
         testPmuEstimation(monitoring, pf)
     end
+
+    @testset "IEEE 30: Set LAV Initial Point" begin
+        analysis = pmuLavStateEstimation(monitoring, Ipopt.Optimizer)
+
+        setInitialPoint!(analysis, pf)
+        teststruct(analysis.voltage, pf.voltage)
+
+        setInitialPoint!(analysis)
+        @test analysis.voltage.magnitude == system30.bus.voltage.magnitude
+        @test analysis.voltage.angle == system30.bus.voltage.angle
+
+        pf = dcPowerFlow(system30)
+        powerFlow!(pf)
+        setInitialPoint!(analysis, pf)
+        @test analysis.voltage.angle == pf.voltage.angle
+    end
 end
 
 system14 = powerSystem(path * "case14test.m")
@@ -452,6 +468,21 @@ system30 = powerSystem(path * "case30test.m")
 
         @test orthogonal.voltage.angle ≈ pf.voltage.angle
         teststruct(orthogonal.power, pf.power; atol = 1e-10)
+    end
+
+    @testset "IEEE 30: Set LAV Initial Point" begin
+        analysis = dcLavStateEstimation(monitoring, Ipopt.Optimizer)
+
+        setInitialPoint!(analysis, pf)
+        @test analysis.voltage.angle == pf.voltage.angle
+
+        setInitialPoint!(analysis)
+        @test analysis.voltage.angle == system30.bus.voltage.angle
+
+        pf = newtonRaphson(system30)
+        powerFlow!(pf)
+        setInitialPoint!(analysis, pf)
+        @test analysis.voltage.angle == pf.voltage.angle
     end
 end
 

@@ -491,6 +491,24 @@ function setInitialPoint!(analysis::PmuStateEstimation{LAV})
     end
 end
 
+function setInitialPoint!(target::PmuStateEstimation{LAV}, source::AC)
+    errorTransfer(source.voltage.magnitude, target.voltage.magnitude)
+    errorTransfer(source.voltage.angle, target.voltage.angle)
+
+    @inbounds for i = 1:target.system.bus.number
+        target.voltage.magnitude[i] = source.voltage.magnitude[i]
+        target.voltage.angle[i] = source.voltage.angle[i]
+    end
+end
+
+function setInitialPoint!(target::PmuStateEstimation{LAV}, source::DC)
+    errorTransfer(source.voltage.angle, target.voltage.angle)
+
+    @inbounds for i = 1:target.system.bus.number
+        target.voltage.angle[i] = source.voltage.angle[i]
+    end
+end
+
 ##### Indices of the Coefficient Matrix #####
 function pmuIndices(cff::SparseModel, co1::Int64, col2::Int64)
     cff.row[cff.cnt] = cff.idx
