@@ -477,11 +477,11 @@ function restorationGram!(
             idx = pseudoDevice[k]
             if k <= numberPseudoPower
                 indexBusBranch = watt.layout.index[idx]
-                (lblWatt, _), _ = iterate(watt.label, idx)
-                (lblVar, _), _ = iterate(var.label, idx)
+                lblWatt = getLabel(watt.label, idx)
+                lblVar = getLabel(var.label, idx)
 
                 if watt.layout.bus[idx]
-                    (lblBus, _), _ = iterate(system.bus.label, indexBusBranch)
+                    lblBus = getLabel(system.bus.label, indexBusBranch)
 
                     addWattmeter!(
                         monitoring; bus = lblBus, label = lblWatt,
@@ -494,7 +494,7 @@ function restorationGram!(
                         variance = var.reactive.variance[idx], noise = false
                     )
                 else
-                    (lblBranch, _), _ = iterate(system.branch.label, indexBusBranch)
+                    lblBranch = getLabel(system.branch.label, indexBusBranch)
                     if watt.layout.from[idx]
                         addWattmeter!(
                             monitoring; from = lblBranch, label = lblWatt,
@@ -521,8 +521,8 @@ function restorationGram!(
                 end
             else
                 indexBus = pmu.layout.index[idx]
-                (lblPmu, _), _ = iterate(pmu.label, idx)
-                (lblBus, _), _ = iterate(system.bus.label, indexBus)
+                lblPmu = getLabel(pmu.label, idx)
+                lblBus = getLabel(system.bus.label, indexBus)
 
                 addPmu!(
                     monitoring; bus = lblBus, label = lblPmu, status = 1,
@@ -697,14 +697,14 @@ function pmuPlacement(
 
     @inbounds for i = 1:bus.number
         if value(placement[i]) == 1
-            placementPmu.bus[iterate(bus.label, i)[1][1]] = i
+            placementPmu.bus[getLabel(bus.label, i)] = i
             for j = 1:branch.number
                 if branch.layout.status[j] == 1
                     if branch.layout.from[j] == i
-                        placementPmu.from[iterate(system.branch.label, j)[1][1]] = j
+                        placementPmu.from[getLabel(system.branch.label, j)] = j
                     end
                     if branch.layout.to[j] == i
-                        placementPmu.to[iterate(system.branch.label, j)[1][1]] = j
+                        placementPmu.to[getLabel(system.branch.label, j)] = j
                     end
                 end
             end

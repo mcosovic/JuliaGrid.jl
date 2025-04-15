@@ -550,7 +550,7 @@ end
 function printf(io::IO, prt::Print, value::OrderedDict{String, Int64}, i::Int64, key::Symbol)
     name = prt.head[key]
     if prt.show[name]
-        print(io, format(prt.pfmt[name], prt.width[name], iterate(value, i)[1][1]))
+        print(io, format(prt.pfmt[name], prt.width[name], getLabel(value, i)))
     end
 end
 
@@ -908,10 +908,6 @@ function getLabel(
     end
 
     busLabel
-end
-
-function getLabel(label::OrderedDict{String, Int64}, i::Int64)
-    iterate(label, i)[1][1]
 end
 
 function isValid(jump::JuMP.Model, constraint::Dict{Int64, ConstraintRef}, i::Int64)

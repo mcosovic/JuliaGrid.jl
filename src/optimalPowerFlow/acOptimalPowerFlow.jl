@@ -428,7 +428,7 @@ function addPolynomial(
         polynomialQuad(qaud, power, cost.polynomial, free, i)
         nonLinear(jump, power, cost.polynomial, term, nonlin, i)
     else
-        infoObjective(iterate(system.generator.label, i)[1][1])
+        infoObjective(getLabel(system.generator.label, i))
     end
 end
 
@@ -458,7 +458,7 @@ function addPiecewise(
             slope = (price[j] - price[j-1]) / (output[j] - output[j-1])
 
             if isinf(slope) || isnan(slope)
-                errorSlope(iterate(system.generator.label, i)[1][1], slope)
+                errorSlope(getLabel(system.generator.label, i), slope)
             end
 
             con[i][j-1] = @constraint(
@@ -469,7 +469,7 @@ function addPiecewise(
         slope = (price[2] - price[1]) / (output[2] - output[1])
 
         if isinf(slope) || isnan(slope)
-            errorSlope(iterate(system.generator.label, i)[1][1], slope)
+            errorSlope(getLabel(system.generator.label, i), slope)
         end
 
         free[i] = price[1] - output[1] * slope
@@ -478,7 +478,7 @@ function addPiecewise(
         add_to_expression!(obj, free[i])
 
     elseif point == 1
-         errorOnePoint(iterate(system.generator.label, i)[1][1])
+         errorOnePoint(getLabel(system.generator.label, i))
     end
 end
 

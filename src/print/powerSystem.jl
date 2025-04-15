@@ -2124,14 +2124,12 @@ function addlabel!(
 )
     for (key, index) in smr.minidx
         if index != 0
-            lbl = iterate(label, index)
-            smr.minlbl[key] = string(lbl[1][1])
+            smr.minlbl[key] = string(getLabel(label, index))
         end
     end
     for (key, index) in smr.maxidx
         if index != 0
-            lbl = iterate(label, index)
-            smr.maxlbl[key] = string(lbl[1][1])
+            smr.maxlbl[key] = string(getLabel(label, index))
         end
     end
 end

@@ -916,14 +916,14 @@ function reactiveLimit!(analysis::AcPowerFlow)
     fill!(bus.supply.active, 0.0)
     fill!(bus.supply.reactive, 0.0)
     outputReactive = fill(0.0, generator.number)
-    labels = collect(keys(system.generator.label))
-    @inbounds for (k, i) in enumerate(generator.layout.bus)
+    @inbounds for (label, k) in system.generator.label
         if generator.layout.status[k] == 1
-            active, reactive = generatorPower(analysis; label = labels[k])
+            busIdx = generator.layout.bus[k]
+            active, reactive = generatorPower(analysis; label)
 
             generator.output.active[k] = active
-            bus.supply.active[i] += active
-            bus.supply.reactive[i] += reactive
+            bus.supply.active[busIdx] += active
+            bus.supply.reactive[busIdx] += reactive
             outputReactive[k] = reactive
         end
     end
@@ -956,11 +956,10 @@ function reactiveLimit!(analysis::AcPowerFlow)
                 if j == bus.layout.slack
                     for k = 1:bus.number
                         if bus.layout.type[k] == 2
-                            old = iterate(system.bus.label, j)[1][1]
-                            new = iterate(system.bus.label, k)[1][1]
                             @info(
-                                "The slack bus labeled $old is converted to " *
-                                "generator bus. The bus labeled $new is the new slack bus."
+                                "The slack bus labeled $(getLabel(bus.label, j)) is converted to " *
+                                "generator bus. The bus labeled $(getLabel(bus.label, k)) is the " *
+                                "new slack bus."
                             )
                             bus.layout.slack = k
                             bus.layout.type[k] = 3
@@ -1016,7 +1015,7 @@ adjustAngle!(analysis; slack = 1)
 function adjustAngle!(analysis::AcPowerFlow; slack::IntStrMiss)
     system = analysis.system
 
-    idx = system.bus.label[getLabel(system.bus, slack, "bus")]
+    idx = getIndex(system.bus, slack, "bus")
     T = system.bus.voltage.angle[idx] - analysis.voltage.angle[idx]
     @inbounds for i = 1:system.bus.number
         analysis.voltage.angle[i] = analysis.voltage.angle[i] + T
@@ -1154,10 +1153,9 @@ function changeSlackBus!(system::PowerSystem)
                 system.bus.layout.type[i] = 3
                 system.bus.layout.slack = i
 
-                slack = iterate(system.bus.label, i)[1][1]
                 @info(
-                    "The bus labeled $slack is the new slack bus since no " *
-                    "in-service generator was available at the previous slack bus."
+                    "The bus labeled $(getLabel(system.bus.label, i)) is the new slack bus since " *
+                    "no in-service generator was available at the previous slack bus."
                 )
                 break
             end

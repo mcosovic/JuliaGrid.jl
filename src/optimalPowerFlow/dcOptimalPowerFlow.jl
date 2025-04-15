@@ -256,7 +256,7 @@ function addPolynomial(
     elseif term == 1
         polynomialConst(obj, cost.polynomial, free, i)
     else
-        infoObjective(iterate(system.generator.label, i)[1][1])
+        infoObjective(getLabel(system.generator.label, i))
     end
 end
 

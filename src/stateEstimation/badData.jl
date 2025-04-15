@@ -100,7 +100,7 @@ function residualTest!(
 
     if bad.index != 0
         if bad.index <= watt.number
-            (bad.label, index),_ = iterate(watt.label, bad.index)
+            bad.label, index = getLabelIdx(watt.label, bad.index)
             if bad.detect
                 watt.active.status[index] = 0
             end
@@ -112,7 +112,7 @@ function residualTest!(
                     break
                 end
             end
-            (bad.label, _),_ = iterate(pmu.label, index)
+            bad.label = getLabel(pmu.label, index)
             if bad.detect
                 pmu.angle.status[index] = 0
             end
@@ -191,7 +191,7 @@ function residualTest!(
     end
 
     if bad.index != 0
-        (bad.label, ),_ = iterate(monitoring.pmu.label, pmuIndex)
+        bad.label = getLabel(monitoring.pmu.label, pmuIndex)
     end
     if bad.detect
         monitoring.pmu.magnitude.status[pmuIndex] = 0
@@ -266,22 +266,22 @@ function residualTest!(
 
     if bad.index != 0
         if se.range[1] <= bad.index < se.range[2]
-            (bad.label, idx),_ = iterate(volt.label, bad.index)
+            bad.label, idx = getLabelIdx(volt.label, bad.index)
             if bad.detect
                 volt.magnitude.status[idx] = 0
             end
         elseif se.range[2] <= bad.index < se.range[3]
-            (bad.label, idx),_ = iterate(amp.label, bad.index - volt.number)
+            bad.label, idx = getLabelIdx(amp.label, bad.index - volt.number)
             if bad.detect
                 amp.magnitude.status[idx] = 0
             end
         elseif se.range[3] <= bad.index < se.range[4]
-            (bad.label, idx),_ = iterate(watt.label, bad.index - volt.number - amp.number)
+            bad.label, idx = getLabelIdx(watt.label, bad.index - volt.number - amp.number)
             if bad.detect
                 watt.active.status[idx] = 0
             end
         elseif se.range[4] <= bad.index < se.range[5]
-            (bad.label, idx),_ = iterate(
+            bad.label, idx = getLabelIdx(
                 var.label, bad.index - volt.number - amp.number - watt.number
             )
             if bad.detect
@@ -297,7 +297,7 @@ function residualTest!(
                 alsoBad = bad.index + 1
             end
 
-            (bad.label, idx),_ = iterate(monitoring.pmu.label, pmuIndex)
+            bad.label, idx = getLabelIdx(monitoring.pmu.label, pmuIndex)
             if bad.detect
                 if monitoring.pmu.layout.polar[idx]
                     if se.type[bad.index] in [2; 3; 4; 5; 12]

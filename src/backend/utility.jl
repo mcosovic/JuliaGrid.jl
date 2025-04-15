@@ -167,6 +167,10 @@ function getLabel(container::Union{P, M}, label::Int64, name::String)
     end
 end
 
+function getLabel(container::LabelDict, idx::Int64)
+    iterate(container, idx)[1][1]
+end
+
 ##### Get Index #####
 function getIndex(container::Union{P, M}, label::String, name::String)
     container.label[getLabel(container, label, name)]
@@ -175,6 +179,14 @@ end
 function getIndex(container::Union{P, M}, label::Int64, name::String)
     container.label[getLabel(container, label, name)]
 end
+
+##### Get Label and Index #####
+function getLabelIdx(container::LabelDict, idx::Int64)
+    (label, idx),_ = iterate(container, idx)
+
+    return label, idx
+end
+
 
 ##### From-To Indices #####
 function fromto(system::PowerSystem, idx::Int64)
@@ -467,6 +479,8 @@ end
 function silentJump(jump::JuMP.Model, verbose::Int64)
     if verbose == 0 || verbose == 1
         JuMP.set_silent(jump)
+    else
+        JuMP.unset_silent(jump)
     end
 end
 
@@ -589,13 +603,6 @@ function errorPolar2Rectangular(polar::Bool)
 end
 
 ##### Info Messages #####
-function infoObjective(label::Union{String, Int64}, term::Int64)
-    @info(
-        "The generator labeled $label has a polynomial cost function " *
-        "of degree $(term-1), which is not included in the objective."
-    )
-end
-
 function infoObjective(label::Union{String, Int64})
     @info(
         "The generator labeled $label has an undefined polynomial " *
