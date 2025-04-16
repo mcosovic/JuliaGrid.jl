@@ -592,6 +592,7 @@ function stateEstimation!(
     current::Bool = false,
     verbose::IntMiss = missing
 )
+    masterVerbose = analysis.method.jump.ext[:verbose]
     verbose = setJumpVerbose(analysis.method.jump, template, verbose)
     setAttribute(analysis.method.jump, iteration, tolerance, verbose)
 
@@ -603,4 +604,6 @@ function stateEstimation!(
     if current
         current!(analysis)
     end
+
+    analysis.method.jump.ext[:verbose] = masterVerbose
 end

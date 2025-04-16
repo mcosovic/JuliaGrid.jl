@@ -111,7 +111,7 @@ Hence, the variables in this model encompass the active power outputs of the gen
 ---
 
 ## Objective Function
-The objective function represents the sum of the active power cost functions ``f_i(P_{\mathrm{g}i})``, ``i \in \mathcal S``, for each generator, where these cost functions can be polynomial or piecewise linear functions. It is important to note that only polynomial cost functions up to the second degree are included in the objective function. If higher-degree polynomials are present, they will be excluded from the objective function by JuliaGrid.
+The objective function represents the sum of the active power cost functions ``f_i(P_{\mathrm{g}i})``, ``i \in \mathcal S``, for each generator, where these cost functions can be polynomial or piecewise linear functions. Only polynomial cost functions of up to the second degree are included in the objective. Specifically, if a higher-degree polynomial is provided, JuliaGrid will discard all terms beyond the second degree and still include the resulting truncated polynomial in the objective function.
 
 ---
 

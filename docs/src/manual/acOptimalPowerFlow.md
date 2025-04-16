@@ -439,10 +439,20 @@ analysis.method.dual.balance.active[1]
 
 ---
 
+##### Wrapper Function
+JuliaGrid provides a wrapper function for AC optimal power flow analysis and also supports the computation of powers and currents using the [powerFlow!](@ref powerFlow!(::AcOptimalPowerFlow)) function:
+```@example acopf
+setInitialPoint!(analysis) # hide
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+powerFlow!(analysis; verbose = 1)
+nothing # hide
+```
+
+---
+
 ##### Print Results in the REPL
 Users can utilize the functions [`printBusData`](@ref printBusData) and [`printGeneratorData`](@ref printGeneratorData) to display results. Additionally, the functions listed in the [Print Constraint Data](@ref PrintConstraintDataAPI) section allow users to print constraint data related to buses, branches, or generators in the desired units. For example:
 ```@example acopf
-@power(MW, MVAr)
 show = Dict("Active Power Balance" => false)
 printBusConstraint(analysis; show)
 nothing # hide
@@ -479,7 +489,7 @@ CSV.write("constraint.csv", CSV.File(take!(io); delim = "|"))
 ---
 
 ## Primal and Dual Warm Start
-Utilizing the `AcOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the initial primal and dual values for the subsequent solving step correspond to the solution obtained from the previous step.
+Utilizing the `AcOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a warm start. In this scenario, the initial primal and dual values for the subsequent solving step correspond to the solution obtained from the previous step.
 
 ---
 
@@ -502,13 +512,13 @@ print(system.generator.label, analysis.method.dual.capability.reactive)
 ##### Modify Optimal Power Flow
 Now, let us introduce changes to the power system from the previous example:
 ```@example acopf
-updateGenerator!(analysis; label = "Generator 2", maxActive = 0.08)
+updateGenerator!(analysis; label = "Generator 2", maxActive = 0.2)
 nothing # hide
 ```
 
 Next, we want to solve this modified optimal power flow problem. If we use [`solve!`](@ref solve!(::AcOptimalPowerFlow)) at this point, the primal and dual initial values will be set to the previously obtained values:
 ```@example acopf
-solve!(analysis)
+powerFlow!(analysis)
 ```
 
 As a result, we obtain a new solution:
@@ -556,8 +566,8 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, reacti
 cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
 cost!(system; generator = "Generator 2", active = 1, piecewise = [10 12.3; 14.7 16.8; 18 19])
 
-analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; verbose = 1)
-solve!(analysis)
+analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
+powerFlow!(analysis)
 nothing # hide
 ```
 

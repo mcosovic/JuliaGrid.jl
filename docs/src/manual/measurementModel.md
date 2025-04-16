@@ -693,15 +693,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.2)
 
 analysis = newtonRaphson(system)
-for iteration = 1:100
-    stopping = mismatch!(analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(analysis)
-end
-power!(analysis)
-current!(analysis)
+powerFlow!(analysis; power = true, current = true)
 
 @voltmeter(label = "!", noise = true)
 addVoltmeter!(monitoring, analysis; variance = 1e-3)
@@ -829,15 +821,7 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 0.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.2)
 
 analysis = newtonRaphson(system)
-for iteration = 1:100
-    stopping = mismatch!(analysis)
-    if all(stopping .< 1e-8)
-        break
-    end
-    solve!(analysis)
-end
-power!(analysis)
-current!(analysis)
+powerFlow!(analysis; power = true, current = true)
 
 addVoltmeter!(monitoring, analysis)
 addAmmeter!(monitoring, analysis)

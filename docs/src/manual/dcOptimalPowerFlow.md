@@ -276,7 +276,7 @@ nothing # hide
 ---
 
 ## [Objective Function](@id DCObjectiveFunctionManual)
-The objective function of the DC optimal power flow is constructed using polynomial and piecewise linear cost functions of the generators, which are defined using the [`cost!`](@ref cost!) functions. It is important to note that only polynomial cost functions up to the second degree are included in the objective. If there are polynomials of higher degrees, JuliaGrid will exclude them from the objective function.
+The objective function of the DC optimal power flow is constructed using polynomial and piecewise linear cost functions of the generators, which are defined using the [`cost!`](@ref cost!) functions. Only polynomial cost functions of up to the second degree are included in the objective. Specifically, if a higher-degree polynomial is provided, JuliaGrid will discard all terms beyond the second degree and still include the resulting truncated polynomial in the objective function.
 
 In the provided example, the objective function that needs to be minimized to obtain the optimal values of the active power outputs of the generators and the bus voltage angles is as follows:
 ```@repl dcopf
@@ -383,6 +383,17 @@ analysis.method.dual.balance.active[1]
 
 ---
 
+##### Wrapper Function
+JuliaGrid provides a wrapper function for DC optimal power flow analysis and also supports the computation of powers using the [powerFlow!](@ref powerFlow!(::DcOptimalPowerFlow)) function:
+```@example dcopf
+setInitialPoint!(analysis) # hide
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+powerFlow!(analysis; verbose = 1)
+nothing # hide
+```
+
+---
+
 ##### Print Results in the REPL
 Users can utilize the functions [`printBusData`](@ref printBusData) and [`printGeneratorData`](@ref printGeneratorData) to display results. Additionally, the functions listed in the [Print Constraint Data](@ref PrintConstraintDataAPI) section allow users to print constraint data related to buses, branches, or generators in the desired units. For example:
 ```@example dcopf
@@ -422,7 +433,7 @@ CSV.write("constraint.csv", CSV.File(take!(io); delim = "|"))
 ---
 
 ## Primal and Dual Warm Start
-Utilizing the `DcOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a "warm start". In this scenario, the initial primal and dual values for the subsequent solving step correspond to the solution obtained from the previous step.
+Utilizing the `DcOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a warm start. In this scenario, the initial primal and dual values for the subsequent solving step correspond to the solution obtained from the previous step.
 
 ---
 
@@ -452,7 +463,7 @@ nothing # hide
 
 Next, we want to solve this modified optimal power flow problem. If we use [`solve!`](@ref solve!(::DcOptimalPowerFlow)) at this point, the primal and dual initial values will be set to the previously obtained values:
 ```@example dcopf
-solve!(analysis)
+powerFlow!(analysis)
 ```
 
 As a result, we obtain a new solution:
@@ -499,8 +510,8 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, maxAct
 cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
 cost!(system; generator = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8])
 
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer; verbose = 1)
-solve!(analysis)
+analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+powerFlow!(analysis)
 nothing # hide
 ```
 

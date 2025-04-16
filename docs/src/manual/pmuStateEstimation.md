@@ -41,8 +41,8 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 2.1)
 
-analysis = newtonRaphson(system)
-powerFlow!(analysis)
+pf = newtonRaphson(system)
+powerFlow!(pf)
 nothing # hide
 ```
 
@@ -60,7 +60,7 @@ JuliaGrid allows users to determine the minimum number of PMUs needed for observ
 using HiGHS
 
 @pmu(label = "PMU ? (!)")
-placement = pmuPlacement!(monitoring, analysis, HiGHS.Optimizer)
+placement = pmuPlacement!(monitoring, pf, HiGHS.Optimizer)
 nothing # hide
 ```
 Note that users can also generate phasor measurements using results from AC optimal power flow.
@@ -113,6 +113,16 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 
 ---
 
+##### Wrapper Function
+JuliaGrid provides a wrapper function for PMU state estimation analysis and also supports the computation of powers and currents using the [`stateEstimation!`](@ref stateEstimation!(::PmuStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal}) function:
+```@example PMUOptimalPlacement
+analysis = pmuStateEstimation(monitoring)
+stateEstimation!(analysis; verbose = 2)
+nothing # hide
+```
+
+---
+
 ##### Correlated Measurement Errors
 In the above approach, we assume that measurement errors from a single PMU are uncorrelated. This assumption leads to the covariance matrix and its inverse matrix (i.e., precision matrix) maintaining a diagonal form:
 ```@repl PMUOptimalPlacement
@@ -140,7 +150,7 @@ analysis.method.precision
 
 Subsequently, we can address this new scenario and observe the solution:
 ```@repl PMUOptimalPlacement
-solve!(analysis)
+stateEstimation!(analysis)
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
@@ -158,7 +168,7 @@ nothing # hide
 Subsequently, by specifying the `Orthogonal` argument in the [`pmuStateEstimation`](@ref pmuStateEstimation) function, JuliaGrid implements a more robust approach to obtain the WLS estimator, which proves particularly beneficial when substantial differences exist among measurement variances:
 ```@example PMUOptimalPlacement
 analysis = pmuStateEstimation(monitoring, Orthogonal)
-solve!(analysis)
+stateEstimation!(analysis)
 nothing # hide
 ```
 
@@ -202,26 +212,38 @@ To obtain an LAV estimator, users need to employ one of the [solvers](https://ju
 using Ipopt
 using JuMP  # hide
 
-analysis = pmuLavStateEstimation(monitoring, Ipopt.Optimizer; verbose = 1)
+analysis = pmuLavStateEstimation(monitoring, Ipopt.Optimizer)
 nothing # hide
 ```
 
 ---
 
 ##### Setup Initial Primal Values
-In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function is executed. Initial primal values are determined based on the `voltage` fields within the `PmuStateEstimation` type. By default, these values are initially established using the initial bus voltage magnitudes and angles from `PowerSystem` type:
+In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function is executed. These values are derived from the voltage magnitudes and angles stored in the `PowerSystem` type and are assigned to the corresponding `voltage` field within the `PmuStateEstimation` type:
 ```@repl PMUOptimalPlacement
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function. It is important to note that JuliaGrid utilizes the provided data to set initial primal values in the rectangular coordinate system. Additionally, the [setInitialPoint!](@ref setInitialPoint!(::AcStateEstimation)) function allows users to configure the initial point as required.
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function. One practical approach is to perform an AC power flow analysis and then apply the resulting solution as the starting point for state estimation:
+```@example PMUOptimalPlacement
+pf = newtonRaphson(system)
+powerFlow!(pf)
+
+setInitialPoint!(analysis, pf)
+nothing # hide
+```
+
+As a result, the initial primal values will now reflect the outcome of the power flow solution:
+```@repl PMUOptimalPlacement
+print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
+```
 
 ---
 
 ##### Solution
 To solve the formulated LAV state estimation model, simply execute the following function:
 ```@example PMUOptimalPlacement
-solve!(analysis)
+stateEstimation!(analysis)
 nothing # hide
 ```
 
@@ -237,40 +259,45 @@ nothing # hide
 ---
 
 ## [Measurement Set Update](@id PMUMeasurementsAlterationManual)
-After establishing the `Measurement` type using the [`measurement`](@ref measurement) function, users gain the capability to incorporate new measurement devices or update existing ones.
-
-Once updates are completed, users can seamlessly progress towards generating the `PmuStateEstimation` type using the [`pmuStateEstimation`](@ref pmuStateEstimation) or [`pmuLavStateEstimation`](@ref pmuLavStateEstimation) function. Ultimately, resolving the PMU state estimation is achieved through the utilization of the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function:
+We begin by creating the `PowerSystem` and `Measurement` types with the [`ems`](@ref ems) function. The AC model is then configured using [`acModel!`](@ref acModel!) function. After that, we initialize the `PmuStateEstimation` type through the [`pmuStateEstimation`](@ref pmuStateEstimation) function and solve the resulting state estimation problem:
 ```@example WLSPMUStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system, monitoring = ems() # <- Initialize the Measurement instance
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", type = 3)
-addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
-addBus!(system; label = "Bus 3", type = 1, active = 2.5, reactive = 0.2)
+addBus!(system; label = "Bus 2")
+addBus!(system; label = "Bus 3")
 
 @branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance = 0.03)
 
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
+acModel!(system)
 
-@pmu(label = "PMU ?")
-addPmu!(monitoring; bus = "Bus 1", magnitude = 1.0, angle = 0.0)
-addPmu!(monitoring; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
-addPmu!(monitoring; from = "Branch 2", magnitude = 0.5, angle = -0.05)
+addPmu!(monitoring; label = "PMU 1", bus = "Bus 1", magnitude = 1.0, angle = 0.0)
+addPmu!(monitoring; label = "PMU 2", bus = "Bus 2", magnitude = 0.98, angle = -0.023)
+addPmu!(monitoring; label = "PMU 3", from = "Branch 2", magnitude = 0.5, angle = -0.05)
 
-analysis = pmuStateEstimation(monitoring) # <- Build PmuStateEstimation for the model
-solve!(analysis)
+analysis = pmuStateEstimation(monitoring)
+stateEstimation!(analysis)
+nothing # hide
+```
 
-addPmu!(monitoring; to = "Branch 2", magnitude = 0.5, angle = 3.1)
+Next, we modify the existing `Measurement` type using add and update functions. Then, we create the new `PmuStateEstimation` type based on the modified system and solve the state estimation problem:
+```@example WLSPMUStateEstimationSolution
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+
+addPmu!(monitoring; label = "PMU 4", to = "Branch 2", magnitude = 0.5, angle = 3)
 updatePmu!(monitoring; label = "PMU 1", varianceMagnitude = 1e-8)
 updatePmu!(monitoring; label = "PMU 3", status = 0)
 
-analysis = pmuStateEstimation(monitoring) # <- Build PmuStateEstimation for new model
-solve!(analysis)
+analysis = pmuStateEstimation(monitoring)
+stateEstimation!(analysis)
 nothing # hide
 ```
 
@@ -287,39 +314,41 @@ This advancement extends beyond the previous scenario where recreating the `Meas
 !!! tip "Tip"
     The addition of new measurements after the creation of `PmuStateEstimation` is not practical in terms of reusing the `PmuStateEstimation` type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
 
-We can modify the prior example to achieve the same model without establishing `PmuStateEstimation` twice:
+Let us now revisit our defined `PowerSystem`, `Measurement` and `PmuStateEstimation` types:
 ```@example WLSPMUStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system, monitoring = ems() # <- Initialize the Measurement instance
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", type = 3)
-addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
-addBus!(system; label = "Bus 3", type = 1, active = 2.5, reactive = 0.2)
+addBus!(system; label = "Bus 2")
+addBus!(system; label = "Bus 3")
 
 @branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance = 0.03)
 
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
+acModel!(system)
 
-@pmu(label = "PMU ?")
-addPmu!(monitoring; bus = "Bus 1", magnitude = 1.0, angle = 0.0)
-addPmu!(monitoring; bus = "Bus 2", magnitude = 0.98, angle = -0.023)
-addPmu!(monitoring; from = "Branch 2", magnitude = 0.5, angle = -0.05)
-addPmu!(monitoring; to = "Branch 2", magnitude = 0.5, angle = 3.1, status = 0)
+addPmu!(monitoring; label = "PMU 1", bus = "Bus 1", magnitude = 1.0, angle = 0.0)
+addPmu!(monitoring; label = "PMU 2", bus = "Bus 2", magnitude = 0.98, angle = -0.023)
+addPmu!(monitoring; label = "PMU 3", from = "Branch 2", magnitude = 0.5, angle = -0.05)
+addPmu!(monitoring; label = "PMU 4", to = "Branch 2", magnitude = 0.5, angle = 3, status = 0)
 
-analysis = pmuStateEstimation(monitoring) # <- Build PmuStateEstimation for the model
-solve!(analysis)
+analysis = pmuStateEstimation(monitoring)
+stateEstimation!(analysis)
+nothing # hide
+```
 
+Next, we modify the existing `Measurement` type as well as the `PmuStateEstimation` type using add and update functions. We then immediately proceed to solve the state estimation problem:
+```@example WLSPMUStateEstimationSolution
 updatePmu!(analysis; label = "PMU 1", varianceMagnitude = 1e-8)
 updatePmu!(analysis; label = "PMU 3", status = 0)
 updatePmu!(analysis; label = "PMU 4", status = 1)
 
-# <- No need for re-build; we have already updated the existing PmuStateEstimation instance
-solve!(analysis)
+stateEstimation!(analysis)
 nothing # hide
 ```
 
@@ -338,15 +367,13 @@ using JuliaGrid # hide
 system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", type = 3, susceptance = 0.002)
-addBus!(system; label = "Bus 2", type = 1, active = 0.1, reactive = 0.01)
-addBus!(system; label = "Bus 3", type = 1, active = 2.5, reactive = 0.2)
+addBus!(system; label = "Bus 2")
+addBus!(system; label = "Bus 3")
 
 @branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.05)
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.03)
-
-addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2, reactive = 0.3)
 
 addPmu!(monitoring; bus = "Bus 1", magnitude = 1.0, angle = 0.0)
 addPmu!(monitoring; bus = "Bus 2", magnitude = 0.97, angle = -0.051)
@@ -354,7 +381,7 @@ addPmu!(monitoring; from = "Branch 2", magnitude = 1.66, angle = -0.15)
 addPmu!(monitoring; to = "Branch 2", magnitude = 1.67, angle = 2.96)
 
 analysis = pmuStateEstimation(monitoring)
-solve!(analysis)
+stateEstimation!(analysis)
 ```
 
 We can now utilize the provided functions to compute powers and currents:

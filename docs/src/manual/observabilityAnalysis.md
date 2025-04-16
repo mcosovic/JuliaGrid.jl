@@ -41,8 +41,6 @@ addBranch!(system; label = "Branch 5", from = "Bus 5", to = "Bus 6", reactance =
 addBranch!(system; label = "Branch 6", from = "Bus 3", to = "Bus 5", reactance = 0.05)
 addBranch!(system; label = "Branch 7", from = "Bus 6", to = "Bus 7", reactance = 0.05)
 
-addGenerator!(system; label = "Generator 1", bus = "Bus 1")
-
 addWattmeter!(monitoring; label = "Wattmeter 1", from = "Branch 1", active = 1.15)
 addVarmeter!(monitoring; label = "Varmeter 1", from = "Branch 1", reactive = -0.50)
 
@@ -160,9 +158,6 @@ addBus!(system; label = "Bus 3")
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.01)
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.04)
-
-addGenerator!(system; label = "Generator 1", bus = "Bus 1")
-
 nothing # hide
 ```
 

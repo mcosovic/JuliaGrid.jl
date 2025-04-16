@@ -31,7 +31,6 @@ addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance =
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 3")
 
-dcModel!(system)
 analysis = dcPowerFlow(system)
 ```
 
@@ -53,7 +52,6 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance =
 
 addGenerator!(system; bus = "Bus 3", active = 3.2)
 
-dcModel!(system)
 analysis = dcPowerFlow(system)
 ```
 
@@ -118,6 +116,16 @@ nothing # hide
 
 ---
 
+##### Wrapper Function
+JuliaGrid provides a wrapper function for DC power flow analysis and also supports the computation of powers using the [powerFlow!](@ref powerFlow!(::DcPowerFlow)) function:
+```@example DCPowerFlowSolution
+analysis = dcPowerFlow(system)
+powerFlow!(analysis; verbose = 2)
+nothing # hide
+```
+
+---
+
 ##### Print Results in the REPL
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example DCPowerFlowSolution
@@ -158,37 +166,40 @@ CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ---
 
 ## [Power System Update](@id DCPowerSystemAlterationManual)
-After establishing the `PowerSystem` type using the [`powerSystem`](@ref powerSystem) function and configuring the DC model with [`dcModel!`](@ref dcModel!), users gain the capability to incorporate new branches and generators. Furthermore, they can adjust buses, branches, and generators.
-
-Once updates are completed, users can progress towards generating the `DcPowerFlow` type using the [`dcPowerFlow`](@ref dcPowerFlow) function. Ultimately, resolving the DC power flow is achieved through the utilization of the [`solve!`](@ref solve!(::DcPowerFlow)) function:
+We begin by creating the `PowerSystem` type with the [`powerSystem`](@ref powerSystem) function. The DC model is then configured using [`dcModel!`](@ref dcModel!) function. After that, we initialize the `DcPowerFlow` type through the [`dcPowerFlow`](@ref dcPowerFlow) function and solve the resulting power flow problem:
 ```@example DCPowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem() # <- Initialize the PowerSystem instance
+system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 2, active = 2.1)
 
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
 dcModel!(system)
-analysis = dcPowerFlow(system) # <- Build DcPowerFlow for the defined power system
-solve!(analysis)
 
+analysis = dcPowerFlow(system)
+powerFlow!(analysis)
+nothing # hide
+```
+
+Next, we modify the existing `PowerSystem` type within the DC model using add and update functions. Then, we create a new `DcPowerFlow` type based on the modified system and solve the power flow problem:
+```@example DCPowerFlowSolution
 updateBus!(system; label = "Bus 2", active = 0.4)
 
-addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
+addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.3)
 updateBranch!(system; label = "Branch 1", status = 0)
 
 addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 1.5)
 updateGenerator!(system; label = "Generator 1", active = 1.9)
 
-analysis = dcPowerFlow(system) # <- Build DcPowerFlow for the updated power system
-solve!(analysis)
+analysis = dcPowerFlow(system)
+powerFlow!(analysis)
 nothing # hide
 ```
 
@@ -198,39 +209,41 @@ nothing # hide
 ---
 
 ## [Power Flow Update](@id DCPowerFlowUpdateManual)
-An advanced methodology involves users establishing the `DcPowerFlow` type using [`dcPowerFlow`](@ref dcPowerFlow) just once. After this initial setup, users can integrate new branches and generators, and also have the capability to modify buses, branches, and generators, all without the need to recreate the `DcPowerFlow` type.
+An advanced methodology involves users establishing the `DcPowerFlow` type just once. After this initial setup, users can integrate new branches and generators, and also have the capability to modify buses, branches, and generators, all without the need to recreate the `DcPowerFlow` type. This is particularly beneficial when the previously computed nodal matrix factorization can be reused.
 
-This advancement extends beyond the previous scenario where recreating the `PowerSystem` and DC model was unnecessary, to now include the scenario where `DcPowerFlow` also does not need to be recreated. Such efficiency can be particularly advantageous in cases where JuliaGrid can reuse nodal matrix factorization.
-
-By modifying the previous example, we observe that we now create the `DcPowerFlow` type only once:
+Let us now revisit our defined `PowerSystem` and `DcPowerFlow` types:
 ```@example DCPowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem() # <- Initialize the PowerSystem instance
+system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2", type = 2, active = 2.1)
 
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.2)
 
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
 dcModel!(system)
-analysis = dcPowerFlow(system) # <- Build DcPowerFlow for the defined power system
-solve!(analysis)
 
+analysis = dcPowerFlow(system)
+powerFlow!(analysis)
+nothing # hide
+```
+
+Next, we modify the existing `PowerSystem` within the DC model as well as the `DcPowerFlow` type using add and update functions. We then immediately proceed to solve the power flow problem:
+```@example DCPowerFlowSolution
 updateBus!(analysis; label = "Bus 2", active = 0.4)
 
-addBranch!(analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
+addBranch!(analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.3)
 updateBranch!(analysis; label = "Branch 1", status = 0)
 
 addGenerator!(analysis; label = "Generator 2", bus = "Bus 2", active = 1.5)
 updateGenerator!(analysis; label = "Generator 1", active = 1.9)
 
-# <- No need for re-build; we have already updated the existing DcPowerFlow instance
-solve!(analysis)
+powerFlow!(analysis)
 nothing # hide
 ```
 
@@ -240,40 +253,36 @@ nothing # hide
 ---
 
 ##### Reusing Matrix Factorization
-Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the active power demand at `Bus 2`, introducing a new generator at `Bus 2`, and fine-tuning the output power of `Generator 1`. It is important to note that these adjustments do not impact the branches, leaving the nodal matrix unchanged. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::DcPowerFlow)) function:
+Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the active power demand at `Bus 2`, introducing a new generator at `Bus 2`, and fine-tuning the output power of `Generator 1`. It is important to note that these adjustments do not impact the branches, leaving the nodal matrix unchanged. To resolve this updated system, users can simply execute the [`powerFlow!`](@ref powerFlow!(::DcPowerFlow)) function:
 ```@example DCPowerFlowSolution
 
 updateBus!(analysis; label = "Bus 2", active = 0.2)
 addGenerator!(analysis; label = "Generator 3", bus = "Bus 2", active = 0.3)
 updateGenerator!(analysis; label = "Generator 1", active = 2.1)
 
-solve!(analysis)
+powerFlow!(analysis)
 nothing # hide
 ```
 
-!!! note "Info"
-    In this scenario, JuliaGrid will recognize instances where the user has not modified branch parameters affecting the nodal matrix. Consequently, JuliaGrid will leverage the previously performed nodal matrix factorization, resulting in a significantly faster solution compared to recomputing the factorization.
+In this scenario, JuliaGrid will recognize instances where the user has not modified branch parameters affecting the nodal matrix. Consequently, JuliaGrid will leverage the previously performed nodal matrix factorization, resulting in a significantly faster solution compared to recomputing the factorization.
 
 ---
 
 ##### Limitations
-The [`dcPowerFlow`](@ref dcPowerFlow) function oversees bus type validations, as detailed in the [Bus Type Modification](@ref DCBusTypeModificationManual) section. Consequently, if a user intends to change the slack bus or leaves an existing slack bus without a generator, proceeding directly to the [`solve!`](@ref solve!(::DcPowerFlow)) function is not feasible.
+The [`dcPowerFlow`](@ref dcPowerFlow) function oversees bus type validations, as detailed in the [Bus Type Modification](@ref DCBusTypeModificationManual) section. Consequently, if a user intends to change the slack bus or leaves an existing slack bus without a generator, proceeding directly to the power flow calculation is not feasible.
 
 In these instances, JuliaGrid will raise an error:
 ```@repl DCPowerFlowSolution
 updateGenerator!(analysis; label = "Generator 1", status = 0)
 ```
 
-Now, the user must execute the [`dcPowerFlow`](@ref dcPowerFlow) function instead of attempting to reuse the `DcPowerFlow` type:
+To resolve this, the user must recreate the `DcPowerFlow` type rather than attempting to reuse the existing one:
 ```julia DCPowerFlowSolution
 updateGenerator!(system; label = "Generator 1", status = 0)
 
 analysis = dcPowerFlow(system)
-solve!(analysis)
+powerFlow!(analysis)
 ```
-
-!!! note "Info"
-    After creating the `PowerSystem` and `DcPowerFlow` types, users can add or modify buses, branches, and generators before directly using the [`solve!`](@ref solve!(::DcPowerFlow)) function. JuliaGrid automatically executes the necessary functions when adjustments lead to a valid solution. However, if modifications are incompatible, like changing the slack bus, JuliaGrid raises an error to prevent misleading outcomes, ensuring accuracy.
 
 ---
 
@@ -297,7 +306,7 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance =
 addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 3.2)
 
 analysis = dcPowerFlow(system)
-solve!(analysis)
+powerFlow!(analysis)
 nothing # hide
 ```
 

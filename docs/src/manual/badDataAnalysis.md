@@ -28,8 +28,6 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.35)
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.16)
 
-addGenerator!(system; label = "Generator 1", bus = "Bus 1")
-
 addWattmeter!(monitoring; label = "Wattmeter 1", from = "Branch 1", active = 0.71)
 addWattmeter!(monitoring; label = "Wattmeter 2", bus = "Bus 3", active = -1.50)
 
