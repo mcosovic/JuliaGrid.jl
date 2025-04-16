@@ -519,6 +519,7 @@ nothing # hide
 Next, we want to solve this modified optimal power flow problem. If we use [`solve!`](@ref solve!(::AcOptimalPowerFlow)) at this point, the primal and dual initial values will be set to the previously obtained values:
 ```@example acopf
 powerFlow!(analysis)
+nothing # hide
 ```
 
 As a result, we obtain a new solution:
