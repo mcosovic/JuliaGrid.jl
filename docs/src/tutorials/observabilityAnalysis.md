@@ -18,15 +18,11 @@ addBus!(system; label = 3)
 addBus!(system; label = 4)
 addBus!(system; label = 5)
 
-@branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.002)
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.05)
 addBranch!(system; label = 2, from = 2, to = 3, reactance = 0.01)
 addBranch!(system; label = 3, from = 2, to = 4, reactance = 0.02)
 addBranch!(system; label = 4, from = 3, to = 4, reactance = 0.03)
 addBranch!(system; label = 5, from = 4, to = 5, reactance = 0.05)
-
-addGenerator!(system; label = 1, bus = 1)
-
 nothing # hide
 ```
 

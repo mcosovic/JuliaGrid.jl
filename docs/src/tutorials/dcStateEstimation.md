@@ -8,14 +8,12 @@ using JuliaGrid # hide
 system = powerSystem()
 
 addBus!(system; label = 1, type = 3, angle = 0.0)
-addBus!(system; label = 2, type = 1, active = 0.1)
-addBus!(system; label = 3, type = 1, active = 1.3)
+addBus!(system; label = 2, active = 0.1)
+addBus!(system; label = 3, active = 1.3)
 
 addBranch!(system; label = 1, from = 1, to = 2, reactance = 0.2)
 addBranch!(system; label = 2, from = 1, to = 3, reactance = 0.1)
 addBranch!(system; label = 3, from = 2, to = 3, reactance = 0.3)
-
-addGenerator!(system; label = 1, bus = 1, active = 3.2)
 
 dcModel!(system)
 nothing # hide

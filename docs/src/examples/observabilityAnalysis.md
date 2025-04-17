@@ -33,8 +33,6 @@ addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 4")
 addBranch!(system; label = "Branch 4", from = "Bus 3", to = "Bus 5")
 addBranch!(system; label = "Branch 5", from = "Bus 3", to = "Bus 4")
 addBranch!(system; label = "Branch 6", from = "Bus 4", to = "Bus 6")
-
-addGenerator!(system; label = "Generator 1", bus = "Bus 1")
 nothing # hide
 ```
 
