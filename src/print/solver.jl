@@ -124,7 +124,7 @@ function printTop(analysis::AcStateEstimation, verbose::Int64)
     ampo = count(x -> x == 0, mtg.ammeter.magnitude.status)
     wato = count(x -> x == 0, mtg.wattmeter.active.status)
     varo = count(x -> x == 0, mtg.varmeter.reactive.status)
-    pmuo = sum(t -> t[1] == 0 || t[2] == 0, zip(mtg.pmu.magnitude.status, mtg.pmu.angle.status))
+    pmuo = sum(t -> t[1] == 0 || t[2] == 0, zip(mtg.pmu.magnitude.status, mtg.pmu.angle.status); init = 0)
 
     col1 = max(textwidth(string(mtg.wattmeter.number)), textwidth(string(mtg.ammeter.number)))
     col2 = max(textwidth(string(mtg.varmeter.number)),textwidth(string(mtg.pmu.number)))
