@@ -102,6 +102,13 @@ function acParameterUpdate!(system::PowerSystem, idx::Int64)
     ac.nodalToFrom[idx] = -transformerRatio * ac.admittance[idx]
 end
 
+##### Check AC Model #####
+function model!(system::PowerSystem, model::AcModel)
+    if isempty(model.nodalMatrix)
+        acModel!(system)
+    end
+end
+
 """
     dcModel!(system::PowerSystem)
 
@@ -189,6 +196,13 @@ function dcAdmittanceUpdate!(system::PowerSystem, status::Union{Int8, Int64}, id
     param = system.branch.parameter
 
     dc.admittance[idx] = status / (param.turnsRatio[idx] * param.reactance[idx])
+end
+
+##### Check AC and DC Model #####
+function model!(system::PowerSystem, model::DcModel)
+    if isempty(model.nodalMatrix)
+        dcModel!(system)
+    end
 end
 
 ##### Expelling Elements from the AC or DC Model #####

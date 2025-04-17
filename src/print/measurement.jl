@@ -115,7 +115,7 @@ function voltData(
     unitList::UnitList,
     pfx::PrefixLive,
     label::IntStrMiss,
-    labels::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
+    labels::LabelDict,
     repeat::Int64;
     kwargs...
 )
@@ -277,7 +277,7 @@ function ampData(
     unitList::UnitList,
     pfx::PrefixLive,
     label::IntStrMiss,
-    labels::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
+    labels::LabelDict,
     repeat::Int64;
     kwargs...
 )
@@ -441,7 +441,7 @@ function wattData(
     unitList::UnitList,
     scale::Dict{Symbol, Float64},
     label::IntStrMiss,
-    labels::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
+    labels::LabelDict,
     repeat::Int64;
     kwargs...
 )
@@ -603,7 +603,7 @@ function varData(
     unitList::UnitList,
     scale::Dict{Symbol, Float64},
     label::IntStrMiss,
-    labels::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
+    labels::LabelDict,
     repeat::Int64;
     kwargs...
 )
@@ -809,7 +809,7 @@ function pmuData(
     unitList::UnitList,
     scale::Dict{Symbol, Float64},
     label::IntStrMiss,
-    labels::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
+    labels::LabelDict,
     repeat::Int64;
     kwargs...
 )
@@ -966,7 +966,7 @@ function pmuData(
     unitList::UnitList,
     scale::Dict{Symbol, Float64},
     label::IntStrMiss,
-    labels::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
+    labels::LabelDict,
     repeat::Int64;
     kwargs...
 )

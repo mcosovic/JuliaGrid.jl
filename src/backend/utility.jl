@@ -100,7 +100,7 @@ end
 ##### Set Missing Label #####
 function setLabel(
     component::Union{P, M},
-    label::Missing,
+    ::Missing,
     default::String,
     key::IntStr;
     prefix::String = ""
@@ -373,19 +373,6 @@ function solution(
     factor \ b
 end
 
-##### Check AC and DC Model #####
-function model!(system::PowerSystem, model::AcModel)
-    if isempty(model.nodalMatrix)
-        acModel!(system)
-    end
-end
-
-function model!(system::PowerSystem, model::DcModel)
-    if isempty(model.nodalMatrix)
-        dcModel!(system)
-    end
-end
-
 ##### Check Slack Bus #####
 function checkSlackBus(system::PowerSystem)
     if system.bus.layout.slack == 0
@@ -398,7 +385,7 @@ import Base.print
 
 function print(
     io::IO,
-    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
+    label::LabelDict,
     data::Vararg{Union{Vector{Float64}, Vector{Int64}, Vector{Int8}}}
 )
     for (key, idx) in label
@@ -406,11 +393,7 @@ function print(
     end
 end
 
-function print(
-    io::IO,
-    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
-    data::Dict{Int64, Float64}
-)
+function print(io::IO, label::LabelDict, data::Dict{Int64, Float64})
     for (key, idx) in label
         if haskey(data, idx)
             println(io::IO, key, ": ", data[idx])
@@ -418,11 +401,7 @@ function print(
     end
 end
 
-function print(
-    io::IO,
-    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
-    obj::Dict{Int64, ConstraintRef}
-)
+function print(io::IO, label::LabelDict, obj::Dict{Int64, ConstraintRef})
     for (key, idx) in label
         if haskey(obj, idx) && is_valid(owner_model(obj[idx]), obj[idx])
             expr = constraint_string(MIME("text/plain"), obj[idx])
@@ -440,11 +419,7 @@ function print(io::IO, obj::Dict{Int64, ConstraintRef})
     end
 end
 
-function print(
-    io::IO,
-    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
-    obj::Dict{Int64, Vector{ConstraintRef}}
-)
+function print(io::IO, label::LabelDict, obj::Dict{Int64, Vector{ConstraintRef}})
     for (key, idx) in label
         if haskey(obj, idx)
             for cons in obj[idx]
@@ -596,9 +571,26 @@ function errorTransfer(a::Vector{Float64}, b::Vector{Float64})
     end
 end
 
-function errorPolar2Rectangular(polar::Bool)
-    if polar
-        throw(ErrorException("The transition from polar to rectangular is not possible."))
+function checkVariance(variance::Float64)
+    if variance == 0.0
+        throw(ErrorException("The variance cannot be zero."))
+    end
+end
+
+function errorVariance(pmu::PMU, varianceRe::Float64, varianceIm::Float64, idx::Int64)
+    if varianceRe == 0.0 || varianceIm == 0.0
+        throw(ErrorException(
+            "The variance associated with the PMU labeled $(getLabel(pmu.label, idx)) is zero.")
+        )
+    end
+end
+
+function errorCovariance(pmu::PMU, varianceIm::Float64, L2::Float64, idx::Int64)
+    if varianceIm == L2^2
+        throw(ErrorException(
+            "The covariances associated with the PMU labeled " *
+            "$(getLabel(pmu.label, idx)) have invalid values.")
+        )
     end
 end
 

@@ -69,6 +69,8 @@ function setMeter(
 
     add!(meter.status, status, defStatus)
     checkStatus(meter.status[end])
+
+    checkVariance(meter.variance[end])
 end
 
 ##### Update Mean, Variance, and Status #####
@@ -95,6 +97,7 @@ function updateMeter(
         meter.status[idx] = status
     end
     checkStatus(meter.status[idx])
+    checkVariance(meter.variance[idx])
 end
 
 ##### Add Meter #####
@@ -112,6 +115,7 @@ function add!(
     meter.status[idx] = status
 
     meter.variance[idx] = topu(variance, defVariance, pfxLive, baseInv)
+    checkVariance(meter.variance[idx])
 
     meter.mean[idx] = exact
     if noise

@@ -48,7 +48,7 @@ function scaleCurrent(system::PowerSystem, pfx::PrefixLive, i::Int64)
     basePower = system.base.power
     baseVoltg = system.base.voltage
 
-    return basePower.value * basePower.prefix /
+    basePower.value * basePower.prefix /
         (sqrt(3) * baseVoltg.value[i] * baseVoltg.prefix * pfx.currentMagnitude)
 end
 
@@ -868,7 +868,7 @@ end
 ##### Utility Functions #####
 function pickLabel(
     container::Union{P,M},
-    labels::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
+    labels::LabelDict,
     label::IntStrMiss,
     component::String
 )
@@ -884,7 +884,7 @@ function pickLabel(
 end
 
 function getLabel(
-    labelComponent::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}},
+    labelComponent::LabelDict,
     label::IntStrMiss,
     show::OrderedDict{String, Bool},
     headings::String...

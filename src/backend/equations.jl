@@ -567,6 +567,8 @@ function variancePmu(pmu::PMU, cosθ::Float64, sinθ::Float64, idx::Int64)
         pmu.magnitude.variance[idx] * sinθ^2 +
         pmu.angle.variance[idx] * (pmu.magnitude.mean[idx] * cosθ)^2
 
+    errorVariance(pmu, varianceRe, varianceIm, idx)
+
     return varianceRe, varianceIm
 end
 
@@ -584,6 +586,8 @@ function covariancePmu(
         (sinθ * cosθ * (pmu.magnitude.variance[idxPmu] -
         pmu.angle.variance[idxPmu] * pmu.magnitude.mean[idxPmu]^2)) * L1⁻¹
     L3⁻² = 1 / (varianceIm - L2^2)
+
+    errorCovariance(pmu, varianceIm, L2, idxPmu)
 
     return L1⁻¹, L2, L3⁻²
 end
@@ -648,12 +652,7 @@ function precision!(pcs::SparseModel, variance::Float64)
 end
 
 ##### Base Voltages at the Branch Ends #####
-function baseVoltageEnd(
-    system::PowerSystem,
-    baseVolt::BaseVoltage,
-    from::Bool,
-    idxBranch::Int64
-)
+function baseVoltageEnd(system::PowerSystem, baseVolt::BaseVoltage, from::Bool, idxBranch::Int64)
     layout = system.branch.layout
     if from
         return baseVolt.value[layout.from[idxBranch]] * baseVolt.prefix

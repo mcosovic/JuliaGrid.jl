@@ -109,84 +109,44 @@ function npq(system::PowerSystem, ::DcPowerFlow)
 end
 
 ##### Measurement Statistics #####
-function printTop(
-    analysis::AcStateEstimation{GaussNewton{T}},
-    verbose::Int64
-) where T <: Union{Normal, Orthogonal}
-
+function printTop(analysis::AcStateEstimation, verbose::Int64)
     if verbose != 3
         return
     end
 
-    range = analysis.method.range
-    type = analysis.method.type
+    mtg = analysis.monitoring
 
-    vol = count(x -> x == 0, type[range[1]:range[2] - 1])
-    amp = count(x -> x == 0, type[range[2]:range[3] - 1])
-    wat = count(x -> x == 0, type[range[3]:range[4] - 1])
-    var = count(x -> x == 0, type[range[4]:range[5] - 1])
-    pmu = Int64(floor(eps() + count(x -> x == 0, type[range[5]:range[6] - 1]) / 2))
-    printTopData(range, vol, amp, wat, var, pmu, verbose)
-end
+    dev =
+        mtg.voltmeter.number + mtg.ammeter.number + mtg.wattmeter.number + mtg.varmeter.number +
+        mtg.pmu.number
 
-function printTop(analysis::AcStateEstimation{LAV}, verbose::Int64)
-    if verbose != 3
-        return
-    end
+    volo = count(x -> x == 0, mtg.voltmeter.magnitude.status)
+    ampo = count(x -> x == 0, mtg.ammeter.magnitude.status)
+    wato = count(x -> x == 0, mtg.wattmeter.active.status)
+    varo = count(x -> x == 0, mtg.varmeter.reactive.status)
+    pmuo = sum(t -> t[1] == 0 || t[2] == 0, zip(mtg.pmu.magnitude.status, mtg.pmu.angle.status))
 
-    range = analysis.method.range
-    type = is_fixed.(analysis.method.deviation.positive)
-
-    vol = count(x -> x == 1, type[range[1]:range[2] - 1])
-    amp = count(x -> x == 1, type[range[2]:range[3] - 1])
-    wat = count(x -> x == 1, type[range[3]:range[4] - 1])
-    var = count(x -> x == 1, type[range[4]:range[5] - 1])
-    display(count(x -> x == 1, type[range[5]:range[6] - 1]) / 2)
-    pmu = Int64(floor(eps() + count(x -> x == 1, type[range[5]:range[6] - 1]) / 2))
-    printTopData(range, vol, amp, wat, var, pmu, verbose)
-end
-
-function printTopData(
-    range::Vector{Int64},
-    volo::Int64,
-    ampo::Int64,
-    wato::Int64,
-    varo::Int64,
-    pmuo::Int64,
-    verbose::Int64
-)
-    if verbose != 3
-        return
-    end
-
-    vol = range[2] - range[1]
-    amp = range[3] - range[2]
-    wat = range[4] - range[3]
-    var = range[5] - range[4]
-    pmu = Int64((range[6] - range[5]) / 2)
-    dev = vol + amp + wat + var + pmu
-
-    col1 = max(textwidth(string(wat)), textwidth(string(amp)))
-    col2 = max(textwidth(string(var)),textwidth(string(pmu)))
-    col3 = textwidth(string(dev))
+    col1 = max(textwidth(string(mtg.wattmeter.number)), textwidth(string(mtg.ammeter.number)))
+    col2 = max(textwidth(string(mtg.varmeter.number)),textwidth(string(mtg.pmu.number)))
+    col3 = max(textwidth(string(mtg.voltmeter.number)),textwidth(string(dev)))
 
     print("Number of wattmeters: ")
-    print(format(Format("%*i"), col1, wat))
+    print(format(Format("%*i"), col1, mtg.wattmeter.number))
 
     print("   Number of varmeters: ")
-    print(format(Format("%*i"), col2, var))
+    print(format(Format("%*i"), col2, mtg.varmeter.number))
 
     print("   Number of voltmeters: ")
-    print(format(Format("%*i\n"), col3, vol))
+    print(format(Format("%*i\n"), col3, mtg.voltmeter.number))
 
     print("  In-service:         ")
-    print(format(Format("%*i"), col1, wat - wato))
+    print(format(Format("%*i"), col1, mtg.wattmeter.number - wato))
 
     print("     In-service:        ")
-    print(format(Format("%*i"), col2, var - varo))
+    print(format(Format("%*i"), col2, mtg.varmeter.number - varo))
 
     print("     In-service:         ")
-    print(format(Format("%*i\n"), col3, vol - volo))
+    print(format(Format("%*i\n"), col3, mtg.voltmeter.number - volo))
 
     print("  Out-of-service:     ")
     print(format(Format("%*i"), col1, wato))
@@ -198,19 +158,19 @@ function printTopData(
     print(format(Format("%*i\n\n"), col3, volo))
 
     print("Number of ammeters:   ")
-    print(format(Format("%*i"), col1, amp))
+    print(format(Format("%*i"), col1, mtg.ammeter.number))
 
     print("   Number of PMUs:      ")
-    print(format(Format("%*i"), col2, pmu))
+    print(format(Format("%*i"), col2, mtg.pmu.number))
 
     print("   Number of devices:    ")
     print(format(Format("%*i\n"), col3, dev))
 
     print("  In-service:         ")
-    print(format(Format("%*i"), col1, amp - ampo))
+    print(format(Format("%*i"), col1, mtg.ammeter.number - ampo))
 
     print("     In-service:        ")
-    print(format(Format("%*i"), col2, pmu - pmuo))
+    print(format(Format("%*i"), col2, mtg.pmu.number - pmuo))
 
     print("     In-service:         ")
     print(format(Format("%*i\n"), col3, dev - volo - ampo - wato - varo - pmuo))

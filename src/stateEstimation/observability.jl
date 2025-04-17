@@ -224,8 +224,9 @@ function mergeFlowIslands(
     branch = system.branch
 
     merge = 1
+    con = fill(false, bus.number)
     @inbounds while merge != 0
-        con = fill(false, bus.number)
+        fill!(con, false)
         incidentToIslands = fill(Int64[], length(observe.tie.injection), 1)
 
         for (k, idxBus) in enumerate(observe.tie.injection)
@@ -266,7 +267,6 @@ function mergeFlowIslands(
 
         removeInjection = Int64[]
         for idxBus in observe.tie.injection
-
             conection = rowval[colptr[idxBus]:(colptr[idxBus + 1] - 1)]
 
             con[conection] .= true

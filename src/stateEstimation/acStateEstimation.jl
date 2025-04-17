@@ -284,8 +284,7 @@ function acWLS(system::PowerSystem, monitoring::Measurement)
         Polar(Float64[], Float64[])
     )
 
-    return jacobian, mean, precision, fill(0.0, total),
-        type, idx, range, power, current, correlated
+    return jacobian, mean, precision, fill(0.0, total), type, idx, range, power, current, correlated
 end
 
 function normalEquation!(system::PowerSystem, analysis::AcStateEstimation)

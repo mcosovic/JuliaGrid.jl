@@ -1815,11 +1815,7 @@ show = Dict("Minimum" => false)
 printGeneratorSummary(analysis; show, delimiter = " ", title = false)
 ```
 """
-function printGeneratorSummary(
-    analysis::Union{AC, DC},
-    io::IO = stdout;
-    kwargs...
-)
+function printGeneratorSummary(analysis::Union{AC, DC}, io::IO = stdout; kwargs...)
     system = analysis.system
     errorVoltage(analysis.voltage.angle)
 
@@ -2082,13 +2078,7 @@ function evaluate!(smr::Summary)
     end
 end
 
-function eval(
-    smr::Summary,
-    i::Int64,
-    scale::Float64,
-    value::Float64,
-    key::String
-)
+function eval(smr::Summary, i::Int64, scale::Float64, value::Float64, key::String)
     value *= scale
 
     if value < smr.minval[key]
@@ -2118,10 +2108,7 @@ function notexist!(smr::Summary)
     end
 end
 
-function addlabel!(
-    smr::Summary,
-    label::Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
-)
+function addlabel!(smr::Summary, label::LabelDict)
     for (key, index) in smr.minidx
         if index != 0
             smr.minlbl[key] = string(getLabel(label, index))
