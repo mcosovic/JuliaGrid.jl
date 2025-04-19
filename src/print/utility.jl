@@ -1096,7 +1096,7 @@ function checkprint(obj::S, idx::Int64) where S
     for name in fieldnames(typeof(obj))
         field1 = getfield(obj, name)
 
-        if isa(field1, Vector) && field1[idx] != 0
+        if isa(field1, Vector{Float64}) && field1[idx] != 0.0
             return true
         end
     end
