@@ -101,6 +101,12 @@
         teststruct(load.bus, build.bus; atol = 1e-14)
         teststruct(load.generator, build.generator)
     end
+
+    @suppress @testset "Debugging Power System" begin
+        print(build; bus = 1)
+        print(build; branch = 1)
+        print(build; generator = 1)
+    end
 end
 
 @testset "Build and Update Power System in SI Units" begin

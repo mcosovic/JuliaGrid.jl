@@ -942,3 +942,132 @@ function summarykwargs(;
     return style, delimiter, (fmt = fmt, width = width, show = show,
         title = title, header = header, footer = footer)
 end
+
+function print(
+    system::PowerSystem;
+    bus::IntStrMiss = missing,
+    branch::IntStrMiss = missing,
+    generator::IntStrMiss = missing
+)
+    if isset(bus)
+        printBus(system, bus)
+    elseif isset(branch)
+        printBranch(system, branch)
+    elseif isset(generator)
+        printGenerator(system, generator)
+    end
+end
+
+function printBus(system::PowerSystem, bus::IntStr)
+    idx = getIndex(system.bus, bus, "bus")
+    type = system.bus.layout.type
+
+    println("📁 " * "$bus")
+    println("├── 📂 Demand Power")
+    println("│   ├── Active: ", system.bus.demand.active[idx])
+    println("│   └── Reactive: ", system.bus.demand.reactive[idx])
+    println("├── 📂 Supply Power")
+    println("│   ├── Active: ", system.bus.supply.active[idx])
+    println("│   └── Reactive: ", system.bus.supply.reactive[idx])
+    println("├── 📂 Shunt Power")
+    println("│   ├── Conductance: ", system.bus.shunt.conductance[idx])
+    println("│   └── Susceptance: ", system.bus.shunt.susceptance[idx])
+    println("├── 📂 Initial Voltage")
+    println("│   ├── Magnitude: ", system.bus.voltage.magnitude[idx])
+    println("│   └── Angle: ", system.bus.voltage.angle[idx])
+    println("├── 📂 Voltage Magnitude Limit")
+    println("│   ├── Minimum: ", system.bus.voltage.minMagnitude[idx])
+    println("│   └── Maximum: ", system.bus.voltage.maxMagnitude[idx])
+    println("└── 📂 Layout")
+    println("    ├── Type: ", type[idx] == 1 ? "demand" : type[idx] == 2 ? "generator" : "slack")
+    println("    ├── Area: ", system.bus.layout.area[idx])
+    println("    ├── Loss Zone: ", system.bus.layout.lossZone[idx])
+    println("    └── Index: ", idx)
+end
+
+function printBranch(system::PowerSystem, branch::IntStr)
+    idx = getIndex(system.branch, branch, "branch")
+
+    if system.branch.flow.type[idx] == 1
+        flowType = "Active Power Limit"
+    elseif system.branch.flow.type[idx] in (2, 3)
+        flowType = "Apparent Power Limit"
+    elseif system.branch.flow.type[idx] in (4, 5)
+        flowType = "Current Magnitude Limit"
+    end
+
+    println("📁 " * "$branch")
+    println("├── 📂 Parameter")
+    println("│   ├── Resistance: ", system.branch.parameter.resistance[idx])
+    println("│   ├── Reactance: ", system.branch.parameter.reactance[idx])
+    println("│   ├── Conductance: ", system.branch.parameter.conductance[idx])
+    println("│   ├── Susceptance: ", system.branch.parameter.susceptance[idx])
+    println("│   ├── Turns Ratio: ", system.branch.parameter.turnsRatio[idx])
+    println("│   └── Phase Shift Angle: ", system.branch.parameter.shiftAngle[idx])
+    println("├── 📂 " * flowType)
+    println("│   ├── From-Bus Minimum: ", system.branch.flow.minFromBus[idx])
+    println("│   ├── From-Bus Maximum: ", system.branch.flow.maxFromBus[idx])
+    println("│   ├── To-Bus Minimum: ", system.branch.flow.minToBus[idx])
+    println("│   ├── To-Bus Maximum: ", system.branch.flow.maxToBus[idx])
+    println("├── 📂 Voltage Angle Difference Limit")
+    println("│   ├── Minimum: ", system.branch.voltage.minDiffAngle[idx])
+    println("│   └── Maximum: ", system.branch.voltage.maxDiffAngle[idx])
+    println("└── 📂 Layout")
+    println("    ├── From-Bus: ", getLabel(system.bus.label, system.branch.layout.from[idx]))
+    println("    ├── To-Bus: ", getLabel(system.bus.label, system.branch.layout.to[idx]))
+    println("    ├── Status: ", system.branch.layout.status[idx])
+    println("    └── Index: ", idx)
+end
+
+function printGenerator(system::PowerSystem, generator::IntStr)
+    idx = getIndex(system.generator, generator, "generator")
+
+    p = system.generator.cost.active
+    q = system.generator.cost.reactive
+    c = system.generator.capability
+
+    println("📁 " * "$generator")
+    println("├── 📂 Output Power")
+    println("│   ├── Active: ", system.generator.output.active[idx])
+    println("│   └── Reactive: ", system.generator.output.reactive[idx])
+    println("├── 📂 Output Power Limit")
+    println("│   ├── Minimum Active: ", c.minActive[idx])
+    println("│   ├── Maximum Active: ", c.maxActive[idx])
+    println("│   ├── Minimum Reactive: ", c.minReactive[idx])
+    println("│   └── Maximum Reactive: ", c.maxReactive[idx])
+
+    if any(x -> x != 0, (
+        c.lowActive[idx], c.minLowReactive[idx], c.maxLowReactive[idx],
+        c.upActive[idx], c.minUpReactive[idx], c.maxUpReactive[idx]))
+
+        println("├── 📂 Capability Curve")
+        println("│   ├── Low Active: ", c.lowActive[idx])
+        println("│   ├── Minimum Reactive: ", c.minLowReactive[idx])
+        println("│   ├── Maximum Reactive: ", c.maxLowReactive[idx])
+        println("│   ├── Up Active: ", c.upActive[idx])
+        println("│   ├── Minimum Reactive: ", c.minUpReactive[idx])
+        println("│   └── Maximum Reactive: ", c.maxUpReactive[idx])
+    end
+
+    println("├── 📂 Voltage")
+    println("│   └── Magnitude: ", system.generator.voltage.magnitude[idx])
+
+    if haskey(p.polynomial, idx) || haskey(p.piecewise, idx)
+        println("├── 📂 Active Power Cost")
+        println("│   ├── Polynomial: ", get(p.polynomial, idx, "undefined"))
+        println("│   ├── Piecewise: ", get(p.piecewise, idx, "undefined"))
+        println("│   ├── In-Use: ", p.model[idx] == 1 ? "piecewise" : p.model[idx] == 2 ? "polynomial" : "undefined")
+    end
+
+    if haskey(q.polynomial, idx) || haskey(q.piecewise, idx)
+        println("├── 📂 Reactive Power Cost")
+        println("│   ├── Polynomial: ", get(q.polynomial, idx, "undefined"))
+        println("│   ├── Piecewise: ", get(q.piecewise, idx, "undefined"))
+        println("│   ├── In-Use: ", q.model[idx] == 1 ? "piecewise" : q.model[idx] == 2 ? "polynomial" : "undefined")
+    end
+
+    println("└── 📂 Layout")
+    println("    ├── Bus: ", getLabel(system.bus.label, system.generator.layout.bus[idx]))
+    println("    ├── Status: ", system.generator.layout.status[idx])
+    println("    └── Index: ", idx)
+end
