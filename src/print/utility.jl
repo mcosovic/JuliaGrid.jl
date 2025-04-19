@@ -963,15 +963,25 @@ function printBus(system::PowerSystem, bus::IntStr)
     type = system.bus.layout.type
 
     println("📁 " * "$bus")
-    println("├── 📂 Demand Power")
-    println("│   ├── Active: ", system.bus.demand.active[idx])
-    println("│   └── Reactive: ", system.bus.demand.reactive[idx])
-    println("├── 📂 Supply Power")
-    println("│   ├── Active: ", system.bus.supply.active[idx])
-    println("│   └── Reactive: ", system.bus.supply.reactive[idx])
-    println("├── 📂 Shunt Power")
-    println("│   ├── Conductance: ", system.bus.shunt.conductance[idx])
-    println("│   └── Susceptance: ", system.bus.shunt.susceptance[idx])
+
+    if checkprint(system.bus.demand, idx)
+        println("├── 📂 Demand Power")
+        println("│   ├── Active: ", system.bus.demand.active[idx])
+        println("│   └── Reactive: ", system.bus.demand.reactive[idx])
+    end
+
+    if checkprint(system.bus.supply, idx)
+        println("├── 📂 Supply Power")
+        println("│   ├── Active: ", system.bus.supply.active[idx])
+        println("│   └── Reactive: ", system.bus.supply.reactive[idx])
+    end
+
+    if checkprint(system.bus.shunt, idx)
+        println("├── 📂 Shunt Power")
+        println("│   ├── Conductance: ", system.bus.shunt.conductance[idx])
+        println("│   └── Susceptance: ", system.bus.shunt.susceptance[idx])
+    end
+
     println("├── 📂 Initial Voltage")
     println("│   ├── Magnitude: ", system.bus.voltage.magnitude[idx])
     println("│   └── Angle: ", system.bus.voltage.angle[idx])
@@ -1005,10 +1015,7 @@ function printBranch(system::PowerSystem, branch::IntStr)
     println("│   ├── Turns Ratio: ", system.branch.parameter.turnsRatio[idx])
     println("│   └── Phase Shift Angle: ", system.branch.parameter.shiftAngle[idx])
 
-    if any(x -> x != 0, (
-        system.branch.flow.minFromBus[idx], system.branch.flow.maxFromBus[idx],
-        system.branch.flow.minToBus[idx], system.branch.flow.maxToBus[idx]))
-
+    if checkprint(system.branch.flow, idx)
         println("├── 📂 " * flowType)
         println("│   ├── From-Bus Minimum: ", system.branch.flow.minFromBus[idx])
         println("│   ├── From-Bus Maximum: ", system.branch.flow.maxFromBus[idx])
@@ -1040,11 +1047,14 @@ function printGenerator(system::PowerSystem, generator::IntStr)
     println("├── 📂 Output Power")
     println("│   ├── Active: ", system.generator.output.active[idx])
     println("│   └── Reactive: ", system.generator.output.reactive[idx])
-    println("├── 📂 Output Power Limit")
-    println("│   ├── Minimum Active: ", c.minActive[idx])
-    println("│   ├── Maximum Active: ", c.maxActive[idx])
-    println("│   ├── Minimum Reactive: ", c.minReactive[idx])
-    println("│   └── Maximum Reactive: ", c.maxReactive[idx])
+
+    if c.minActive[idx] != 0.0 || c.maxActive[idx] != Inf || c.minReactive[idx] != -Inf || c.maxReactive[idx] != Inf
+        println("├── 📂 Output Power Limit")
+        println("│   ├── Minimum Active: ", c.minActive[idx])
+        println("│   ├── Maximum Active: ", c.maxActive[idx])
+        println("│   ├── Minimum Reactive: ", c.minReactive[idx])
+        println("│   └── Maximum Reactive: ", c.maxReactive[idx])
+    end
 
     if any(x -> x != 0, (
         c.lowActive[idx], c.minLowReactive[idx], c.maxLowReactive[idx],
@@ -1080,4 +1090,16 @@ function printGenerator(system::PowerSystem, generator::IntStr)
     println("    ├── Bus: ", getLabel(system.bus.label, system.generator.layout.bus[idx]))
     println("    ├── Status: ", system.generator.layout.status[idx])
     println("    └── Index: ", idx)
+end
+
+function checkprint(obj::S, idx::Int64) where S
+    for name in fieldnames(typeof(obj))
+        field1 = getfield(obj, name)
+
+        if isa(field1, Vector) && field1[idx] != 0
+            return true
+        end
+    end
+
+    false
 end

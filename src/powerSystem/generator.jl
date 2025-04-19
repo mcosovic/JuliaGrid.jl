@@ -42,9 +42,10 @@ The function updates the `generator` field within the `PowerSystem` type, and in
 parameters impact variables in the `bus` field, it automatically adjusts the field.
 
 # Default Settings
-By default, certain keywords are assigned default values: `status = 1` and `magnitude = 1.0`
-per-unit. The rest of the keywords are initialized with a value of zero. However, the user can modify
-these default settings by utilizing the [`@generator`](@ref @generator) macro.
+By default, certain keywords are assigned default values: `status = 1`, `magnitude = 1.0`,
+`maxActive = Inf`, `minReactive = -Inf`, and `maxReactive = Inf`. The rest of the keywords are
+initialized with a value of zero. However, the user can modify these default settings by utilizing
+the [`@generator`](@ref @generator) macro.
 
 # Units
 By default, the input units are associated with per-units as shown. However, users have the option to

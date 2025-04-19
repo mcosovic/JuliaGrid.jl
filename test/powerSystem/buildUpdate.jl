@@ -49,7 +49,7 @@
         addGenerator!(build; bus = "1", active = 3.7, maxReactive = 1.75, maxActive = 4.72)
         addGenerator!(build; bus = 2, active = 2.1, magnitude = 1.1, maxActive = 3.16, status = 0)
         addGenerator!(build; bus = 2, active = 2.6, reactive = 0.3, maxActive = 3.16)
-        addGenerator!(build; bus = 1, active = 0.8, reactive = 0.3, status = 0)
+        addGenerator!(build; bus = 1, active = 0.8, reactive = 0.3, maxActive = 0.0, status = 0)
 
         cost!(build; generator = 1, active = 2, polynomial = [0.01 * 100^2; 40 * 100; 4])
         cost!(build; generator = 2, active = 2, polynomial = [0.0266666667 * 100^2; 20 * 100; 3])
@@ -88,7 +88,7 @@
 
     @testset "Update Generators" begin
         updateGenerator!(build; label = 2, status = 1, magnitude = 1.2)
-        updateGenerator!(build; label = 4, status = 1, active = 0.1, reactive = 0.2)
+        updateGenerator!(build; label = 4, status = 1, active = 0.1, reactive = 0.2, maxActive = 0.0)
         updateGenerator!(build; label = 1, status = 0, minActive = 0.1, maxActive = 1)
         updateGenerator!(build; label = 3, status = 0, active = 0.3, reactive = 0.1)
         updateGenerator!(build; label = 1, minReactive = -0.1, maxReactive = 0.9)
@@ -178,7 +178,7 @@ end
         addGenerator!(build; bus = 1, active = 370e3, maxReactive = 175, maxActive = 472e3)
         addGenerator!(build; bus = 2, active = 210e3, magnitude = 1.1 * 115 / fn)
         addGenerator!(build; bus = 2, active = 260e3, reactive = 30, maxActive = 316e3)
-        addGenerator!(build; bus = 1, active = 80e3, reactive = 30, status = 0)
+        addGenerator!(build; bus = 1, active = 80e3, reactive = 30, maxActive = 0.0, status = 0)
 
         updateGenerator!(build; label = 2, maxActive = 316e3, status = 0)
 
@@ -228,7 +228,7 @@ end
         updateGenerator!(build; label = 1, upActive = 500e3, minUpReactive = 300, maxUpReactive = 400)
         updateGenerator!(build; label = 1, loadFollowing = 500e3, reserve10min = 300e3, reactiveRamp = 400)
         updateGenerator!(build; label = 2, status = 1, magnitude = 1.2 * 120 / fn)
-        updateGenerator!(build; label = 4, status = 1, active = 10e3, reactive = 20)
+        updateGenerator!(build; label = 4, status = 1, active = 10e3, reactive = 20, maxActive = 0.0)
         updateGenerator!(build; label = 1, status = 0, minActive = 10e3, maxActive = 100e3)
         updateGenerator!(build; label = 3, status = 0, active = 30e3, reactive = 10)
         updateGenerator!(build; label = 1, minReactive = -10, maxReactive = 90)

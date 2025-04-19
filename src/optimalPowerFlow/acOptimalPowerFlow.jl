@@ -478,7 +478,7 @@ function addPiecewise(
         add_to_expression!(obj, free[i])
 
     elseif point == 1
-         errorOnePoint(getLabel(system.generator.label, i))
+        errorOnePoint(getLabel(system.generator.label, i))
     end
 end
 

@@ -283,7 +283,7 @@ Regarding the [`addBus!`](@ref addBus!) function, the bus type is automatically 
 
 Transitioning to the [`addBranch!`](@ref addBranch!) function, the default operational status is `status = 1`, indicating that the branch is in-service. The off-nominal turns ratio for the transformer is specified as `turnsRatio = 1.0`, and the phase shift angle is set to `shiftAngle = 0.0`, collectively defining the line configuration with these standard settings. The flow rating is also configured as `type = 3`. Moreover, the minimum and maximum voltage angle differences between the from-bus and to-bus ends are set to `minDiffAngle = -2pi` and `maxDiffAngle = 2pi`, respectively.
 
-Similarly, the [`addGenerator!`](@ref addGenerator!) function designates an operational generator by employing `status = 1`, and it sets `magnitude = 1.0` per-unit, denoting the desired voltage magnitude setpoint.
+Similarly, the [`addGenerator!`](@ref addGenerator!) function designates an operational generator by employing `status = 1`, and it sets `magnitude = 1.0` per-unit, denoting the desired voltage magnitude setpoint. By default, the generator's output limits are unrestricted, with `minActive = 0.0`, `maxActive = Inf`, `minReactive = -Inf`, and `maxReactive = Inf`.
 
 The remaining parameters are initialized with default values of zero.
 

@@ -149,34 +149,34 @@
     end
 
     @testset "Costs" begin
-        cost!(opf; generator = 5, active = 2, polynomial = [452.2; 31; 18; 5])
+        cost!(opf; generator = 4, active = 2, polynomial = [452.2; 31; 18; 5])
         testReusing(opf)
 
-        cost!(opf; generator = 5, active = 2, polynomial = [452.2; 31; 18])
+        cost!(opf; generator = 4, active = 2, polynomial = [452.2; 31; 18])
         testReusing(opf)
 
-        cost!(opf; generator = 5, active = 2, polynomial = [165.0])
+        cost!(opf; generator = 4, active = 2, polynomial = [18.0])
         testReusing(opf)
 
-        cost!(opf; generator = 5, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+        cost!(opf; generator = 4, active = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
         testReusing(opf)
 
-        cost!(opf; generator = 5, active = 1, piecewise = [10.2 14.3; 11.5 16.1])
+        cost!(opf; generator = 4, active = 1, piecewise = [10.2 14.3; 11.5 16.1])
         testReusing(opf)
 
-        cost!(opf; generator = 4, reactive = 2, polynomial = [452.2; 31; 18; 5])
+        cost!(opf; generator = 3, reactive = 2, polynomial = [452.2; 31; 18; 5])
         testReusing(opf)
 
-        cost!(opf; generator = 4, reactive = 2, polynomial = [452.2; 31; 18])
+        cost!(opf; generator = 3, reactive = 2, polynomial = [452.2; 31; 18])
         testReusing(opf)
 
-        cost!(opf; generator = 4, reactive = 2, polynomial = [165.0])
+        cost!(opf; generator = 3, reactive = 2, polynomial = [165.0])
         testReusing(opf)
 
-        cost!(opf; generator = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
+        cost!(opf; generator = 3, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1; 12.8 18.6])
         testReusing(opf)
 
-        cost!(opf; generator = 4, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1])
+        cost!(opf; generator = 3, reactive = 1, piecewise = [10.2 14.3; 11.5 16.1])
         testReusing(opf)
     end
 end
