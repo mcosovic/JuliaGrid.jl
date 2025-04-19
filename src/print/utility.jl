@@ -1004,14 +1004,24 @@ function printBranch(system::PowerSystem, branch::IntStr)
     println("│   ├── Susceptance: ", system.branch.parameter.susceptance[idx])
     println("│   ├── Turns Ratio: ", system.branch.parameter.turnsRatio[idx])
     println("│   └── Phase Shift Angle: ", system.branch.parameter.shiftAngle[idx])
-    println("├── 📂 " * flowType)
-    println("│   ├── From-Bus Minimum: ", system.branch.flow.minFromBus[idx])
-    println("│   ├── From-Bus Maximum: ", system.branch.flow.maxFromBus[idx])
-    println("│   ├── To-Bus Minimum: ", system.branch.flow.minToBus[idx])
-    println("│   ├── To-Bus Maximum: ", system.branch.flow.maxToBus[idx])
-    println("├── 📂 Voltage Angle Difference Limit")
-    println("│   ├── Minimum: ", system.branch.voltage.minDiffAngle[idx])
-    println("│   └── Maximum: ", system.branch.voltage.maxDiffAngle[idx])
+
+    if any(x -> x != 0, (
+        system.branch.flow.minFromBus[idx], system.branch.flow.maxFromBus[idx],
+        system.branch.flow.minToBus[idx], system.branch.flow.maxToBus[idx]))
+
+        println("├── 📂 " * flowType)
+        println("│   ├── From-Bus Minimum: ", system.branch.flow.minFromBus[idx])
+        println("│   ├── From-Bus Maximum: ", system.branch.flow.maxFromBus[idx])
+        println("│   ├── To-Bus Minimum: ", system.branch.flow.minToBus[idx])
+        println("│   ├── To-Bus Maximum: ", system.branch.flow.maxToBus[idx])
+    end
+
+    if system.branch.voltage.minDiffAngle[idx] > -2π || system.branch.voltage.maxDiffAngle[idx] < 2π
+        println("├── 📂 Voltage Angle Difference Limit")
+        println("│   ├── Minimum: ", system.branch.voltage.minDiffAngle[idx])
+        println("│   └── Maximum: ", system.branch.voltage.maxDiffAngle[idx])
+    end
+
     println("└── 📂 Layout")
     println("    ├── From-Bus: ", getLabel(system.bus.label, system.branch.layout.from[idx]))
     println("    ├── To-Bus: ", getLabel(system.bus.label, system.branch.layout.to[idx]))
