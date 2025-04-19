@@ -587,15 +587,17 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 ```
 """
 macro branch(kwargs...)
+    kwargs_escaped = esc(kwargs)
+
     quote
-        for kwarg in $(esc(kwargs))
+        for kwarg in $kwargs_escaped
             parameter::Symbol = kwarg.args[1]
             if parameter == :type
                 setfield!(template.branch, parameter, Int8(eval(kwarg.args[2])))
             end
         end
 
-        for kwarg in $(esc(kwargs))
+        for kwarg in $kwargs_escaped
             parameter::Symbol = kwarg.args[1]
 
             if hasfield(BranchTemplate, parameter)

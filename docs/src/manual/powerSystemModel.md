@@ -133,6 +133,11 @@ Also, we have defined the bus voltage angle in radians for `Bus 2` as its initia
 system.bus.voltage.angle
 ```
 
+Additionally, the user can easily inspect data for a specific bus using:
+```@repl addBus
+print(system; bus = "Bus 1")
+```
+
 !!! note "Info"
     We recommend reading the documentation for the [`addBus!`](@ref addBus!) function, where we have provided a list of all the keywords that can be used.
 
@@ -187,6 +192,7 @@ The branch connecting two buses can be added once those buses are defined, and `
 ```@example addBranch
 using JuliaGrid # hide
 @default(unit) # hide
+@default(template) # hide
 
 system = powerSystem()
 
@@ -199,6 +205,11 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 Here, we created the branch from `Bus 1` to `Bus 2` with following parameter:
 ```@repl addBranch
 system.branch.parameter.reactance
+```
+
+Additionally, the user can easily inspect data for a specific branch using:
+```@repl addBranch
+print(system; branch = "Branch 1")
 ```
 
 !!! note "Info"
@@ -251,6 +262,11 @@ system.generator.output.reactive
 ```
 
 Similar to buses and branches, the input units can be changed to units other than per-units using different macros.
+
+Additionally, the user can easily inspect data for a specific generator using:
+```@repl addGenerator
+print(system; generator = "Generator 1")
+```
 
 !!! note "Info"
     It is recommended to refer to the documentation for the [`addGenerator!`](@ref addGenerator!) function, where we have provided a list of all the keywords that can be used.
