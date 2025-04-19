@@ -69,12 +69,12 @@ addWattmeter!(monitoring; from = &quot;Branch 4&quot;, active = powerFlow.power.
 |             | Measurement | Variance | Status |
 |             |        [pu] |     [pu] |        |
 |-------------|-------------|----------|--------|
-| Wattmeter 1 |      0.7305 | 1.00e-04 |      1 |
-| Wattmeter 2 |     -0.2156 | 1.00e-04 |      1 |
-| Wattmeter 3 |     -0.5042 | 1.00e-04 |      1 |
-| Wattmeter 4 |      0.3894 | 1.00e-04 |      1 |
-| Wattmeter 5 |     -0.1092 | 1.00e-04 |      1 |
-| Wattmeter 6 |     -0.2913 | 1.00e-04 |      1 |
+| Wattmeter 1 |      0.7174 | 1.00e-04 |      1 |
+| Wattmeter 2 |     -0.2174 | 1.00e-04 |      1 |
+| Wattmeter 3 |     -0.4574 | 1.00e-04 |      1 |
+| Wattmeter 4 |      0.4093 | 1.00e-04 |      1 |
+| Wattmeter 5 |     -0.1076 | 1.00e-04 |      1 |
+| Wattmeter 6 |     -0.3029 | 1.00e-04 |      1 |
 | Wattmeter 7 |      0.5357 | 1.00e-04 |      1 |
 | Wattmeter 8 |      0.1049 | 1.00e-04 |      1 |
 |-----------------------------------------------|</code></pre><p>Figure 2 illustrates this measurement configuration, which includes active power injection measurements at all buses and two active power flow measurements.</p><div style="text-align: center;">
@@ -89,12 +89,12 @@ addWattmeter!(monitoring; from = &quot;Branch 4&quot;, active = powerFlow.power.
 |   Bus |   Angle |           Active |       Active |          Active |
 |       |   [deg] |             [pu] |         [pu] |            [pu] |
 |-------|---------|------------------|--------------|-----------------|
-| Bus 1 |  0.0000 |           0.7258 |       0.0000 |          0.7258 |
-| Bus 2 | -1.5549 |           0.0029 |       0.2170 |         -0.2141 |
-| Bus 3 | -4.3359 |          -0.0241 |       0.4780 |         -0.5021 |
-| Bus 4 | -1.1674 |           0.4681 |       0.0760 |          0.3921 |
-| Bus 5 | -2.1519 |           0.0023 |       0.1120 |         -0.1097 |
-| Bus 6 | -2.2023 |           0.0030 |       0.2950 |         -0.2920 |
+| Bus 1 |  0.0000 |           0.7143 |       0.0000 |          0.7143 |
+| Bus 2 | -1.5244 |          -0.0068 |       0.2170 |         -0.2238 |
+| Bus 3 | -4.0090 |           0.0104 |       0.4780 |         -0.4676 |
+| Bus 4 | -0.9716 |           0.4720 |       0.0760 |          0.3960 |
+| Bus 5 | -2.1107 |           0.0004 |       0.1120 |         -0.1116 |
+| Bus 6 | -2.1920 |          -0.0123 |       0.2950 |         -0.3073 |
 |---------------------------------------------------------------------|</code></pre><p>Additionally, data related to measurement monitorings can be examined:</p><pre><code class="language-julia hljs">printWattmeterData(analysis)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|---------------------------------------------------------------------|
 | Wattmeter Data                                                      |
 |---------------------------------------------------------------------|
@@ -103,14 +103,14 @@ addWattmeter!(monitoring; from = &quot;Branch 4&quot;, active = powerFlow.power.
 |             | Measurement | Variance | Estimate | Residual | Status |
 |             |        [pu] |     [pu] |     [pu] |     [pu] |        |
 |-------------|-------------|----------|----------|----------|--------|
-| Wattmeter 1 |      0.7305 | 1.00e-04 |   0.7258 |   0.0047 |      1 |
-| Wattmeter 2 |     -0.2156 | 1.00e-04 |  -0.2141 |  -0.0014 |      1 |
-| Wattmeter 3 |     -0.5042 | 1.00e-04 |  -0.5021 |  -0.0021 |      1 |
-| Wattmeter 4 |      0.3894 | 1.00e-04 |   0.3921 |  -0.0027 |      1 |
-| Wattmeter 5 |     -0.1092 | 1.00e-04 |  -0.1097 |   0.0006 |      1 |
-| Wattmeter 6 |     -0.2913 | 1.00e-04 |  -0.2920 |   0.0007 |      1 |
-| Wattmeter 7 |      0.5357 | 1.00e-04 |   0.5428 |  -0.0071 |      1 |
-| Wattmeter 8 |      0.1049 | 1.00e-04 |   0.1011 |   0.0038 |      1 |
+| Wattmeter 1 |      0.7174 | 1.00e-04 |   0.7143 |   0.0031 |      1 |
+| Wattmeter 2 |     -0.2174 | 1.00e-04 |  -0.2238 |   0.0064 |      1 |
+| Wattmeter 3 |     -0.4574 | 1.00e-04 |  -0.4676 |   0.0102 |      1 |
+| Wattmeter 4 |      0.4093 | 1.00e-04 |   0.3960 |   0.0133 |      1 |
+| Wattmeter 5 |     -0.1076 | 1.00e-04 |  -0.1116 |   0.0040 |      1 |
+| Wattmeter 6 |     -0.3029 | 1.00e-04 |  -0.3073 |   0.0044 |      1 |
+| Wattmeter 7 |      0.5357 | 1.00e-04 |   0.5321 |   0.0036 |      1 |
+| Wattmeter 8 |      0.1049 | 1.00e-04 |   0.1170 |  -0.0121 |      1 |
 |---------------------------------------------------------------------|</code></pre><hr/><h2 id="Modifying-Measurement-Data"><a class="docs-heading-anchor" href="#Modifying-Measurement-Data">Modifying Measurement Data</a><a id="Modifying-Measurement-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Modifying-Measurement-Data" title="Permalink"></a></h2><p>Let us now modify the measurement values. Instead of recreating the measurement set and the DC state estimation model from scratch, both are updated simultaneously:</p><pre><code class="language-julia hljs">updateWattmeter!(analysis; label = &quot;Wattmeter 7&quot;, active = 1.1)
 updateWattmeter!(analysis; label = &quot;Wattmeter 8&quot;, active = 1.6)</code></pre><p>By changing these measurement values, two outliers are introduced into the dataset, which affects the estimates.</p><p>Next, the DC state estimation is solved again to compute the updated estimate:</p><pre><code class="language-julia hljs">stateEstimation!(analysis; power = true, verbose = 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">EXIT: The solution of the DC state estimation was found.</code></pre><p>Bus-related data can now be examined:</p><pre><code class="language-julia hljs">printBusData(analysis)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|---------------------------------------------------------------------|
 | Bus Data                                                            |
@@ -120,12 +120,12 @@ updateWattmeter!(analysis; label = &quot;Wattmeter 8&quot;, active = 1.6)</code>
 |   Bus |   Angle |           Active |       Active |          Active |
 |       |   [deg] |             [pu] |         [pu] |            [pu] |
 |-------|---------|------------------|--------------|-----------------|
-| Bus 1 |  0.0000 |           0.8655 |       0.0000 |          0.8655 |
-| Bus 2 | -1.7977 |          -0.2485 |       0.2170 |         -0.4655 |
-| Bus 3 | -1.5485 |           0.1293 |       0.4780 |         -0.3487 |
-| Bus 4 |  2.4534 |           0.9558 |       0.0760 |          0.8798 |
-| Bus 5 | -2.5355 |          -0.2949 |       0.1120 |         -0.4069 |
-| Bus 6 | -2.8635 |          -0.2292 |       0.2950 |         -0.5242 |
+| Bus 1 |  0.0000 |           0.8540 |       0.0000 |          0.8540 |
+| Bus 2 | -1.7672 |          -0.2581 |       0.2170 |         -0.4751 |
+| Bus 3 | -1.2217 |           0.1638 |       0.4780 |         -0.3142 |
+| Bus 4 |  2.6492 |           0.9597 |       0.0760 |          0.8837 |
+| Bus 5 | -2.4943 |          -0.2968 |       0.1120 |         -0.4088 |
+| Bus 6 | -2.8531 |          -0.2445 |       0.2950 |         -0.5395 |
 |---------------------------------------------------------------------|</code></pre><p>With the modified measurement values for <code>Wattmeter 7</code> and <code>Wattmeter 8</code>, the estimated results deviate more significantly from the exact values obtained through DC optimal power flow, as the altered measurements no longer align with their corresponding values.</p><p>Now, instead of using the WLS estimator, we compute the LAV estimator:</p><pre><code class="language-julia hljs">analysis = dcLavStateEstimation(monitoring, Ipopt.Optimizer)
 stateEstimation!(analysis; power = true, verbose = 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">EXIT: The optimal solution was found.</code></pre><p>Bus-related data can be examined:</p><pre><code class="language-julia hljs">printBusData(analysis)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|---------------------------------------------------------------------|
 | Bus Data                                                            |
@@ -135,12 +135,12 @@ stateEstimation!(analysis; power = true, verbose = 1)</code></pre><pre class="do
 |   Bus |   Angle |           Active |       Active |          Active |
 |       |   [deg] |             [pu] |         [pu] |            [pu] |
 |-------|---------|------------------|--------------|-----------------|
-| Bus 1 |  0.0000 |           0.7309 |       0.0000 |          0.7309 |
-| Bus 2 | -1.5665 |           0.0014 |       0.2170 |         -0.2156 |
-| Bus 3 | -4.3770 |          -0.0262 |       0.4780 |         -0.5042 |
-| Bus 4 | -1.2096 |           0.4654 |       0.0760 |          0.3894 |
-| Bus 5 | -2.1685 |           0.0028 |       0.1120 |         -0.1092 |
-| Bus 6 | -2.2148 |           0.0037 |       0.2950 |         -0.2913 |
+| Bus 1 |  0.0000 |           0.7174 |       0.0000 |          0.7174 |
+| Bus 2 | -1.5457 |          -0.0418 |       0.2170 |         -0.2588 |
+| Bus 3 | -3.8609 |           0.0206 |       0.4780 |         -0.4574 |
+| Bus 4 | -0.7942 |           0.4853 |       0.0760 |          0.4093 |
+| Bus 5 | -2.0367 |           0.0044 |       0.1120 |         -0.1076 |
+| Bus 6 | -2.1402 |          -0.0079 |       0.2950 |         -0.3029 |
 |---------------------------------------------------------------------|</code></pre><p>As observed, the estimates obtained using the LAV method are closer to the exact values from the DC optimal power flow, as LAV is more robust to outliers compared to WLS.</p><hr/><h2 id="Modifying-Measurement-Set"><a class="docs-heading-anchor" href="#Modifying-Measurement-Set">Modifying Measurement Set</a><a id="Modifying-Measurement-Set-1"></a><a class="docs-heading-anchor-permalink" href="#Modifying-Measurement-Set" title="Permalink"></a></h2><p>Let us proceed with the LAV state estimation model and set two measurements to out-of-service:</p><pre><code class="language-julia hljs">updateWattmeter!(analysis; label = &quot;Wattmeter 1&quot;, status = 0)
 updateWattmeter!(analysis; label = &quot;Wattmeter 5&quot;, status = 0)</code></pre><p>Recompute the LAV estimator and active power values:</p><pre><code class="language-julia hljs">stateEstimation!(analysis; power = true, verbose = 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">EXIT: The optimal solution was found.</code></pre><p>Bus-related data can now be examined:</p><pre><code class="language-julia hljs">printBusData(analysis)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|---------------------------------------------------------------------|
 | Bus Data                                                            |
@@ -150,10 +150,10 @@ updateWattmeter!(analysis; label = &quot;Wattmeter 5&quot;, status = 0)</code></
 |   Bus |   Angle |           Active |       Active |          Active |
 |       |   [deg] |             [pu] |         [pu] |            [pu] |
 |-------|---------|------------------|--------------|-----------------|
-| Bus 1 |  0.0000 |           1.5878 |       0.0000 |          1.5878 |
-| Bus 2 | -3.1513 |           0.0014 |       0.2170 |         -0.2156 |
-| Bus 3 | -7.2882 |          -0.0262 |       0.4780 |         -0.5042 |
-| Bus 4 | -5.2166 |           0.4654 |       0.0760 |          0.3894 |
-| Bus 5 | -7.1559 |          -0.8541 |       0.1120 |         -0.9661 |
-| Bus 6 | -5.8693 |           0.0037 |       0.2950 |         -0.2913 |
-|---------------------------------------------------------------------|</code></pre><p>As observed, while the LAV approach is more robust than WLS in handling outliers, the accuracy of the estimated values still depends on factors such as the magnitude of outliers, their number, and the positioning of meters within the power system. Removing two accurate measurements while keeping outliers in the system shows that even the LAV method cannot fully compensate for the loss of reliable data, leading to less accurate estimates.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pmuStateEstimation/">« PMU State Estimation</a><a class="docs-footer-nextpage" href="../../api/powerSystemModel/">Power System Model »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.1 on <span class="colophon-date" title="Thursday 17 April 2025 13:51">Thursday 17 April 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+| Bus 1 |  0.0000 |           1.5991 |       0.0000 |          1.5991 |
+| Bus 2 | -3.1513 |          -0.0004 |       0.2170 |         -0.2174 |
+| Bus 3 | -6.9049 |           0.0206 |       0.4780 |         -0.4574 |
+| Bus 4 | -5.0265 |           0.4853 |       0.0760 |          0.4093 |
+| Bus 5 | -7.3323 |          -0.9186 |       0.1120 |         -1.0306 |
+| Bus 6 | -6.0047 |          -0.0079 |       0.2950 |         -0.3029 |
+|---------------------------------------------------------------------|</code></pre><p>As observed, while the LAV approach is more robust than WLS in handling outliers, the accuracy of the estimated values still depends on factors such as the magnitude of outliers, their number, and the positioning of meters within the power system. Removing two accurate measurements while keeping outliers in the system shows that even the LAV method cannot fully compensate for the loss of reliable data, leading to less accurate estimates.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pmuStateEstimation/">« PMU State Estimation</a><a class="docs-footer-nextpage" href="../../api/powerSystemModel/">Power System Model »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.1 on <span class="colophon-date" title="Saturday 19 April 2025 11:26">Saturday 19 April 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
