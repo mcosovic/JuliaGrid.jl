@@ -157,6 +157,11 @@ printVoltmeterData(monitoring)
 nothing # hide
 ```
 
+Additionally, users can display stored data for a specific voltmeter with:
+```@repl addVoltmeterSI
+print(monitoring; voltmeter = 1)
+```
+
 ---
 
 ## [Add Ammeter](@id AddAmmeterManual)
@@ -217,6 +222,11 @@ Users have the option to print the ammeter data in the REPL using any units that
 ```@example addAmmeterSI
 printAmmeterData(monitoring)
 nothing # hide
+```
+
+Additionally, users can display stored data for a specific ammeter with:
+```@repl addAmmeterSI
+print(monitoring; ammeter = 1)
 ```
 
 ---
@@ -281,6 +291,11 @@ printWattmeterData(monitoring)
 nothing # hide
 ```
 
+Additionally, users can display stored data for a specific wattmeter with:
+```@repl addWattmeterSI
+print(monitoring; wattmeter = 1)
+```
+
 ---
 
 ## [Add Varmeter](@id AddVarmeterManual)
@@ -339,6 +354,11 @@ Users have the option to print the varmeter data in the REPL using any units tha
 ```@example addVarmeterSI
 printVarmeterData(monitoring)
 nothing # hide
+```
+
+Additionally, users can display stored data for a specific varmeter with:
+```@repl addVarmeterSI
+print(monitoring; varmeter = 1)
 ```
 
 ---
@@ -437,6 +457,11 @@ Users have the option to print the PMU data in the REPL using any units that hav
 ```@example addPmuSI
 printPmuData(monitoring)
 nothing # hide
+```
+
+Additionally, users can display stored data for a specific PMU with:
+```@repl addPmuSI
+print(monitoring; pmu = 1)
 ```
 
 ---

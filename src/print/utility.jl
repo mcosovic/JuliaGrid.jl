@@ -1092,6 +1092,160 @@ function printGenerator(system::PowerSystem, generator::IntStr)
     println("    └── Index: ", idx)
 end
 
+
+function print(
+    monitoring::Measurement;
+    voltmeter::IntStrMiss = missing,
+    ammeter::IntStrMiss = missing,
+    wattmeter::IntStrMiss = missing,
+    varmeter::IntStrMiss = missing,
+    pmu::IntStrMiss = missing
+)
+    if isset(voltmeter)
+        printVoltmeter(monitoring, voltmeter)
+    elseif isset(ammeter)
+        printAmmeter(monitoring, ammeter)
+    elseif isset(wattmeter)
+        printWattmeter(monitoring, wattmeter)
+    elseif isset(varmeter)
+        printVarmeter(monitoring, varmeter)
+    elseif isset(pmu)
+        printPmu(monitoring, pmu)
+    end
+end
+
+function printVoltmeter(monitoring::Measurement, voltmeter::IntStr)
+    idx = getIndex(monitoring.voltmeter, voltmeter, "voltmeter")
+
+    println("📁 " * "$voltmeter")
+    println("├── 📂 Voltage Magnitude Measurement")
+    println("│   ├── Mean: ", monitoring.voltmeter.magnitude.mean[idx])
+    println("│   ├── Variance: ", monitoring.voltmeter.magnitude.variance[idx])
+    println("│   └── Status: ", monitoring.voltmeter.magnitude.status[idx])
+    println("└── 📂 Layout")
+    println("    ├── Bus: ", getLabel(monitoring.system.bus.label, monitoring.voltmeter.layout.index[idx]))
+    println("    └── Index: ", idx)
+end
+
+function printAmmeter(monitoring::Measurement, ammeter::IntStr)
+    idx = getIndex(monitoring.ammeter, ammeter, "ammeter")
+    label = getLabel(monitoring.system.branch.label, monitoring.ammeter.layout.index[idx])
+
+    println("📁 " * "$ammeter")
+    println("├── 📂 Current Magnitude Measurement")
+    println("│   ├── Mean: ", monitoring.ammeter.magnitude.mean[idx])
+    println("│   ├── Variance: ", monitoring.ammeter.magnitude.variance[idx])
+    println("│   └── Status: ", monitoring.ammeter.magnitude.status[idx])
+    println("└── 📂 Layout")
+
+    if monitoring.ammeter.layout.from[idx]
+        println("    ├── From-Bus: ", label)
+    else
+        println("    ├── To-Bus: ", label)
+    end
+
+    println("    └── Index: ", idx)
+end
+
+function printWattmeter(monitoring::Measurement, wattmeter::IntStr)
+    idx = getIndex(monitoring.wattmeter, wattmeter, "wattmeter")
+
+    if monitoring.wattmeter.layout.bus[idx]
+        label = getLabel(monitoring.system.bus.label, monitoring.wattmeter.layout.index[idx])
+    else
+        label = getLabel(monitoring.system.branch.label, monitoring.wattmeter.layout.index[idx])
+    end
+
+    println("📁 " * "$wattmeter")
+    println("├── 📂 Active Power Measurement")
+    println("│   ├── Mean: ", monitoring.wattmeter.active.mean[idx])
+    println("│   ├── Variance: ", monitoring.wattmeter.active.variance[idx])
+    println("│   └── Status: ", monitoring.wattmeter.active.status[idx])
+    println("└── 📂 Layout")
+
+    if monitoring.wattmeter.layout.bus[idx]
+        println("    ├── Bus: ", label)
+    elseif monitoring.wattmeter.layout.from[idx]
+        println("    ├── From-Bus: ", label)
+    else
+        println("    ├── To-Bus: ", label)
+    end
+
+    println("    └── Index: ", idx)
+end
+
+function printVarmeter(monitoring::Measurement, varmeter::IntStr)
+    idx = getIndex(monitoring.varmeter, varmeter, "varmeter")
+
+    if monitoring.varmeter.layout.bus[idx]
+        label = getLabel(monitoring.system.bus.label, monitoring.varmeter.layout.index[idx])
+    else
+        label = getLabel(monitoring.system.branch.label, monitoring.varmeter.layout.index[idx])
+    end
+
+    println("📁 " * "$varmeter")
+    println("├── 📂 Reactive Power Measurement")
+    println("│   ├── Mean: ", monitoring.varmeter.reactive.mean[idx])
+    println("│   ├── Variance: ", monitoring.varmeter.reactive.variance[idx])
+    println("│   └── Status: ", monitoring.varmeter.reactive.status[idx])
+    println("└── 📂 Layout")
+
+    if monitoring.varmeter.layout.bus[idx]
+        println("    ├── Bus: ", label)
+    elseif monitoring.varmeter.layout.from[idx]
+        println("    ├── From-Bus: ", label)
+    else
+        println("    ├── To-Bus: ", label)
+    end
+
+    println("    └── Index: ", idx)
+end
+
+function printPmu(monitoring::Measurement, pmu::IntStr)
+    idx = getIndex(monitoring.pmu, pmu, "pmu")
+
+    if monitoring.pmu.layout.bus[idx]
+        label = getLabel(monitoring.system.bus.label, monitoring.pmu.layout.index[idx])
+    else
+        label = getLabel(monitoring.system.branch.label, monitoring.pmu.layout.index[idx])
+    end
+
+    println("📁 " * "$pmu")
+
+    if monitoring.pmu.layout.bus[idx]
+        println("├── 📂 Voltage Magnitude Measurement")
+    else
+        println("├── 📂 Current Magnitude Measurement")
+    end
+
+    println("│   ├── Mean: ", monitoring.pmu.magnitude.mean[idx])
+    println("│   ├── Variance: ", monitoring.pmu.magnitude.variance[idx])
+    println("│   └── Status: ", monitoring.pmu.magnitude.status[idx])
+
+    if monitoring.pmu.layout.bus[idx]
+        println("├── 📂 Voltage Angle Measurement")
+    else
+        println("├── 📂 Current Angle Measurement")
+    end
+
+    println("│   ├── Mean: ", monitoring.pmu.angle.mean[idx])
+    println("│   ├── Variance: ", monitoring.pmu.angle.variance[idx])
+    println("│   └── Status: ", monitoring.pmu.angle.status[idx])
+
+    println("└── 📂 Layout")
+
+    if monitoring.pmu.layout.bus[idx]
+        println("    ├── Bus: ", label)
+    elseif monitoring.pmu.layout.from[idx]
+        println("    ├── From-Bus: ", label)
+    else
+        println("    ├── To-Bus: ", label)
+    end
+
+    println("    └── Index: ", idx)
+end
+
+
 function checkprint(obj::S, idx::Int64) where S
     for name in fieldnames(typeof(obj))
         field1 = getfield(obj, name)

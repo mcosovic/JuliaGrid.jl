@@ -512,6 +512,8 @@ end
         addVoltmeter!( monitoring; bus = "Bus 2", magnitude = 2.0, status = 1)
         @test monitoring.voltmeter.label["Voltmeter 3"] == 3
         @test monitoring.voltmeter.magnitude.status[3] == 1
+
+        @suppress print(monitoring; voltmeter = "Voltmeter 1")
     end
 
     @testset "Ammeter Macro" begin
@@ -541,6 +543,9 @@ end
         @test monitoring.ammeter.magnitude.mean[4] == 4.0
         @test monitoring.ammeter.magnitude.variance[4] == 1e-5
         @test monitoring.ammeter.magnitude.status[4] == 0
+
+        @suppress print(monitoring; ammeter = "Ammeter 1")
+        @suppress print(monitoring; ammeter = "Ammeter 3")
     end
 
     @testset "Wattmeter Macro" begin
@@ -582,6 +587,10 @@ end
         @test monitoring.wattmeter.active.mean[6] == 7.0
         @test monitoring.wattmeter.active.variance[6] == 3
         @test monitoring.wattmeter.active.status[6] == 0
+
+        @suppress print(monitoring; wattmeter = "Wattmeter 1")
+        @suppress print(monitoring; wattmeter = "Wattmeter 3")
+        @suppress print(monitoring; wattmeter = "Wattmeter 5")
     end
 
     @testset "Varmeter Macro" begin
@@ -623,6 +632,10 @@ end
         @test monitoring.varmeter.reactive.mean[6] == 7.1
         @test monitoring.varmeter.reactive.variance[6] == 30
         @test monitoring.varmeter.reactive.status[6] == 1
+
+        @suppress print(monitoring; varmeter = "Varmeter 1")
+        @suppress print(monitoring; varmeter = "Varmeter 3")
+        @suppress print(monitoring; varmeter = "Varmeter 5")
     end
 
     @testset "PMU Macro" begin
@@ -706,6 +719,10 @@ end
         @test monitoring.pmu.angle.status[6] == 1
         @test monitoring.pmu.layout.polar[6] == false
         @test monitoring.pmu.layout.correlated[6] == false
+
+        @suppress print(monitoring; pmu = "PMU 1")
+        @suppress print(monitoring; pmu = "PMU 3")
+        @suppress print(monitoring; pmu = "PMU 5")
     end
 end
 

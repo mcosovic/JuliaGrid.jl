@@ -2,6 +2,24 @@
 
 ---
 
+## Version 0.4.1
+
+Release Date: April 21, 2025
+
+#### Added
+  * Functions for printing data related to a specific component.
+  * Support for the `setInitialPoint!` function across all LAV estimators.
+
+#### Fixed
+  * Corrected verbosity settings for optimization methods when `silent` is enabled.
+
+#### Other
+  * Updated default values for generator output power limits.
+  * Enhanced efficiency of merging flow islands.
+  * Eliminated the requirement for a generator on the slack bus in state estimation.
+
+---
+
 ## Version 0.4.0
 
 Release Date: April 11, 2025
@@ -12,10 +30,8 @@ Release Date: April 11, 2025
   * Renamed type definitions for improved readability.
 
 #### Added
-  * Bad data Chi-squared test function:
-    * [`chiTest`](@ref chiTest).
-  * Wrapper function for creating `PowerSystem` and `Measurement` types:
-    * [`ems`](@ref ems).
+  * Bad data Chi-squared test function [`chiTest`](@ref chiTest).
+  * Wrapper function for creating `PowerSystem` and `Measurement` types [`ems`](@ref ems).
 
 #### Fixed
   * Update analysis functions now correctly apply updates, even changes are made regardless of the specific type.
@@ -35,9 +51,7 @@ Release Date: March 10, 2025
   * Allowing macros to execute at the code line where they are called.
 
 #### Added
-  * Wrapper functions:
-    * [`powerFlow!`](@ref powerFlow!)
-    * [`stateEstimation!`](@ref stateEstimation!)
+  * Wrapper functions [`powerFlow!`](@ref powerFlow!) and [`stateEstimation!`](@ref stateEstimation!).
 
 #### Fixed
   * Conversions between SI units and per-unit system
