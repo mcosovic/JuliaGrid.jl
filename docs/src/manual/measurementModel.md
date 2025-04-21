@@ -51,14 +51,20 @@ Furthermore, we provide users with the ability to modify each specific measureme
 ---
 
 ## [Build Model](@id BuildMeasurementModelManual)
-The [`measurement`](@ref measurement) function generates the `Measurement` type and requires a string-formatted path to HDF5 files as input. Alternatively, the `Measurement` can be created without any initial data by initializing it as empty, allowing the user to construct the measurements from scratch.
+The [`measurement`](@ref measurement) function creates an instance of the `Measurement` type. It requires a `PowerSystem` instance representing the system being observed and a string specifying the path to the relevant HDF5 measurement file. Alternatively, the `Measurement` can be created without any initial data, allowing the user to construct the measurements from scratch.
 
 ---
 
 ##### HDF5 File
-In order to use the HDF5 file as input to create the `Measurement` type, it is necessary to have saved the data using the [`saveMeasurement`](@ref saveMeasurement) function beforehand. Let us say we saved the measurements as `measurements14.h5` in the directory `C:\hdf5`. Then, the following code can be used to construct the `Measurement` type:
+In order to use the HDF5 file as input to create the `Measurement` type, it is necessary to have saved the data using the [`saveMeasurement`](@ref saveMeasurement) function beforehand. Suppose the measurement data is saved as `monitoring.h5` in the `C:\hdf5` directory, and it corresponds to the IEEE 14-bus test case with system data stored in `case14.h5`. In that case, the following code constructs the `Measurement` type:
 ```julia
-monitoring = measurement("C:/hdf5/measurements14.h5")
+system = powerSystem("case14.h5")
+monitoring = measurement(system, "C:/hdf5/monitoring.h5")
+```
+
+The same result can also be achieved using the wrapper function [`ems`](@ref ems):
+```julia
+system, monitoring = ems("case14.h5", "C:/hdf5/monitoring.h5")
 ```
 
 ---
@@ -96,7 +102,7 @@ Furthermore, we have established the wattmeter to measure the active power flow 
 ## [Save Model](@id SaveMeasurementModelManual)
 Once the `Measurement` type has been created using one of the methods outlined in [Build Model](@ref BuildMeasurementModelManual), the current data can be stored in the HDF5 file by using [`saveMeasurement`](@ref saveMeasurement) function:
 ```julia
-saveMeasurement(monitoring; path = "C:/hdf5/measurement.h5")
+saveMeasurement(monitoring; path = "C:/hdf5/monitoring.h5")
 ```
 All electrical quantities saved in the HDF5 file are in per-units and radians.
 
