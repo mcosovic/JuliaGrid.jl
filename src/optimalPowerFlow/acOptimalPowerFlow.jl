@@ -537,7 +537,9 @@ function addCapability(
     idx::Int64
 )
     if minPower[idx] != maxPower[idx]
-        con[idx] = @constraint(jump, minPower[idx] <= var[idx] <= maxPower[idx])
+        if minPower[idx] != -Inf && maxPower[idx] != Inf
+            con[idx] = @constraint(jump, minPower[idx] <= var[idx] <= maxPower[idx])
+        end
     else
         fix!(var[idx], minPower[idx], con, idx)
     end
@@ -779,7 +781,7 @@ function remove!(
         if is_valid.(jump, ref[idx])
             delete(jump, ref[idx])
         end
-        delete!(ref, index)
+        delete!(ref, idx)
     end
 end
 

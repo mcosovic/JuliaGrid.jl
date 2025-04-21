@@ -244,6 +244,21 @@ function add!(
 end
 
 function add!(
+    vector::Vector{Float64},
+    value::FltIntMiss,
+    default::ContainerTemplate,
+    pfxLive::Float64,
+    baseInv::Float64,
+    shadow::Float64,
+)
+    if ismissing(value) && isnan(default.value)
+        value = 5 * shadow
+    end
+
+    push!(vector, topu(value, default, pfxLive, baseInv))
+end
+
+function add!(
     vector::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}},
     value::Union{FltIntMiss, Int8},
     default::Union{FltIntMiss, Int8}

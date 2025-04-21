@@ -283,7 +283,7 @@ Regarding the [`addBus!`](@ref addBus!) function, the bus type is automatically 
 
 Transitioning to the [`addBranch!`](@ref addBranch!) function, the default operational status is `status = 1`, indicating that the branch is in-service. The off-nominal turns ratio for the transformer is specified as `turnsRatio = 1.0`, and the phase shift angle is set to `shiftAngle = 0.0`, collectively defining the line configuration with these standard settings. The flow rating is also configured as `type = 3`. Moreover, the minimum and maximum voltage angle differences between the from-bus and to-bus ends are set to `minDiffAngle = -2pi` and `maxDiffAngle = 2pi`, respectively.
 
-Similarly, the [`addGenerator!`](@ref addGenerator!) function designates an operational generator by employing `status = 1`, and it sets `magnitude = 1.0` per-unit, denoting the desired voltage magnitude setpoint. By default, the generator's output limits are unrestricted, with `minActive = 0.0`, `maxActive = Inf`, `minReactive = -Inf`, and `maxReactive = Inf`.
+Similarly, the [`addGenerator!`](@ref addGenerator!) function designates an operational generator by employing `status = 1`, and it sets `magnitude = 1.0` per-unit, denoting the desired voltage magnitude setpoint. By default, the generator's output is constrained with limits: `minActive = 0.0`, `maxActive = 5 active`, `minReactive = -5 reactive`, and `maxReactive = 5 reactive`, where `active` and `reactive` refer to the generator’s output powers.
 
 The remaining parameters are initialized with default values of zero.
 
@@ -774,3 +774,8 @@ system.generator.cost.reactive.piecewise[1]
 
 !!! tip "Tip"
     The [`cost!`](@ref cost!) function not only adds costs but also allows users to update previously defined cost functions. This functionality is particularly valuable in optimal power flow analyses, as it allows users to modify generator power costs without the need to recreate models from scratch.
+
+Finally, we can inspect data for a specific generator using:
+```@repl addActiveCost
+print(system; generator = "Generator 1")
+```

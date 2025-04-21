@@ -134,7 +134,7 @@
 
         addGenerator!(system; label = 13, bus = 6, active = 0.3, minActive = 0.0, maxActive = 0.5)
         cost!(system; generator = 13, active = 1, piecewise = [10 12.3; 14.7 16.8])
-        updateGenerator!(opf; label = 13)
+        updateGenerator!(opf; label = 13, minReactive = -0.5, maxReactive = 0.5)
         testReusing(opf)
 
         updateGenerator!(system; label = 13, status = 0)

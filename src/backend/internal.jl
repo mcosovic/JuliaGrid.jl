@@ -450,11 +450,11 @@ macro default(mode::Symbol)
 
             template.generator.minActive.value = 0.0
             template.generator.minActive.pu = true
-            template.generator.maxActive.value = Inf
+            template.generator.maxActive.value = NaN
             template.generator.maxActive.pu = true
-            template.generator.minReactive.value = -Inf
+            template.generator.minReactive.value = NaN
             template.generator.minReactive.pu = true
-            template.generator.maxReactive.value = Inf
+            template.generator.maxReactive.value = NaN
             template.generator.maxReactive.pu = true
 
             template.generator.lowActive.value = 0.0

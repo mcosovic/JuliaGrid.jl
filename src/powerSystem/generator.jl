@@ -43,9 +43,9 @@ parameters impact variables in the `bus` field, it automatically adjusts the fie
 
 # Default Settings
 By default, certain keywords are assigned default values: `status = 1`, `magnitude = 1.0`,
-`maxActive = Inf`, `minReactive = -Inf`, and `maxReactive = Inf`. The rest of the keywords are
-initialized with a value of zero. However, the user can modify these default settings by utilizing
-the [`@generator`](@ref @generator) macro.
+`maxActive = 5 active`, `minReactive = -5 reactive`, and `maxReactive = 5 reactive`. The rest of the
+keywords are initialized with a value of zero. However, the user can modify these default settings
+by utilizing the [`@generator`](@ref @generator) macro.
 
 # Units
 By default, the input units are associated with per-units as shown. However, users have the option to
@@ -92,10 +92,11 @@ function addGenerator!(system::PowerSystem; label::IntStrMiss = missing, bus::In
     add!(gen.output.active, key.active, def.active, pfx.activePower, baseInv)
     add!(gen.output.reactive, key.reactive, def.reactive, pfx.reactivePower, baseInv)
 
-    add!(cbt.minActive, key.minActive, def.minActive, pfx.activePower, baseInv)
-    add!(cbt.maxActive, key.maxActive, def.maxActive, pfx.activePower, baseInv)
-    add!(cbt.minReactive, key.minReactive, def.minReactive, pfx.reactivePower, baseInv)
-    add!(cbt.maxReactive, key.maxReactive, def.maxReactive, pfx.reactivePower, baseInv)
+    add!(cbt.minActive, key.minActive, def.minActive, pfx.activePower, baseInv, 0.0)
+    add!(cbt.maxActive, key.maxActive, def.maxActive, pfx.activePower, baseInv, gen.output.active[end])
+    add!(cbt.minReactive, key.minReactive, def.minReactive, pfx.reactivePower, baseInv, -gen.output.reactive[end])
+    add!(cbt.maxReactive, key.maxReactive, def.maxReactive, pfx.reactivePower, baseInv, gen.output.reactive[end])
+
     add!(cbt.lowActive, key.lowActive, def.lowActive, pfx.activePower, baseInv)
     add!(cbt.minLowReactive, key.minLowReactive, def.minLowReactive, pfx.reactivePower, baseInv)
     add!(cbt.maxLowReactive, key.maxLowReactive, def.maxLowReactive, pfx.reactivePower, baseInv)
