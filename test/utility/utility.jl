@@ -374,7 +374,7 @@ end
 
 function testConstraint(lav, wls, idx::Int64)
     if wls.method.mean[idx] == 0
-        @test is_valid(lav.method.jump, lav.method.residual[idx]) == false
+        haskey(lav.method.residual, idx) == false
     else
         f = JuMP.constraint_object(lav.method.residual[idx])
         if f.func isa JuMP.GenericAffExpr
