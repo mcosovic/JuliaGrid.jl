@@ -134,7 +134,7 @@ system.bus.voltage.angle
 ```
 
 Users can also display information for a specific bus with:
-```@repl addBus
+```@example addBus
 print(system; bus = "Bus 1")
 ```
 
@@ -208,7 +208,7 @@ system.branch.parameter.reactance
 ```
 
 Users can also display information for a specific branch with:
-```@repl addBranch
+```@example addBranch
 print(system; branch = "Branch 1")
 ```
 
@@ -264,7 +264,7 @@ system.generator.output.reactive
 Similar to buses and branches, the input units can be changed to units other than per-units using different macros.
 
 Users can also display information for a specific generator with:
-```@repl addGenerator
+```@example addGenerator
 print(system; generator = "Generator 1")
 ```
 
@@ -776,6 +776,6 @@ system.generator.cost.reactive.piecewise[1]
     The [`cost!`](@ref cost!) function not only adds costs but also allows users to update previously defined cost functions. This functionality is particularly valuable in optimal power flow analyses, as it allows users to modify generator power costs without the need to recreate models from scratch.
 
 Finally, we can inspect data for the specific generator using:
-```@repl addActiveCost
+```@example addActiveCost
 print(system; generator = "Generator 1")
 ```

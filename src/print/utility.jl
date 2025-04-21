@@ -1242,9 +1242,10 @@ function printPmu(monitoring::Measurement, pmu::IntStr)
         println("    ├── To-Bus: ", label)
     end
 
+    println("    ├── Polar: ", monitoring.pmu.layout.polar[idx])
+    println("    ├── Correlated: ", monitoring.pmu.layout.correlated[idx])
     println("    └── Index: ", idx)
 end
-
 
 function checkprint(obj::S, idx::Int64) where S
     for name in fieldnames(typeof(obj))

@@ -158,7 +158,7 @@ nothing # hide
 ```
 
 Additionally, users can display stored data for a specific voltmeter with:
-```@repl addVoltmeterSI
+```@example addVoltmeterSI
 print(monitoring; voltmeter = 1)
 ```
 
@@ -225,7 +225,7 @@ nothing # hide
 ```
 
 Additionally, users can display stored data for a specific ammeter with:
-```@repl addAmmeterSI
+```@example addAmmeterSI
 print(monitoring; ammeter = 1)
 ```
 
@@ -292,7 +292,7 @@ nothing # hide
 ```
 
 Additionally, users can display stored data for a specific wattmeter with:
-```@repl addWattmeterSI
+```@example addWattmeterSI
 print(monitoring; wattmeter = 1)
 ```
 
@@ -357,7 +357,7 @@ nothing # hide
 ```
 
 Additionally, users can display stored data for a specific varmeter with:
-```@repl addVarmeterSI
+```@example addVarmeterSI
 print(monitoring; varmeter = 1)
 ```
 
@@ -460,7 +460,7 @@ nothing # hide
 ```
 
 Additionally, users can display stored data for a specific PMU with:
-```@repl addPmuSI
+```@example addPmuSI
 print(monitoring; pmu = 1)
 ```
 
