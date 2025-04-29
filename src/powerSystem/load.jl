@@ -8,7 +8,8 @@ branches, or generators, or modify the parameters of existing ones.
 # Argument
 It requires a string path to:
 - the HDF5 file with the `.h5` extension,
-- the Matpower file with the `.m` extension.
+- the Matpower file with the `.m` extension,
+- the PSSE v33 file with the `.raw` extension.
 
 # Returns
 The `PowerSystem` composite type with the following fields:
@@ -37,20 +38,29 @@ function powerSystem(inputFile::String)
             checkLabel(hdf5, template)
 
             system = powerSystem()
-            loadBus(system, hdf5)
-            loadBranch(system, hdf5)
-            loadGenerator(system, hdf5)
-            loadBase(system, hdf5)
+            hdf5Bus(system, hdf5)
+            hdf5Branch(system, hdf5)
+            hdf5Generator(system, hdf5)
+            hdf5Base(system, hdf5)
         close(hdf5)
     end
 
     if extension == ".m"
         system = powerSystem()
 
-        busLine, branchLine, genLine, costLine = readMATLAB(system, fullpath)
-        loadBus(system, busLine)
-        loadBranch(system, branchLine)
-        loadGenerator(system, genLine, costLine)
+        busLine, branchLine, genLine, costLine = matpowerRead(system, fullpath)
+        matpowerBus(system, busLine)
+        matpowerBranch(system, branchLine)
+        matpowerGenerator(system, genLine, costLine)
+    end
+
+    if extension == ".raw"
+        system = powerSystem()
+
+        lines = psseRead(system, fullpath)
+        psseBus(system, lines)
+        psseBranch(system, lines)
+        psseGenerator(system, lines)
     end
 
     return system
@@ -137,7 +147,7 @@ function checkLabel(hdf5::File, template::Template)
 end
 
 ##### Load Bus Data from HDF5 File #####
-function loadBus(system::PowerSystem, hdf5::File)
+function hdf5Bus(system::PowerSystem, hdf5::File)
     if !haskey(hdf5, "bus")
         throw(ErrorException("The bus data is missing."))
     end
@@ -178,7 +188,7 @@ function loadBus(system::PowerSystem, hdf5::File)
 end
 
 ##### Load Branch Data from HDF5 File #####
-function loadBranch(system::PowerSystem, hdf5::File)
+function hdf5Branch(system::PowerSystem, hdf5::File)
     if !haskey(hdf5, "branch")
         throw(ErrorException("The branch data is missing."))
     end
@@ -215,7 +225,7 @@ function loadBranch(system::PowerSystem, hdf5::File)
 end
 
 ##### Load Generator Data from HDF5 File #####
-function loadGenerator(system::PowerSystem, hdf5::File)
+function hdf5Generator(system::PowerSystem, hdf5::File)
     if !haskey(hdf5, "generator")
         throw(ErrorException("The generator data is missing."))
     end
@@ -275,7 +285,7 @@ function loadGenerator(system::PowerSystem, hdf5::File)
 end
 
 ##### Load Base Power from HDF5 File #####
-function loadBase(system::PowerSystem, hdf5::File)
+function hdf5Base(system::PowerSystem, hdf5::File)
     if !haskey(hdf5, "base")
         throw(ErrorException("The base data is missing."))
     end
@@ -286,7 +296,7 @@ function loadBase(system::PowerSystem, hdf5::File)
 end
 
 ##### Load Power System Data from MATLAB File #####
-@inline function readMATLAB(system::PowerSystem, fullpath::String)
+function matpowerRead(system::PowerSystem, fullpath::String)
     busLine = String[]
     busFlag = false
     branchLine = String[]
@@ -332,7 +342,7 @@ end
 end
 
 ##### Load Bus Data from MATLAB File #####
-function loadBus(system::PowerSystem, busLine::Vector{String})
+function matpowerBus(system::PowerSystem, busLine::Vector{String})
     if isempty(busLine)
         throw(ErrorException("The bus data is missing."))
     end
@@ -370,10 +380,8 @@ function loadBus(system::PowerSystem, busLine::Vector{String})
     data = Array{SubString{String}}(undef, 13)
     @inbounds for (k, line) in enumerate(eachsplit.(busLine))
         for (i, s) in enumerate(line)
-            if i == 14
-                break
-            end
             data[i] = SubString(s)
+            i == 13 && break
         end
 
         labelInt = parse(Int64, data[1])
@@ -412,7 +420,7 @@ function loadBus(system::PowerSystem, busLine::Vector{String})
 end
 
 ##### Load Branch Data from MATLAB File #####
-function loadBranch(system::PowerSystem, branchLine::Vector{String})
+function matpowerBranch(system::PowerSystem, branchLine::Vector{String})
     if isempty(branchLine)
         throw(ErrorException("The branch data is missing."))
     end
@@ -442,32 +450,28 @@ function loadBranch(system::PowerSystem, branchLine::Vector{String})
     branch.flow.type = fill(Int8(3), branch.number)
 
     branch.layout.from = fill(0, branch.number)
-    branch.layout.to = similar( branch.layout.from)
+    branch.layout.to = similar(branch.layout.from)
     branch.layout.status = similar(branch.flow.type)
 
     data = Array{SubString{String}}(undef, 13)
     @inbounds for (k, line) in enumerate(eachsplit.(branchLine))
         for (i, s) in enumerate(line)
-            if i == 14
-                break
-            end
             data[i] = SubString(s)
+            i == 13 && break
         end
 
         label!(branch.label, k, k)
 
-        branch.layout.from[k] = getLabelIdx(system.bus.label, data[1])
-        branch.layout.to[k] = getLabelIdx(system.bus.label, data[2])
+        branch.layout.from[k] = getIndex(system.bus.label, data[1])
+        branch.layout.to[k] = getIndex(system.bus.label, data[2])
 
         branch.parameter.resistance[k] = parse(Float64, data[3])
         branch.parameter.reactance[k] = parse(Float64, data[4])
         branch.parameter.susceptance[k] = parse(Float64, data[5])
 
         longTerm = parse(Float64, data[6]) * basePowerInv
-        branch.flow.minFromBus[k] = -longTerm
-        branch.flow.maxFromBus[k] = longTerm
-        branch.flow.minToBus[k] = -longTerm
-        branch.flow.maxToBus[k] = longTerm
+        branch.flow.minFromBus[k] = branch.flow.minToBus[k] = -longTerm
+        branch.flow.maxFromBus[k] = branch.flow.maxToBus[k] = longTerm
 
         branch.parameter.turnsRatio[k] = parse(Float64, data[9])
         if branch.parameter.turnsRatio[k] == 0.0
@@ -488,7 +492,7 @@ function loadBranch(system::PowerSystem, branchLine::Vector{String})
 end
 
 ##### Load Generator Data from MATLAB File #####
-function loadGenerator(system::PowerSystem, genLine::Vector{String}, costLine::Vector{String})
+function matpowerGenerator(system::PowerSystem, genLine::Vector{String}, costLine::Vector{String})
     if isempty(genLine)
         throw(ErrorException("The generator data is missing."))
     end
@@ -528,14 +532,12 @@ function loadGenerator(system::PowerSystem, genLine::Vector{String}, costLine::V
     data = Array{SubString{String}}(undef, 21)
     @inbounds for (k, line) in enumerate(eachsplit.(genLine))
         for (i, s) in enumerate(line)
-            if i == 22
-                break
-            end
             data[i] = SubString(s)
+            i == 21 && break
         end
 
         label!(gen.label, k, k)
-        gen.layout.bus[k] = getLabelIdx(system.bus.label, data[1])
+        gen.layout.bus[k] = getIndex(system.bus.label, data[1])
 
         gen.output.active[k] = parse(Float64, data[2]) * basePowerInv
         gen.output.reactive[k] = parse(Float64, data[3]) * basePowerInv
@@ -594,7 +596,7 @@ function loadGenerator(system::PowerSystem, genLine::Vector{String}, costLine::V
 end
 
 ##### Parser Generator Cost Model #####
-@inline function costParser(
+function costParser(
     system::PowerSystem,
     cost::Cost,
     costLines::Vector{Base.SplitIterator{String, typeof(isspace)}},
@@ -630,8 +632,628 @@ end
     end
 end
 
+##### Load Power System Data from PSSE File #####
+function psseRead(system::PowerSystem, fullpath::String)
+    basePower = true
+    findingStart = true
+    lines = [String[], String[], String[], String[], String[], String[], String[]]
+
+    idx = 0
+    for line in eachline(fullpath)
+        if !isempty(line)
+
+            if basePower
+                header = split(line, ",")
+                system.base.power.value = parse(Float64, header[2])
+                basePower = false
+                continue
+            end
+
+            if findingStart
+                findingStart, idx = psseStartBus(line)
+            end
+
+            flag, idx = psseBreakStart(line, idx)
+            psseParse(line, lines, flag, idx)
+        end
+    end
+
+    if system.base.power == 0
+        system.base.power.value = 100
+        @info("The variable basePower not found. The algorithm proceeds with value of 1e8 VA.")
+    end
+
+    return lines
+end
+
+function psseStartBus(line::String)
+    bus = split(line, ",")
+    try
+        parse(Int64, bus[1])
+        parse(Float64, bus[3])
+        parse(Float64, bus[9])
+
+        return false, 1
+    catch
+        return true, 0
+    end
+end
+
+function psseBreakStart(line::String, idx::Int64)
+    if occursin(r"^(Q|\s*0)\s*(/.*)?$", line)
+
+        if occursin("BEGIN LOAD DATA", line)
+            return false, 2
+        end
+
+        if occursin("BEGIN FIXED SHUNT DATA", line)
+            return false, 3
+        end
+
+        if occursin("BEGIN SWITCHED SHUNT DATA", line)
+            return false, 4
+        end
+
+        if occursin("BEGIN BRANCH DATA", line)
+            return false, 5
+        end
+
+        if occursin("BEGIN TRANSFORMER DATA", line)
+            return false, 6
+        end
+
+        if occursin("BEGIN GENERATOR DATA", line)
+            return false, 7
+        end
+
+        return false, 0
+    end
+
+    return true, idx
+end
+
+function psseParse(line::String, str::Vector{Vector{String}}, flag::Bool, idx::Int64)
+    if flag && idx != 0
+        addLine!(line, str[idx])
+    end
+end
+
+
+##### Load Bus Data from PSEE File #####
+function psseBus(system::PowerSystem, lines::Vector{Vector{String}})
+    if isempty(lines[1])
+        throw(ErrorException("The bus data is missing."))
+    end
+
+    def = template.bus
+    bus = system.bus
+    basePowerInv = 1 / system.base.power.value
+    deg2rad = pi / 180
+
+    bus.number = length(lines[1])
+    bus.label = OrderedDict{template.config.system, Int64}()
+    sizehint!(bus.label, bus.number)
+
+    bus.supply.active = fill(0.0, bus.number)
+    bus.supply.reactive = fill(0.0, bus.number)
+
+    bus.voltage.magnitude = similar(bus.supply.active)
+    bus.voltage.angle = similar(bus.supply.active)
+    bus.voltage.minMagnitude = similar(bus.supply.active)
+    bus.voltage.maxMagnitude = similar(bus.supply.active)
+
+    bus.layout.type = Array{Int8}(undef, bus.number)
+    bus.layout.area = fill(0, bus.number)
+    bus.layout.lossZone = similar(bus.layout.area)
+    bus.layout.slack = 0
+
+    system.base.voltage.value = similar(bus.supply.active)
+
+    bus.layout.label = 0
+    data = Array{SubString{String}}(undef, 11)
+    for (k, line) in enumerate(eachsplit.(lines[1], ","))
+        minmaxMagnitude = false
+        for (i, s) in enumerate(line)
+            data[i] = SubString(s)
+            i == 11 && (minmaxMagnitude = true; break)
+        end
+
+        labelInt = parse(Int64, data[1])
+        busLabel!(bus.label, data[1], labelInt, k)
+        if bus.layout.label < labelInt
+            bus.layout.label = labelInt
+        end
+
+        bus.voltage.magnitude[k] = parse(Float64, data[8])
+        bus.voltage.angle[k] = parse(Float64, data[9]) * deg2rad
+
+        system.base.voltage.value[k] = parse(Float64, data[3]) * 1e3
+
+        if minmaxMagnitude
+            bus.voltage.maxMagnitude[k] = parse(Float64, data[10])
+            bus.voltage.minMagnitude[k] = parse(Float64, data[11])
+        else
+            baseInv = sqrt(3) / system.base.voltage.value[k]
+
+            bus.voltage.minMagnitude[k] = topu(missing, def.minMagnitude, 1.0, baseInv)
+            bus.voltage.maxMagnitude[k] = topu(missing, def.maxMagnitude, 1.0, baseInv)
+        end
+
+        bus.layout.type[k] = parse(Int8, data[4])
+        bus.layout.area[k] = parse(Int64, data[5])
+        bus.layout.lossZone[k] = parse(Int64, data[6])
+
+        if bus.layout.type[k] == 3
+            bus.layout.slack = k
+        end
+    end
+
+    bus.demand.active = fill(0.0, bus.number)
+    bus.demand.reactive = fill(0.0, bus.number)
+
+    data = Array{SubString{String}}(undef, 11)
+    for line in eachsplit.(lines[2], ",")
+        for (i, s) in enumerate(line)
+            data[i] = SubString(s)
+            i == 11 && break
+        end
+
+        if parse(Int64, data[3]) == 1
+            idx = parse(Int64, data[1])
+
+            constPower = parse(Float64, data[6])
+            constCurrent = parse(Float64, data[8]) * bus.voltage.magnitude[idx]
+            constImpedance = parse(Float64, data[10]) * bus.voltage.magnitude[idx]^2
+            bus.demand.active[idx] += (constPower + constCurrent + constImpedance) * basePowerInv
+
+            constPower = parse(Float64, data[7])
+            constCurrent = parse(Float64, data[9]) * bus.voltage.magnitude[idx]
+            constImpedance = parse(Float64, data[11]) * bus.voltage.magnitude[idx]^2
+            bus.demand.reactive[idx] += (constPower + constCurrent - constImpedance) * basePowerInv
+        end
+    end
+
+    bus.shunt.conductance = fill(0.0, bus.number)
+    bus.shunt.susceptance = fill(0.0, bus.number)
+
+    data = Array{SubString{String}}(undef, 5)
+    for line in eachsplit.(lines[3], ",")
+        for (i, s) in enumerate(line)
+            data[i] = SubString(s)
+            i == 5 && break
+        end
+
+        if parse(Int64, data[3]) == 1
+            idx = parse(Int64, data[1])
+            bus.shunt.conductance[idx] += parse(Float64, data[4]) * basePowerInv
+            bus.shunt.susceptance[idx] += parse(Float64, data[5]) * basePowerInv
+        end
+    end
+
+    data = Array{SubString{String}}(undef, 3)
+    for line in eachsplit.(lines[4], ",")
+        for (i, s) in enumerate(line)
+            i == 1 && (data[1] = SubString(s))
+            i == 4 && (data[2] = SubString(s))
+            i == 10 && (data[3] = SubString(s); break)
+        end
+
+        if parse(Int64, data[2]) == 1
+            idx = parse(Int64, data[1])
+            bus.shunt.susceptance[idx] += parse(Float64, data[3]) * basePowerInv
+        end
+    end
+
+    if bus.layout.slack == 0
+        bus.layout.slack = 1
+        @info("The slack bus is not found. The first bus is set to be the slack.")
+    end
+end
+
+##### Load Branch Data from PSSE File #####
+function psseBranch(system::PowerSystem, lines::Vector{Vector{String}})
+    if isempty(lines[5])
+        throw(ErrorException("The branch data is missing."))
+    end
+
+    def = template.branch
+    bus = system.bus
+    branch = system.branch
+    basePowerInv = 1 / system.base.power.value
+    baseV = system.base.voltage
+    deg2rad = pi / 180
+
+    branch.number = length(lines[5])
+    branch.label = OrderedDict{template.config.system, Int64}()
+    sizehint!(branch.label, branch.number)
+
+    branch.parameter.conductance = fill(0.0, branch.number)
+    branch.parameter.resistance = similar(branch.parameter.conductance)
+    branch.parameter.reactance = similar(branch.parameter.conductance)
+    branch.parameter.susceptance = similar(branch.parameter.conductance) * basePowerInv
+    branch.parameter.turnsRatio = fill(1.0, branch.number)
+    branch.parameter.shiftAngle = fill(0.0, branch.number)
+
+    branch.voltage.minDiffAngle = similar(branch.parameter.conductance)
+    branch.voltage.maxDiffAngle = similar(branch.parameter.resistance)
+
+    branch.flow.minFromBus = similar(branch.parameter.conductance)
+    branch.flow.maxFromBus = similar(branch.parameter.conductance)
+    branch.flow.minToBus = similar(branch.parameter.conductance)
+    branch.flow.maxToBus = similar(branch.parameter.conductance)
+    branch.flow.type = fill(Int8(3), branch.number)
+
+    branch.layout.from = fill(0, branch.number)
+    branch.layout.to = similar(branch.layout.from)
+    branch.layout.status = similar(branch.flow.type)
+
+    data = Array{SubString{String}}(undef, 14)
+    for (k, line) in enumerate(eachsplit.(lines[5], ","))
+        for (i, s) in enumerate(line)
+            data[i] = SubString(s)
+            i == 14 && break
+        end
+
+        label!(branch.label, k, k)
+
+        branch.layout.from[k] = getIndex(system.bus.label, parse(Int64, data[1]))
+        branch.layout.to[k] = getIndex(system.bus.label, abs(parse(Int64, data[2])))
+
+        branch.parameter.resistance[k] = parse(Float64, data[4])
+        branch.parameter.reactance[k] = parse(Float64, data[5])
+        branch.parameter.susceptance[k] = parse(Float64, data[6])
+
+        longTerm = parse(Float64, data[7]) * basePowerInv
+        branch.flow.minFromBus[k] = branch.flow.minToBus[k] = -longTerm
+        branch.flow.maxFromBus[k] = branch.flow.maxToBus[k] = longTerm
+
+        branch.layout.status[k] = parse(Int8, data[14])
+
+        branch.voltage.minDiffAngle[k] = topu(missing, def.minDiffAngle, pfx.voltageAngle, 1.0)
+        branch.voltage.maxDiffAngle[k] = topu(missing, def.maxDiffAngle, pfx.voltageAngle, 1.0)
+
+        if branch.layout.status[k] == 1
+            branch.layout.inservice += 1
+
+            bus.shunt.conductance[branch.layout.from[k]] += parse(Float64, data[10])
+            bus.shunt.susceptance[branch.layout.from[k]] += parse(Float64, data[11])
+
+            bus.shunt.conductance[branch.layout.to[k]] += parse(Float64, data[12])
+            bus.shunt.susceptance[branch.layout.to[k]] += parse(Float64, data[13])
+        end
+    end
+
+    block = 0
+    cntLine = 0
+    cnt = 1
+    data = Array{SubString{String}}(undef, 83)
+    for line in eachsplit.(lines[6], ",")
+
+        if cntLine == 0
+            cnt = 1
+
+            for s in line
+                data[cnt] = SubString(s)
+                cnt += 1
+            end
+
+            if parse(Int64, data[3]) == 0
+                block = 4
+            else
+                block = 5
+            end
+
+            cntLine += 1
+
+        elseif cntLine < block
+            for s in line
+                data[cnt] = SubString(s)
+                cnt += 1
+            end
+            cntLine += 1
+        end
+
+        if cntLine == block
+            if block == 4
+                i = getIndex(system.bus.label, parse(Int64, data[1]))
+                j = getIndex(system.bus.label, parse(Int64, data[2]))
+
+                τ1 = parse(Float64, data[25])
+                τ2 = parse(Float64, data[42])
+
+                addBranch!(
+                    system; label = branch.number + 1, from = i, to = j,
+                    reactance = 1.0, status = parse(Int64, data[12]),
+                    turnsRatio = τ1 / τ2
+                )
+
+                longTerm = parse(Float64, data[28]) * basePowerInv
+                branch.flow.minFromBus[end] = branch.flow.minToBus[end] = -longTerm
+                branch.flow.maxFromBus[end] = branch.flow.maxToBus[end] = longTerm
+
+                branch.parameter.resistance[end] = parse(Float64, data[22])
+                branch.parameter.reactance[end] = parse(Float64, data[23])
+                branch.parameter.shiftAngle[end] = parse(Float64, data[27]) * deg2rad
+
+                Vb1 = parse(Float64, data[26])
+                Vb2 = parse(Float64, data[43])
+
+                cw = parse(Float64, data[5])
+                cz = parse(Float64, data[6])
+
+                R = branch.parameter.resistance
+                X = branch.parameter.reactance
+                τ = branch.parameter.turnsRatio
+
+                if cz == 2 || cz == 3
+                    Sbinv = 1 / parse(Float64, data[24])
+
+                    if cz == 3
+                        R[end] *= Sbinv * 1e-6
+                        X[end] = sqrt(X[end]^2 - R[end]^2)
+                    end
+
+                    if isapprox(Vb1, 0.0)
+                        R[end] *= system.base.power.value * Sbinv
+                        X[end] *= system.base.power.value * Sbinv
+                    else
+                        Zn = (Vb1^2 * Sbinv) / ((baseV.value[i] * baseV.prefix)^2 * basePowerInv * 1e-6)
+
+                        R[end] *= Zn
+                        X[end] *= Zn
+                    end
+                end
+
+                if cw == 1
+                    R[end] *= τ2^2
+                    X[end] *= τ2^2
+                elseif cw == 2
+                    R[end] *= (1e3 * τ2 / baseV.value[j])^2
+                    X[end] *= (1e3 * τ2 / baseV.value[j])^2
+                    τ[end] *= baseV.value[j] / baseV.value[i]
+                elseif cw == 3
+                    if isapprox(Vb2, 0.0)
+                        R[end] *= τ2^2
+                        X[end] *= τ2^2
+                    else
+                        R[end] *= (1e3 * τ2 * Vb2 / baseV.value[j])^2
+                        X[end] *= (1e3 * τ2 * Vb2 / baseV.value[j])^2
+                    end
+
+                    if Vb1 != 0.0 && Vb2 != 0.0
+                        τ[end] *= (baseV.value[j] / baseV.value[i]) * (Vb1 / Vb2)
+                    end
+                end
+            else
+                i = getIndex(system.bus.label, parse(Int64, data[1]))
+                j = getIndex(system.bus.label, parse(Int64, data[2]))
+                q = getIndex(system.bus.label, parse(Int64, data[3]))
+
+                addBus!(
+                    system; label = bus.number + 1,
+                    base = 1e3 * system.base.voltage.prefix / pfx.baseVoltage,
+                    area = bus.layout.area[i], lossZone = bus.layout.lossZone[i]
+                )
+
+                bus.voltage.magnitude[end] = parse(Float64, data[31])
+                bus.voltage.angle[end] = parse(Float64, data[32]) * deg2rad
+
+                n = getIndex(bus, bus.number, "bus")
+
+                status = parse(Int8, data[12])
+
+                addBranch!(
+                    system; label = branch.number + 1, from = i, to = n,
+                    reactance = 1.0, turnsRatio = parse(Float64, data[33]),
+                    status = (status == 0 || status == 4) ? 0 : 1
+                )
+
+                addBranch!(
+                    system; label = branch.number + 1, from = j, to = n,
+                    reactance = 1.0, turnsRatio = parse(Float64, data[50]),
+                    status = (status == 0 || status == 2) ? 0 : 1
+                )
+
+                addBranch!(
+                    system; label = branch.number + 1, from = q, to = n,
+                    reactance = 1.0, turnsRatio = parse(Float64, data[67]),
+                    status = (status == 0 || status == 3) ? 0 : 1
+                )
+
+                branch.parameter.shiftAngle[end - 2] = parse(Float64, data[35]) * deg2rad
+                branch.parameter.shiftAngle[end - 1] = parse(Float64, data[52]) * deg2rad
+                branch.parameter.shiftAngle[end] = parse(Float64, data[69]) * deg2rad
+
+                longTerm = parse(Float64, data[36]) * basePowerInv
+                branch.flow.minFromBus[end - 2] = branch.flow.minToBus[end - 2] = -longTerm
+                branch.flow.maxFromBus[end - 2] = branch.flow.maxToBus[end - 2] = longTerm
+
+                longTerm = parse(Float64, data[53]) * basePowerInv
+                branch.flow.minFromBus[end - 1] = branch.flow.minToBus[end - 1] = -longTerm
+                branch.flow.maxFromBus[end - 1] = branch.flow.maxToBus[end - 1] = longTerm
+
+                longTerm = parse(Float64, data[70]) * basePowerInv
+                branch.flow.minFromBus[end] = branch.flow.minToBus[end] = -longTerm
+                branch.flow.maxFromBus[end] = branch.flow.maxToBus[end] = longTerm
+
+                cw = parse(Float64, data[5])
+                cz = parse(Float64, data[6])
+
+                R12 = parse(Float64, data[22])
+                R23 = parse(Float64, data[25])
+                R31 = parse(Float64, data[28])
+
+                X12 = parse(Float64, data[23])
+                X23 = parse(Float64, data[26])
+                X31 = parse(Float64, data[29])
+
+                Vb1 = parse(Float64, data[34])
+                Vb2 = parse(Float64, data[51])
+                Vb3 = parse(Float64, data[68])
+
+                if cz == 2 || cz == 3
+                    Sbinv1 = 1 / parse(Float64, data[24])
+                    Sbinv2 = 1 / parse(Float64, data[27])
+                    Sbinv3 = 1 / parse(Float64, data[30])
+
+                    if cz == 3
+                        R12 *= Sbinv1 * 1e-6
+                        X12 = sqrt(X12^2 - R12^2)
+
+                        R23 *= Sbinv2 * 1e-6
+                        X23 = sqrt(X23^2 - R23^2)
+
+                        R31 *= Sbinv3 * 1e-6
+                        X31 = sqrt(X31^2 - R31^2)
+                    end
+
+                    if isapprox(Vb1, 0.0)
+                        R12 *= system.base.power.value * Sbinv1
+                        X12 *= system.base.power.value * Sbinv1
+                    else
+                        Zn = (Vb1^2 * Sbinv1) / ((baseV.value[i] * baseV.prefix)^2 * basePowerInv * 1e-6)
+
+                        R12 *= Zn
+                        X12 *= Zn
+                    end
+
+                    if isapprox(Vb2, 0.0)
+                        R23 *= system.base.power.value * Sbinv2
+                        X23 *= system.base.power.value * Sbinv2
+                    else
+                        Zn = (Vb2^2 * Sbinv2) / ((baseV.value[j] * baseV.prefix)^2 * basePowerInv * 1e-6)
+
+                        R23 *= Zn
+                        X23 *= Zn
+                    end
+
+                    if isapprox(Vb3, 0.0)
+                        R31 *= system.base.power.value * Sbinv3
+                        X31 *= system.base.power.value * Sbinv3
+                    else
+                        Zn = (Vb3^2 * Sbinv3) / ((baseV.value[q] * baseV.prefix)^2 * basePowerInv * 1e-6)
+
+                        R31 *= Zn
+                        X31 *= Zn
+                    end
+                end
+
+                if cw == 2
+                    branch.parameter.turnsRatio[end - 2] /= baseV.value[i] * 1e-3
+                    branch.parameter.turnsRatio[end - 1] /= baseV.value[j] * 1e-3
+                    branch.parameter.turnsRatio[end] /= baseV.value[q] * 1e-3
+                end
+
+                if cw == 3
+                    if  Vb1 != 0.0
+                        branch.parameter.turnsRatio[end - 2] *= Vb1 / (baseV.value[i] * 1e-3)
+                    end
+
+                    if Vb2 != 0.0
+                        branch.parameter.turnsRatio[end - 1] *= Vb2 / (baseV.value[j] * 1e-3)
+                    end
+
+                    if Vb3 != 0.0
+                        branch.parameter.turnsRatio[end] *= Vb3 / (baseV.value[q] * 1e-3)
+                    end
+                end
+
+                branch.parameter.resistance[end - 2] = (R12 - R23 + R31) / 2
+                branch.parameter.reactance[end - 2] = (X12 - X23 + X31) / 2
+
+                branch.parameter.resistance[end - 1] = (R12 + R23 - R31) / 2
+                branch.parameter.reactance[end - 1] = (X12 + X23 - X31) / 2
+
+                branch.parameter.resistance[end] = (-R12 + R23 + R31) / 2
+                branch.parameter.reactance[end] = (-X12 + X23 + X31) / 2
+            end
+
+            cntLine = 0
+        end
+    end
+
+    branch.layout.label = branch.number
+end
+
+function psseGenerator(system::PowerSystem, lines::Vector{Vector{String}})
+    if isempty(lines[7])
+        throw(ErrorException("The generator data is missing."))
+    end
+
+    gen = system.generator
+    basePowerInv = 1 / system.base.power.value
+
+    gen.number = length(lines[7])
+    gen.label = OrderedDict{template.config.system, Int64}()
+    sizehint!(gen.label, gen.number)
+
+    gen.output.active = fill(0.0, gen.number)
+    gen.output.reactive = similar(gen.output.active)
+
+    gen.capability.minActive = similar(gen.output.active)
+    gen.capability.maxActive = similar(gen.output.active)
+    gen.capability.minReactive = similar(gen.output.active)
+    gen.capability.maxReactive = similar(gen.output.active)
+    gen.capability.lowActive = fill(0.0, gen.number)
+    gen.capability.minLowReactive = fill(0.0, gen.number)
+    gen.capability.maxLowReactive = fill(0.0, gen.number)
+    gen.capability.upActive = fill(0.0, gen.number)
+    gen.capability.minUpReactive = fill(0.0, gen.number)
+    gen.capability.maxUpReactive = fill(0.0, gen.number)
+
+    gen.ramping.loadFollowing = fill(0.0, gen.number)
+    gen.ramping.reserve10min = fill(0.0, gen.number)
+    gen.ramping.reserve30min = fill(0.0, gen.number)
+    gen.ramping.reactiveRamp = fill(0.0, gen.number)
+
+    gen.voltage.magnitude = similar(gen.output.active)
+
+    gen.layout.bus = fill(0, gen.number)
+    gen.layout.area = fill(0.0, gen.number)
+    gen.layout.status = Array{Int8}(undef, gen.number)
+
+    gen.cost.active.model = fill(Int8(0), gen.number)
+    gen.cost.reactive.model = fill(Int8(0), gen.number)
+
+    data = Array{SubString{String}}(undef, 18)
+    for (k, line) in enumerate(eachsplit.(lines[7], ","))
+        for (i, s) in enumerate(line)
+            data[i] = SubString(s)
+            i == 18 && break
+        end
+
+        label!(gen.label, k, k)
+        gen.layout.bus[k] = getIndex(system.bus.label, parse(Int64, data[1]))
+
+        gen.output.active[k] = parse(Float64, data[3]) * basePowerInv
+        gen.output.reactive[k] = parse(Float64, data[4]) * basePowerInv
+
+        gen.capability.maxReactive[k] = parse(Float64, data[5]) * basePowerInv
+        gen.capability.minReactive[k] = parse(Float64, data[6]) * basePowerInv
+
+        gen.capability.maxActive[k] = parse(Float64, data[17]) * basePowerInv
+        gen.capability.minActive[k] = parse(Float64, data[18]) * basePowerInv
+
+        gen.voltage.magnitude[k] = parse(Float64, data[7])
+
+        gen.layout.status[k] = parse(Int8, data[15])
+
+        if gen.layout.status[k] == 1
+            i = gen.layout.bus[k]
+            addGenInBus!(system, i, k)
+
+            system.bus.supply.active[i] += gen.output.active[k]
+            system.bus.supply.reactive[i] += gen.output.reactive[k]
+            gen.layout.inservice += 1
+        end
+    end
+
+    gen.layout.label = gen.number
+    system.base.power.value *= 1e6
+end
+
 ##### Read Data From HDF5 File #####
-@inline function readHDF5(group::Group, key::String, number::Int64)
+function readHDF5(group::Group, key::String, number::Int64)
     if length(group[key]) == 1
         return fill(read(group[key])::Union{Float64, Int64, Int8, Bool}, number)
     else
@@ -698,6 +1320,13 @@ function addLine!(subline::SubString{String}, str::Vector{String})
     end
 end
 
+function addLine!(subline::String, str::Vector{String})
+    subline = strip(subline)
+    if !isempty(subline)
+        push!(str, subline)
+    end
+end
+
 ##### Add Label for Matpower Input Data #####
 function busLabel!(lbl::OrderedDict{String, Int64}, label::SubString{String}, ::Int64, idx::Int64)
     lbl[label] = idx
@@ -713,13 +1342,4 @@ end
 
 function label!(lbl::OrderedDict{Int64, Int64}, label::Int64, idx::Int64)
     lbl[label] = idx
-end
-
-##### Get Label Index for Matpower Input Data #####
-function getLabelIdx(lbl::OrderedDict{String, Int64}, label::SubString{String})
-    lbl[label]
-end
-
-function getLabelIdx(lbl::OrderedDict{Int64, Int64}, label::SubString{String})
-    lbl[parse(Int64, label)]
 end

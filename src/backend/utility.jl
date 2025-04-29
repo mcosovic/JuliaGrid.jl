@@ -16,7 +16,7 @@ end
     catch
         extension = ""
     end
-    if extension == ".h5" || extension == ".m"
+    if extension == ".h5" || extension == ".m"  || extension == ".raw"
         fullpath = inputFile
         path = dirname(inputFile)
         dataname = basename(inputFile)
@@ -24,7 +24,7 @@ end
 
     if isempty(extension)
         throw(ErrorException("The extension is missing."))
-    elseif extension != ".h5" && extension != ".m"
+    elseif extension != ".h5" && extension != ".m" && extension != ".raw"
         throw(DomainError(extension, "The extension "  * extension * " is not supported."))
     end
 
@@ -180,13 +180,28 @@ function getIndex(container::Union{P, M}, label::Int64, name::String)
     container.label[getLabel(container, label, name)]
 end
 
+function getIndex(lbl::OrderedDict{String, Int64}, label::SubString{String})
+    lbl[label]
+end
+
+function getIndex(lbl::OrderedDict{Int64, Int64}, label::SubString{String})
+    lbl[parse(Int64, label)]
+end
+
+function getIndex(lbl::OrderedDict{Int64, Int64}, label::Int64)
+    lbl[label]
+end
+
+function getIndex(lbl::OrderedDict{String, Int64}, label::Int64)
+    lbl[string(label)]
+end
+
 ##### Get Label and Index #####
 function getLabelIdx(container::LabelDict, idx::Int64)
     (label, idx),_ = iterate(container, idx)
 
     return label, idx
 end
-
 
 ##### From-To Indices #####
 function fromto(system::PowerSystem, idx::Int64)
