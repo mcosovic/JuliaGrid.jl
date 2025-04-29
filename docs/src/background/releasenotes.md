@@ -2,6 +2,15 @@
 
 ---
 
+## Version 0.4.2
+
+Release Date: April 29, 2025
+
+#### Added
+  * Parser for PSSE case files.
+
+---
+
 ## Version 0.4.1
 
 Release Date: April 21, 2025

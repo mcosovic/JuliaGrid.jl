@@ -3,7 +3,7 @@ JuliaGrid supports the type `PowerSystem` to preserve power system data, with th
 
 The type `PowerSystem` can be created using a function:
 * [`powerSystem`](@ref powerSystem).
-JuliaGrid supports three modes for populating the `PowerSystem` type: using built-in functions, using HDF5 file format, and using [Matpower](https://matpower.org) case files.
+JuliaGrid supports four modes for populating the `PowerSystem` type: using built-in functions, using HDF5 file format, using [Matpower](https://matpower.org) case files, and using PSSE version 33 case files.
 
 It is recommended to use the HDF5 format for large-scale systems. To facilitate this, JuliaGrid has the function:
 * [`savePowerSystem`](@ref savePowerSystem).
@@ -41,6 +41,14 @@ The [`powerSystem`](@ref powerSystem) function generates the `PowerSystem` type 
 For example, to create the `PowerSystem` type using the Matpower case file for the IEEE 14-bus test case, which is named `case14.m` and located in the folder `C:\matpower`, the following Julia code can be used:
 ```julia
 system = powerSystem("C:/matpower/case14.m")
+```
+
+---
+
+##### PSSE File
+Similarly, to create the `PowerSystem` type using a PSSE version 33 case file for the IEEE 14-bus test case, named `case14.raw` and located in the folder `C:\psse`, use the following Julia code:
+```julia
+system = powerSystem("C:/psse/case14.raw")
 ```
 
 ---
