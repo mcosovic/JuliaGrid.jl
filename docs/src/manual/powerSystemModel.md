@@ -35,6 +35,9 @@ Moreover, it is feasible to modify the parameters of buses, branches, and genera
 ## [Build Model](@id BuildModelManual)
 The [`powerSystem`](@ref powerSystem) function generates the `PowerSystem` type and requires a string-formatted path to either Matpower cases or HDF5 files as input. Alternatively, the `PowerSystem` can be created without any initial data by initializing it as empty, allowing the user to construct the power system from scratch.
 
+!!! info "Info"
+    While building the model, users can manage bus, branch, and generator labels in several ways. For more details, see the [Labels](@ref LabelsManual) section.
+
 ---
 
 ##### Matpower File
@@ -518,9 +521,68 @@ label[system.generator.layout.bus]
 
 ---
 
-##### Loading and Saving Labels
-When a user loads a power system from a Matpower file, the default behavior is to store labels as strings. However, this can be overridden by using the [`@config`](@ref @config) macro to store labels as integers.
+##### Managing String Labels in Matpower and PSSE Imports
+When a user loads a power system from a Matpower or PSSE file, the default behavior is to store labels as strings, using bus names if available in the file. Branch and generator labels, however, are defined as an incremental set of integers by default. This behavior can be overwritten using templates. For example, in the `case5.m` file, bus names are provided. Let us load that power system and use a template to generate branch labels:
+```@example RetrieveLabels
+@default(template) # hide
+@branch(label = "Branch ?")
+system = powerSystem("case5.m")
+nothing # hide
+```
 
+As a result, bus labels are read directly from the `case5.m` file:
+```@repl RetrieveLabels
+system.bus.label
+```
+
+Branch labels are generated using the specified template:
+```@repl RetrieveLabels
+system.branch.label
+```
+
+Generator labels are assigned as an incremental set of integers by default:
+```@repl RetrieveLabels
+system.generator.label
+```
+
+Now, in cases where bus names are not provided in the input file, as with `case4.m`, users can define a template to generate bus labels. For example:
+```@example RetrieveLabels
+@default(template) # hide
+@bus(label = "Bus ?")
+system = powerSystem("case4.m")
+nothing # hide
+```
+
+As a result, JuliaGrid uses the integer bus labels available in `case4.m` to generate labels based on the template:
+```@repl RetrieveLabels
+system.bus.label
+```
+
+---
+
+##### Managing Integer Labels in Matpower and PSSE Imports
+If users need to exclusively work with the integer bus labels available in the Matpower and PSSE files, they can configure the system accordingly. For example:
+```@example RetrieveLabels
+@default(template) # hide
+@config(label = Integer)
+system = powerSystem("case4.m")
+nothing # hide
+```
+
+With this configuration, JuliaGrid uses the integer bus labels from the input data:
+```@repl RetrieveLabels
+system.bus.label
+```
+
+Similarly, integer labels are used for branches and generators:
+```@repl RetrieveLabels
+system.branch.label
+system.generator.label
+```
+
+---
+
+##### Managing Labels in HDF5 Imports
 When saving the power system to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Likewise, when loading data from an HDF5 file, the label type will be preserved as saved, regardless of what is set by the [`@config`](@ref @config) macro.
 
 ---
