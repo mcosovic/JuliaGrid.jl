@@ -184,6 +184,7 @@ end
 @testset "Reusing DC Optimal Power Flow" begin
     @default(unit)
     @default(template)
+    @config(label = Integer)
 
     system = powerSystem(path * "case14optimal.m")
     cost!(system; generator = 3, active = 2, polynomial = [854.0, 116.0, 53.0])

@@ -547,7 +547,7 @@ function printf(
     end
 end
 
-function printf(io::IO, prt::Print, value::OrderedDict{String, Int64}, i::Int64, key::Symbol)
+function printf(io::IO, prt::Print, value::LabelDict, i::Int64, key::Symbol)
     name = prt.head[key]
     if prt.show[name]
         print(io, format(prt.pfmt[name], prt.width[name], getLabel(value, i)))

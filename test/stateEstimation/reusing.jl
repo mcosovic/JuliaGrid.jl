@@ -1,4 +1,4 @@
-system = powerSystem(path * "case14test.m")
+system = powerSystem(path * "case14test2.m")
 @testset "Reusing AC State Estimation" begin
     @default(template)
     @default(unit)
@@ -478,7 +478,7 @@ system = powerSystem(path * "case14test.m")
     end
 end
 
-system = powerSystem(path * "case14test.m")
+system = powerSystem(path * "case14test2.m")
 @testset "Reusing Meters PMU State Estimation" begin
     @default(template)
     @default(unit)
@@ -606,7 +606,7 @@ system = powerSystem(path * "case14test.m")
     end
 end
 
-system = powerSystem(path * "case14test.m")
+system = powerSystem(path * "case14test2.m")
 @testset "Reusing Meters DC State Estimation" begin
     @default(template)
     @default(unit)

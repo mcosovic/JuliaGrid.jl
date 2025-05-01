@@ -1,4 +1,4 @@
-system14 = powerSystem(path * "case14test.m")
+system14 = powerSystem(path * "case14test2.m")
 system30 = powerSystem(path * "case30test.m")
 @testset "AC State Estimation" begin
     @default(template)
@@ -296,7 +296,7 @@ system30 = powerSystem(path * "case30test.m")
     end
 end
 
-system14 = powerSystem(path * "case14test.m")
+system14 = powerSystem(path * "case14test2.m")
 system30 = powerSystem(path * "case30test.m")
 @testset "PMU State Estimation" begin
     @default(template)
@@ -380,7 +380,7 @@ system30 = powerSystem(path * "case30test.m")
     end
 end
 
-system14 = powerSystem(path * "case14test.m")
+system14 = powerSystem(path * "case14test2.m")
 system30 = powerSystem(path * "case30test.m")
 @testset "DC State Estimation" begin
     @default(template)
@@ -487,6 +487,7 @@ system30 = powerSystem(path * "case30test.m")
 end
 
 @testset "Print Data in Per-Units" begin
+    @config(label = Integer)
     system, monitoring = ems(path * "case14test.m", "monitoring.h5")
 
     addPmu!(monitoring; bus = 1, magnitude = 1.0, angle = 0.0)
@@ -564,7 +565,7 @@ end
 end
 
 @testset "Print Data in SI Units" begin
-    system, monitoring = ems(path * "case14test.m", "monitoring.h5")
+    system, monitoring = ems(path * "case14test2.m", "monitoring.h5")
 
     addPmu!(monitoring; bus = 1, magnitude = 1.0, angle = 0.0)
     addPmu!(monitoring; bus = 3, magnitude = 1.1, angle = -0.3)

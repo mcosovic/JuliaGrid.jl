@@ -185,7 +185,10 @@ end
 end
 
 @testset "Print Data in Per-Units" begin
+    @config(label = Integer)
+
     ########## Print AC Data ##########
+    system14 = powerSystem(path * "case14test.m")
     analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
     @suppress powerFlow!(analysis; verbose = 3)
 
@@ -242,11 +245,13 @@ end
 end
 
 @testset "Print Data in SI Units" begin
+    @default(template)
     @power(kW, MVAr, MVA)
     @voltage(kV, deg, V)
     @current(MA, deg)
 
     ########## Print AC Data ##########
+    system14 = powerSystem(path * "case14test2.m")
     analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
     powerFlow!(analysis)
 

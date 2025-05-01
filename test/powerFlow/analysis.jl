@@ -249,6 +249,7 @@ end
 end
 
 @testset "Print Data in Per-Units" begin
+    @config(label = Integer)
     system14 = powerSystem(path * "case14test.m")
 
     ########## Print AC Data ##########
@@ -341,7 +342,8 @@ end
 end
 
 @testset "Print Data in SI Units" begin
-    system14 = powerSystem(path * "case14test.m")
+    @default(template)
+    system14 = powerSystem(path * "case14test2.m")
 
     @power(GW, MVAr)
     @voltage(kV, deg)

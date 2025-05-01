@@ -1,6 +1,6 @@
 @testset "Load and Save Measurements with String Labels" begin
     ########## Build Measurement Data ##########
-    system, monitoring = ems(path * "case14test.m")
+    system, monitoring = ems(path * "case14test2.m")
 
     @voltmeter(label = "Voltmeter ?")
     addVoltmeter!(monitoring; bus = 1, magnitude = 1.1, noise = true, status = 0)
@@ -45,7 +45,7 @@ end
     @config(label = Integer)
 
     ########## Build Measurement Data ##########
-    system, monitoring = ems(path * "case14test.m")
+    system, monitoring = ems(path * "case14test2.m")
 
     addVoltmeter!(monitoring; bus = 1, magnitude = 1.1, noise = true, status = 0)
     addVoltmeter!(monitoring; bus = 14, magnitude = 1.0, variance = 1e-4)

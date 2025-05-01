@@ -54,9 +54,7 @@ function setLabel(
     end
 
     if !isnothing(labelInt)
-        if component.layout.label < labelInt
-            component.layout.label = labelInt
-        end
+        component.layout.label = max(component.layout.label, labelInt)
     end
 
     setindex!(component.label, component.number, labelStr)
@@ -83,9 +81,7 @@ function setLabel(
         throw(ErrorException("The label $label is not unique."))
     end
 
-    if component.layout.label < label
-        component.layout.label = label
-    end
+    component.layout.label = max(component.layout.label, label)
     setindex!(component.label, component.number, labelStrInt)
 end
 
@@ -129,7 +125,7 @@ function typeLabel(
     default::String,
     idx::Int64,
     prefix::String,
-    key::String
+    key::Union{String, Int64}
 )
     label = replace(default, r"\?" => string(idx), r"\!" => string(prefix, key))
 

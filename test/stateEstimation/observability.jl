@@ -1,4 +1,4 @@
-@testset "DC State Estimation: Observability" begin
+@testset "Observability Analysis" begin
     @default(template)
     @default(unit)
 

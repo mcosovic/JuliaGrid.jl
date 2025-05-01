@@ -230,7 +230,9 @@ end
 end
 
 @testset "Reusing Gauss-Seidel Method" begin
+    @default(unit)
     @default(template)
+    @config(label = Integer)
 
     system = powerSystem(path * "case14test.m")
     gs = gaussSeidel(system)

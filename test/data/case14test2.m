@@ -91,24 +91,6 @@ mpc.gencost = [
 	1	0	0	4	140             3582.87481	210         4981.72313	280         6497.03117  350     8137.67767;     
 ];
 
-%% bus names
-mpc.bus_name = {
-	'Bus 1 HV';
-	'Bus 2 HV';
-	'Bus 3 HV';
-	'Bus 4 HV';
-	'Bus 5 HV';
-	'Bus 6 LV';
-	'Bus 7 ZV';
-	'Bus 8 TV';
-	'Bus 9 LV';
-	'Bus 10 LV';
-	'Bus 11 LV';
-	'Bus 12 LV';
-	'Bus 13 LV';
-	'Bus 14 LV';
-};
-
 % Warnings from cdf2matp conversion:
 %
 % ***** check the title format in the first line of the cdf file.

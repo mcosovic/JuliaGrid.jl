@@ -1,4 +1,4 @@
-system14 = powerSystem(path * "case14test.m")
+system14 = powerSystem(path * "case14test2.m")
 system30 = powerSystem(path * "case30test.m")
 @testset "Optimal PMU Placement" begin
     @default(template)
