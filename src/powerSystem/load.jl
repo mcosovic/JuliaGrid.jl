@@ -341,6 +341,7 @@ function matpowerBus(system::PowerSystem, lines::Vector{Vector{String}})
     end
 
     bus = system.bus
+    def = template.bus
     basePowerInv = 1 / system.base.power.value
     deg2rad = pi / 180
 
@@ -407,8 +408,14 @@ function matpowerBus(system::PowerSystem, lines::Vector{Vector{String}})
 
         bus.layout.lossZone[k] = parse(Int64, data[11])
 
-        bus.voltage.maxMagnitude[k] = parse(Float64, data[12])
-        bus.voltage.minMagnitude[k] = parse(Float64, data[13])
+        if isassigned(data, 12) && isassigned(data, 13)
+            bus.voltage.maxMagnitude[k] = parse(Float64, data[12])
+            bus.voltage.minMagnitude[k] = parse(Float64, data[13])
+        else
+            baseInv = sqrt(3) / system.base.voltage.value[k]
+            bus.voltage.minMagnitude[k] = topu(missing, def.minMagnitude, 1.0, baseInv)
+            bus.voltage.maxMagnitude[k] = topu(missing, def.maxMagnitude, 1.0, baseInv)
+        end
 
         if bus.layout.type[k] == 3
             bus.layout.slack = k
@@ -761,11 +768,7 @@ function psseBus(system::PowerSystem, lines::Vector{Vector{String}})
     bus.layout.label = 0
     data = Array{SubString{String}}(undef, 11)
     for (k, line) in enumerate(eachsplit.(lines[1], ","))
-        minmaxMagnitude = false
-        for (i, s) in enumerate(line)
-            data[i] = SubString(s)
-            i == 11 && (minmaxMagnitude = true; break)
-        end
+        splitLine!(line, data, 11)
 
         labelInt = parse(Int64, data[1])
         bus.layout.label = max(bus.layout.label, labelInt)
@@ -787,12 +790,11 @@ function psseBus(system::PowerSystem, lines::Vector{Vector{String}})
 
         system.base.voltage.value[k] = parse(Float64, data[3]) * 1e3
 
-        if minmaxMagnitude
+        if isassigned(data, 10) && isassigned(data, 11)
             bus.voltage.maxMagnitude[k] = parse(Float64, data[10])
             bus.voltage.minMagnitude[k] = parse(Float64, data[11])
         else
             baseInv = sqrt(3) / system.base.voltage.value[k]
-
             bus.voltage.minMagnitude[k] = topu(missing, def.minMagnitude, 1.0, baseInv)
             bus.voltage.maxMagnitude[k] = topu(missing, def.maxMagnitude, 1.0, baseInv)
         end
