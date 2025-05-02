@@ -133,7 +133,7 @@ function addVoltmeter!(monitoring::Measurement, analysis::AC; kwargs...)
 
     if status != -1
         volt.layout.index = collect(1:system.bus.number)
-        volt.label = OrderedDict{template.config.monitoring, Int64}()
+        volt.label = OrderedDict{template.voltmeter.key, Int64}()
         sizehint!(volt.label, volt.number)
 
         volt.magnitude.mean = similar(analysis.voltage.magnitude)
@@ -333,12 +333,7 @@ macro voltmeter(kwargs...)
                 elseif parameter == :noise
                     setfield!(template.voltmeter, parameter, Bool(eval(kwarg.args[2])))
                 elseif parameter == :label
-                    label = string(kwarg.args[2])
-                    if contains(label, "?") || contains(label, "!")
-                        setfield!(template.voltmeter, parameter, label)
-                    else
-                        errorTemplateLabel()
-                    end
+                    macroLabel(template.voltmeter, kwarg.args[2], "[?!]")
                 end
             else
                 errorTemplateKeyword(parameter)

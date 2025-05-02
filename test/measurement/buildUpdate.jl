@@ -11,7 +11,7 @@
 
     @voltmeter(label = "?", variance = 1e-60)
     @ammeter(label = "Amm ?", varianceFrom = 1e-2, varianceTo = 1e-3, statusFrom = 0)
-    @wattmeter(varianceBus = 1e-3, varianceFrom = 1e-2, varianceTo = 1e-4, statusBus = 0)
+    @wattmeter(label = Int64, varianceBus = 1e-3, varianceFrom = 1e-2, varianceTo = 1e-4, statusBus = 0)
     @varmeter(varianceBus = 1e-2, varianceFrom = 1e-2, varianceTo = 1e-1, statusTo = 0)
     @pmu(label = "? PMU", varianceMagnitudeBus = 1e-3, varianceAngleBus = 1e-5)
     @pmu(varianceMagnitudeFrom = 1e-5, varianceAngleFrom = 1e-6, statusFrom = 0)
@@ -126,14 +126,14 @@
     end
 
     @testset "Update Wattmeters" begin
-        updateWattmeter!(monitoring; label = "4", active = 0.5, variance = 1e-2, status = 0)
+        updateWattmeter!(monitoring; label = 4, active = 0.5, variance = 1e-2, status = 0)
 
         @test monitoring.wattmeter.active.mean[4] == 0.5
         @test monitoring.wattmeter.active.variance[4] == 1e-2
         @test monitoring.wattmeter.active.status[4] == 0
 
-        updateWattmeter!(monitoring; label = "14", active = 0.1, variance = 1e-10, noise = true)
-        updateWattmeter!(monitoring;label = "14", status = 1)
+        updateWattmeter!(monitoring; label = 14, active = 0.1, variance = 1e-10, noise = true)
+        updateWattmeter!(monitoring;label = 14, status = 1)
 
         @test monitoring.wattmeter.active.mean[14] ≈ 0.1 atol = 1e-2
         @test monitoring.wattmeter.active.mean[14] != 0.1

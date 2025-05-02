@@ -116,11 +116,12 @@ Base.@kwdef mutable struct BusTemplate
     angle::ContainerTemplate = ContainerTemplate()
     minMagnitude::ContainerTemplate = ContainerTemplate(0.9, true)
     maxMagnitude::ContainerTemplate = ContainerTemplate(1.1, true)
-    label::String = "?"
     base::Float64 = 138e3
     type::Int8 = Int8(1)
     area::Int64 = 0
     lossZone::Int64 = 0
+    label::String = "?"
+    key::DataType = String
 end
 
 Base.@kwdef mutable struct BranchTemplate
@@ -135,10 +136,11 @@ Base.@kwdef mutable struct BranchTemplate
     maxFromBus::ContainerTemplate = ContainerTemplate()
     minToBus::ContainerTemplate = ContainerTemplate()
     maxToBus::ContainerTemplate = ContainerTemplate()
-    label::String = "?"
     turnsRatio::Float64 = 1.0
     status::Int8 = Int8(1)
     type::Int8 = Int8(3)
+    label::String = "?"
+    key::DataType = String
 end
 
 Base.@kwdef mutable struct GeneratorTemplate
@@ -159,16 +161,18 @@ Base.@kwdef mutable struct GeneratorTemplate
     reactiveRamp::ContainerTemplate = ContainerTemplate()
     reserve10min::ContainerTemplate = ContainerTemplate()
     reserve30min::ContainerTemplate = ContainerTemplate()
-    label::String = "?"
     status::Int8 = Int8(1)
     area::Int64 = 0
+    label::String = "?"
+    key::DataType = String
 end
 
 Base.@kwdef mutable struct VoltmeterTemplate
     variance::ContainerTemplate = ContainerTemplate(1e-4, true)
     status::Int8 = Int8(1)
-    label::String = "?"
     noise::Bool = false
+    label::String = "?"
+    key::DataType = String
 end
 
 Base.@kwdef mutable struct AmmeterTemplate
@@ -176,9 +180,10 @@ Base.@kwdef mutable struct AmmeterTemplate
     varianceTo::ContainerTemplate = ContainerTemplate(1e-4, true)
     statusFrom::Int8 = Int8(1)
     statusTo::Int8 = Int8(1)
-    label::String = "?"
     square::Bool = false
     noise::Bool = false
+    label::String = "?"
+    key::DataType = String
 end
 
 Base.@kwdef mutable struct WattmeterTemplate
@@ -188,8 +193,9 @@ Base.@kwdef mutable struct WattmeterTemplate
     statusBus::Int8 = Int8(1)
     statusFrom::Int8 = Int8(1)
     statusTo::Int8 = Int8(1)
-    label::String = "?"
     noise::Bool = false
+    label::String = "?"
+    key::DataType = String
 end
 
 Base.@kwdef mutable struct VarmeterTemplate
@@ -199,8 +205,9 @@ Base.@kwdef mutable struct VarmeterTemplate
     statusBus::Int8 = Int8(1)
     statusFrom::Int8 = Int8(1)
     statusTo::Int8 = Int8(1)
-    label::String = "?"
     noise::Bool = false
+    label::String = "?"
+    key::DataType = String
 end
 
 Base.@kwdef mutable struct PmuTemplate
@@ -213,17 +220,15 @@ Base.@kwdef mutable struct PmuTemplate
     statusBus::Int8 = Int8(1)
     statusFrom::Int8 = Int8(1)
     statusTo::Int8 = Int8(1)
-    label::String = "?"
     correlated::Bool = false
     polar::Bool = false
     square::Bool = false
     noise::Bool = false
+    label::String = "?"
+    key::DataType = String
 end
 
 Base.@kwdef mutable struct ConfigTemplate
-    label::DataType = String
-    system::DataType = String
-    monitoring::DataType = String
     verbose::Int64 = 0
 end
 

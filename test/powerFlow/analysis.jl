@@ -250,6 +250,7 @@ end
 
 @testset "Print Data in Per-Units" begin
     @config(label = Integer)
+    @bus(label = String)
     system14 = powerSystem(path * "case14test.m")
 
     ########## Print AC Data ##########
@@ -267,10 +268,10 @@ end
         width = Dict("Voltage Angle" => 10, "Power Injection Active" => 9)
         delimiter = ""
 
-        printBusData(analysis; label = 1, width, delimiter, header = true)
-        printBusData(analysis; label = 2, width, delimiter)
-        printBusData(analysis; label = 4, width, delimiter, footer = true)
-        printBusData(analysis; label = 1, width, delimiter, style = false)
+        printBusData(analysis; label = "Bus 1 HV", width, delimiter, header = true)
+        printBusData(analysis; label = "Bus 2 HV", width, delimiter)
+        printBusData(analysis; label = "Bus 7 ZV", width, delimiter, footer = true)
+        printBusData(analysis; label = "Bus 1 HV", width, delimiter, style = false)
 
         width = Dict("In-Use" => 10)
         show = Dict("Minimum" => false)
@@ -324,7 +325,7 @@ end
 
     @suppress @testset "Print DC Bus Data" begin
         printBusData(analysis, repeat = 10)
-        printBusData(analysis, repeat = 10; label = 1)
+        printBusData(analysis, repeat = 10; label = "Bus 1 HV")
         printBusSummary(analysis)
     end
 
@@ -343,7 +344,10 @@ end
 
 @testset "Print Data in SI Units" begin
     @default(template)
-    system14 = powerSystem(path * "case14test2.m")
+    @bus(label = Integer)
+    @branch(label = "Branch ?")
+    @generator(label = Integer)
+    system14 = powerSystem(path * "case14test.m")
 
     @power(GW, MVAr)
     @voltage(kV, deg)
@@ -361,7 +365,7 @@ end
 
     @suppress @testset "Print AC Branch Data" begin
         printBranchData(analysis)
-        printBranchData(analysis; label = 1, header = true)
+        printBranchData(analysis; label = "Branch 1", header = true)
         printBranchSummary(analysis)
     end
 
@@ -383,7 +387,7 @@ end
 
     @suppress @testset "Print DC Branch Data" begin
         printBranchData(analysis)
-        printBranchData(analysis; label = 1)
+        printBranchData(analysis; label = "Branch 10")
         printBranchSummary(analysis)
     end
 

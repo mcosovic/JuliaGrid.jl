@@ -81,7 +81,7 @@ system = powerSystem()
 function powerSystem()
     PowerSystem(
         Bus(
-            OrderedDict{template.config.system, Int64}(),
+            OrderedDict{template.bus.key, Int64}(),
             BusDemand(Float64[], Float64[]),
             BusSupply(Float64[], Float64[], Dict{Int64, Vector{Int64}}()),
             BusShunt(Float64[], Float64[]),
@@ -90,7 +90,7 @@ function powerSystem()
             0
         ),
         Branch(
-            OrderedDict{template.config.system, Int64}(),
+            OrderedDict{template.branch.key, Int64}(),
             BranchParameter(
                 Float64[], Float64[], Float64[], Float64[], Float64[], Float64[]
             ),
@@ -100,7 +100,7 @@ function powerSystem()
             0
         ),
         Generator(
-            OrderedDict{template.config.system, Int64}(),
+            OrderedDict{template.generator.key, Int64}(),
             GeneratorOutput(Float64[], Float64[]),
             GeneratorCapability(
                 Float64[], Float64[], Float64[], Float64[], Float64[],
@@ -293,7 +293,7 @@ function matpowerRead(system::PowerSystem, fullpath::String)
     genFlag = false
     costFlag = false
     nameFlag = false
-    name = typeofLabel(template)
+    name = typeofLabel(template.bus.key)
 
     system.base.power.value = 0.0
     @inbounds for line in eachline(fullpath)
@@ -346,10 +346,10 @@ function matpowerBus(system::PowerSystem, lines::Vector{Vector{String}})
     deg2rad = pi / 180
 
     bus.number = length(lines[1])
-    bus.label = OrderedDict{template.config.system, Int64}()
+    bus.label = OrderedDict{template.bus.key, Int64}()
     sizehint!(bus.label, bus.number)
 
-    labeltype = typeofLabel(lines[5], template.config, template.bus.label, bus.number)
+    labeltype = typeofLabel(lines[5], template.bus.key, template.bus.label, bus.number)
     master = OrderedDict{Int64, Int64}()
     sizehint!(master, bus.number)
 
@@ -441,10 +441,10 @@ function matpowerBranch(system::PowerSystem, lines::Vector{Vector{String}}, mast
     deg2rad = pi / 180
 
     branch.number = length(lines[2])
-    branch.label = OrderedDict{template.config.system, Int64}()
+    branch.label = OrderedDict{template.branch.key, Int64}()
     sizehint!(branch.label, branch.number)
 
-    labeltype = typeofLabel(template.config, template.branch.label)
+    labeltype = typeofLabel(template.branch.key, template.branch.label)
     buslabel = labelbus(system.bus.label, master)
 
     branch.parameter.conductance = fill(0.0, branch.number)
@@ -512,10 +512,10 @@ function matpowerGenerator(system::PowerSystem, lines::Vector{Vector{String}}, m
     basePowerInv = 1 / system.base.power.value
 
     gen.number = length(lines[3])
-    gen.label = OrderedDict{template.config.system, Int64}()
+    gen.label = OrderedDict{template.generator.key, Int64}()
     sizehint!(gen.label, gen.number)
 
-    labeltype = typeofLabel(template.config, template.generator.label)
+    labeltype = typeofLabel(template.generator.key, template.generator.label)
     buslabel = labelbus(system.bus.label, master)
 
     gen.output.active = fill(0.0, gen.number)
@@ -743,10 +743,10 @@ function psseBus(system::PowerSystem, lines::Vector{Vector{String}})
     deg2rad = pi / 180
 
     bus.number = length(lines[1])
-    bus.label = OrderedDict{template.config.system, Int64}()
+    bus.label = OrderedDict{template.bus.key, Int64}()
     sizehint!(bus.label, bus.number)
 
-    labeltype = typeofLabel(template)
+    labeltype = typeofLabel(template.bus.key)
     master = OrderedDict{Int64, Int64}()
     sizehint!(master, bus.number)
 
@@ -876,10 +876,10 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
     deg2rad = pi / 180
 
     branch.number = length(lines[5])
-    branch.label = OrderedDict{template.config.system, Int64}()
+    branch.label = OrderedDict{template.branch.key, Int64}()
     sizehint!(branch.label, branch.number)
 
-    labeltype = typeofLabel(template.config, template.branch.label)
+    labeltype = typeofLabel(template.branch.key, template.branch.label)
     buslabel = labelbus(system.bus.label, master)
 
     branch.parameter.conductance = fill(0.0, branch.number)
@@ -1195,10 +1195,10 @@ function psseGenerator(system::PowerSystem, lines::Vector{Vector{String}}, maste
     basePowerInv = 1 / system.base.power.value
 
     gen.number = length(lines[7])
-    gen.label = OrderedDict{template.config.system, Int64}()
+    gen.label = OrderedDict{template.generator.key, Int64}()
     sizehint!(gen.label, gen.number)
 
-    labeltype = typeofLabel(template.config, template.generator.label)
+    labeltype = typeofLabel(template.generator.key, template.generator.label)
     buslabel = labelbus(system.bus.label, master)
 
     gen.output.active = fill(0.0, gen.number)
@@ -1378,27 +1378,16 @@ end
 
 ##### Type of Labels #####
 function setTypeLabel(hdf5::File, template::Template)
-    labelType = eltype(hdf5["bus/label"])
-    if labelType === Cstring
-        template.config.system = String
-    else
-        template.config.system = Int64
-    end
+    template.bus.key = eltype(hdf5["bus/label"]) === Cstring ? String : Int64
+    template.branch.key = eltype(hdf5["branch/label"]) === Cstring ? String : Int64
+    template.generator.key = eltype(hdf5["generator/label"]) === Cstring ? String : Int64
 end
 
-function typeofLabel(template::Template)
-    if template.config.system == String
-        return true
-    end
-
-    false
-end
-
-function typeofLabel(name::Vector{String}, labelconfig::ConfigTemplate, labeldef::String, busNumber::Int64)
-    if labelconfig.system == String
+function typeofLabel(name::Vector{String}, key::DataType, label::String, busNumber::Int64)
+    if key == String
         if !isempty(name) || lastindex(name) == busNumber
             return 3
-        elseif labeldef != "?"
+        elseif label != "?"
             return 2
         end
     end
@@ -1406,12 +1395,20 @@ function typeofLabel(name::Vector{String}, labelconfig::ConfigTemplate, labeldef
     1
 end
 
-function typeofLabel(labelconfig::ConfigTemplate, labeldef::String)
-    if labelconfig.system == String && labeldef != "?"
+function typeofLabel(key::DataType, label::String)
+    if key == String && label != "?"
         return false
     end
 
     return true
+end
+
+function typeofLabel(key::DataType)
+    if key == String
+        return true
+    end
+
+    false
 end
 
 ##### Choose Label Container #####

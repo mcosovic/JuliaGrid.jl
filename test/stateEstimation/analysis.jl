@@ -1,10 +1,12 @@
-system14 = powerSystem(path * "case14test2.m")
-system30 = powerSystem(path * "case30test.m")
+
 @testset "AC State Estimation" begin
     @default(template)
     @default(unit)
+    @bus(label = Integer)
 
     ########## IEEE 14-bus Test Case ##########
+    system14 = powerSystem(path * "case14test.m")
+
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.25)
     updateBus!(system14; label = 1, magnitude = 1.0)
@@ -194,6 +196,8 @@ system30 = powerSystem(path * "case30test.m")
     end
 
     ########## IEEE 30-bus Test Case ##########
+    system30 = powerSystem(path * "case30test.m")
+
     acModel!(system30)
     pf = newtonRaphson(system30)
     powerFlow!(pf; power = true, current = true)
@@ -296,15 +300,15 @@ system30 = powerSystem(path * "case30test.m")
     end
 end
 
-system14 = powerSystem(path * "case14test2.m")
-system30 = powerSystem(path * "case30test.m")
 @testset "PMU State Estimation" begin
     @default(template)
     @default(unit)
 
     ########## IEEE 14-bus Test Case ##########
-    updateBus!(system14; label = 1, type = 2)
-    updateBus!(system14; label = 3, type = 3, angle = -0.17)
+    system14 = powerSystem(path * "case14test.m")
+
+    updateBus!(system14; label = "Bus 1 HV", type = 2)
+    updateBus!(system14; label = "Bus 3 HV", type = 3, angle = -0.17)
     updateBranch!(system14; label = 3, conductance = 0.01)
     updateBranch!(system14; label = 6, conductance = 0.05)
 
@@ -343,6 +347,8 @@ system30 = powerSystem(path * "case30test.m")
     end
 
     ########## IEEE 30-bus Test Case ##########
+    system30 = powerSystem(path * "case30test.m")
+
     acModel!(system30)
     pf = newtonRaphson(system30)
     powerFlow!(pf; power = true, current = true)
@@ -380,13 +386,14 @@ system30 = powerSystem(path * "case30test.m")
     end
 end
 
-system14 = powerSystem(path * "case14test2.m")
-system30 = powerSystem(path * "case30test.m")
 @testset "DC State Estimation" begin
     @default(template)
     @default(unit)
+    @bus(label = Integer)
 
     ########## IEEE 14-bus Test Case ##########
+    system14 = powerSystem(path * "case14test.m")
+
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.17)
 
@@ -445,6 +452,8 @@ system30 = powerSystem(path * "case30test.m")
     end
 
     ########## IEEE 30-bus Test Case ##########
+    system30 = powerSystem(path * "case30test.m")
+
     dcModel!(system30)
     pf = dcPowerFlow(system30)
     powerFlow!(pf; power = true)
@@ -565,10 +574,11 @@ end
 end
 
 @testset "Print Data in SI Units" begin
-    system, monitoring = ems(path * "case14test2.m", "monitoring.h5")
+    @config(label = String)
+    system, monitoring = ems(path * "case14test.m", "monitoring.h5")
 
-    addPmu!(monitoring; bus = 1, magnitude = 1.0, angle = 0.0)
-    addPmu!(monitoring; bus = 3, magnitude = 1.1, angle = -0.3)
+    addPmu!(monitoring; bus = "Bus 1 HV", magnitude = 1.0, angle = 0.0)
+    addPmu!(monitoring; bus = "Bus 3 HV", magnitude = 1.1, angle = -0.3)
 
     @power(GW, MVAr, MVA)
     @voltage(kV, deg, V)

@@ -668,9 +668,9 @@ function pmuPlacement(
     ac = system.model.ac
 
     placementPmu = PmuPlacement(
-        OrderedDict{template.config.system, Int64}(),
-        OrderedDict{template.config.system, Int64}(),
-        OrderedDict{template.config.system, Int64}()
+        OrderedDict{template.bus.key, Int64}(),
+        OrderedDict{template.branch.key, Int64}(),
+        OrderedDict{template.branch.key, Int64}()
     )
 
     model!(system, ac)

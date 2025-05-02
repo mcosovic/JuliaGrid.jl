@@ -426,3 +426,7 @@ end
 ##### Types #####
 const P = Union{Bus, Branch, Generator}
 const M = Union{Voltmeter, Ammeter, Wattmeter, Varmeter, PMU}
+const Templates = Union{
+    BusTemplate, BranchTemplate, GeneratorTemplate,
+    VoltmeterTemplate, AmmeterTemplate, WattmeterTemplate, VarmeterTemplate, PmuTemplate
+}

@@ -199,7 +199,7 @@ function addAmmeter!(
             ammNumber = system.branch.layout.inservice
         end
 
-        amp.label = OrderedDict{template.config.monitoring, Int64}()
+        amp.label = OrderedDict{template.ammeter.key, Int64}()
         sizehint!(amp.label, ammNumber)
 
         amp.layout.index = fill(0, ammNumber)
@@ -467,12 +467,7 @@ macro ammeter(kwargs...)
                 elseif parameter in [:noise, :square]
                     setfield!(template.ammeter, parameter, Bool(eval(kwarg.args[2])))
                 elseif parameter == :label
-                    label = string(kwarg.args[2])
-                    if contains(label, "?") || contains(label, "!")
-                        setfield!(template.ammeter, parameter, label)
-                    else
-                        errorTemplateLabel()
-                    end
+                    macroLabel(template.ammeter, kwarg.args[2], "[?!]")
                 end
             else
                 errorTemplateKeyword(parameter)

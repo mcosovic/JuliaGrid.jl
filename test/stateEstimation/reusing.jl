@@ -1,9 +1,12 @@
-system = powerSystem(path * "case14test2.m")
+
 @testset "Reusing AC State Estimation" begin
     @default(template)
     @default(unit)
+    @config(label = Integer)
 
     ############ IEEE 14-bus Test Case ############
+    system = powerSystem(path * "case14test.m")
+
     acModel!(system)
     pf = newtonRaphson(system)
     powerFlow!(pf)
@@ -478,12 +481,14 @@ system = powerSystem(path * "case14test2.m")
     end
 end
 
-system = powerSystem(path * "case14test2.m")
 @testset "Reusing Meters PMU State Estimation" begin
     @default(template)
     @default(unit)
+    @config(label = Integer)
 
     ############ IEEE 14-bus Test Case ############
+    system = powerSystem(path * "case14test.m")
+
     acModel!(system)
     pf = newtonRaphson(system)
     powerFlow!(pf)
@@ -606,12 +611,14 @@ system = powerSystem(path * "case14test2.m")
     end
 end
 
-system = powerSystem(path * "case14test2.m")
 @testset "Reusing Meters DC State Estimation" begin
     @default(template)
     @default(unit)
+    @config(label = Integer)
 
     ############ IEEE 14-bus Test Case ############
+    system = powerSystem(path * "case14test.m")
+
     dcModel!(system)
     pf = dcPowerFlow(system)
     powerFlow!(pf)

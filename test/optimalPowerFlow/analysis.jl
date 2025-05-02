@@ -186,6 +186,7 @@ end
 
 @testset "Print Data in Per-Units" begin
     @config(label = Integer)
+    @bus(label = String)
 
     ########## Print AC Data ##########
     system14 = powerSystem(path * "case14test.m")
@@ -195,8 +196,8 @@ end
     @suppress @testset "Bus Constraint AC Data" begin
         printBusConstraint(analysis; delimiter = "")
         printBusConstraint(analysis; style = false)
-        printBusConstraint(analysis; label = 1, header = true)
-        printBusConstraint(analysis; label = 2, footer = true)
+        printBusConstraint(analysis; label = "Bus 1 HV", header = true)
+        printBusConstraint(analysis; label = "Bus 2 HV", footer = true)
     end
 
     @suppress @testset "Branch Constraint AC Data" begin
@@ -220,8 +221,8 @@ end
     @suppress @testset "Bus Constraint DC Data" begin
         printBusConstraint(analysis; delimiter = "")
         printBusConstraint(analysis; style = false)
-        printBusConstraint(analysis; label = 1, header = true)
-        printBusConstraint(analysis; label = 2, footer = true)
+        printBusConstraint(analysis; label = "Bus 3 HV", header = true)
+        printBusConstraint(analysis; label = "Bus 2 HV", footer = true)
     end
 
     @suppress @testset "Branch Constraint DC Data" begin
@@ -249,9 +250,12 @@ end
     @power(kW, MVAr, MVA)
     @voltage(kV, deg, V)
     @current(MA, deg)
+    @bus(label = Int64)
+    @branch(label = "B?")
+    @generator(label = "G?")
 
     ########## Print AC Data ##########
-    system14 = powerSystem(path * "case14test2.m")
+    system14 = powerSystem(path * "case14test.m")
     analysis = acOptimalPowerFlow(system14, Ipopt.Optimizer)
     powerFlow!(analysis)
 
@@ -264,15 +268,15 @@ end
 
     @suppress @testset "Branch Constraint AC Data" begin
         printBranchConstraint(analysis; delimiter = "")
-        printBranchConstraint(analysis; label = 5, header = true)
-        printBranchConstraint(analysis; label = 6, footer = true)
+        printBranchConstraint(analysis; label = "B5", header = true)
+        printBranchConstraint(analysis; label = "B6", footer = true)
         printBranchConstraint(analysis; style = false)
     end
 
     @suppress @testset "Generator Constraint AC Data" begin
         printGeneratorConstraint(analysis; delimiter = "")
-        printGeneratorConstraint(analysis; label = 5, header = true)
-        printGeneratorConstraint(analysis; label = 6, footer = true)
+        printGeneratorConstraint(analysis; label = "G5", header = true)
+        printGeneratorConstraint(analysis; label = "G6", footer = true)
         printGeneratorConstraint(analysis; style = false)
     end
 
@@ -289,15 +293,15 @@ end
 
     @suppress @testset "Branch Constraint DC Data" begin
         printBranchConstraint(analysis; delimiter = "")
-        printBranchConstraint(analysis; label = 5, header = true)
-        printBranchConstraint(analysis; label = 6, footer = true)
+        printBranchConstraint(analysis; label = "B5", header = true)
+        printBranchConstraint(analysis; label = "B6", footer = true)
         printBranchConstraint(analysis; style = false)
     end
 
     @suppress @testset "Generator Constraint DC Data" begin
         printGeneratorConstraint(analysis; delimiter = "")
-        printGeneratorConstraint(analysis; label = 5, header = true)
-        printGeneratorConstraint(analysis; label = 6, footer = true)
+        printGeneratorConstraint(analysis; label = "G5", header = true)
+        printGeneratorConstraint(analysis; label = "G6", footer = true)
         printGeneratorConstraint(analysis; style = false)
     end
 end

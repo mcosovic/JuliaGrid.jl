@@ -17,7 +17,7 @@ system30 = powerSystem(path * "case30test.m")
     powerFlow!(analysis)
     analysis.method.iteration += iteration
 
-    adjustAngle!(analysis; slack = 1)
+    adjustAngle!(analysis; slack = "Bus 1 HV")
 
     @testset "IEEE 14: Matpower" begin
         testVoltage(matpower14, analysis)

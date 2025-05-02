@@ -421,7 +421,7 @@ function addPowermeter!(
             deviceNumber += system.branch.layout.inservice
         end
 
-        monitoring.label = OrderedDict{template.config.monitoring, Int64}()
+        monitoring.label = OrderedDict{def.key, Int64}()
         sizehint!(monitoring.label, deviceNumber)
         monitoring.number = 0
 
@@ -942,12 +942,7 @@ macro wattmeter(kwargs...)
                 elseif parameter == :noise
                     setfield!(template.wattmeter, parameter, Bool(eval(kwarg.args[2])))
                 elseif parameter == :label
-                    label = string(kwarg.args[2])
-                    if contains(label, "?") || contains(label, "!")
-                        setfield!(template.wattmeter, parameter, label)
-                    else
-                        errorTemplateLabel()
-                    end
+                    macroLabel(template.wattmeter, kwarg.args[2], "[?!]")
                 end
             else
                 errorTemplateKeyword(parameter)
@@ -1022,12 +1017,8 @@ macro varmeter(kwargs...)
                 elseif parameter == :noise
                     setfield!(template.varmeter, parameter, Bool(eval(kwarg.args[2])))
                 elseif parameter == :label
-                    label = string(kwarg.args[2])
-                    if contains(label, "?") || contains(label, "!")
-                        setfield!(template.varmeter, parameter, label)
-                    else
-                        errorTemplateLabel()
-                    end
+                    macroLabel(template.varmeter, kwarg.args[2], "[?!]")
+
                 end
             else
                 errorTemplateKeyword(parameter)

@@ -3,8 +3,8 @@
     matpower = powerSystem(path * "case14test.m")
     @base(matpower, MVA, kV)
 
-    savePowerSystem(matpower; path = path * "case14str.h5", reference = "IEEE 14", note = "Test")
-    hdf5 = powerSystem(path * "case14str.h5")
+    savePowerSystem(matpower; path = path * "save_case14str.h5", reference = "IEEE 14", note = "Test")
+    hdf5 = powerSystem(path * "save_case14str.h5")
     @base(hdf5, MVA, kV)
 
     @testset "Power System Data" begin
@@ -31,8 +31,8 @@
     ########## Load and Save Without Bus Names ##########
     matpower = powerSystem(path * "case30test.m")
 
-    savePowerSystem(matpower; path = path * "case30str.h5")
-    hdf5 = powerSystem(path * "case30str.h5")
+    savePowerSystem(matpower; path = path * "save_case30str.h5")
+    hdf5 = powerSystem(path * "save_case30str.h5")
 
     @testset "Power System Data" begin
         teststruct(matpower.bus, hdf5.bus)
@@ -52,8 +52,8 @@
     @generator(label = "Gen ?")
     matpower = powerSystem(path * "case30test.m")
 
-    savePowerSystem(matpower; path = path * "case30tmpstr.h5")
-    hdf5 = powerSystem(path * "case30tmpstr.h5")
+    savePowerSystem(matpower; path = path * "save_case30tmpstr.h5")
+    hdf5 = powerSystem(path * "save_case30tmpstr.h5")
 
     @testset "Power System Data" begin
         teststruct(matpower.bus, hdf5.bus)
@@ -80,8 +80,8 @@ end
     matpower = powerSystem(path * "case14test.m")
     @base(matpower, MVA, kV)
 
-    savePowerSystem(matpower; path = path * "case14integer.h5")
-    hdf5 = powerSystem(path * "case14integer.h5")
+    savePowerSystem(matpower; path = path * "save_case14int.h5")
+    hdf5 = powerSystem(path * "save_case14int.h5")
     @base(hdf5, MVA, kV)
 
     @testset "Power System Data" begin
@@ -94,6 +94,41 @@ end
     @testset "Labels" begin
         @test haskey(matpower.bus.label, 16) == haskey(hdf5.bus.label, 16)
         @test haskey(matpower.bus.label, 13) == haskey(hdf5.bus.label, 13)
+        @test haskey(matpower.branch.label, 10) == haskey(hdf5.branch.label, 10)
+        @test haskey(matpower.branch.label, 20) == haskey(hdf5.branch.label, 20)
+        @test haskey(matpower.generator.label, 1) == haskey(hdf5.generator.label, 1)
+        @test haskey(matpower.generator.label, 5) == haskey(hdf5.generator.label, 5)
+    end
+end
+
+@testset "Load and Save Matpower Case with Mixed Labels" begin
+    @default(template)
+    @bus(label = Integer)
+    @branch(label = "Branch ?")
+    @generator(label = Integer)
+
+    ########## Load and Save ##########
+    matpower = powerSystem(path * "case14test.m")
+    @base(matpower, MVA, kV)
+
+    savePowerSystem(matpower; path = path * "save_case14mixed.h5")
+    hdf5 = powerSystem(path * "save_case14mixed.h5")
+    @base(hdf5, MVA, kV)
+
+    @testset "Power System Data" begin
+        teststruct(matpower.bus, hdf5.bus)
+        teststruct(matpower.branch, hdf5.branch)
+        teststruct(matpower.generator, hdf5.generator)
+        teststruct(matpower.base, hdf5.base)
+    end
+
+    @testset "Labels" begin
+        @test haskey(matpower.bus.label, 16) == haskey(hdf5.bus.label, 16)
+        @test haskey(matpower.bus.label, 13) == haskey(hdf5.bus.label, 13)
+        @test haskey(matpower.branch.label, "Branch 10") == haskey(hdf5.branch.label, "Branch 10")
+        @test haskey(matpower.branch.label, "Branch 20") == haskey(hdf5.branch.label, "Branch 20")
+        @test haskey(matpower.generator.label, 1) == haskey(hdf5.generator.label, 1)
+        @test haskey(matpower.generator.label, 5) == haskey(hdf5.generator.label, 5)
     end
 end
 
@@ -108,11 +143,19 @@ end
     psse = powerSystem(path * "psse.raw")
     matpower = powerSystem(path * "psse.m")
 
+    savePowerSystem(psse; path = path * "save_pssestr.h5")
+    hdf5 = powerSystem(path * "save_pssestr.h5")
+
     @testset "Power System Data" begin
         teststruct(matpower.bus, psse.bus)
         teststruct(matpower.branch, psse.branch; atol = 1e-6)
         teststruct(matpower.generator, psse.generator)
         teststruct(matpower.base, psse.base)
+
+        teststruct(hdf5.bus, psse.bus)
+        teststruct(hdf5.branch, psse.branch; atol = 1e-6)
+        teststruct(hdf5.generator, psse.generator)
+        teststruct(hdf5.base, psse.base)
     end
 
     @testset "Labels" begin
@@ -134,17 +177,61 @@ end
     psse = powerSystem(path * "psse.raw")
     matpower = powerSystem(path * "psse.m")
 
+    savePowerSystem(psse; path = path * "save_psseint.h5")
+    hdf5 = powerSystem(path * "save_psseint.h5")
+
     @testset "Power System Data" begin
         teststruct(matpower.bus, psse.bus)
         teststruct(matpower.branch, psse.branch; atol = 1e-6)
         teststruct(matpower.generator, psse.generator)
         teststruct(matpower.base, psse.base)
+
+        teststruct(hdf5.bus, psse.bus)
+        teststruct(hdf5.branch, psse.branch; atol = 1e-6)
+        teststruct(hdf5.generator, psse.generator)
+        teststruct(hdf5.base, psse.base)
     end
 
     @testset "Labels" begin
         @test haskey(psse.bus.label, 3) == haskey(matpower.bus.label, 3)
         @test haskey(psse.bus.label, 2) == haskey(matpower.bus.label, 2)
         @test haskey(psse.bus.label, 10) == haskey(matpower.bus.label, 10)
+        @test haskey(psse.branch.label, 10) == haskey(matpower.branch.label, 10)
+        @test haskey(psse.branch.label, 20) == haskey(matpower.branch.label, 20)
+        @test haskey(psse.generator.label, 1) == haskey(matpower.generator.label, 1)
+        @test haskey(psse.generator.label, 5) == haskey(matpower.generator.label, 5)
+    end
+end
+
+@testset "Load and Save PSSE Case with Mixed Labels" begin
+    @default(template)
+    @bus(label = "Bus ?")
+    @branch(label = Integer)
+    @generator(label = Integer)
+
+    ########## Load and Save  ##########
+    psse = powerSystem(path * "psse.raw")
+    matpower = powerSystem(path * "psse.m")
+
+    savePowerSystem(psse; path = path * "save_pssemixed.h5")
+    hdf5 = powerSystem(path * "save_pssemixed.h5")
+
+    @testset "Power System Data" begin
+        teststruct(matpower.bus, psse.bus)
+        teststruct(matpower.branch, psse.branch; atol = 1e-6)
+        teststruct(matpower.generator, psse.generator)
+        teststruct(matpower.base, psse.base)
+
+        teststruct(hdf5.bus, psse.bus)
+        teststruct(hdf5.branch, psse.branch; atol = 1e-6)
+        teststruct(hdf5.generator, psse.generator)
+        teststruct(hdf5.base, psse.base)
+    end
+
+    @testset "Labels" begin
+        @test haskey(psse.bus.label, "Bus 3 ZV") == haskey(matpower.bus.label, "Bus 3 ZV")
+        @test haskey(psse.bus.label, "Bus 2") == haskey(matpower.bus.label, "Bus 2")
+        @test haskey(psse.bus.label, "Bus 10") == haskey(matpower.bus.label, "Bus 10")
         @test haskey(psse.branch.label, 10) == haskey(matpower.branch.label, 10)
         @test haskey(psse.branch.label, 20) == haskey(matpower.branch.label, 20)
         @test haskey(psse.generator.label, 1) == haskey(matpower.generator.label, 1)

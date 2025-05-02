@@ -1,13 +1,12 @@
-system14 = powerSystem(path * "case14test2.m")
-system30 = powerSystem(path * "case30test.m")
-
 @testset "AC State Estimation: Bad Data" begin
     @default(template)
     @default(unit)
 
     ########## IEEE 14-bus Test Case ##########
-    updateBus!(system14; label = 1, type = 2)
-    updateBus!(system14; label = 3, type = 3, angle = -0.17)
+    system14 = powerSystem(path * "case14test.m")
+
+    updateBus!(system14; label = "Bus 1 HV", type = 2)
+    updateBus!(system14; label = "Bus 3 HV", type = 3, angle = -0.17)
 
     acModel!(system14)
     pf = newtonRaphson(system14)
@@ -16,7 +15,7 @@ system30 = powerSystem(path * "case30test.m")
     monitoring = measurement(system14)
     @varmeter(label = "Varmeter ?", varianceBus = 1e-2, varianceFrom = 1e-2, varianceTo = 1e-2)
     @voltmeter(variance = 1e-2)
-    @wattmeter(varianceBus = 1e-2, varianceFrom = 1e-2, varianceTo = 1e-2)
+    @wattmeter(label = Integer, varianceBus = 1e-2, varianceFrom = 1e-2, varianceTo = 1e-2)
 
     addVoltmeter!(monitoring, pf)
     addWattmeter!(monitoring, pf)
@@ -117,8 +116,11 @@ end
 @testset "PMU State Estimation: Bad Data" begin
     @default(template)
     @default(unit)
+    @config(label = Int64)
 
     ########## IEEE 14-bus Test Case ##########
+    system14 = powerSystem(path * "case14test.m")
+
     updateBus!(system14; label = 1, type = 2)
     updateBus!(system14; label = 3, type = 3, angle = -0.17)
 
@@ -221,8 +223,10 @@ end
     @default(unit)
 
     ########## IEEE 14-bus Test Case ##########
-    updateBus!(system14; label = 1, type = 2)
-    updateBus!(system14; label = 3, type = 3, angle = -0.17)
+    system14 = powerSystem(path * "case14test.m")
+
+    updateBus!(system14; label = "Bus 1 HV", type = 2)
+    updateBus!(system14; label = "Bus 3 HV", type = 3, angle = -0.17)
 
     dcModel!(system14)
     pf = dcPowerFlow(system14)

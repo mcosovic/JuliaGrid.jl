@@ -1,17 +1,17 @@
-system14 = powerSystem(path * "case14test2.m")
-system30 = powerSystem(path * "case30test.m")
 @testset "Optimal PMU Placement" begin
     @default(template)
     @default(unit)
+    @config(label = Integer)
 
     ########## IEEE 14-bus Test Case ##########
+    system14 = powerSystem(path * "case14test.m")
+
     @testset "IEEE 14: Phasor Measurement Placement" begin
         placement = pmuPlacement(system14, GLPK.Optimizer)
 
-        @test collect(keys(placement.bus)) == ["1"; "4"; "16"; "7"; "9"]
-        @test collect(keys(placement.from)) ==
-            ["1"; "2"; "7"; "8"; "9"; "11"; "12"; "13"; "14"; "15"; "16"; "17"]
-        @test collect(keys(placement.to)) == ["4"; "6"; "10"; "8"; "9"; "15"]
+        @test collect(keys(placement.bus)) == [1; 4; 16; 7; 9]
+        @test collect(keys(placement.from)) == [1; 2; 7; 8; 9; 11; 12; 13; 14; 15; 16; 17]
+        @test collect(keys(placement.to)) == [4; 6; 10; 8; 9; 15]
     end
 
     updateBus!(system14; label = 1, type = 2)
@@ -59,6 +59,8 @@ system30 = powerSystem(path * "case30test.m")
     end
 
     ########## IEEE 30-bus Test Case ##########
+    system30 = powerSystem(path * "case30test.m")
+
     acModel!(system30)
     pf = newtonRaphson(system30)
     powerFlow!( pf; current = true)

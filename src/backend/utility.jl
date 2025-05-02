@@ -40,6 +40,23 @@ end
     return fullpath, extension
 end
 
+##### Check File Format #####
+function macroLabel(container::Templates, label::Union{Symbol, String}, sym::String)
+    if label == :Int64 || label == :Integer
+        setfield!(container, :key, Int64)
+    elseif label == :String
+        setfield!(container, :key, String)
+    else
+        label = string(label)
+        if contains(label, Regex(sym))
+            setfield!(container, :label, label)
+            setfield!(container, :key, String)
+        else
+            errorTemplateSymbol(sym)
+        end
+    end
+end
+
 ##### Set String Label #####
 function setLabel(
     component::Union{P, M},
@@ -125,7 +142,7 @@ function typeLabel(
     default::String,
     idx::Int64,
     prefix::String,
-    key::Union{String, Int64}
+    key::IntStr
 )
     label = replace(default, r"\?" => string(idx), r"\!" => string(prefix, key))
 
@@ -141,7 +158,7 @@ function typeLabel(
     return label
 end
 
-function typeLabel(::OrderedDict{Int64, Int64}, ::String, idx::Int64, ::String, ::Int64)
+function typeLabel(::OrderedDict{Int64, Int64}, ::String, idx::Int64, ::String, ::IntStr)
     idx
 end
 
@@ -528,12 +545,8 @@ function errorPower(power::Vector{Float64})
     end
 end
 
-function errorTemplateSymbol()
-    throw(ErrorException("The label template lacks the '?' symbol to indicate integer placement."))
-end
-
-function errorTemplateLabel()
-    throw(ErrorException("The label template is missing the required '?' or '!' symbols."))
+function errorTemplateSymbol(sym::String)
+    throw(ErrorException("The label template lacks the " * sym * " symbol required to create a template."))
 end
 
 function errorTemplateKeyword(parameter::Symbol)

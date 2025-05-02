@@ -301,7 +301,7 @@ function addPmu!(
             pmuNumber += system.branch.layout.inservice
         end
 
-        pmu.label = OrderedDict{template.config.monitoring, Int64}()
+        pmu.label = OrderedDict{template.pmu.key, Int64}()
         sizehint!(pmu.label, pmuNumber)
 
         pmu.layout.index = fill(0, pmuNumber)
@@ -971,12 +971,7 @@ macro pmu(kwargs...)
                     elseif parameter in [:noise, :correlated, :polar, :square]
                         setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))
                     elseif parameter == :label
-                        label = string(kwarg.args[2])
-                        if contains(label, "?") || contains(label, "!")
-                            setfield!(template.pmu, parameter, label)
-                        else
-                            errorTemplateLabel()
-                        end
+                        macroLabel(template.pmu, kwarg.args[2], "[?!]")
                     end
                 end
             else

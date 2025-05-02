@@ -2,6 +2,7 @@
     @default(unit)
     @default(template)
     @config(label = Integer)
+    @branch(label = "B?")
 
     system = powerSystem(path * "case14test.m")
     nr = newtonRaphson(system)
@@ -49,30 +50,30 @@
         addBranch!(nr; from = 16, to = 7, resistance = 0.01, reactance = 0.23, susceptance = 0.1)
         testReusing(nr)
 
-        updateBranch!(nr; label = 12, resistance = 0.02, status = 1)
+        updateBranch!(nr; label = "B12", resistance = 0.02, status = 1)
         testReusing(nr)
 
-        updateBranch!(nr; label = 5, reactance = 0.28, susceptance = 0.001, status = 1)
+        updateBranch!(nr; label = "B5", reactance = 0.28, susceptance = 0.001, status = 1)
         testReusing(nr)
 
-        updateBranch!(nr; label = 5, turnsRatio = 0.99, status = 0)
+        updateBranch!(nr; label = "B5", turnsRatio = 0.99, status = 0)
         testReusing(nr)
 
-        updateBranch!(nr; label = 5, status = 1)
+        updateBranch!(nr; label = "B5", status = 1)
         testReusing(nr)
 
-        updateBranch!(nr; label = 5, status = 0)
+        updateBranch!(nr; label = "B5", status = 0)
         testReusing(nr)
 
-        updateBranch!(nr; label = 12, status = 0)
+        updateBranch!(nr; label = "B12", status = 0)
         testReusing(nr)
 
-        updateBranch!(system; label = 12, resistance = 0.03, reactance = 0.4, susceptance = 0.1)
-        updateBranch!(nr; label = 12, conductance = 0.01, status = 1)
+        updateBranch!(system; label = "B12", resistance = 0.03, reactance = 0.4, susceptance = 0.1)
+        updateBranch!(nr; label = "B12", conductance = 0.01, status = 1)
         testReusing(nr)
 
         addBranch!(system; from = 14, to = 13, resistance = 0.01, reactance = 0.23)
-        updateBranch!(nr; label = 25, conductance = 0.01, status = 1)
+        updateBranch!(nr; label = "B25", conductance = 0.01, status = 1)
         testReusing(nr)
 
         power!(nr)
@@ -323,18 +324,19 @@ end
 end
 
 @testset "Reusing DC Power Flow" begin
+    @default(template)
     system = powerSystem(path * "case14test.m")
     dc = dcPowerFlow(system)
 
     @testset "Buses" begin
-        updateBus!(dc; label = 3, active = 0.15, conductance = 0.16)
+        updateBus!(dc; label = "Bus 3 HV", active = 0.15, conductance = 0.16)
         testReusing(dc)
 
-        updateBus!(dc; label = 3, conductance = 0.26)
+        updateBus!(dc; label = "Bus 3 HV", conductance = 0.26)
         testReusing(dc)
 
-        updateBus!(system; label = 4, conductance = 0.26)
-        updateBus!(dc; label = 4)
+        updateBus!(system; label = "Bus 4 HV", conductance = 0.26)
+        updateBus!(dc; label = "Bus 4 HV")
         testReusing(dc)
 
         power!(dc)
@@ -344,10 +346,10 @@ end
     end
 
     @testset "Branches" begin
-        addBranch!(dc; from = 16, to = 7, reactance = 0.03)
+        addBranch!(dc; from = "Bus 6 LV", to = "Bus 7 ZV", reactance = 0.03)
         testReusing(dc)
 
-        addBranch!(dc; from = 16, to = 7, reactance = 0.08, status = 0)
+        addBranch!(dc; from = "Bus 6 LV", to = "Bus 7 ZV", reactance = 0.08, status = 0)
         testReusing(dc)
 
         updateBranch!(dc; label = 4, shiftAngle = -1.2)
@@ -365,11 +367,11 @@ end
         updateBranch!(dc; label = 10, status = 0)
         testReusing(dc)
 
-        addBranch!(system; from = 14, to = 13, resistance = 0.01, reactance = 0.23)
+        addBranch!(system; from = "Bus 14 LV", to = "Bus 13 LV", resistance = 0.01, reactance = 0.23)
         updateBranch!(dc; label = 23, conductance = 0.01, status = 1)
         testReusing(dc)
 
-        addBranch!(system; from = 14, to = 13, resistance = 0.01, reactance = 0.23, status = 0)
+        addBranch!(system; from = "Bus 14 LV", to = "Bus 13 LV", resistance = 0.01, reactance = 0.23, status = 0)
         updateBranch!(dc; label = 24)
         testReusing(dc)
 
@@ -383,10 +385,10 @@ end
     end
 
     @testset "Generators" begin
-        addGenerator!(dc; bus = 2, active = 0.8)
+        addGenerator!(dc; bus = "Bus 2 HV", active = 0.8)
         testReusing(dc)
 
-        addGenerator!(dc; bus = 14, active = 0.5, status = 0)
+        addGenerator!(dc; bus = "Bus 14 LV", active = 0.5, status = 0)
         testReusing(dc)
 
         updateGenerator!(dc; label = 9, active = 1.2)
@@ -401,11 +403,11 @@ end
         updateGenerator!(dc; label = 7, status = 0)
         testReusing(dc)
 
-        addGenerator!(system; bus = 2, active = 0.5, reactive = 0.1)
+        addGenerator!(system; bus = "Bus 2 HV", active = 0.5, reactive = 0.1)
         updateGenerator!(dc; label = 11)
         testReusing(dc)
 
-        addGenerator!(system; bus = 3, active = 0.8, status = 0)
+        addGenerator!(system; bus = "Bus 3 HV", active = 0.8, status = 0)
         updateGenerator!(dc; label = 12)
         testReusing(dc)
 

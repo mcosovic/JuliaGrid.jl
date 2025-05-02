@@ -34,7 +34,7 @@ function measurement(system::PowerSystem, inputFile::String)
 
     if extension == ".h5"
         hdf5 = h5open(fullpath, "r")
-            checkLabelMeasurement(hdf5, template)
+            setTypeLabelMeasurement(hdf5, template)
 
             monitoring = measurement(system)
             loadVoltmeter(monitoring, hdf5)
@@ -67,31 +67,31 @@ monitoring = measurement(system)
 function measurement(system::PowerSystem)
     Measurement(
         Voltmeter(
-            OrderedDict{template.config.monitoring, Int64}(),
+            OrderedDict{template.voltmeter.key, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             VoltmeterLayout(Int64[], 0),
             0
         ),
         Ammeter(
-            OrderedDict{template.config.monitoring, Int64}(),
+            OrderedDict{template.ammeter.key, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             AmmeterLayout(Int64[], Int64[], Bool[], Bool[], 0),
             0
         ),
         Wattmeter(
-            OrderedDict{template.config.monitoring, Int64}(),
+            OrderedDict{template.wattmeter.key, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             PowermeterLayout(Int64[], Bool[], Bool[], Bool[], 0),
             0
         ),
         Varmeter(
-            OrderedDict{template.config.monitoring, Int64}(),
+            OrderedDict{template.varmeter.key, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             PowermeterLayout(Int64[], Bool[], Bool[], Bool[], 0),
             0
         ),
         PMU(
-            OrderedDict{template.config.monitoring, Int64}(),
+            OrderedDict{template.pmu.key, Int64}(),
             GaussMeter(Float64[], Float64[], Int8[]),
             GaussMeter(Float64[], Float64[], Int8[]),
             PmuLayout(Int64[], Bool[], Bool[], Bool[], Bool[], Bool[], Bool[], 0),
@@ -162,15 +162,21 @@ function ems()
 end
 
 ##### Check Label Type from HDF5 File #####
-function checkLabelMeasurement(hdf5::File, template::Template)
-    for monitoring in hdf5
-        labelType = eltype(monitoring["label"])
-        if labelType === Cstring
-            template.config.monitoring = String
-        else
-            template.config.monitoring = Int64
-        end
-        break
+function setTypeLabelMeasurement(hdf5::File, template::Template)
+    if haskey(hdf5, "voltmeter")
+        template.voltmeter.key = eltype(hdf5["voltmeter/label"]) === Cstring ? String : Int64
+    end
+    if haskey(hdf5, "ammeter")
+        template.ammeter.key = eltype(hdf5["ammeter/label"]) === Cstring ? String : Int64
+    end
+    if haskey(hdf5, "wattmeter")
+        template.wattmeter.key = eltype(hdf5["wattmeter/label"]) === Cstring ? String : Int64
+    end
+    if haskey(hdf5, "varmeter")
+        template.varmeter.key = eltype(hdf5["varmeter/label"]) === Cstring ? String : Int64
+    end
+    if haskey(hdf5, "pmu")
+        template.pmu.key = eltype(hdf5["pmu/label"]) === Cstring ? String : Int64
     end
 end
 

@@ -112,6 +112,7 @@ end
 @testset "Build and Update Power System in SI Units" begin
     @default(template)
     @config(label = Integer)
+    @generator(label = "G?")
     load = powerSystem(path * "build.m")
     @base(load, MVA, kV)
 
@@ -180,12 +181,12 @@ end
         addGenerator!(build; bus = 2, active = 260e3, reactive = 30, maxActive = 316e3)
         addGenerator!(build; bus = 1, active = 80e3, reactive = 30, maxActive = 0.0, status = 0)
 
-        updateGenerator!(build; label = 2, maxActive = 316e3, status = 0)
+        updateGenerator!(build; label = "G2", maxActive = 316e3, status = 0)
 
-        cost!(build; generator = 1, active = 2, polynomial = [0.01e-6; 40e-3; 4])
-        cost!(build; generator = 2, active = 2, polynomial = [0.0266666667e-6; 20e-3; 3])
-        cost!(build; generator = 3, active = 2, polynomial = [0.0266666667e-6; 20e-3; 2])
-        cost!(build; generator = 4, active = 2, polynomial = [30.0e-3; 5])
+        cost!(build; generator = "G1", active = 2, polynomial = [0.01e-6; 40e-3; 4])
+        cost!(build; generator = "G2", active = 2, polynomial = [0.0266666667e-6; 20e-3; 3])
+        cost!(build; generator = "G3", active = 2, polynomial = [0.0266666667e-6; 20e-3; 2])
+        cost!(build; generator = "G4", active = 2, polynomial = [30.0e-3; 5])
 
         teststruct(load.bus, build.bus; atol = 1e-12)
         teststruct(load.generator, build.generator; atol = 1e-12)
@@ -224,16 +225,16 @@ end
     end
 
     @testset "Update Generators" begin
-        updateGenerator!(build; label = 1, lowActive = 100e3, minLowReactive = 200, maxLowReactive = 300)
-        updateGenerator!(build; label = 1, upActive = 500e3, minUpReactive = 300, maxUpReactive = 400)
-        updateGenerator!(build; label = 1, loadFollowing = 500e3, reserve10min = 300e3, reactiveRamp = 400)
-        updateGenerator!(build; label = 2, status = 1, magnitude = 1.2 * 120 / fn)
-        updateGenerator!(build; label = 4, status = 1, active = 10e3, reactive = 20, maxActive = 0.0)
-        updateGenerator!(build; label = 1, status = 0, minActive = 10e3, maxActive = 100e3)
-        updateGenerator!(build; label = 3, status = 0, active = 30e3, reactive = 10)
-        updateGenerator!(build; label = 1, minReactive = -10, maxReactive = 90)
+        updateGenerator!(build; label = "G1", lowActive = 100e3, minLowReactive = 200, maxLowReactive = 300)
+        updateGenerator!(build; label = "G1", upActive = 500e3, minUpReactive = 300, maxUpReactive = 400)
+        updateGenerator!(build; label = "G1", loadFollowing = 500e3, reserve10min = 300e3, reactiveRamp = 400)
+        updateGenerator!(build; label = "G2", status = 1, magnitude = 1.2 * 120 / fn)
+        updateGenerator!(build; label = "G4", status = 1, active = 10e3, reactive = 20, maxActive = 0.0)
+        updateGenerator!(build; label = "G1", status = 0, minActive = 10e3, maxActive = 100e3)
+        updateGenerator!(build; label = "G3", status = 0, active = 30e3, reactive = 10)
+        updateGenerator!(build; label = "G1", minReactive = -10, maxReactive = 90)
 
-        cost!(build; generator = 4, active = 2, polynomial = [0.3e-6; 15e-3; 5])
+        cost!(build; generator = "G4", active = 2, polynomial = [0.3e-6; 15e-3; 5])
 
         teststruct(load.bus, build.bus; atol = 1e-12)
         teststruct(load.generator, build.generator; atol = 1e-12)

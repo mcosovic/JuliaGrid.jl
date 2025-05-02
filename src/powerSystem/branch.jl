@@ -631,12 +631,7 @@ macro branch(kwargs...)
                     elseif parameter == :turnsRatio
                         setfield!(template.branch, parameter, Float64(eval(kwarg.args[2])))
                     elseif parameter == :label
-                        label = string(kwarg.args[2])
-                        if contains(label, "?")
-                            setfield!(template.branch, parameter, label)
-                        else
-                            errorTemplateSymbol()
-                        end
+                        macroLabel(template.branch, kwarg.args[2], "[?]")
                     end
                 end
             else

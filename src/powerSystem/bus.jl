@@ -435,12 +435,7 @@ macro bus(kwargs...)
                     elseif parameter in [:area; :lossZone]
                         setfield!(template.bus, parameter, Int64(eval(kwarg.args[2])))
                     elseif parameter == :label
-                        label = string(kwarg.args[2])
-                        if contains(label, "?")
-                            setfield!(template.bus, parameter, label)
-                        else
-                            errorTemplateSymbol()
-                        end
+                        macroLabel(template.bus, kwarg.args[2], "[?]")
                     end
                 end
             else

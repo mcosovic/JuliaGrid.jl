@@ -266,7 +266,7 @@ macro config(kwargs...)
         for kwarg in $(esc(kwargs))
             parameter::Symbol = kwarg.args[1]
 
-            if hasfield(ConfigTemplate, parameter)
+            if parameter == :label || parameter == :verbose
                 if parameter == :label
                     type = kwarg.args[2]
                     if type == :Integer || type == :Int64
@@ -274,9 +274,14 @@ macro config(kwargs...)
                     else
                         datatype = String
                     end
-                    setfield!(template.config, :label, datatype)
-                    setfield!(template.config, :system, datatype)
-                    setfield!(template.config, :monitoring, datatype)
+                    setfield!(template.bus, :key, datatype)
+                    setfield!(template.branch, :key, datatype)
+                    setfield!(template.generator, :key, datatype)
+                    setfield!(template.voltmeter, :key, datatype)
+                    setfield!(template.ammeter, :key, datatype)
+                    setfield!(template.wattmeter, :key, datatype)
+                    setfield!(template.varmeter, :key, datatype)
+                    setfield!(template.pmu, :key, datatype)
                 end
                 if parameter == :verbose
                     setfield!(template.config, :verbose, Int64(eval(kwarg.args[2])))
@@ -400,11 +405,12 @@ macro default(mode::Symbol)
             template.bus.angle.value = 0.0
             template.bus.angle.pu = true
 
-            template.bus.label = "?"
             template.bus.base = 138e3
             template.bus.type = Int8(1)
             template.bus.area = 1
             template.bus.lossZone = 1
+            template.bus.label = "?"
+            template.bus.key = String
         end
 
         if mode == :template || mode == :branch
@@ -433,10 +439,11 @@ macro default(mode::Symbol)
             template.branch.maxToBus.value = 0.0
             template.branch.maxToBus.pu = true
 
-            template.branch.label = "?"
             template.branch.turnsRatio = 1.0
             template.branch.status = Int8(1)
             template.branch.type = Int8(3)
+            template.branch.label = "?"
+            template.branch.key = String
         end
 
         if mode == :template || mode == :generator
@@ -480,9 +487,10 @@ macro default(mode::Symbol)
             template.generator.reserve30min.value = 0.0
             template.generator.reserve30min.pu = true
 
-            template.generator.label = "?"
             template.generator.status = Int8(1)
             template.generator.area = 0
+            template.generator.label = "?"
+            template.generator.key = String
         end
 
         if mode == :template || mode == :voltmeter
@@ -490,8 +498,9 @@ macro default(mode::Symbol)
             template.voltmeter.variance.pu = true
 
             template.voltmeter.status = Int8(1)
-            template.voltmeter.label = "?"
             template.voltmeter.noise = false
+            template.voltmeter.label = "?"
+            template.voltmeter.key = String
         end
 
         if mode == :template || mode == :ammeter
@@ -503,9 +512,10 @@ macro default(mode::Symbol)
             template.ammeter.statusFrom = Int8(1)
             template.ammeter.statusTo = Int8(1)
 
-            template.ammeter.label = "?"
             template.ammeter.square = false
             template.ammeter.noise = false
+            template.ammeter.label = "?"
+            template.ammeter.key = String
         end
 
         if mode == :template || mode == :wattmeter
@@ -520,8 +530,9 @@ macro default(mode::Symbol)
             template.wattmeter.statusFrom = Int8(1)
             template.wattmeter.statusTo = Int8(1)
 
-            template.wattmeter.label = "?"
             template.wattmeter.noise = false
+            template.wattmeter.label = "?"
+            template.wattmeter.key = String
         end
 
         if mode == :template || mode == :varmeter
@@ -536,8 +547,9 @@ macro default(mode::Symbol)
             template.varmeter.statusFrom = Int8(1)
             template.varmeter.statusTo = Int8(1)
 
-            template.varmeter.label = "?"
             template.varmeter.noise = false
+            template.varmeter.label = "?"
+            template.varmeter.key = String
         end
 
         if mode == :template || mode == :pmu
@@ -560,17 +572,15 @@ macro default(mode::Symbol)
             template.pmu.statusFrom = Int8(1)
             template.pmu.statusTo = Int8(1)
 
-            template.pmu.label = "?"
             template.pmu.noise = false
             template.pmu.correlated = false
             template.pmu.polar = false
             template.pmu.square = false
+            template.pmu.label = "?"
+            template.pmu.key = String
         end
 
         if mode == :template
-            template.config.label = String
-            template.config.system = String
-            template.config.monitoring = String
             template.config.verbose = 0
         end
     end
