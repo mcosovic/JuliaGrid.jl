@@ -391,7 +391,7 @@ As we have shown, JuliaGrid mandates a distinctive label for every bus, branch, 
 ---
 
 ##### Integer-Based Labeling
-Let us take a look at the following illustration:
+Instead of using strings for labels, Julia provides the [`@config`](@ref @config) macro to enable storing labels as integers:
 ```@example LabelInteger
 using JuliaGrid # hide
 @default(unit) # hide
@@ -409,9 +409,36 @@ addGenerator!(system; label = 1, bus = 2, active = 0.5, reactive = 0.1)
 nothing # hide
 ```
 
-In this example, we use the macro [`@config`](@ref @config) to specify that labels will be stored as integers. It is essential to run this macro; otherwise, even if integers are used in subsequent functions, they will be stored as strings.
+Note that the [`@config`](@ref @config) macro must be executed first. Otherwise, even if integers are passed to the functions, labels will be stored as strings. In this example, two buses are created with integer labels `1` and `2`. A branch connects them and is assigned label `1`, while a generator is added to bus `2`, also labeled `1`.
 
-Here, two buses are created with labels `1` and `2`. A branch connects these two buses, assigned a unique label of `1`. Finally, a generator is connected to bus `2`, with its own label set to `1`.
+---
+
+##### Integer-String-Based Labeling
+In addition to using only strings or only integers, JuliaGrid also supports mixed labeling. For example, you can assign string labels to buses while keeping integer labels for branches and generators:
+```@example LabelInteger
+@default(unit) # hide
+@default(template) # hide
+@branch(label = Integer)
+@generator(label = Integer)
+
+system = powerSystem()
+
+addBus!(system; label = "Bus 1", type = 3, active = 0.1)
+addBus!(system; label = "Bus 2", type = 1, angle = -0.2)
+
+addBranch!(system; label = 1, from = "Bus 1", to = "Bus 2", reactance = 0.12)
+
+addGenerator!(system; label = 1, bus = "Bus 2", active = 0.5, reactive = 0.1)
+nothing # hide
+```
+
+In this case, the two buses are labeled with strings `Bus 1` and `Bus 2`. A branch connects them using an integer label `1`, and a generator is placed on `Bus 2`, also with an integer label `1`. The same configuration can also be achieved by using the [`@config`](@ref @config) macro together with the [`@bus`](@ref @bus) macro:
+```@example LabelInteger
+@config(label = Integer)
+@bus(label = String)
+nothing # hide
+```
+
 
 ---
 
@@ -433,7 +460,7 @@ addGenerator!(system; bus = 2, active = 0.5, reactive = 0.1)
 nothing # hide
 ```
 
-This example models the same power system as before. In the previous case, we manually assigned labels using incremental integers. Here, we rely on the automatic labeling behavior, but since the macro [`@config`](@ref @config) is not used, the labels will be stored as strings.
+In this example, two buses are created with automatically assigned string labels `1` and `2`. A branch connects them with label `1`, and a generator is added to bus `2`, also labeled `1`. Since the [`@config`](@ref @config) macro is not used, labels are stored as strings by default. To ensure automated labels are stored as integers, users should either set `label = Integer` in the [`@config`](@ref @config) macro or customize label types using the [`@bus`](@ref @bus), [`@branch`](@ref @branch), and [`@generator`](@ref @generator) macros.
 
 ---
 
@@ -521,11 +548,15 @@ label[system.generator.layout.bus]
 
 ---
 
-##### Managing String Labels in Matpower and PSSE Imports
-When a user loads a power system from a Matpower or PSSE file, the default behavior is to store labels as strings, using bus names if available in the file. Branch and generator labels, however, are defined as an incremental set of integers by default. This behavior can be overwritten using templates. For example, in the `case5.m` file, bus names are provided. Let us load that power system and use a template to generate branch labels:
+##### Managing Labels in Matpower and PSSE Imports
+When importing a power system from a Matpower or PSSE file, JuliaGrid stores all labels as strings by default. If the file contains bus names, these names are used as bus labels. In contrast, branch and generator labels are automatically assigned as incremental integers.
+
+This default labeling behavior can be modified using macros. For example, in the `case5.m` file, bus names are included. The following code shows how to load the system while generating custom branch labels and storing generator labels as integers:
 ```@example RetrieveLabels
 @default(template) # hide
 @branch(label = "Branch ?")
+@generator(label = Integer)
+
 system = powerSystem("case5.m")
 nothing # hide
 ```
@@ -535,55 +566,48 @@ As a result, bus labels are read directly from the `case5.m` file:
 system.bus.label
 ```
 
-Branch labels are generated using the specified template:
+Branch labels are generated based on the specified template:
 ```@repl RetrieveLabels
 system.branch.label
 ```
 
-Generator labels are assigned as an incremental set of integers by default:
+Generator labels are automatically assigned as a sequential set of integers and stored as such:
 ```@repl RetrieveLabels
 system.generator.label
 ```
 
-Now, in cases where bus names are not provided in the input file, as with `case4.m`, users can define a template to generate bus labels. For example:
+In cases where bus names are not included in the input file, as is the case with `case4.m`, users can define a label template to generate bus labels manually. For example:
 ```@example RetrieveLabels
 @default(template) # hide
 @bus(label = "Bus ?")
+
 system = powerSystem("case4.m")
 nothing # hide
 ```
 
-As a result, JuliaGrid uses the integer bus labels available in `case4.m` to generate labels based on the template:
+As a result, JuliaGrid uses the integer bus indices from `case4.m` to create labels according to the template:
 ```@repl RetrieveLabels
 system.bus.label
 ```
 
----
-
-##### Managing Integer Labels in Matpower and PSSE Imports
-If users need to exclusively work with the integer bus labels available in the Matpower and PSSE files, they can configure the system accordingly. For example:
+If the goal is to work directly with the integer bus labels provided in `case4.m` and preserve them as integers, users can specify that explicitly:
 ```@example RetrieveLabels
 @default(template) # hide
-@config(label = Integer)
+@bus(label = Integer)
+
 system = powerSystem("case4.m")
 nothing # hide
 ```
 
-With this configuration, JuliaGrid uses the integer bus labels from the input data:
+As a result, bus labels are imported and stored as integers:
 ```@repl RetrieveLabels
 system.bus.label
-```
-
-Similarly, integer labels are used for branches and generators:
-```@repl RetrieveLabels
-system.branch.label
-system.generator.label
 ```
 
 ---
 
 ##### Managing Labels in HDF5 Imports
-When saving the power system to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Likewise, when loading data from an HDF5 file, the label type will be preserved as saved, regardless of what is set by the [`@config`](@ref @config) macro.
+When saving the power system to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Similarly, when loading a system from an HDF5 file, JuliaGrid preserves the stored label types without applying any overrides from the [`@config`](@ref @config), [`@bus`](@ref @bus), [`@branch`](@ref @branch), or [`@generator`](@ref @generator) macros.
 
 ---
 

@@ -567,7 +567,7 @@ In all the previous examples, with the exception of the last one, we relied on a
 ---
 
 ##### Integer-Based Labeling
-Let us take a look at the following illustration:
+Instead of using strings for labels, Julia provides the [`@config`](@ref @config) macro to enable storing labels as integers:
 ```@example LabelInteger
 using JuliaGrid # hide
 @default(unit) # hide
@@ -587,7 +587,41 @@ addAmmeter!(monitoring; label = 2, to = 1, magnitude = 0.9)
 nothing # hide
 ```
 
-In this example, we use the macro [`@config`](@ref @config) to specify that labels will be stored as integers. It is essential to run this macro; otherwise, even if integers are used in subsequent functions, they will be stored as strings.
+Note that the [`@config`](@ref @config) macro must be executed first. Otherwise, even if integers are passed to the functions, labels will be stored as strings. In this example, all labels, both in the power system and in the measurement system, are stored as integers.
+
+---
+
+##### Integer-String-Based Labeling
+In addition to using only strings or only integers, JuliaGrid supports mixed labeling. Users can fine-tune labels for all power system components as well as for all measurement devices. For example:
+```@example LabelInteger
+using JuliaGrid # hide
+@default(unit) # hide
+@default(template) # hide
+@branch(label = Integer)
+@ammeter(label = Integer)
+
+system, monitoring = ems()
+
+addBus!(system; label = "Bus 1")
+addBus!(system; label = "Bus 2")
+addBranch!(system; label = 1, from = "Bus 1", to = "Bus 2", reactance = 0.12)
+
+addVoltmeter!(monitoring; label = "Voltmeter 1", bus = "Bus 1", magnitude = 1.0)
+
+addAmmeter!(monitoring; label = 1, from = 1, magnitude = 1.1)
+addAmmeter!(monitoring; label = 2, to = 1, magnitude = 0.9)
+nothing # hide
+```
+
+In this example, string labels are used for buses and voltmeters, while integers are used for branches and ammeters. The same configuration can be achieved by using the [`@config`](@ref @config) macro along with the macros for specifying power system components and measurement devices:
+```@example LabelInteger
+@default(unit) # hide
+@default(template) # hide
+@config(label = Integer)
+@bus(label = String)
+@voltmeter(label = String)
+nothing # hide
+```
 
 ---
 
@@ -696,8 +730,8 @@ This procedure is applicable to all measurement devices, including voltmeters, a
 
 ---
 
-##### Loading and Saving Labels
-When saving the measurements to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Likewise, when loading data from an HDF5 file, the label type will be preserved as saved, regardless of what is set by the [`@config`](@ref @config) macro.
+##### Managing Labels in HDF5 Imports
+When saving the measurements to an HDF5 file, the label type (strings or integers) will match the type chosen during system setup. Similarly, when loading data from an HDF5 file, the label type is preserved exactly as it was saved, regardless of any settings provided by the [`@config`](@ref @config) macro or macros related to measurement devices.
 
 
 ---
