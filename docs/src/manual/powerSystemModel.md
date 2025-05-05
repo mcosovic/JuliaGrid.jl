@@ -196,6 +196,11 @@ After executing this macro, the base voltage values will be stored in kilovolts 
 system.base.voltage.value, system.base.voltage.unit
 ```
 
+Finally, the user can check the unit system in use for bus-related keywords:
+```@example addBus
+unit(Bus)
+```
+
 ---
 
 ## [Add Branch](@id AddBranchManual)
@@ -249,6 +254,11 @@ system.branch.parameter.reactance
 
 It is important to note that, when working with impedance and admittance values in ohms (Ω) and siemens (S) that are related to a transformer, the assignment must be based on the primary side of the transformer.
 
+Finally, the user can check the unit system in use for branch-related keywords:
+```@example addBranchUnit
+unit(Branch)
+```
+
 ---
 
 ## [Add Generator](@id AddGeneratorManual)
@@ -272,7 +282,8 @@ system.generator.output.active
 system.generator.output.reactive
 ```
 
-Similar to buses and branches, the input units can be changed to units other than per-units using different macros.
+Similar to buses and branches, the input units for generators can be set to values other than per-unit using appropriate macros. The unit system in use for generator-related data can be checked by passing `Generator` to the `unit` function.
+
 
 Users can also display information for a specific generator with:
 ```@example addGenerator
