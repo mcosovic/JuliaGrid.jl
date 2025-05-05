@@ -304,6 +304,9 @@ Base.@kwdef mutable struct UnitList
     apparentPowerLive::String        = "pu"
     currentMagnitudeLive::String     = "pu"
     currentAngleLive::String         = "rad"
+    voltageBaseLive::String          = "V"
+    impedanceLive::String            = "pu"
+    admittanceLive::String           = "pu"
 end
 const unitList = UnitList()
 

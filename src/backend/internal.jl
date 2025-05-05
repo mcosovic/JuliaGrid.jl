@@ -146,9 +146,9 @@ macro voltage(magnitude::Symbol, angle::Symbol, base::Symbol = :V)
         local suffix = parseSuffix(unitList.voltageAngleLive, unitList.voltageAngle, "voltage angle")
         pfx.voltageAngle = parsePrefix(unitList.voltageAngleLive, suffix)
 
-        baseString = string($(QuoteNode(base)))
-        local suffix = parseSuffix(baseString, unitList.baseVoltage, "base voltage")
-        pfx.baseVoltage = parsePrefix(baseString, suffix)
+        unitList.voltageBaseLive = string($(QuoteNode(base)))
+        local suffix = parseSuffix(unitList.voltageBaseLive, unitList.baseVoltage, "base voltage")
+        pfx.baseVoltage = parsePrefix(unitList.voltageBaseLive, suffix)
     end
 end
 
@@ -225,13 +225,13 @@ Changing the units of `admittance` is reflected in the following quantities:
 """
 macro parameter(impedance::Symbol, admittance::Symbol)
     quote
-        local impedanceString = string($(esc(QuoteNode(impedance))))
-        local suffix = parseSuffix(impedanceString, unitList.impedance, "impedance")
-        pfx.impedance = parsePrefix(impedanceString, suffix)
+        unitList.impedanceLive = string($(esc(QuoteNode(impedance))))
+        local suffix = parseSuffix(unitList.impedanceLive, unitList.impedance, "impedance")
+        pfx.impedance = parsePrefix(unitList.impedanceLive, suffix)
 
-        local admittanceString = string($(esc(QuoteNode(admittance))))
-        local suffix = parseSuffix(admittanceString, unitList.admittance, "admittance")
-        pfx.admittance = parsePrefix(admittanceString, suffix)
+        unitList.admittanceLive = string($(esc(QuoteNode(admittance))))
+        local suffix = parseSuffix(unitList.admittanceLive, unitList.admittance, "admittance")
+        pfx.admittance = parsePrefix(unitList.admittanceLive, suffix)
     end
 end
 

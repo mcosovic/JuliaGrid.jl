@@ -638,7 +638,7 @@ The function accepts five keywords:
   * first column (pu, W or VAr): active or reactive power output of the generator,
   * second column (\\\$/hr): cost for the specified active or reactive power output.
 * `polynomial`: The n-th degree polynomial coefficients given as `Vector{Float64}`:
-  * first element (\\\$/puⁿ-hr, \\\$/Wⁿhr or \\\$/VArⁿ-hr): coefficient of the n-th degree term, ....,
+  * first element (\\\$/puⁿ-hr, \\\$/Wⁿ-hr or \\\$/VArⁿ-hr): coefficient of the n-th degree term, ....,
   * penultimate element (\\\$/pu-hr, \\\$/W-hr or \\\$/VAr-hr): coefficient of the first degree term,
   * last element (\\\$/hr): constant coefficient.
 

@@ -107,6 +107,12 @@
         print(build; branch = 1)
         print(build; generator = 1)
     end
+
+    @suppress @testset "Debugging Units" begin
+        unit(Bus)
+        unit(Branch)
+        unit(Generator)
+    end
 end
 
 @testset "Build and Update Power System in SI Units" begin

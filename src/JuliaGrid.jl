@@ -33,6 +33,7 @@ export printBusData, printBranchData, printGeneratorData
 export printBusSummary, printBranchSummary, printGeneratorSummary
 export printBusConstraint, printBranchConstraint, printGeneratorConstraint
 export printVoltmeterData, printAmmeterData, printWattmeterData, printVarmeterData, printPmuData
+export unit
 
 ########## Power System ##########
 include("powerSystem/load.jl")
