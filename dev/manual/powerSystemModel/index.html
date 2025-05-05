@@ -33,7 +33,21 @@ addBus!(system; label = &quot;Bus 2&quot;, type = 1, angle = -2.0, base = 345.0)
  0.1
  0.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; system.bus.voltage.angle</code><code class="nohighlight hljs ansi" style="display:block;">2-element Vector{Float64}:
   0.0
- -0.03490658503988659</code></pre><p>The base voltage values will still be stored in volts (V) since we only changed the input unit prefix, and did not modify the internal unit prefix, as shown below:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; system.base.voltage.value, system.base.voltage.unit</code><code class="nohighlight hljs ansi" style="display:block;">([345000.0, 345000.0], &quot;V&quot;)</code></pre><p>To modify the internal unit prefix, the following macro can be used:</p><pre><code class="language-julia hljs">@base(system, VA, kV)</code></pre><p>After executing this macro, the base voltage values will be stored in kilovolts (kV):</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; system.base.voltage.value, system.base.voltage.unit</code><code class="nohighlight hljs ansi" style="display:block;">([345.0, 345.0], &quot;kV&quot;)</code></pre><hr/><h2 id="AddBranchManual"><a class="docs-heading-anchor" href="#AddBranchManual">Add Branch</a><a id="AddBranchManual-1"></a><a class="docs-heading-anchor-permalink" href="#AddBranchManual" title="Permalink"></a></h2><p>The branch connecting two buses can be added once those buses are defined, and <code>from</code> and <code>to</code> keywords must correspond to labels of those buses. For example:</p><pre><code class="language-julia hljs">system = powerSystem()
+ -0.03490658503988659</code></pre><p>The base voltage values will still be stored in volts (V) since we only changed the input unit prefix, and did not modify the internal unit prefix, as shown below:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; system.base.voltage.value, system.base.voltage.unit</code><code class="nohighlight hljs ansi" style="display:block;">([345000.0, 345000.0], &quot;V&quot;)</code></pre><p>To modify the internal unit prefix, the following macro can be used:</p><pre><code class="language-julia hljs">@base(system, VA, kV)</code></pre><p>After executing this macro, the base voltage values will be stored in kilovolts (kV):</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; system.base.voltage.value, system.base.voltage.unit</code><code class="nohighlight hljs ansi" style="display:block;">([345.0, 345.0], &quot;kV&quot;)</code></pre><p>Finally, the user can check the unit system in use for bus-related keywords:</p><pre><code class="language-julia hljs">unit(Bus)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">📁 Bus Keyword Units
+├── 📂 Demand Power
+│   ├── active: MW
+│   └── reactive: MVAr
+├── 📂 Shunt Power
+│   ├── conductance: MW
+│   └── susceptance: MVAr
+├── 📂 Initial Voltage
+│   ├── magnitude: pu
+│   └── angle: deg
+├── 📂 Voltage Magnitude Limit
+│   ├── minMagnitude: pu
+│   └── maxMagnitude: pu
+└── 📂 Base Voltage
+    └── base: kV</code></pre><hr/><h2 id="AddBranchManual"><a class="docs-heading-anchor" href="#AddBranchManual">Add Branch</a><a id="AddBranchManual-1"></a><a class="docs-heading-anchor-permalink" href="#AddBranchManual" title="Permalink"></a></h2><p>The branch connecting two buses can be added once those buses are defined, and <code>from</code> and <code>to</code> keywords must correspond to labels of those buses. For example:</p><pre><code class="language-julia hljs">system = powerSystem()
 
 addBus!(system; label = &quot;Bus 1&quot;, type = 3, active = 0.1)
 addBus!(system; label = &quot;Bus 2&quot;, type = 1, angle = -0.2)
@@ -59,14 +73,31 @@ addBus!(system; label = &quot;Bus 1&quot;, type = 3, active = 0.1)
 addBus!(system; label = &quot;Bus 2&quot;, type = 1, angle = -0.2)
 
 addBranch!(system; label = &quot;Branch 1&quot;, from = &quot;Bus 1&quot;, to = &quot;Bus 2&quot;, reactance = 22.8528)</code></pre><p>Still, all electrical quantities are stored in per-units, and the same branch as before is created:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; system.branch.parameter.reactance</code><code class="nohighlight hljs ansi" style="display:block;">1-element Vector{Float64}:
- 0.11999999999999998</code></pre><p>It is important to note that, when working with impedance and admittance values in ohms (Ω) and siemens (S) that are related to a transformer, the assignment must be based on the primary side of the transformer.</p><hr/><h2 id="AddGeneratorManual"><a class="docs-heading-anchor" href="#AddGeneratorManual">Add Generator</a><a id="AddGeneratorManual-1"></a><a class="docs-heading-anchor-permalink" href="#AddGeneratorManual" title="Permalink"></a></h2><p>The generator connected to a bus can be added once the bus is defined. Each generator must have a unique label, and the <code>bus</code> keyword should correspond to the unique label of the bus it is connected to. For instance:</p><pre><code class="language-julia hljs">system = powerSystem()
+ 0.11999999999999998</code></pre><p>It is important to note that, when working with impedance and admittance values in ohms (Ω) and siemens (S) that are related to a transformer, the assignment must be based on the primary side of the transformer.</p><p>Finally, the user can check the unit system in use for branch-related keywords:</p><pre><code class="language-julia hljs">unit(Branch)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">📁 Branch Keyword Units
+├── 📂 Parameter
+│   ├── resistance: Ω
+│   ├── reactance: Ω
+│   ├── conductance: pu
+│   ├── susceptance: pu
+│   └── shiftAngle: rad
+├── 📂 Voltage Angle Difference Limit
+│   ├── minDiffAngle: rad
+│   └── maxDiffAngle: rad
+└── 📂 Flow Limit
+    ├── minFromBus
+    ├── maxFromBus
+    ├── minToBus
+    └─┐ maxToBus
+      ├── type ∈ [1]: pu
+      ├── type ∈ [2, 3]: pu
+      └── type ∈ [4, 5]: pu</code></pre><hr/><h2 id="AddGeneratorManual"><a class="docs-heading-anchor" href="#AddGeneratorManual">Add Generator</a><a id="AddGeneratorManual-1"></a><a class="docs-heading-anchor-permalink" href="#AddGeneratorManual" title="Permalink"></a></h2><p>The generator connected to a bus can be added once the bus is defined. Each generator must have a unique label, and the <code>bus</code> keyword should correspond to the unique label of the bus it is connected to. For instance:</p><pre><code class="language-julia hljs">system = powerSystem()
 
 addBus!(system; label = &quot;Bus 1&quot;)
 addBus!(system; label = &quot;Bus 2&quot;)
 
 addGenerator!(system; label = &quot;Generator 1&quot;, bus = &quot;Bus 2&quot;, active = 0.5, reactive = 0.1)</code></pre><p>In the above code, we add the generator to the <code>Bus 2</code>, with active and reactive power outputs set to:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; system.generator.output.active</code><code class="nohighlight hljs ansi" style="display:block;">1-element Vector{Float64}:
  0.5</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; system.generator.output.reactive</code><code class="nohighlight hljs ansi" style="display:block;">1-element Vector{Float64}:
- 0.1</code></pre><p>Similar to buses and branches, the input units can be changed to units other than per-units using different macros.</p><p>Users can also display information for a specific generator with:</p><pre><code class="language-julia hljs">print(system; generator = &quot;Generator 1&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">📁 Generator 1
+ 0.1</code></pre><p>Similar to buses and branches, the input units for generators can be set to values other than per-unit using appropriate macros. The unit system in use for generator-related data can be checked by passing <code>Generator</code> to the <code>unit</code> function.</p><p>Users can also display information for a specific generator with:</p><pre><code class="language-julia hljs">print(system; generator = &quot;Generator 1&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">📁 Generator 1
 ├── 📂 Output Power
 │   ├── Active: 0.5
 │   └── Reactive: 0.1
@@ -299,4 +330,4 @@ addGenerator!(system; label = &quot;Generator 1&quot;, bus = &quot;Bus 2&quot;, 
 └── 📂 Layout
     ├── Bus: Bus 2
     ├── Status: 1
-    └── Index: 1</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../acPowerFlow/">AC Power Flow »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.2 on <span class="colophon-date" title="Monday 5 May 2025 16:35">Monday 5 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+    └── Index: 1</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../acPowerFlow/">AC Power Flow »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.2 on <span class="colophon-date" title="Monday 5 May 2025 16:50">Monday 5 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
