@@ -109,9 +109,9 @@
     end
 
     @suppress @testset "Debugging Units" begin
-        unit(Bus)
-        unit(Branch)
-        unit(Generator)
+        printBusUnit()
+        printBranchUnit()
+        printGeneratorUnit()
     end
 end
 

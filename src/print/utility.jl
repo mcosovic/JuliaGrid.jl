@@ -1259,7 +1259,7 @@ function checkprint(obj::S, idx::Int64) where S
     false
 end
 
-function unit(::Type{<:Bus})
+function printBusUnit()
     println("📁 Bus Keyword Units")
     println("├── 📂 Demand Power")
     println("│   ├── active: " * unitList.activePowerLive)
@@ -1277,7 +1277,7 @@ function unit(::Type{<:Bus})
     println("    └── base: " * unitList.voltageBaseLive)
 end
 
-function unit(::Type{<:Branch})
+function printBranchUnit()
     println("📁 Branch Keyword Units")
     println("├── 📂 Parameter")
     println("│   ├── resistance: " * unitList.impedanceLive)
@@ -1298,7 +1298,7 @@ function unit(::Type{<:Branch})
     println("      └── type ∈ [4, 5]: ", unitList.currentMagnitudeLive)
 end
 
-function unit(::Type{<:Generator})
+function printGeneratorUnit()
     println("📁 Generator Keyword Units")
     println("├── 📂 Output Power")
     println("│   ├── active: " * unitList.activePowerLive)
