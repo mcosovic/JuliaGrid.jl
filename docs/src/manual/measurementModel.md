@@ -168,6 +168,11 @@ Additionally, users can display stored data for a specific voltmeter with:
 print(monitoring; voltmeter = 1)
 ```
 
+Finally, the unit system used for voltmeter-related keywords can be checked with:
+```@example addVoltmeterSI
+printVoltmeterUnit()
+```
+
 ---
 
 ## [Add Ammeter](@id AddAmmeterManual)
@@ -233,6 +238,11 @@ nothing # hide
 Additionally, users can display stored data for a specific ammeter with:
 ```@example addAmmeterSI
 print(monitoring; ammeter = 1)
+```
+
+Finally, the unit system used for ammeter-related keywords can be checked with:
+```@example addAmmeterSI
+printAmmeterUnit()
 ```
 
 ---
@@ -302,6 +312,11 @@ Additionally, users can display stored data for a specific wattmeter with:
 print(monitoring; wattmeter = 1)
 ```
 
+Finally, the unit system used for wattmeter-related keywords can be checked with:
+```@example addWattmeterSI
+printWattmeterUnit()
+```
+
 ---
 
 ## [Add Varmeter](@id AddVarmeterManual)
@@ -365,6 +380,11 @@ nothing # hide
 Additionally, users can display stored data for a specific varmeter with:
 ```@example addVarmeterSI
 print(monitoring; varmeter = 1)
+```
+
+Finally, the unit system used for varmeter-related keywords can be checked with:
+```@example addVarmeterSI
+printVarmeterUnit()
 ```
 
 ---
@@ -468,6 +488,11 @@ nothing # hide
 Additionally, users can display stored data for a specific PMU with:
 ```@example addPmuSI
 print(monitoring; pmu = 1)
+```
+
+Finally, the unit system used for PMU-related keywords can be checked with:
+```@example addPmuSI
+printPmuUnit()
 ```
 
 ---

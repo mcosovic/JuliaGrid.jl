@@ -2,6 +2,17 @@
 
 ---
 
+## Version 0.4.3
+
+Release Date: May 6, 2025
+
+#### Added
+  * Functions to print the unit system in use for keywords.
+  * Support for configuring the label type for each power system component group and measurement type.
+  * Support for reading bus names from Matpower and PSSE imports.
+
+---
+
 ## Version 0.4.2
 
 Release Date: April 29, 2025
