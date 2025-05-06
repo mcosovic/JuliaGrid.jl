@@ -362,6 +362,7 @@ macro default(mode::Symbol)
             pfx.apparentPower = 0.0
             unitList.activePowerLive = "pu"
             unitList.reactivePowerLive = "pu"
+            unitList.activePowerLive = "pu"
         end
 
         if mode == :unit || mode == :voltage
@@ -370,6 +371,7 @@ macro default(mode::Symbol)
             pfx.baseVoltage = 1.0
             unitList.voltageMagnitudeLive = "pu"
             unitList.voltageAngleLive = "rad"
+            unitList.voltageBaseLive = "V"
         end
 
         if mode == :unit || mode == :current
@@ -382,6 +384,8 @@ macro default(mode::Symbol)
         if mode == :unit || mode == :parameter
             pfx.impedance = 0.0
             pfx.admittance = 0.0
+            unitList.impedanceLive = "pu"
+            unitList.admittanceLive = "pu"
         end
 
         if mode == :template || mode == :bus

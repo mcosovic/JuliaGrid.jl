@@ -1318,9 +1318,51 @@ function printGeneratorUnit()
     println("├── 📂 Voltage")
     println("│   └── magnitude: " * unitList.voltageMagnitudeLive)
     println("├── 📂 Active Power Cost")
-    println("│   ├── piecewise: [", unitList.activePowerLive,  " \$/hr]")
-    println("│   └── polynomial: [\$/", unitList.activePowerLive, "ⁿ-hr, ...,  ", "\$/hr]")
+    println("│   ├── piecewise: ", unitList.activePowerLive,  ", \$/hr")
+    println("│   └── polynomial: \$/", unitList.activePowerLive, "ⁿ-hr")
     println("└── 📂 Reactive Power Cost")
-    println("    ├── piecewise: [", unitList.reactivePowerLive,  " \$/hr]")
-    println("    └── polynomial: [\$/", unitList.reactivePowerLive, "ⁿ-hr, ...,  ", "\$/hr]")
+    println("    ├── piecewise: ", unitList.reactivePowerLive,  ", \$/hr")
+    println("    └── polynomial: \$/", unitList.reactivePowerLive, "ⁿ-hr")
+end
+
+function printVoltmeterUnit()
+    println("📁 Voltmeter Keyword Units")
+    println("└── 📂 Voltage Magnitude Measurement")
+    println("    ├── magnitude: " * unitList.voltageMagnitudeLive)
+    println("    └── variance: " * unitList.voltageMagnitudeLive)
+end
+
+function printAmmeterUnit()
+    println("📁 Ammeter Keyword Units")
+    println("└── 📂 Current Magnitude Measurement")
+    println("    ├── magnitude: " * unitList.currentMagnitudeLive)
+    println("    └── variance: " * unitList.currentMagnitudeLive)
+end
+
+function printWattmeterUnit()
+    println("📁 Wattmeter Keyword Units")
+    println("└── 📂 Active Power Measurement")
+    println("    ├── active: " * unitList.activePowerLive)
+    println("    └── variance: " * unitList.activePowerLive)
+end
+
+function printVarmeterUnit()
+    println("📁 Varmeter Keyword Units")
+    println("└── 📂 Reactive Power Measurement")
+    println("    ├── reactive: " * unitList.reactivePowerLive)
+    println("    └── variance: " * unitList.reactivePowerLive)
+end
+
+function printPmuUnit()
+    println("📁 PMU Keyword Units")
+    println("├── 📂 Voltage Phasor Measurement")
+    println("│   ├── magnitude: " * unitList.voltageMagnitudeLive)
+    println("│   ├── varianceMagnitude: " * unitList.voltageMagnitudeLive)
+    println("│   ├── angle: " * unitList.voltageAngleLive)
+    println("│   └── varianceAngle: " * unitList.voltageAngleLive)
+    println("└── 📂 Current Phasor Measurement")
+    println("    ├── magnitude: " * unitList.currentMagnitudeLive)
+    println("    ├── varianceMagnitude: " * unitList.currentMagnitudeLive)
+    println("    ├── angle: " * unitList.currentAngleLive)
+    println("    └── varianceAngle: " * unitList.currentAngleLive)
 end

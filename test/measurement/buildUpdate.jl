@@ -724,6 +724,14 @@ end
         @suppress print(monitoring; pmu = "PMU 3")
         @suppress print(monitoring; pmu = "PMU 5")
     end
+
+    @suppress @testset "Debugging Units" begin
+        printVoltmeterUnit()
+        printAmmeterUnit()
+        printWattmeterUnit()
+        printVarmeterUnit()
+        printPmuUnit()
+    end
 end
 
 @testset "Build Measurements in SI Units Using Macros" begin
