@@ -197,6 +197,89 @@ function generatorTemplate()
     println("    └── status: ", template.generator.status)
 end
 
+function voltmeterTemplate()
+    println("📁 Voltmeter Template")
+    println("├── 📂 Label")
+    println("│   └── label: ", template.voltmeter.key == String ? template.voltmeter.label : template.voltmeter.key)
+    println("├── 📂 Voltage Magnitude Measurement")
+    println("│   ├── variance: ", infoTpl(template.voltmeter.variance, pfx, unitList, :voltageMagnitude)...)
+    println("│   ├── status: ", template.voltmeter.status)
+    println("└── 📂 Setting")
+    println("    └── noise: ", template.voltmeter.noise)
+end
+
+function ammeterTemplate()
+    println("📁 Ammeter Template")
+    println("├── 📂 Label")
+    println("│   └── label: ", template.ammeter.key == String ? template.ammeter.label : template.ammeter.key)
+    println("├── 📂 From-Bus Current Magnitude Measurement")
+    println("│   ├── varianceFrom: ", infoTpl(template.ammeter.varianceFrom, pfx, unitList, :currentMagnitude)...)
+    println("│   └── statusFrom: ", template.ammeter.statusFrom)
+    println("├── 📂 To-Bus Current Magnitude Measurement")
+    println("│   ├── varianceTo: ", infoTpl(template.ammeter.varianceTo, pfx, unitList, :currentMagnitude)...)
+    println("│   └── statusTo: ", template.ammeter.statusTo)
+    println("└── 📂 Setting")
+    println("    ├── noise: ", template.ammeter.noise)
+    println("    └── square: ", template.ammeter.square)
+end
+
+function wattmeterTemplate()
+    println("📁 Wattmeter Template")
+    println("├── 📂 Label")
+    println("│   └── label: ", template.wattmeter.key == String ? template.wattmeter.label : template.wattmeter.key)
+    println("├── 📂 Active Power Injection Measurement")
+    println("│   ├── varianceBus: ", infoTpl(template.wattmeter.varianceBus, pfx, unitList, :activePower)...)
+    println("│   └── statusBus: ", template.wattmeter.statusBus)
+    println("├── 📂 From-Bus Active Power Flow Measurement")
+    println("│   ├── varianceFrom: ", infoTpl(template.wattmeter.varianceFrom, pfx, unitList, :activePower)...)
+    println("│   └── statusFrom: ", template.wattmeter.statusFrom)
+    println("├── 📂 To-Bus Active Power Flow Measurement")
+    println("│   ├── varianceTo: ", infoTpl(template.wattmeter.varianceTo, pfx, unitList, :activePower)...)
+    println("│   └── statusTo: ", template.wattmeter.statusTo)
+    println("└── 📂 Setting")
+    println("    └── noise: ", template.wattmeter.noise)
+end
+
+function varmeterTemplate()
+    println("📁 Varmeter Template")
+    println("├── 📂 Label")
+    println("│   └── label: ", template.varmeter.key == String ? template.varmeter.label : template.varmeter.key)
+    println("├── 📂 Reactive Power Injection Measurement")
+    println("│   ├── varianceBus: ", infoTpl(template.varmeter.varianceBus, pfx, unitList, :reactivePower)...)
+    println("│   └── statusBus: ", template.varmeter.statusBus)
+    println("├── 📂 From-Bus Reactive Power Flow Measurement")
+    println("│   ├── varianceFrom: ", infoTpl(template.varmeter.varianceFrom, pfx, unitList, :reactivePower)...)
+    println("│   └── statusFrom: ", template.varmeter.statusFrom)
+    println("├── 📂 To-Bus Reactive Power Flow Measurement")
+    println("│   ├── varianceTo: ", infoTpl(template.varmeter.varianceTo, pfx, unitList, :reactivePower)...)
+    println("│   └── statusTo: ", template.varmeter.statusTo)
+    println("└── 📂 Setting")
+    println("    └── noise: ", template.varmeter.noise)
+end
+
+function pmuTemplate()
+    println("📁 PMU Template")
+    println("├── 📂 Label")
+    println("│   └── label: ", template.pmu.key == String ? template.pmu.label : template.pmu.key)
+    println("├── 📂 Voltage Phasor Measurement")
+    println("│   ├── varianceMagnitudeBus: ", infoTpl(template.pmu.varianceMagnitudeBus, pfx, unitList, :voltageMagnitude)...)
+    println("│   ├── varianceAngleBus: ", infoTpl(template.pmu.varianceAngleBus, pfx, unitList, :voltageAngle)...)
+    println("│   └── statusBus: ", template.pmu.statusFrom)
+    println("├── 📂 From-Bus Current Phasor Measurement")
+    println("│   ├── varianceMagnitudeFrom: ", infoTpl(template.pmu.varianceMagnitudeFrom, pfx, unitList, :currentMagnitude)...)
+    println("│   ├── varianceAngleFrom: ", infoTpl(template.pmu.varianceAngleFrom, pfx, unitList, :currentAngle)...)
+    println("│   └── statusFrom: ", template.pmu.statusFrom)
+    println("├── 📂 To-Bus Current Phasor Measurement")
+    println("│   ├── varianceMagnitudeTo: ", infoTpl(template.pmu.varianceMagnitudeTo, pfx, unitList, :currentMagnitude)...)
+    println("│   ├── varianceAngleTo: ", infoTpl(template.pmu.varianceAngleTo, pfx, unitList, :currentAngle)...)
+    println("│   └── statusTo: ", template.pmu.statusTo)
+    println("└── 📂 Setting")
+    println("    ├── noise: ", template.pmu.noise)
+    println("    ├── correlated: ", template.pmu.correlated)
+    println("    ├── polar: ", template.pmu.polar)
+    println("    └── square: ", template.pmu.square)
+end
+
 
 function infoTpl(container::ContainerTemplate, pfx::PrefixLive, unitList::UnitList, field::Symbol)
     if container.pu
@@ -261,6 +344,26 @@ macro info(obj, field)
         elseif field == :generator
             return esc(quote
                 JuliaGrid.generatorTemplate()
+            end)
+        elseif field == :voltmeter
+            return esc(quote
+                voltmeterTemplate()
+            end)
+        elseif field == :ammeter
+            return esc(quote
+                ammeterTemplate()
+            end)
+        elseif field == :wattmeter
+            return esc(quote
+                wattmeterTemplate()
+            end)
+        elseif field == :varmeter
+            return esc(quote
+                varmeterTemplate()
+            end)
+        elseif field == :pmu
+            return esc(quote
+                pmuTemplate()
             end)
         end
     end

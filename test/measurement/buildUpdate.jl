@@ -725,12 +725,17 @@ end
         @suppress print(monitoring; pmu = "PMU 5")
     end
 
-    @suppress @testset "Debugging Units" begin
+    @suppress @testset "Debugging Units and Templates" begin
         @info(unit, voltmeter)
         @info(unit, ammeter)
         @info(unit, wattmeter)
         @info(unit, varmeter)
         @info(unit, pmu)
+        @info(template, voltmeter)
+        @info(template, ammeter)
+        @info(template, wattmeter)
+        @info(template, varmeter)
+        @info(template, pmu)
     end
 end
 
