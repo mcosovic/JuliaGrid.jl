@@ -8,7 +8,7 @@ The framework's architecture centres around code-reusability paradigm, allowing 
 * Users define the specific type of required analysis.
 * Finally, they solve the generated power system model.
 
-JuliaGrid supports importing power system data from Matpower and PSSE case files. It also provides functions for building power systems and supports saving data in HDF5 format to enhance loading speed.
+JuliaGrid offers comprehensive support for importing power system data from both Matpower and PSSE case files. In addition to data import, it provides tools for constructing detailed models of power systems and associated measurements. To accelerate future data access, it also enables saving processed data in the efficient HDF5 format.
 
 ---
 

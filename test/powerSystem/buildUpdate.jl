@@ -108,10 +108,13 @@
         print(build; generator = 1)
     end
 
-    @suppress @testset "Debugging Units" begin
-        printBusUnit()
-        printBranchUnit()
-        printGeneratorUnit()
+    @suppress @testset "Debugging Units and Templates" begin
+        @info(unit, bus)
+        @info(unit, branch)
+        @info(unit, generator)
+        @info(template, bus)
+        @info(template, branch)
+        @info(template, generator)
     end
 end
 

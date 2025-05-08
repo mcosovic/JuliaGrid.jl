@@ -726,11 +726,11 @@ end
     end
 
     @suppress @testset "Debugging Units" begin
-        printVoltmeterUnit()
-        printAmmeterUnit()
-        printWattmeterUnit()
-        printVarmeterUnit()
-        printPmuUnit()
+        @info(unit, voltmeter)
+        @info(unit, ammeter)
+        @info(unit, wattmeter)
+        @info(unit, varmeter)
+        @info(unit, pmu)
     end
 end
 

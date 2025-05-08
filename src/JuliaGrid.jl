@@ -29,12 +29,11 @@ include("print/powerSystem.jl")
 include("print/constraint.jl")
 include("print/measurement.jl")
 include("print/solver.jl")
+include("print/info.jl")
 export printBusData, printBranchData, printGeneratorData
 export printBusSummary, printBranchSummary, printGeneratorSummary
 export printBusConstraint, printBranchConstraint, printGeneratorConstraint
 export printVoltmeterData, printAmmeterData, printWattmeterData, printVarmeterData, printPmuData
-export printBusUnit, printBranchUnit, printGeneratorUnit
-export printVoltmeterUnit, printAmmeterUnit, printWattmeterUnit, printVarmeterUnit, printPmuUnit
 
 ########## Power System ##########
 include("powerSystem/load.jl")

@@ -170,7 +170,7 @@ print(monitoring; voltmeter = 1)
 
 Finally, the unit system used for voltmeter-related keywords can be checked with:
 ```@example addVoltmeterSI
-printVoltmeterUnit()
+@info(unit, voltmeter)
 ```
 
 ---
@@ -242,7 +242,7 @@ print(monitoring; ammeter = 1)
 
 Finally, the unit system used for ammeter-related keywords can be checked with:
 ```@example addAmmeterSI
-printAmmeterUnit()
+@info(unit, ammeter)
 ```
 
 ---
@@ -314,7 +314,7 @@ print(monitoring; wattmeter = 1)
 
 Finally, the unit system used for wattmeter-related keywords can be checked with:
 ```@example addWattmeterSI
-printWattmeterUnit()
+@info(unit, wattmeter)
 ```
 
 ---
@@ -384,7 +384,7 @@ print(monitoring; varmeter = 1)
 
 Finally, the unit system used for varmeter-related keywords can be checked with:
 ```@example addVarmeterSI
-printVarmeterUnit()
+@info(unit, varmeter)
 ```
 
 ---
@@ -492,7 +492,7 @@ print(monitoring; pmu = 1)
 
 Finally, the unit system used for PMU-related keywords can be checked with:
 ```@example addPmuSI
-printPmuUnit()
+@info(unit, pmu)
 ```
 
 ---

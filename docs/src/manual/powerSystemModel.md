@@ -198,7 +198,7 @@ system.base.voltage.value, system.base.voltage.unit
 
 Finally, the user can check the unit system in use for bus-related keywords:
 ```@example addBus
-printBusUnit()
+@info(unit, bus)
 ```
 
 ---
@@ -256,7 +256,7 @@ It is important to note that, when working with impedance and admittance values 
 
 Finally, the user can check the unit system in use for branch-related keywords:
 ```@example addBranchUnit
-printBranchUnit()
+@info(unit, branch)
 ```
 
 ---
@@ -282,7 +282,7 @@ system.generator.output.active
 system.generator.output.reactive
 ```
 
-Similar to buses and branches, the input units for generators can be set to values other than per-unit using appropriate macros. The unit system in use for generator-related data can be checked by using `printGeneratorUnit` function.
+Similar to buses and branches, the input units for generators can be set to values other than per-unit using appropriate macros. The unit system in use for generator-related data can be checked by using the macro `@info(unit, generator)`.
 
 
 Users can also display information for a specific generator with:
