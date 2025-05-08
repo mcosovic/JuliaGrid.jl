@@ -1,59 +1,3 @@
-import Base.@info
-
-macro info(obj, field)
-    if obj == :unit
-        if field == :bus
-            return esc(quote
-                infoBusUnit()
-            end)
-        elseif field == :branch
-            return esc(quote
-                infoBranchUnit()
-            end)
-        elseif field == :generator
-            return esc(quote
-                infoGeneratorUnit()
-            end)
-        elseif field == :voltmeter
-            return esc(quote
-                infoVoltmeterUnit()
-            end)
-        elseif field == :ammeter
-            return esc(quote
-                infoAmmeterUnit()
-            end)
-        elseif field == :wattmeter
-            return esc(quote
-                infoWattmeterUnit()
-            end)
-        elseif field == :varmeter
-            return esc(quote
-                infoVarmeterUnit()
-            end)
-        elseif field == :pmu
-            return esc(quote
-                infoPmuUnit()
-            end)
-        end
-    end
-
-    if obj == :template
-        if field == :bus
-            return esc(quote
-                infoBusTemplate()
-            end)
-        elseif field == :branch
-            return esc(quote
-                infoBranchTemplate()
-            end)
-        elseif field == :generator
-            return esc(quote
-                infoGeneratorTemplate()
-            end)
-        end
-    end
-end
-
 function infoBusUnit()
     println("📁 Bus Keyword Units")
     println("├── 📂 Demand Power")
@@ -263,6 +207,61 @@ function infoTpl(container::ContainerTemplate, pfx::PrefixLive, unitList::UnitLi
             return container.value / prefix, " [" * getfield(unitList, Symbol(string(field, "Live"))) * "]"
         else
             return container.value, " [" * getfield(unitList, field)[1] * "]"
+        end
+    end
+end
+
+import Base.@info
+macro info(obj, field)
+    if obj == :unit
+        if field == :bus
+            return esc(quote
+                infoBusUnit()
+            end)
+        elseif field == :branch
+            return esc(quote
+                infoBranchUnit()
+            end)
+        elseif field == :generator
+            return esc(quote
+                infoGeneratorUnit()
+            end)
+        elseif field == :voltmeter
+            return esc(quote
+                infoVoltmeterUnit()
+            end)
+        elseif field == :ammeter
+            return esc(quote
+                infoAmmeterUnit()
+            end)
+        elseif field == :wattmeter
+            return esc(quote
+                infoWattmeterUnit()
+            end)
+        elseif field == :varmeter
+            return esc(quote
+                infoVarmeterUnit()
+            end)
+        elseif field == :pmu
+            return esc(quote
+                infoPmuUnit()
+            end)
+        end
+    end
+
+    if obj == :template
+        if field == :bus
+            return esc(quote
+                infoBusTemplate()
+            end)
+        elseif field == :branch
+            return esc(quote
+                infoBranchTemplate()
+            end)
+        elseif field == :generator
+            return esc(quote
+                infoGeneratorTemplate()
+            end)
         end
     end
 end
