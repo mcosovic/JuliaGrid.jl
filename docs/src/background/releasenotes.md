@@ -2,6 +2,15 @@
 
 ---
 
+## Version 0.4.4
+
+Release Date: May 8, 2025
+
+#### Added
+  * Functions to print the templates currently in use.
+
+---
+
 ## Version 0.4.3
 
 Release Date: May 6, 2025
