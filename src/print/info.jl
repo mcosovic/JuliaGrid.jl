@@ -303,7 +303,7 @@ macro info(obj, field)
             end)
         elseif field == :branch
             return esc(quote
-            JuliaGrid.branchUnit()
+                JuliaGrid.branchUnit()
             end)
         elseif field == :generator
             return esc(quote
@@ -347,23 +347,23 @@ macro info(obj, field)
             end)
         elseif field == :voltmeter
             return esc(quote
-                voltmeterTemplate()
+                JuliaGrid.voltmeterTemplate()
             end)
         elseif field == :ammeter
             return esc(quote
-                ammeterTemplate()
+                JuliaGrid.ammeterTemplate()
             end)
         elseif field == :wattmeter
             return esc(quote
-                wattmeterTemplate()
+                JuliaGrid.wattmeterTemplate()
             end)
         elseif field == :varmeter
             return esc(quote
-                varmeterTemplate()
+                JuliaGrid.varmeterTemplate()
             end)
         elseif field == :pmu
             return esc(quote
-                pmuTemplate()
+                JuliaGrid.pmuTemplate()
             end)
         end
     end

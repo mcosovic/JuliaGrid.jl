@@ -108,7 +108,7 @@
         print(build; generator = 1)
     end
 
-    @testset "Debugging Units and Templates" begin
+    @suppress @testset "Debugging Units and Templates" begin
         @info(unit, bus)
         @info(unit, branch)
         @info(unit, generator)
