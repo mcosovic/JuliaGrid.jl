@@ -345,6 +345,11 @@ In the given example, the [`@generator`](@ref @generator) macro is utilized inst
 system.generator.voltage.magnitude
 ```
 
+Users can view the templates associated with the bus, branch, or generators keywords. For example, to check templates related to bus keywords, use:
+```@example CreateBusTemplate
+@info(template, bus)
+```
+
 ---
 
 ##### Customizing Input Units

@@ -553,6 +553,11 @@ For instance, when adding a wattmeter to the bus, the `varianceBus = 1e-3` will 
 
 It is important to note that changing input units will also impact the templates accordingly.
 
+Users can view the templates associated with the voltmeter, ammeter, wattmeter, varmeter or PMUs keywords. For example, to check templates related to wattmeter keywords, use:
+```@example changeDefault
+@info(template, wattmeter)
+```
+
 ---
 
 ##### Multiple Templates
