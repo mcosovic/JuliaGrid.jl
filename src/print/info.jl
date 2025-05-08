@@ -1,4 +1,4 @@
-function infoBusUnit()
+function busUnit()
     println("📁 Bus Keyword Units")
     println("├── 📂 Demand Power")
     println("│   ├── active: " * unitList.activePowerLive)
@@ -16,7 +16,7 @@ function infoBusUnit()
     println("    └── base: " * unitList.voltageBaseLive)
 end
 
-function infoBranchUnit()
+function branchUnit()
     println("📁 Branch Keyword Units")
     println("├── 📂 Parameter")
     println("│   ├── resistance: " * unitList.impedanceLive)
@@ -37,7 +37,7 @@ function infoBranchUnit()
     println("      └── type ∈ [4, 5]: ", unitList.currentMagnitudeLive)
 end
 
-function infoGeneratorUnit()
+function generatorUnit()
     println("📁 Generator Keyword Units")
     println("├── 📂 Output Power")
     println("│   ├── active: " * unitList.activePowerLive)
@@ -64,35 +64,35 @@ function infoGeneratorUnit()
     println("    └── polynomial: \$/", unitList.reactivePowerLive, "ⁿ-hr")
 end
 
-function infoVoltmeterUnit()
+function voltmeterUnit()
     println("📁 Voltmeter Keyword Units")
     println("└── 📂 Voltage Magnitude Measurement")
     println("    ├── magnitude: " * unitList.voltageMagnitudeLive)
     println("    └── variance: " * unitList.voltageMagnitudeLive)
 end
 
-function infoAmmeterUnit()
+function ammeterUnit()
     println("📁 Ammeter Keyword Units")
     println("└── 📂 Current Magnitude Measurement")
     println("    ├── magnitude: " * unitList.currentMagnitudeLive)
     println("    └── variance: " * unitList.currentMagnitudeLive)
 end
 
-function infoWattmeterUnit()
+function wattmeterUnit()
     println("📁 Wattmeter Keyword Units")
     println("└── 📂 Active Power Measurement")
     println("    ├── active: " * unitList.activePowerLive)
     println("    └── variance: " * unitList.activePowerLive)
 end
 
-function infoVarmeterUnit()
+function varmeterUnit()
     println("📁 Varmeter Keyword Units")
     println("└── 📂 Reactive Power Measurement")
     println("    ├── reactive: " * unitList.reactivePowerLive)
     println("    └── variance: " * unitList.reactivePowerLive)
 end
 
-function infoPmuUnit()
+function pmuUnit()
     println("📁 PMU Keyword Units")
     println("├── 📂 Voltage Phasor Measurement")
     println("│   ├── magnitude: " * unitList.voltageMagnitudeLive)
@@ -106,7 +106,7 @@ function infoPmuUnit()
     println("    └── varianceAngle: " * unitList.currentAngleLive)
 end
 
-function infoBusTemplate()
+function busTemplate()
     println("📁 Bus Template")
     println("├── 📂 Label")
     println("│   └── label: ", template.bus.key == String ? template.bus.label : template.bus.key)
@@ -130,7 +130,7 @@ function infoBusTemplate()
     println("    └── lossZone: ", template.bus.lossZone)
 end
 
-function infoBranchTemplate()
+function branchTemplate()
     if template.branch.type == 1
         flowType = :activePower
     elseif template.branch.type in (2, 3)
@@ -162,7 +162,7 @@ function infoBranchTemplate()
     println("    └── status: ", template.branch.status)
 end
 
-function infoGeneratorTemplate()
+function generatorTemplate()
     println("📁 Generator Template")
     println("├── 📂 Label")
     println("│   └── label: ", template.generator.key == String ? template.generator.label : template.generator.key)
@@ -216,35 +216,35 @@ macro info(obj, field)
     if obj == :unit
         if field == :bus
             return esc(quote
-                infoBusUnit()
+                JuliaGrid.busUnit()
             end)
         elseif field == :branch
             return esc(quote
-                infoBranchUnit()
+            JuliaGrid.branchUnit()
             end)
         elseif field == :generator
             return esc(quote
-                infoGeneratorUnit()
+                JuliaGrid.generatorUnit()
             end)
         elseif field == :voltmeter
             return esc(quote
-                infoVoltmeterUnit()
+                JuliaGrid.voltmeterUnit()
             end)
         elseif field == :ammeter
             return esc(quote
-                infoAmmeterUnit()
+                JuliaGrid.ammeterUnit()
             end)
         elseif field == :wattmeter
             return esc(quote
-                infoWattmeterUnit()
+                JuliaGrid.wattmeterUnit()
             end)
         elseif field == :varmeter
             return esc(quote
-                infoVarmeterUnit()
+                JuliaGrid.varmeterUnit()
             end)
         elseif field == :pmu
             return esc(quote
-                infoPmuUnit()
+                JuliaGrid.pmuUnit()
             end)
         end
     end
@@ -252,15 +252,15 @@ macro info(obj, field)
     if obj == :template
         if field == :bus
             return esc(quote
-                infoBusTemplate()
+                JuliaGrid.busTemplate()
             end)
         elseif field == :branch
             return esc(quote
-                infoBranchTemplate()
+                JuliaGrid.branchTemplate()
             end)
         elseif field == :generator
             return esc(quote
-                infoGeneratorTemplate()
+                JuliaGrid.generatorTemplate()
             end)
         end
     end
