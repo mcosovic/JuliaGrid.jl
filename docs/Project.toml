@@ -7,7 +7,7 @@ GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
 
 [compat]
-Documenter = "1.10.2"
+Documenter = "=1.10.2"
 JuMP = "1.15.0"
 HiGHS = "1.5.0"
 Ipopt = "1.7.0"
