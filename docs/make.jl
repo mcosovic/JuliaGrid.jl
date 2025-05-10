@@ -16,7 +16,12 @@ makedocs(
     format = Documenter.HTML(
         assets = ["assets/style.css", "assets/citations.css", "assets/subfigure.css"],
         prettyurls = get(ENV, "CI", nothing) == "true",
-        collapselevel = 1
+        collapselevel = 1,
+        size_threshold_ignore = [
+            "api/measurementModel.md",
+            "tutorials/acStateEstimation.md",
+            "tutorials/acPowerFlow.md"
+        ]
     ),
     pages = [
         "Introduction" => "index.md",
