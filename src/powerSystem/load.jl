@@ -998,7 +998,7 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
                 X = branch.parameter.reactance
                 τ = branch.parameter.turnsRatio
 
-                if cz == 2 || cz == 3
+                if cz ∈ (2, 3)
                     Sbinv = 1 / parse(Float64, data[24])
 
                     if cz == 3
@@ -1104,7 +1104,7 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
                 Vb2 = parse(Float64, data[51])
                 Vb3 = parse(Float64, data[68])
 
-                if cz == 2 || cz == 3
+                if cz ∈ (2, 3)
                     Sbinv1 = 1 / parse(Float64, data[24])
                     Sbinv2 = 1 / parse(Float64, data[27])
                     Sbinv3 = 1 / parse(Float64, data[30])

@@ -452,7 +452,7 @@ macro ammeter(kwargs...)
             parameter::Symbol = kwarg.args[1]
 
             if hasfield(AmmeterTemplate, parameter)
-                if parameter in [:varianceFrom, :varianceTo]
+                if parameter in (:varianceFrom, :varianceTo)
                     container::ContainerTemplate = getfield(template.ammeter, parameter)
                     val = Float64(eval(kwarg.args[2]))
                     if pfx.currentMagnitude != 0.0
@@ -462,9 +462,9 @@ macro ammeter(kwargs...)
                         setfield!(container, :value, val)
                         setfield!(container, :pu, true)
                     end
-                elseif parameter in [:statusFrom, :statusTo]
+                elseif parameter in (:statusFrom, :statusTo)
                     setfield!(template.ammeter, parameter, Int8(eval(kwarg.args[2])))
-                elseif parameter in [:noise, :square]
+                elseif parameter in (:noise, :square)
                     setfield!(template.ammeter, parameter, Bool(eval(kwarg.args[2])))
                 elseif parameter == :label
                     macroLabel(template.ammeter, kwarg.args[2], "[?!]")

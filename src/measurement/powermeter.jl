@@ -927,7 +927,7 @@ macro wattmeter(kwargs...)
             parameter::Symbol = kwarg.args[1]
 
             if hasfield(WattmeterTemplate, parameter)
-                if parameter in [:varianceBus, :varianceFrom, :varianceTo]
+                if parameter in (:varianceBus, :varianceFrom, :varianceTo)
                     container::ContainerTemplate = getfield(template.wattmeter, parameter)
                     val = Float64(eval(kwarg.args[2]))
                     if pfx.activePower != 0.0
@@ -937,7 +937,7 @@ macro wattmeter(kwargs...)
                         setfield!(container, :value, val)
                         setfield!(container, :pu, true)
                     end
-                elseif parameter in [:statusBus, :statusFrom, :statusTo]
+                elseif parameter in (:statusBus, :statusFrom, :statusTo)
                     setfield!(template.wattmeter, parameter, Int8(eval(kwarg.args[2])))
                 elseif parameter == :noise
                     setfield!(template.wattmeter, parameter, Bool(eval(kwarg.args[2])))
@@ -1002,7 +1002,7 @@ macro varmeter(kwargs...)
             parameter::Symbol = kwarg.args[1]
 
             if hasfield(VarmeterTemplate, parameter)
-                if parameter in [:varianceBus, :varianceFrom, :varianceTo]
+                if parameter in (:varianceBus, :varianceFrom, :varianceTo)
                     container::ContainerTemplate = getfield(template.varmeter, parameter)
                     val = Float64(eval(kwarg.args[2]))
                     if pfx.reactivePower != 0.0
@@ -1012,7 +1012,7 @@ macro varmeter(kwargs...)
                         setfield!(container, :value, val)
                         setfield!(container, :pu, true)
                     end
-                elseif parameter in [:statusBus, :statusFrom, :statusTo]
+                elseif parameter in (:statusBus, :statusFrom, :statusTo)
                     setfield!(template.varmeter, parameter, Int8(eval(kwarg.args[2])))
                 elseif parameter == :noise
                     setfield!(template.varmeter, parameter, Bool(eval(kwarg.args[2])))

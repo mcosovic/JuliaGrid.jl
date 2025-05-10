@@ -374,13 +374,13 @@ function updateGenerator!(
     idx = gen.label[getLabel(gen, label, "generator")]
     idxBus = gen.layout.bus[idx]
 
-    if gen.layout.status[idx] == 0 && system.bus.layout.type[idxBus] in [2, 3]
+    if gen.layout.status[idx] == 0 && system.bus.layout.type[idxBus] ∈ (2, 3)
         if length(system.bus.supply.generator[idxBus]) == 0
             errorTypeConversion()
         end
     end
 
-    if system.bus.layout.type[idxBus] in [2, 3]
+    if system.bus.layout.type[idxBus] ∈ (2, 3)
         idx = system.bus.supply.generator[idxBus][1]
         analysis.voltage.magnitude[idxBus] = gen.voltage.magnitude[idx]
     end
@@ -397,13 +397,13 @@ function updateGenerator!(analysis::AcPowerFlow{GaussSeidel}; label::IntStrMiss,
     idx = gen.label[getLabel(gen, label, "generator")]
     idxBus = gen.layout.bus[idx]
 
-    if gen.layout.status[idx] == 0 && bus.layout.type[idxBus] in [2, 3]
+    if gen.layout.status[idx] == 0 && bus.layout.type[idxBus] ∈ (2, 3)
         if length(bus.supply.generator[idxBus]) == 0
             errorTypeConversion()
         end
     end
 
-    if bus.layout.type[idxBus] in [2, 3]
+    if bus.layout.type[idxBus] ∈ (2, 3)
         idx = bus.supply.generator[idxBus][1]
         analysis.voltage.magnitude[idxBus] = gen.voltage.magnitude[idx]
         analysis.method.voltage[idxBus] =
@@ -579,18 +579,18 @@ macro generator(kwargs...)
             parameter::Symbol = kwarg.args[1]
 
             if hasfield(GeneratorTemplate, parameter)
-                if !(parameter in [:area; :status; :label])
+                if parameter ∉ (:area, :status, :label)
                     container::ContainerTemplate = getfield(template.generator, parameter)
 
-                    if parameter in [
-                        :active; :minActive; :maxActive; :lowActive; :upActive;
-                        :loadFollowing; :reserve10min; :reserve30min
-                        ]
+                    if parameter in (
+                        :active, :minActive, :maxActive, :lowActive, :upActive,
+                        :loadFollowing, :reserve10min, :reserve30min
+                        )
                         pfxLive = pfx.activePower
-                    elseif parameter in [
-                        :reactive; :minReactive; :maxReactive; :minLowReactive;
-                        :maxLowReactive; :minUpReactive; :maxUpReactive; :reactiveRamp
-                        ]
+                    elseif parameter in (
+                        :reactive, :minReactive, :maxReactive, :minLowReactive,
+                        :maxLowReactive, :minUpReactive, :maxUpReactive, :reactiveRamp
+                        )
                         pfxLive = pfx.reactivePower
                     elseif parameter == :magnitude
                         pfxLive = pfx.voltageMagnitude
@@ -686,7 +686,7 @@ function cost!(
         )
     elseif ismissing(active) && ismissing(reactive)
         throw(ErrorException("The cost model is missing."))
-    elseif isset(active) && !(active in [1; 2]) || isset(reactive) && !(reactive in [1; 2])
+    elseif isset(active) && active ∉ (1, 2) || isset(reactive) && reactive ∉ (1, 2)
         throw(ErrorException(
             "The model is not allowed; it should be piecewise (1) or polynomial (2).")
         )

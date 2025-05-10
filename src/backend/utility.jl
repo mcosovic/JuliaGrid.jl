@@ -16,7 +16,7 @@ end
     catch
         extension = ""
     end
-    if extension == ".h5" || extension == ".m"  || extension == ".raw"
+    if extension ∈ (".h5", ".m", ".raw")
         fullpath = inputFile
         path = dirname(inputFile)
         dataname = basename(inputFile)
@@ -24,7 +24,7 @@ end
 
     if isempty(extension)
         throw(ErrorException("The extension is missing."))
-    elseif extension != ".h5" && extension != ".m" && extension != ".raw"
+    elseif extension ∉ (".h5", ".m", ".raw")
         throw(DomainError(extension, "The extension "  * extension * " is not supported."))
     end
 
@@ -328,7 +328,7 @@ end
 ##### Check if the Value is Stored #####
 function isstored(A::SparseMatrixCSC{Float64, Int64}, i::Int64, j::Int64)
     startIdx = A.colptr[j]
-    endIdx = A.colptr[j+1] - 1
+    endIdx = A.colptr[j + 1] - 1
 
     startIdx <= endIdx && i in A.rowval[startIdx:endIdx]
 end
@@ -553,7 +553,7 @@ function errorTemplateKeyword(parameter::Symbol)
     throw(ErrorException("The keyword $(parameter) is illegal."))
 end
 
-function errorGetLabel(name::Union{Int64, String}, label::Union{Int64, String})
+function errorGetLabel(name::IntStr, label::IntStr)
     throw(ErrorException(
         "The $name label $label that has been specified does " *
         "not exist within the available $name labels.")
@@ -574,7 +574,7 @@ end
 
 function errorTypeConversion()
     throw(ErrorException(
-            "The power flow model cannot be reused because the bus type configuration has changed.")
+        "The power flow model cannot be reused because the bus type configuration has changed.")
         )
 end
 
@@ -592,13 +592,13 @@ function errorSlackDefinition()
     )
 end
 
-function errorOnePoint(label::Union{String, Int64})
+function errorOnePoint(label::IntStr)
     throw(ErrorException(
         "The generator labeled $label has a piecewise linear cost function with only one defined point.")
     )
 end
 
-function errorSlope(label::Union{String, Int64}, slope::Float64)
+function errorSlope(label::IntStr, slope::Float64)
     throw(ErrorException(
         "The piecewise linear cost function's slope of the generator labeled $label has $slope value.")
     )
@@ -634,7 +634,7 @@ function errorCovariance(pmu::PMU, varianceIm::Float64, L2::Float64, idx::Int64)
 end
 
 ##### Info Messages #####
-function infoObjective(label::Union{String, Int64})
+function infoObjective(label::IntStr)
     @info(
         "The generator labeled $label has an undefined polynomial " *
         "cost function, which is not included in the objective."

@@ -547,9 +547,7 @@ function generatorPower(analysis::AcPowerFlow; label::IntStr)
 
             basePowerMVA = system.base.power.value * system.base.power.prefix * 1e-6
             if basePowerMVA * abs(Qminsum - Qmaxsum) > 10 * eps(Float64)
-                Qg =
-                    QminNew + ((Qgensum - Qminsum) / (Qmaxsum - Qminsum)) *
-                    (QmaxNew - QminNew)
+                Qg = QminNew + ((Qgensum - Qminsum) / (Qmaxsum - Qminsum)) * (QmaxNew - QminNew)
             else
                 Qg = QminNew + (Qgensum - Qminsum) / service
             end

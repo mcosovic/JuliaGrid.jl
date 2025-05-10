@@ -72,7 +72,7 @@ function addBus!(system::PowerSystem; label::IntStrMiss = missing, kwargs...)
     setLabel(bus, label, def.label, "bus")
 
     add!(bus.layout.type, key.type, def.type)
-    if !(bus.layout.type[end] in [1, 2, 3])
+    if bus.layout.type[end] ∉ (1, 2, 3)
         throw(ErrorException("The value $(key.type) of the bus type is illegal."))
     end
     if bus.layout.type[end] == 3
@@ -164,7 +164,7 @@ function updateBus!(system::PowerSystem; label::IntStrMiss, kwargs...)
             bus.layout.pattern += 1
         end
 
-        if key.type in [1; 2]
+        if key.type ∈ (1, 2)
             if bus.layout.slack == idx
                 bus.layout.slack = 0
             end
@@ -172,7 +172,7 @@ function updateBus!(system::PowerSystem; label::IntStrMiss, kwargs...)
         end
 
         if key.type == 3
-            if bus.layout.slack != 0 && bus.layout.slack != idx
+            if bus.layout.slack ∉ (0, idx)
                 throw(ErrorException(
                     "To set bus with label " * label * " as the slack bus, reassign " *
                     "the current slack bus to either a generator or demand bus.")
@@ -406,13 +406,13 @@ macro bus(kwargs...)
             parameter::Symbol = kwarg.args[1]
 
             if hasfield(BusTemplate, parameter)
-                if !(parameter in [:base; :type; :area; :lossZone; :label])
+                if parameter ∉ (:base, :type, :area, :lossZone, :label)
                     container::ContainerTemplate = getfield(template.bus, parameter)
-                    if parameter in [:active; :conductance]
+                    if parameter in (:active, :conductance)
                         pfxLive = pfx.activePower
-                    elseif parameter in [:reactive; :susceptance]
+                    elseif parameter in (:reactive, :susceptance)
                         pfxLive = pfx.reactivePower
-                    elseif parameter in [:magnitude; :minMagnitude; :maxMagnitude]
+                    elseif parameter in (:magnitude, :minMagnitude, :maxMagnitude)
                         pfxLive = pfx.voltageMagnitude
                     elseif parameter == :angle
                         pfxLive = pfx.voltageAngle
@@ -426,13 +426,10 @@ macro bus(kwargs...)
                     end
                 else
                     if parameter == :base
-                        setfield!(
-                            template.bus, parameter,
-                            Float64(eval(kwarg.args[2])) * pfx.baseVoltage
-                        )
+                        setfield!(template.bus, parameter, Float64(eval(kwarg.args[2])) * pfx.baseVoltage)
                     elseif parameter == :type
                         setfield!(template.bus, parameter, Int8(eval(kwarg.args[2])))
-                    elseif parameter in [:area; :lossZone]
+                    elseif parameter in (:area, :lossZone)
                         setfield!(template.bus, parameter, Int64(eval(kwarg.args[2])))
                     elseif parameter == :label
                         macroLabel(template.bus, kwarg.args[2], "[?]")

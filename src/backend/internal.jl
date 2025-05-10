@@ -39,7 +39,7 @@ macro base(system::Symbol, power::Symbol, voltage::Symbol)
 end
 
 """
-    @power(active, reactive, [apparent])
+    @power(active, reactive, apparent)
 
 JuliaGrid stores all data related with powers in per-units, and these cannot be altered. However, the
 power units of the built-in functions used to add or modified power system elements can be modified
@@ -82,7 +82,7 @@ Changing the unit of `apparent` power unit is reflected in the following quantit
 @power(MW, kVAr, VA)
 ```
 """
-macro power(active::Symbol, reactive::Symbol, apparent::Symbol = :pu)
+macro power(active::Symbol = :pu, reactive::Symbol = :pu, apparent::Symbol = :pu)
     quote
         unitList.activePowerLive = string($(QuoteNode(active)))
         local suffix = parseSuffix(unitList.activePowerLive, unitList.activePower, "active power")
@@ -99,7 +99,7 @@ macro power(active::Symbol, reactive::Symbol, apparent::Symbol = :pu)
 end
 
 """
-    @voltage(magnitude, angle, [base])
+    @voltage(magnitude, angle, base)
 
 JuliaGrid stores all data related with voltages in per-units and radians, and these cannot be altered.
 However, the voltage magnitude and angle units of the built-in functions used to add or modified power
@@ -136,7 +136,7 @@ Changing the unit prefix of voltage `base` is reflected in the following quantit
 @voltage(pu, deg, kV)
 ```
 """
-macro voltage(magnitude::Symbol, angle::Symbol, base::Symbol = :V)
+macro voltage(magnitude::Symbol = :pu, angle::Symbol = :rad, base::Symbol = :V)
     quote
         unitList.voltageMagnitudeLive = string($(esc(QuoteNode(magnitude))))
         local suffix = parseSuffix(unitList.voltageMagnitudeLive, unitList.voltageMagnitude, "voltage magnitude")
@@ -184,7 +184,7 @@ Changing the unit of current `angle` is reflected in the following quantities:
 @current(pu, deg)
 ```
 """
-macro current(magnitude::Symbol, angle::Symbol)
+macro current(magnitude::Symbol = :pu, angle::Symbol = :rad)
     quote
         unitList.currentMagnitudeLive = string($(esc(QuoteNode(magnitude))))
         local suffix = parseSuffix(unitList.currentMagnitudeLive, unitList.currentMagnitude, "current magnitude")
@@ -223,7 +223,7 @@ Changing the units of `admittance` is reflected in the following quantities:
 @parameter(Ω, pu)
 ```
 """
-macro parameter(impedance::Symbol, admittance::Symbol)
+macro parameter(impedance::Symbol = :pu, admittance::Symbol = :pu)
     quote
         unitList.impedanceLive = string($(esc(QuoteNode(impedance))))
         local suffix = parseSuffix(unitList.impedanceLive, unitList.impedance, "impedance")
@@ -299,7 +299,7 @@ function parseSuffix(input::String, unitList, type::String)
             suffix = i
         end
     end
-    if isempty(suffix) || (suffix in ["pu"; "rad"; "deg"] && suffix != input)
+    if isempty(suffix) || (suffix ∈ ("pu", "rad", "deg") && suffix != input)
         throw(ErrorException("The unit " * input * " of " * type * " is illegal."))
     end
 

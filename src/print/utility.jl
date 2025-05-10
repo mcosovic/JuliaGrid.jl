@@ -734,9 +734,7 @@ function fmax(
         else
             val = sqrt(value(constraint[i])) * scale
         end
-        width[key] = max(
-            textwidth(format(Format(fmt[key]), 0, val)), width[key]
-        )
+        width[key] = max(textwidth(format(Format(fmt[key]), 0, val)), width[key])
     end
 end
 

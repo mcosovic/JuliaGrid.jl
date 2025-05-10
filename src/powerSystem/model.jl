@@ -66,18 +66,17 @@ function acNodalUpdate!(system::PowerSystem, idx::Int64)
     filledElements = nnz(ac.nodalMatrix)
     ac.model += 1
 
-    from = system.branch.layout.from[idx]
-    to = system.branch.layout.to[idx]
+    i, j = fromto(system, idx)
 
-    ac.nodalMatrix[from, from] += ac.nodalFromFrom[idx]
-    ac.nodalMatrix[to, to] += ac.nodalToTo[idx]
-    ac.nodalMatrixTranspose[from, from] += ac.nodalFromFrom[idx]
-    ac.nodalMatrixTranspose[to, to] += ac.nodalToTo[idx]
+    ac.nodalMatrix[i, i] += ac.nodalFromFrom[idx]
+    ac.nodalMatrix[j, j] += ac.nodalToTo[idx]
+    ac.nodalMatrixTranspose[i, i] += ac.nodalFromFrom[idx]
+    ac.nodalMatrixTranspose[j, j] += ac.nodalToTo[idx]
 
-    ac.nodalMatrix[from, to] += ac.nodalFromTo[idx]
-    ac.nodalMatrix[to, from] += ac.nodalToFrom[idx]
-    ac.nodalMatrixTranspose[to, from] += ac.nodalFromTo[idx]
-    ac.nodalMatrixTranspose[from, to] += ac.nodalToFrom[idx]
+    ac.nodalMatrix[i, j] += ac.nodalFromTo[idx]
+    ac.nodalMatrix[j, i] += ac.nodalToFrom[idx]
+    ac.nodalMatrixTranspose[j, i] += ac.nodalFromTo[idx]
+    ac.nodalMatrixTranspose[i, j] += ac.nodalToFrom[idx]
 
     if filledElements != nnz(ac.nodalMatrix)
         ac.pattern += 1
@@ -129,18 +128,17 @@ dcModel!(system)
 """
 function dcModel!(system::PowerSystem)
     dc = system.model.dc
-    layout = system.branch.layout
+    branch = system.branch
     param = system.branch.parameter
 
     dc.shiftPower = fill(0.0, system.bus.number)
-    dc.admittance = fill(0.0, system.branch.number)
+    dc.admittance = fill(0.0, branch.number)
     nodalDiagonals = fill(0.0, system.bus.number)
-    @inbounds for i = 1:system.branch.number
-        if layout.status[i] == 1
+    @inbounds for i = 1:branch.number
+        if branch.layout.status[i] == 1
             dc.admittance[i] = 1 / (param.turnsRatio[i] * param.reactance[i])
 
-            from = layout.from[i]
-            to = layout.to[i]
+            from, to = fromto(system, i)
 
             shift = param.shiftAngle[i] * dc.admittance[i]
             dc.shiftPower[from] -= shift
@@ -153,7 +151,7 @@ function dcModel!(system::PowerSystem)
 
     idxBus = collect(1:system.bus.number)
     dc.nodalMatrix = sparse(
-        [idxBus; layout.from; layout.to], [idxBus; layout.to; layout.from],
+        [idxBus; branch.layout.from; branch.layout.to], [idxBus; branch.layout.to; branch.layout.from],
         [nodalDiagonals; -dc.admittance; -dc.admittance],
         system.bus.number, system.bus.number
     )
@@ -166,15 +164,14 @@ function dcNodalUpdate!(system::PowerSystem, idx::Int64)
     filledElements = nnz(dc.nodalMatrix)
     dc.model += 1
 
-    from = system.branch.layout.from[idx]
-    to = system.branch.layout.to[idx]
+    i, j = fromto(system, idx)
 
     admittance = dc.admittance[idx]
 
-    dc.nodalMatrix[from, from] += admittance
-    dc.nodalMatrix[to, to] += admittance
-    dc.nodalMatrix[from, to] -= admittance
-    dc.nodalMatrix[to, from] -= admittance
+    dc.nodalMatrix[i, i] += admittance
+    dc.nodalMatrix[j, j] += admittance
+    dc.nodalMatrix[i, j] -= admittance
+    dc.nodalMatrix[j, i] -= admittance
 
     if filledElements != nnz(dc.nodalMatrix)
         dc.pattern += 1
@@ -236,7 +233,7 @@ function acModelEmpty!(ac::AcModel)
 
     ac.nodalMatrix = spzeros(0, 0)
     ac.nodalMatrixTranspose = spzeros(0, 0)
-    ac.nodalToTo =  ComplexF64[]
+    ac.nodalToTo = ComplexF64[]
     ac.nodalFromFrom = ComplexF64[]
     ac.nodalFromTo = ComplexF64[]
     ac.nodalToFrom = ComplexF64[]
@@ -248,7 +245,7 @@ function dcModelEmpty!(dc::DcModel)
     dc.pattern += 1
 
     dc.nodalMatrix = spzeros(0, 0)
-    dc.admittance =  Float64[]
+    dc.admittance = Float64[]
     dc.shiftPower = Float64[]
 end
 

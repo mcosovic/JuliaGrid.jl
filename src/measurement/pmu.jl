@@ -943,14 +943,14 @@ macro pmu(kwargs...)
             parameter::Symbol = kwarg.args[1]
 
             if hasfield(PmuTemplate, parameter)
-                if parameter in [
-                        :varianceMagnitudeBus; :varianceAngleBus; :varianceMagnitudeFrom;
-                        :varianceAngleFrom; :varianceMagnitudeTo; :varianceAngleTo
-                        ]
+                if parameter in (
+                        :varianceMagnitudeBus, :varianceAngleBus, :varianceMagnitudeFrom,
+                        :varianceAngleFrom, :varianceMagnitudeTo, :varianceAngleTo
+                        )
                     container::ContainerTemplate = getfield(template.pmu, parameter)
                     if parameter == :varianceMagnitudeBus
                         prefixLive = pfx.voltageMagnitude
-                    elseif parameter in [:varianceMagnitudeFrom; :varianceMagnitudeTo]
+                    elseif parameter in (:varianceMagnitudeFrom, :varianceMagnitudeTo)
                         prefixLive = pfx.currentMagnitude
                     elseif parameter == :varianceAngleBus
                         prefixLive = pfx.voltageAngle
@@ -966,9 +966,9 @@ macro pmu(kwargs...)
                         setfield!(container, :pu, true)
                     end
                 else
-                    if parameter in [:statusBus; :statusFrom; :statusTo]
+                    if parameter in (:statusBus, :statusFrom, :statusTo)
                         setfield!(template.pmu, parameter, Int8(eval(kwarg.args[2])))
-                    elseif parameter in [:noise, :correlated, :polar, :square]
+                    elseif parameter in (:noise, :correlated, :polar, :square)
                         setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))
                     elseif parameter == :label
                         macroLabel(template.pmu, kwarg.args[2], "[?!]")

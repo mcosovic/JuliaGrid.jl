@@ -605,7 +605,7 @@ function precision!(
 )
     L1⁻¹, L2, L3⁻² = covariancePmu(pmu, cosθ, sinθ, varianceRe, varianceIm, idxPmu)
 
-    precision[idx, idx + 1] = (- L2 * L1⁻¹) * L3⁻²
+    precision[idx, idx + 1] = (-L2 * L1⁻¹) * L3⁻²
     precision[idx + 1, idx] = precision[idx, idx + 1]
     precision[idx, idx] = (L1⁻¹ - L2 * precision[idx, idx + 1]) * L1⁻¹
     precision[idx + 1, idx + 1] = L3⁻²
@@ -653,11 +653,10 @@ end
 
 ##### Base Voltages at the Branch Ends #####
 function baseVoltageEnd(system::PowerSystem, baseVolt::BaseVoltage, from::Bool, idxBranch::Int64)
-    layout = system.branch.layout
     if from
-        return baseVolt.value[layout.from[idxBranch]] * baseVolt.prefix
+        return baseVolt.value[system.branch.layout.from[idxBranch]] * baseVolt.prefix
     else
-        return baseVolt.value[layout.to[idxBranch]] * baseVolt.prefix
+        return baseVolt.value[system.branch.layout.to[idxBranch]] * baseVolt.prefix
     end
 end
 

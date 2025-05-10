@@ -467,18 +467,18 @@ function updateBranch!(analysis::AcPowerFlow{FastNewtonRaphson}; label::IntStrMi
                 Pijθij(system, analysis.method, p, i, j)
                 QijVij(analysis.method, q, i, j)
             end
-            if i in (from, to)
+            if i ∈ (from, to)
                 Pijθi(system, analysis.method, p, i)
                 QijVi(system, analysis.method, q, i)
             end
-            if j in (from, to)
+            if j ∈ (from, to)
                 Pijθj(system, analysis.method, p, j)
                 QijVj(system, analysis.method, q, j)
             end
         end
     end
 
-    @inbounds for i in (from, to)
+    @inbounds for i ∈ (from, to)
         if system.bus.layout.type[i] == 1
             jcbQ[analysis.method.pq[i], analysis.method.pq[i]] += system.bus.shunt.susceptance[i]
         end
@@ -601,20 +601,20 @@ macro branch(kwargs...)
             parameter::Symbol = kwarg.args[1]
 
             if hasfield(BranchTemplate, parameter)
-                if !(parameter in [:status; :type; :label; :turnsRatio])
+                if parameter ∉ (:status, :type, :label, :turnsRatio)
                     container::ContainerTemplate = getfield(template.branch, parameter)
-                    if parameter in [:resistance; :reactance]
+                    if parameter in (:resistance, :reactance)
                         pfxLive = pfx.impedance
-                    elseif parameter in [:conductance; :susceptance]
+                    elseif parameter in (:conductance, :susceptance)
                         pfxLive = pfx.admittance
-                    elseif parameter in [:shiftAngle; :minDiffAngle; :maxDiffAngle]
+                    elseif parameter in (:shiftAngle, :minDiffAngle, :maxDiffAngle)
                         pfxLive = pfx.voltageAngle
-                    elseif parameter in [:minFromBus; :maxFromBus; :minToBus; :maxToBus]
+                    elseif parameter in (:minFromBus, :maxFromBus, :minToBus, :maxToBus)
                         if template.branch.type == 1
                             pfxLive = pfx.activePower
-                        elseif template.branch.type in [2, 3]
+                        elseif template.branch.type in (2, 3)
                             pfxLive = pfx.apparentPower
-                        elseif template.branch.type in [4, 5]
+                        elseif template.branch.type in (4, 5)
                             pfxLive = pfx.currentMagnitude
                         end
                     end
@@ -643,28 +643,22 @@ end
 
 ##### Branch Flow Rating Type #####
 function flowType(system::PowerSystem, pfx::PrefixLive, basePowerInv::Float64, idx::Int64)
-    branch = system.branch
     baseVoltg = system.base.voltage
-    type = branch.flow.type[idx]
+    type = system.branch.flow.type[idx]
 
     if type == 1
-        pfxLive = pfx.activePower
-        baseInvFrom = basePowerInv
-        baseInvTo = basePowerInv
-    elseif type == 2 || type == 3
-        pfxLive = pfx.apparentPower
-        baseInvFrom = basePowerInv
-        baseInvTo = basePowerInv
-    elseif type == 4 || type == 5
-        pfxLive = pfx.currentMagnitude
+        return pfx.activePower, basePowerInv, basePowerInv
+    elseif type ∈ (2, 3)
+        return pfx.apparentPower, basePowerInv, basePowerInv
+    elseif type ∈ (4, 5)
         i, j = fromto(system, idx)
-        baseInvFrom = baseCurrentInv(basePowerInv, baseVoltg.value[i] * baseVoltg.prefix)
-        baseInvTo = baseCurrentInv(basePowerInv, baseVoltg.value[j] * baseVoltg.prefix)
+
+        return pfx.currentMagnitude,
+            baseCurrentInv(basePowerInv, baseVoltg.value[i] * baseVoltg.prefix),
+            baseCurrentInv(basePowerInv, baseVoltg.value[j] * baseVoltg.prefix)
     else
         throw(ErrorException("The value $type of the branch flow rating type is illegal."))
     end
-
-    return pfxLive, baseInvFrom, baseInvTo
 end
 
 ##### Branch Keywords #####
