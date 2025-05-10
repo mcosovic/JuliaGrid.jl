@@ -1153,8 +1153,10 @@ function changeSlackBus!(system::PowerSystem)
                 system.bus.layout.type[i] = 3
                 system.bus.layout.slack = i
 
-                @info("No in-service generator found at the slack bus.")
-                @info("The bus labeled $(getLabel(system.bus.label, i)) is the new slack bus.")
+                @info(
+                    "No in-service generator found at the slack bus. " *
+                    "The bus labeled $(getLabel(system.bus.label, i)) is the new slack bus."
+                )
 
                 break
             end
