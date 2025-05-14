@@ -339,7 +339,7 @@ function updateAmmeter!(
     magnitude::FltIntMiss = missing,
     square::BoolMiss = missing,
     kwargs...
-) where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     amp = analysis.monitoring.ammeter
     wls = analysis.method

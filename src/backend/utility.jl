@@ -392,34 +392,108 @@ function factorization!(A::SparseMatrixCSC{Float64, Int64}, F::CHOLMOD.Factor{Fl
 end
 
 function factorization(A::SparseMatrixCSC{Float64, Int64}, ::SPQR.QRSparse{Float64, Int64})
-    return qr(A)
+    qr(A)
 end
 
 function factorization!(A::SparseMatrixCSC{Float64, Int64}, ::SPQR.QRSparse{Float64, Int64})
     qr(A)
 end
 
-##### Solutions #####
-function solution(x::Vector{Float64}, b::Vector{Float64}, F::UMFPACK.UmfpackLU{Float64, Int64})
-    if isempty(x)
-        x = fill(0.0, size(F.L, 2))
+##### Select Factorization #####
+selectFactorization(::Type{LDLt}) = ldlt(sparse(Matrix(1.0I, 1, 1)))
+selectFactorization(::Type{LU}) = lu(sparse(Matrix(1.0I, 1, 1)))
+selectFactorization(::Type{QR}) = qr(sparse(Matrix(1.0I, 1, 1)))
+selectFactorization(::Type{Orthogonal}) = qr(sparse(Matrix(1.0I, 1, 1)))
+selectFactorization(::Type{PetersWilkinson}) = lu(sparse(Matrix(1.0I, 1, 1)))
+
+##### Select Type #####
+selectType(::Type{LDLt}) = Normal
+selectType(::Type{LU}) = Normal
+selectType(::Type{QR}) = Normal
+selectType(::Type{Orthogonal}) = Orthogonal
+selectType(::Type{PetersWilkinson}) = PetersWilkinson
+
+##### Solution #####
+function solution!(x::Vector{Float64}, F::FactorSparse, b::Vector{Float64})
+    if isa(F, UMFPACK.UmfpackLU{Float64, Int64})
+        ldiv!(x, F, b)
+    else
+        x .= F \ b
+    end
+end
+
+function dropZeros!(A::SparseMatrixCSC{Float64, Int64})
+    oldHash = hash((A.rowval, A.colptr))
+    dropzeros!(A)
+
+    if oldHash != hash((A.rowval, A.colptr))
+        return -1
+    else
+        return 0
+    end
+end
+
+##### Set Zeros in the Row and Column #####
+function removeColumn(A::SparseMatrixCSC{Float64, Int64}, idx::Int64)
+    removeIdx = A.colptr[idx]:(A.colptr[idx + 1] - 1)
+    removeVal = A.nzval[removeIdx]
+    @inbounds for i in removeIdx
+        A.nzval[i] = 0.0
     end
 
-    ldiv!(x, F, b)
+    return removeIdx, removeVal
 end
 
-function solution(
-    ::Vector{Float64},
-    b::Vector{Float64},
-    factor::Union{SPQR.QRSparse{Float64, Int64}, CHOLMOD.Factor{Float64}}
-)
-    factor \ b
+function removeRowColumn(A::SparseMatrixCSC{Float64, Int64}, idx::Int64)
+    removeIdx = A.colptr[idx]:(A.colptr[idx + 1] - 1)
+    removeVal = A.nzval[removeIdx]
+    @inbounds for i in removeIdx
+        A[A.rowval[i], idx] = 0.0
+        A[idx, A.rowval[i]] = 0.0
+    end
+
+    return removeIdx, removeVal
 end
+
+##### Restor Values in the Row and Column #####
+function restoreColumn!(
+    A::SparseMatrixCSC{Float64, Int64},
+    removeIdx::UnitRange{Int64},
+    removeVal::Vector{Float64},
+    idx::Int64
+)
+    @inbounds for (k, i) in enumerate(removeIdx)
+        A[A.rowval[i], idx] = removeVal[k]
+    end
+end
+
+function restoreRowColumn!(
+    A::SparseMatrixCSC{Float64, Int64},
+    removeIdx::UnitRange{Int64},
+    removeVal::Vector{Float64},
+    idx::Int64
+)
+    @inbounds for (k, i) in enumerate(removeIdx)
+        A[A.rowval[i], idx] = removeVal[k]
+        A[idx, A.rowval[i]] = removeVal[k]
+    end
+end
+
 
 ##### Check Slack Bus #####
 function checkSlackBus(system::PowerSystem)
     if system.bus.layout.slack == 0
         throw(ErrorException("The slack bus is missing."))
+    end
+end
+
+##### Add Angle of the Slack Bus #####
+function addSlackAngle!(system::PowerSystem, analysis::DC)
+    analysis.voltage.angle[system.bus.layout.slack] = 0.0
+    if system.bus.voltage.angle[system.bus.layout.slack] != 0.0
+        @inbounds for i = 1:system.bus.number
+            analysis.voltage.angle[i] += system.bus.voltage.angle[system.bus.layout.slack]
+        end
     end
 end
 

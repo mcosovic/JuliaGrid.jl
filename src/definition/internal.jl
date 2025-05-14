@@ -1,5 +1,3 @@
-export LU, QR, LDLt
-
 ##### Aliases #####
 const FltInt = Union{Float64, Int64}
 const FltIntMiss = Union{Float64, Int64, Missing}
@@ -9,6 +7,7 @@ const IntStr = Union{Int64, String}
 const IntStrMiss = Union{Int64, String, Missing}
 const LabelDict = Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
 const Signature = Dict{Symbol, Union{Int64, Dict{Int64, Float64}}}
+const FactorSparse = Union{UMFPACK.UmfpackLU{Float64, Int64}, SPQR.QRSparse{Float64, Int64}, CHOLMOD.Factor{Float64}}
 
 ##### Polar Coordinate #####
 mutable struct Polar
@@ -325,28 +324,10 @@ Base.@kwdef mutable struct PrefixLive
 end
 const pfx = PrefixLive()
 
-"""
-    QR
 
-An abstract type used for representing QR factorization in JuliaGrid.
-"""
-abstract type QR end
 
-"""
-    LU
 
-An abstract type used for representing LU factorization in JuliaGrid.
-"""
-abstract type LU end
-
-"""
-    LDLt
-
-An abstract type used for representing LDLt factorization in JuliaGrid.
-"""
-abstract type LDLt end
-
-const factorized = Dict{DataType, Factorization{Float64}}()
-factorized[LU] = lu(sparse(Matrix(1.0I, 1, 1)))
-factorized[QR] = qr(sparse(Matrix(1.0I, 1, 1)))
-factorized[LDLt] = ldlt(sparse(Matrix(1.0I, 1, 1)))
+# const factorized = Dict{DataType, Factorization{Float64}}()
+# factorized[LU] = lu(sparse(Matrix(1.0I, 1, 1)))
+# factorized[QR] = qr(sparse(Matrix(1.0I, 1, 1)))
+# factorized[LDLt] = ldlt(sparse(Matrix(1.0I, 1, 1)))

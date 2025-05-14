@@ -566,7 +566,7 @@ function updateWattmeter!(
     label::IntStrMiss,
     active::FltIntMiss = missing,
     kwargs...
-) where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     bus = analysis.system.bus
     nodal = analysis.system.model.ac.nodalMatrix
@@ -642,7 +642,7 @@ function updateWattmeter!(
     label::IntStrMiss,
     active::FltIntMiss = missing,
     kwargs...
-) where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     system = analysis.system
     dc = system.model.dc
@@ -807,7 +807,7 @@ function updateVarmeter!(
     label::IntStrMiss,
     reactive::FltIntMiss = missing,
     kwargs...
-) where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     bus = analysis.system.bus
     nodal = analysis.system.model.ac.nodalMatrix

@@ -35,7 +35,7 @@ acModel!(system)
 analysis = newtonRaphson(system, QR)
 ```
 """
-function newtonRaphson(system::PowerSystem, factorization::Type{<:Union{QR, LU}} = LU)
+function newtonRaphson(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LU}}
     ac = system.model.ac
     bus = system.bus
 
@@ -131,7 +131,7 @@ function newtonRaphson(system::PowerSystem, factorization::Type{<:Union{QR, LU}}
             sparse(iIdx, jIdx, fill(0.0, nnzJcb), dimJcb, dimJcb),
             fill(0.0, dimJcb),
             fill(0.0, dimJcb),
-            factorized[factorization],
+            selectFactorization(T),
             pq,
             pvpq,
             Dict(:pattern => -1, :type => 0),
@@ -178,8 +178,8 @@ acModel!(system)
 analysis = fastNewtonRaphsonBX(system, QR)
 ```
 """
-function fastNewtonRaphsonBX(system::PowerSystem, factorization::Type{<:Union{QR, LU}} = LU)
-    fastNewtonRaphsonModel(system, factorization, true)
+function fastNewtonRaphsonBX(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LU}}
+    fastNewtonRaphsonModel(system, T, true)
 end
 
 """
@@ -219,15 +219,11 @@ acModel!(system)
 analysis = fastNewtonRaphsonXB(system, QR)
 ```
 """
-function fastNewtonRaphsonXB(system::PowerSystem, factorization::Type{<:Union{QR, LU}} = LU)
-    fastNewtonRaphsonModel(system, factorization, false)
+function fastNewtonRaphsonXB(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LU}}
+    fastNewtonRaphsonModel(system, T, false)
 end
 
-function fastNewtonRaphsonModel(
-    system::PowerSystem,
-    factorization::Type{<:Union{QR, LU}},
-    bx::Bool
-)
+function fastNewtonRaphsonModel(system::PowerSystem, T::Type{<:Union{QR, LU}}, bx::Bool)
     bus = system.bus
     branch = system.branch
     ac = system.model.ac
@@ -315,13 +311,13 @@ function fastNewtonRaphsonModel(
                 sparse(iIdxP, jIdxP, zeros(nnzP), bus.number - 1, bus.number - 1),
                 fill(0.0, bus.number - 1),
                 fill(0.0, bus.number - 1),
-                factorized[factorization],
+                selectFactorization(T),
             ),
             FastNewtonRaphsonModel(
                 sparse(iIdxQ, jIdxQ, zeros(nnzQ), pqNum, pqNum),
                 fill(0.0, pqNum),
                 fill(0.0, pqNum),
-                factorized[factorization],
+                selectFactorization(T),
             ),
             pq,
             pvpq,
@@ -756,7 +752,7 @@ function solve!(analysis::AcPowerFlow{NewtonRaphson})
         pf.factorization = factorization(jcb, pf.factorization)
     end
 
-    pf.increment = solution(pf.increment, pf.mismatch, pf.factorization)
+    solution!(pf.increment, pf.factorization, pf.mismatch)
 
     @inbounds for i = 1:bus.number
         if bus.layout.type[i] == 1
@@ -796,7 +792,7 @@ function solve!(analysis::AcPowerFlow{FastNewtonRaphson})
         end
     end
 
-   active.increment = solution(active.increment, active.mismatch, active.factorization)
+    solution!(active.increment, active.factorization, active.mismatch)
 
     @inbounds for i = 1:bus.number
         if i != bus.layout.slack
@@ -817,7 +813,7 @@ function solve!(analysis::AcPowerFlow{FastNewtonRaphson})
         end
     end
 
-    reactive.increment = solution(reactive.increment, reactive.mismatch, reactive.factorization)
+    solution!(reactive.increment, reactive.factorization, reactive.mismatch)
 
     @inbounds for i = 1:bus.number
         if bus.layout.type[i] == 1

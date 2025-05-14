@@ -2,7 +2,7 @@ module JuliaGrid
 
 using JuMP
 
-import LinearAlgebra: lu, lu!, ldlt, ldlt!, qr, ldiv, ldiv!, diag, I, Factorization
+import LinearAlgebra: lu, lu!, ldlt, ldlt!, qr, ldiv, ldiv!, diag, I, Factorization, UpperTriangular
 import SparseArrays: sparse, spzeros, spdiagm, dropzeros!, nzrange, nnz, SparseMatrixCSC, UMFPACK, SPQR, CHOLMOD
 
 import HDF5: h5open, h5read, readmmap, attrs, attributes, File, Group, Dataset

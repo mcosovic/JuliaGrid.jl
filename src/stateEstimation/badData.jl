@@ -41,7 +41,7 @@ stateEstimation!(analysis)
 function residualTest!(
     analysis::DcStateEstimation{WLS{T}};
     threshold::Float64 = 3.0
-) where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     errorVoltage(analysis.voltage.angle)
 
@@ -54,7 +54,7 @@ function residualTest!(
 
     bad = ResidualTest(false, 0.0, "", 0)
 
-    slackRange, elementsRemove = delSlackCoeff(analysis, bus.layout.slack)
+    removeIdx, removeVal = removeColumn(se.coefficient, bus.layout.slack)
 
     gain = transpose(se.coefficient) * se.precision * se.coefficient
     gain[bus.layout.slack, bus.layout.slack] = 1.0
@@ -88,7 +88,7 @@ function residualTest!(
         end
     end
 
-    addSlackCoeff(analysis, slackRange, elementsRemove, bus.layout.slack)
+    restoreColumn!(se.coefficient, removeIdx, removeVal, bus.layout.slack)
 
     if bad.maxNormalizedResidual > threshold
         se.signature[:run] = true
@@ -125,7 +125,7 @@ end
 function residualTest!(
     analysis::PmuStateEstimation{WLS{T}};
     threshold::Float64 = 3.0
-)  where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     errorVoltage(analysis.voltage.angle)
 
@@ -204,7 +204,7 @@ end
 function residualTest!(
     analysis::AcStateEstimation{GaussNewton{T}};
     threshold::Float64 = 3.0
-)  where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     errorVoltage(analysis.voltage.angle)
 
@@ -212,7 +212,6 @@ function residualTest!(
     monitoring = analysis.monitoring
     bus = system.bus
     se = analysis.method
-    jcb = se.jacobian
 
     volt = monitoring.voltmeter
     amp = monitoring.ammeter
@@ -221,12 +220,9 @@ function residualTest!(
 
     bad = ResidualTest(false, 0.0, "", 0)
 
-    slackRange = jcb.colptr[bus.layout.slack]:(jcb.colptr[bus.layout.slack + 1] - 1)
-    elementsRemove = jcb.nzval[slackRange]
-    @inbounds for (k, i) in enumerate(slackRange)
-        jcb[jcb.rowval[i], bus.layout.slack] = 0.0
-    end
-    gain = (transpose(jcb) * se.precision * jcb)
+    removeIdx, removeVal = removeColumn(se.jacobian, bus.layout.slack)
+
+    gain = (transpose(se.jacobian) * se.precision * se.jacobian)
     gain[bus.layout.slack, bus.layout.slack] = 1.0
 
     if !isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64})
@@ -237,11 +233,11 @@ function residualTest!(
 
     gainInverse = sparseInverse(F, gain, 2 * bus.number)
 
-    JGi = jcb * gainInverse
-    idx = findall(!iszero, jcb)
-    c = fill(0.0, size(jcb, 1))
+    JGi = se.jacobian * gainInverse
+    idx = findall(!iszero, se.jacobian)
+    c = fill(0.0, size(se.jacobian, 1))
     @inbounds for i in idx
-        c[i[1]] += JGi[i] * jcb[i]
+        c[i[1]] += JGi[i] * se.jacobian[i]
     end
 
     bad.maxNormalizedResidual = 0.0
@@ -256,9 +252,7 @@ function residualTest!(
         end
     end
 
-    @inbounds for (k, i) in enumerate(slackRange)
-        jcb[jcb.rowval[i], bus.layout.slack] = elementsRemove[k]
-    end
+    restoreColumn!(se.jacobian, removeIdx, removeVal, bus.layout.slack)
 
     if bad.maxNormalizedResidual > threshold
         bad.detect = true
@@ -582,7 +576,7 @@ bad = chiTest(analysis; confidence = 0.96)
 function chiTest(
     analysis::AcStateEstimation{GaussNewton{T}};
     confidence::Float64 = 0.95
-)  where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     system = analysis.system
     se = analysis.method
@@ -596,7 +590,7 @@ end
 function chiTest(
     analysis::DcStateEstimation{WLS{T}};
     confidence::Float64 = 0.95
-)  where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     system = analysis.system
     se = analysis.method
@@ -613,7 +607,7 @@ end
 function chiTest(
     analysis::PmuStateEstimation{WLS{T}};
     confidence::Float64 = 0.95
-)  where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     system = analysis.system
     se = analysis.method

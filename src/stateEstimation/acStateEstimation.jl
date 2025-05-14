@@ -10,9 +10,9 @@ This function requires the `Measurement` type to establish the WLS state estimat
 
 Moreover, the presence of the `method` parameter is not mandatory. To address the WLS state
 estimation method, users can opt to utilize factorization techniques to decompose the gain matrix,
-such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. Opting for the
-`Orthogonal` method is advisable for a more robust solution in scenarios involving ill-conditioned
-data, particularly when substantial variations in variances are present.
+such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. For improved robustness
+in cases with ill-conditioned data or significant variance disparities, using the `Orthogonal` or
+`PetersWilkinson` method is recommended.
 
 If the user does not provide the `method`, the default method for solving the estimation model will
 be `LU` factorization.
@@ -39,44 +39,12 @@ system, monitoring = ems("case14.h5", "monitoring.h5")
 analysis = gaussNewton(monitoring, Orthogonal)
 ```
 """
-function gaussNewton(monitoring::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
-    system = monitoring.system
-    jcb, mean, pcs, rsd, type, index, range, power, current, _ = acWLS(system, monitoring)
-
-    AcStateEstimation(
-        Polar(
-            copy(system.bus.voltage.magnitude),
-            copy(system.bus.voltage.angle)
-        ),
-        power,
-        current,
-        GaussNewton{Normal}(
-            jcb,
-            pcs,
-            mean,
-            rsd,
-            fill(0.0, 2 * system.bus.number),
-            factorized[factorization],
-            type,
-            index,
-            range,
-            Dict(:pattern => -1),
-            0.0,
-            0
-        ),
-        system,
-        monitoring,
-    )
-end
-
-function gaussNewton(monitoring::Measurement, ::Type{<:Orthogonal})
+function gaussNewton(monitoring::Measurement, ::Type{T} = LU) where {T <: WlsMethod}
     system = monitoring.system
     jcb, mean, pcs, rsd, type, index, range, power, current, crld = acWLS(system, monitoring)
 
-    if crld
-        throw(ErrorException(
-            "The non-diagonal precision matrix prevents using the orthogonal method.")
-        )
+    if T <: Union{Orthogonal, PetersWilkinson} && crld
+        throw(ErrorException("A non-diagonal precision matrix prevents the use of the select method."))
     end
 
     AcStateEstimation(
@@ -86,13 +54,13 @@ function gaussNewton(monitoring::Measurement, ::Type{<:Orthogonal})
         ),
         power,
         current,
-        GaussNewton{Orthogonal}(
+        GaussNewton{selectType(T)}(
             jcb,
             pcs,
             mean,
             rsd,
             fill(0.0, 2 * system.bus.number),
-            factorized[QR],
+            selectFactorization(T),
             type,
             index,
             range,
@@ -904,20 +872,15 @@ increment!(analysis)
 """
 function increment!(analysis::AcStateEstimation{GaussNewton{Normal}})
     system = analysis.system
+    bus = system.bus
+    se = analysis.method
 
     normalEquation!(system, analysis)
 
-    bus = system.bus
-    se = analysis.method
-    jcb = se.jacobian
-    volt = analysis.voltage
+    removeIdx, removeVal = removeColumn(se.jacobian, bus.layout.slack)
 
-    slackRange = jcb.colptr[bus.layout.slack]:(jcb.colptr[bus.layout.slack + 1] - 1)
-    elementsRemove = jcb.nzval[slackRange]
-    @inbounds for (k, i) in enumerate(slackRange)
-        jcb[jcb.rowval[i], bus.layout.slack] = 0.0
-    end
-    gain = (transpose(jcb) * se.precision * jcb)
+    temp = transpose(se.jacobian) * se.precision
+    gain = temp * se.jacobian
     gain[bus.layout.slack, bus.layout.slack] = 1.0
 
     if se.signature[:pattern] == -1
@@ -927,58 +890,77 @@ function increment!(analysis::AcStateEstimation{GaussNewton{Normal}})
         se.factorization = factorization!(gain, se.factorization)
     end
 
-    se.increment = solution(
-        se.increment, transpose(jcb) * se.precision * se.residual, se.factorization
-    )
-
-    @inbounds for (k, i) in enumerate(slackRange)
-        jcb[jcb.rowval[i], bus.layout.slack] = elementsRemove[k]
-    end
-
+    solution!(se.increment, se.factorization, temp * se.residual)
     se.increment[bus.layout.slack] = 0.0
+
+    restoreColumn!(se.jacobian, removeIdx, removeVal, bus.layout.slack)
 
     return maximum(abs, se.increment)
 end
 
 function increment!(analysis::AcStateEstimation{GaussNewton{Orthogonal}})
     system = analysis.system
+    bus = system.bus
+    se = analysis.method
 
     normalEquation!(system, analysis)
 
-    bus = system.bus
-    se = analysis.method
-    jcb = se.jacobian
-    volt = analysis.voltage
+    removeIdx, removeVal = removeColumn(se.jacobian, bus.layout.slack)
+    sqrtPrecision!(se.precision, lastindex(se.mean))
 
-    @inbounds for i = 1:lastindex(se.mean)
-        se.precision.nzval[i] = sqrt(se.precision.nzval[i])
-    end
-
-    slackRange = jcb.colptr[bus.layout.slack]:(jcb.colptr[bus.layout.slack + 1] - 1)
-    elementsRemove = jcb.nzval[slackRange]
-    @inbounds for (k, i) in enumerate(slackRange)
-        jcb[jcb.rowval[i], bus.layout.slack] = 0.0
-    end
-
-    jcbScale = se.precision * jcb
+    H = se.precision * se.jacobian
     if se.signature[:pattern] == -1
         se.signature[:pattern] = 0
-        se.factorization = factorization(jcbScale, se.factorization)
+        se.factorization = factorization(H, se.factorization)
     else
-        se.factorization = factorization!(jcbScale, se.factorization)
+        se.factorization = factorization!(H, se.factorization)
     end
 
-    se.increment = solution(se.increment, se.precision * se.residual, se.factorization)
-
-    @inbounds for (k, i) in enumerate(slackRange)
-        jcb[jcb.rowval[i], bus.layout.slack] = elementsRemove[k]
-    end
-
+    solution!(se.increment, se.factorization, se.precision * se.residual)
     se.increment[bus.layout.slack] = 0.0
 
-    @inbounds for i = 1:lastindex(se.mean)
-        se.precision.nzval[i] ^= 2
+    squarePrecision!(se.precision, lastindex(se.mean))
+    restoreColumn!(se.jacobian, removeIdx, removeVal, bus.layout.slack)
+
+    return maximum(abs, se.increment)
+end
+
+function increment!(analysis::AcStateEstimation{GaussNewton{PetersWilkinson}})
+    system = analysis.system
+    bus = system.bus
+    se = analysis.method
+
+    normalEquation!(system, analysis)
+
+    control = UMFPACK.get_umfpack_control(Float64, Int64)
+    control[UMFPACK.JL_UMFPACK_SCALE] = 0
+
+    removeIdx, removeVal = removeColumn(se.jacobian, bus.layout.slack)
+    sqrtPrecision!(se.precision, lastindex(se.mean))
+
+    H = vcat(se.precision * se.jacobian, sparse([1], [bus.layout.slack], [1.0], 1, 2 * bus.number))
+    se.signature[:pattern] = dropZeros!(H)
+
+    if se.signature[:pattern] == -1
+        se.signature[:pattern] = 0
+        se.factorization = lu(H; control)
+    else
+        lu!(se.factorization, H)
     end
+
+    z = se.precision * se.residual
+    push!(z, 0.0)
+    permute!(z, se.factorization.p)
+
+    Lt = transpose(se.factorization.L)
+    y = (Lt * se.factorization.L) \ (Lt * z)
+
+    se.increment .= UpperTriangular(se.factorization.U) \ y
+    invpermute!(se.increment, se.factorization.q)
+    se.increment[bus.layout.slack] = 0.0
+
+    squarePrecision!(se.precision, lastindex(se.mean))
+    restoreColumn!(se.jacobian, removeIdx, removeVal, bus.layout.slack)
 
     return maximum(abs, se.increment)
 end
@@ -1019,7 +1001,7 @@ analysis = acLavStateEstimation(monitoring, Ipopt.Optimizer; verbose = 1)
 solve!(analysis)
 ```
 """
-function solve!(analysis::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
+function solve!(analysis::AcStateEstimation{GaussNewton{T}}) where T <: WlsMethod
     system = analysis.system
     bus = system.bus
     volt = analysis.voltage
@@ -1293,7 +1275,7 @@ function stateEstimation!(
     power::Bool = false,
     current::Bool = false,
     verbose::Int64 = template.config.verbose
-)  where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     system = analysis.system
     converged = false

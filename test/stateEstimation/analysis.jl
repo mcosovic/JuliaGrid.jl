@@ -195,6 +195,14 @@
         teststruct(orthogonal.power, pf.power; atol = 1e-10)
     end
 
+    @testset "IEEE 14: Peters-Wilkinson Method" begin
+        peters = gaussNewton(monitoring, PetersWilkinson)
+        stateEstimation!(peters; power = true, current = true)
+
+        teststruct(peters.voltage, pf.voltage; atol = 1e-10)
+        teststruct(peters.power, pf.power; atol = 1e-10)
+    end
+
     ########## IEEE 30-bus Test Case ##########
     system30 = powerSystem(path * "case30test.m")
 
@@ -250,6 +258,14 @@
 
         teststruct(orthogonal.voltage, pf.voltage; atol = 1e-8)
         teststruct(orthogonal.power, pf.power; atol = 1e-8)
+    end
+
+    @testset "IEEE 30: Peters-Wilkinson Method" begin
+        peters = gaussNewton(monitoring, PetersWilkinson)
+        stateEstimation!(peters; tolerance = 1e-10, power = true)
+
+        teststruct(peters.voltage, pf.voltage; atol = 1e-8)
+        teststruct(peters.power, pf.power; atol = 1e-8)
     end
 
     @testset "IEEE 30: Covariance Matrix" begin
@@ -339,6 +355,14 @@ end
         teststruct(orthogonal.power, pf.power; atol = 1e-10)
     end
 
+    @testset "IEEE 14: Peters-Wilkinson Method" begin
+        peters = pmuStateEstimation(monitoring, PetersWilkinson)
+        stateEstimation!(peters; power = true)
+
+        @test peters.voltage.angle ≈ pf.voltage.angle
+        teststruct(peters.power, pf.power; atol = 1e-10)
+    end
+
     @testset "IEEE 14: Correlated PMU Measurements" begin
         monitoring = measurement(system14)
 
@@ -353,11 +377,27 @@ end
     pf = newtonRaphson(system30)
     powerFlow!(pf; power = true, current = true)
 
-    @testset "IEEE 30: Uncorrelated PMU Measurements" begin
-        monitoring = measurement(system30)
+    monitoring = measurement(system30)
 
+    @testset "IEEE 30: Uncorrelated PMU Measurements" begin
         addPmu!(monitoring, pf)
         testPmuEstimation(monitoring, pf)
+    end
+
+    @testset "IEEE 30: Orthogonal Method" begin
+        orthogonal = pmuStateEstimation(monitoring, Orthogonal)
+        stateEstimation!(orthogonal; power = true)
+
+        @test orthogonal.voltage.angle ≈ pf.voltage.angle
+        teststruct(orthogonal.power, pf.power; atol = 1e-10)
+    end
+
+    @testset "IEEE 30: Peters-Wilkinson Method" begin
+        peters = pmuStateEstimation(monitoring, PetersWilkinson)
+        stateEstimation!(peters; power = true)
+
+        @test peters.voltage.angle ≈ pf.voltage.angle
+        teststruct(peters.power, pf.power; atol = 1e-10)
     end
 
     @testset "IEEE 30: Correlated PMU Measurements" begin
@@ -451,6 +491,14 @@ end
         teststruct(orthogonal.power, pf.power; atol = 1e-10)
     end
 
+    @testset "IEEE 14: Peters-Wilkinson Method" begin
+        peters = dcStateEstimation(monitoring, PetersWilkinson)
+        stateEstimation!(peters; power = true)
+
+        @test peters.voltage.angle ≈ pf.voltage.angle
+        teststruct(peters.power, pf.power; atol = 1e-10)
+    end
+
     ########## IEEE 30-bus Test Case ##########
     system30 = powerSystem(path * "case30test.m")
 
@@ -477,6 +525,14 @@ end
 
         @test orthogonal.voltage.angle ≈ pf.voltage.angle
         teststruct(orthogonal.power, pf.power; atol = 1e-10)
+    end
+
+    @testset "IEEE 30: Peters-Wilkinson Method" begin
+        peters = dcStateEstimation(monitoring, PetersWilkinson)
+        stateEstimation!(peters; power = true)
+
+        @test peters.voltage.angle ≈ pf.voltage.angle
+        teststruct(peters.power, pf.power; atol = 1e-10)
     end
 
     @testset "IEEE 30: Set LAV Initial Point" begin

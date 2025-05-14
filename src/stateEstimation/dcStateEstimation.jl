@@ -9,9 +9,9 @@ This function requires the `Measurement` type to establish the WLS state estimat
 
 Moreover, the presence of the `method` parameter is not mandatory. To address the WLS state
 estimation method, users can opt to utilize factorization techniques to decompose the gain matrix,
-such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. Opting for the
-`Orthogonal` method is advisable for a more robust solution in scenarios involving ill-conditioned
-data, particularly when substantial variations in variances are present.
+such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. For improved robustness
+in cases with ill-conditioned data or significant variance disparities, using the `Orthogonal` or
+`PetersWilkinson` method is recommended.
 
 If the user does not provide the `method`, the default method for solving the estimation model will
 be `LU` factorization.
@@ -40,29 +40,7 @@ system, monitoring = ems("case14.h5", "monitoring.h5")
 analysis = dcStateEstimation(monitoring, Orthogonal)
 ```
 """
-function dcStateEstimation(monitoring::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
-    system = monitoring.system
-    coeff, mean, precision, power, idx, numDevice, inservice = dcStateEstimationWls(system, monitoring)
-
-    DcStateEstimation(
-        Angle(Float64[]),
-        power,
-        WLS{Normal}(
-            coeff,
-            precision,
-            mean,
-            factorized[factorization],
-            idx,
-            numDevice,
-            inservice,
-            Dict(:pattern => -1, :run => true)
-        ),
-        system,
-        monitoring
-    )
-end
-
-function dcStateEstimation(monitoring::Measurement, ::Type{<:Orthogonal})
+function dcStateEstimation(monitoring::Measurement, ::Type{T} = LU) where {T <: WlsMethod}
     system = monitoring.system
     coeff, mean, precision, power, idx, numDevice, inservice = dcStateEstimationWls(system, monitoring)
 
@@ -71,11 +49,11 @@ function dcStateEstimation(monitoring::Measurement, ::Type{<:Orthogonal})
             Float64[]
         ),
         power,
-        WLS{Orthogonal}(
+        WLS{selectType(T)}(
             coeff,
             precision,
             mean,
-            factorized[QR],
+            selectFactorization(T),
             idx,
             numDevice,
             inservice,
@@ -170,7 +148,7 @@ function dcStateEstimationWls(system::PowerSystem, monitoring::Measurement)
         Real(Float64[])
     )
 
-   return coefficient, mean, pcs, power, pmuIdx, numDevice, inservice
+    return coefficient, mean, pcs, power, pmuIdx, numDevice, inservice
 end
 
 """
@@ -359,17 +337,16 @@ solve!(analysis)
 ```
 """
 function solve!(analysis::DcStateEstimation{WLS{Normal}})
-    system = analysis.system
     se = analysis.method
-    bus = system.bus
-    slackAngle = bus.voltage.angle[bus.layout.slack]
+    bus = analysis.system.bus
 
-    slackRange, elementsRemove = delSlackCoeff(analysis, bus.layout.slack)
+    removeIdx, removeVal = removeColumn(se.coefficient, bus.layout.slack)
 
+    temp = transpose(se.coefficient) * se.precision
     if se.signature[:run]
         se.signature[:run] = false
 
-        gain = transpose(se.coefficient) * se.precision * se.coefficient
+        gain = temp * se.coefficient
         gain[bus.layout.slack, bus.layout.slack] = 1.0
 
         if se.signature[:pattern] == -1
@@ -379,51 +356,73 @@ function solve!(analysis::DcStateEstimation{WLS{Normal}})
             se.factorization = factorization!(gain, se.factorization)
         end
     end
-    b = transpose(se.coefficient) * se.precision * se.mean
+    b = temp * se.mean
 
-    analysis.voltage.angle = solution(analysis.voltage.angle, b, se.factorization)
+    fillState!(analysis.voltage, bus.number)
+    solution!(analysis.voltage.angle, se.factorization, b)
 
-    analysis.voltage.angle[bus.layout.slack] = 0.0
-    if slackAngle != 0.0
-        @inbounds for i = 1:bus.number
-            analysis.voltage.angle[i] += slackAngle
-        end
-    end
-
-    addSlackCoeff(analysis, slackRange, elementsRemove, bus.layout.slack)
+    addSlackAngle!(analysis.system, analysis)
+    restoreColumn!(se.coefficient, removeIdx, removeVal, bus.layout.slack)
 end
 
 function solve!(analysis::DcStateEstimation{WLS{Orthogonal}})
-    system = analysis.system
-    bus = system.bus
-    voltage = analysis.voltage
     se = analysis.method
+    bus = analysis.system.bus
 
-    slackRange, elementsRemove = delSlackCoeff(analysis, bus.layout.slack)
-
-    @inbounds for i = 1:se.number
-        se.precision.nzval[i] = sqrt(se.precision.nzval[i])
-    end
+    removeIdx, removeVal = removeColumn(se.coefficient, bus.layout.slack)
+    sqrtPrecision!(se.precision, se.number)
 
     if se.signature[:run]
         se.signature[:run] = false
-        coefficientScale = se.precision * se.coefficient
-        se.factorization = factorization(coefficientScale, se.factorization)
+        se.factorization = qr(se.precision * se.coefficient)
     end
-    voltage.angle = solution(voltage.angle, se.precision * se.mean, se.factorization)
 
-    analysis.voltage.angle[bus.layout.slack] = 0.0
-    if bus.voltage.angle[bus.layout.slack] != 0.0
-        @inbounds for i = 1:bus.number
-            voltage.angle[i] += bus.voltage.angle[bus.layout.slack]
+    fillState!(analysis.voltage, bus.number)
+    solution!(analysis.voltage.angle, se.factorization, se.precision * se.mean)
+
+    addSlackAngle!(analysis.system, analysis)
+    squarePrecision!(se.precision, se.number)
+    restoreColumn!(se.coefficient, removeIdx, removeVal, bus.layout.slack)
+end
+
+function solve!(analysis::DcStateEstimation{WLS{PetersWilkinson}})
+    se = analysis.method
+    bus = analysis.system.bus
+
+    control = UMFPACK.get_umfpack_control(Float64, Int64)
+    control[UMFPACK.JL_UMFPACK_SCALE] = 0
+
+    removeIdx, removeVal = removeColumn(se.coefficient, bus.layout.slack)
+    sqrtPrecision!(se.precision, se.number)
+
+    if se.signature[:run]
+        se.signature[:run] = false
+
+        H = vcat(se.precision * se.coefficient, sparse([1], [bus.layout.slack], [1.0], 1, bus.number))
+        se.signature[:pattern] = dropZeros!(H)
+
+        if se.signature[:pattern] == -1
+            se.signature[:pattern] = 0
+            se.factorization = lu(H; control)
+        else
+            lu!(se.factorization, H)
         end
     end
 
-    @inbounds for i = 1:se.number
-        se.precision.nzval[i] ^= 2
-    end
+    z = se.precision * se.mean
+    push!(z, 0.0)
+    permute!(z, se.factorization.p)
 
-    addSlackCoeff(analysis, slackRange, elementsRemove, bus.layout.slack)
+    Lt = transpose(se.factorization.L)
+    y = (Lt * se.factorization.L) \ (Lt * z)
+
+    fillState!(analysis.voltage, bus.number)
+    analysis.voltage.angle .= UpperTriangular(se.factorization.U) \ y
+    invpermute!(analysis.voltage.angle, se.factorization.q)
+
+    addSlackAngle!(analysis.system, analysis)
+    squarePrecision!(se.precision, se.number)
+    restoreColumn!(se.coefficient, removeIdx, removeVal, bus.layout.slack)
 end
 
 function solve!(analysis::DcStateEstimation{LAV})
@@ -471,30 +470,22 @@ function dcIndices(cff::SparseModel, row::Int64, col::Int64)
     cff.cnt += 1
 end
 
-##### Remove Slack Bus Coefficents #####
-function delSlackCoeff(analysis::DcStateEstimation, slack::Int64)
-    se = analysis.method
 
-    slackRange = se.coefficient.colptr[slack]:(se.coefficient.colptr[slack + 1] - 1)
-    elementsRemove = se.coefficient.nzval[slackRange]
-    @inbounds for i in slackRange
-        se.coefficient.nzval[i] = 0.0
+function sqrtPrecision!(P::SparseMatrixCSC{Float64, Int64}, n::Int64)
+    @inbounds for i = 1:n
+        P.nzval[i] = sqrt(P.nzval[i])
     end
-
-    return slackRange, elementsRemove
 end
 
-##### Restore Slack Bus Coefficents #####
-function addSlackCoeff(
-    analysis::DcStateEstimation,
-    slackRange::UnitRange{Int64},
-    elementsRemove::Vector{Float64},
-    slack::Int64
-)
-    se = analysis.method
+function squarePrecision!(P::SparseMatrixCSC{Float64, Int64}, n::Int64)
+    @inbounds for i = 1:n
+        P.nzval[i] ^= 2
+    end
+end
 
-    @inbounds for (k, i) in enumerate(slackRange)
-        se.coefficient[se.coefficient.rowval[i], slack] = elementsRemove[k]
+function fillState!(voltage::Angle, n::Int64)
+    if isempty(voltage.angle)
+        voltage.angle = fill(0.0, n)
     end
 end
 
@@ -541,7 +532,7 @@ function stateEstimation!(
     tolerance::FltIntMiss = missing,
     power::Bool = false,
     verbose::Int64 = template.config.verbose
-)  where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     system = analysis.system
     printMiddle(system, analysis, verbose)

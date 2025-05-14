@@ -54,8 +54,10 @@ using JuliaGrid
 * [`GaussNewton`](@ref GaussNewton)
 * [`WLS`](@ref WLS)
 * [`LAV`](@ref LAV)
+* [`WlsMethod`](@ref WlsMethod)
 * [`Normal`](@ref Normal)
 * [`Orthogonal`](@ref Orthogonal)
+* [`PetersWilkinson`](@ref PetersWilkinson)
 
 ###### Bad Data Analysis
 * [`ChiTest`](@ref ChiTest)

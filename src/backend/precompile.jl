@@ -121,6 +121,14 @@ PrecompileTools.@setup_workload begin
             func(analysis; label = 1)
         end
 
+        analysis = gaussNewton(monitoring, Orthogonal)
+        increment!(analysis)
+        solve!(analysis)
+
+        analysis = gaussNewton(monitoring, PetersWilkinson)
+        increment!(analysis)
+        solve!(analysis)
+
         ########## PMU State Estimation ###########
         analysis = pmuStateEstimation(monitoring)
         solve!(analysis)
@@ -131,6 +139,12 @@ PrecompileTools.@setup_workload begin
             func(analysis; label = 1)
         end
 
+        analysis = pmuStateEstimation(monitoring, Orthogonal)
+        solve!(analysis)
+
+        analysis = pmuStateEstimation(monitoring, PetersWilkinson)
+        solve!(analysis)
+
         ########### DC State Estimation ###########
         analysis = dcStateEstimation(monitoring)
         solve!(analysis)
@@ -139,5 +153,11 @@ PrecompileTools.@setup_workload begin
         for (name, func) in dccompile
             func(analysis; label = 1)
         end
+
+        analysis = dcStateEstimation(monitoring, Orthogonal)
+        solve!(analysis)
+
+        analysis = dcStateEstimation(monitoring, PetersWilkinson)
+        solve!(analysis)
     end
 end

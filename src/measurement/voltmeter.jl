@@ -233,7 +233,7 @@ function updateVoltmeter!(
     label::IntStrMiss,
     magnitude::FltIntMiss = missing,
     kwargs...
-) where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     volt = analysis.monitoring.voltmeter
     wls = analysis.method

@@ -503,7 +503,7 @@ function updatePmu!(
     label::IntStrMiss,
     square::BoolMiss = missing,
     kwargs...
-) where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     bus = analysis.system.bus
     pmu = analysis.monitoring.pmu
@@ -708,7 +708,7 @@ function updatePmu!(
     label::IntStrMiss,
     square::BoolMiss = missing,
     kwargs...
-) where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     pmu = analysis.monitoring.pmu
     wls = analysis.method
@@ -824,7 +824,7 @@ function updatePmu!(
     label::IntStr,
     square::BoolMiss = missing,
     kwargs...
-) where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     slack = analysis.system.bus.layout.slack
     pmu = analysis.monitoring.pmu

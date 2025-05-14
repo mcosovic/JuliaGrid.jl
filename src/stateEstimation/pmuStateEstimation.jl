@@ -9,9 +9,9 @@ This function requires the `Measurement` type to establish the WLS state estimat
 
 Moreover, the presence of the `method` parameter is not mandatory. To address the WLS state
 estimation method, users can opt to utilize factorization techniques to decompose the gain matrix,
-such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. Opting for the
-`Orthogonal` method is advisable for a more robust solution in scenarios involving ill-conditioned
-data, particularly when substantial variations in variances are present.
+such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. For improved robustness
+in cases with ill-conditioned data or significant variance disparities, using the `Orthogonal` or
+`PetersWilkinson` method is recommended.
 
 If the user does not provide the `method`, the default method for solving the estimation model will
 be `LU` factorization.
@@ -38,9 +38,13 @@ system, monitoring = ems("case14.h5", "monitoring.h5")
 analysis = pmuStateEstimation(monitoring, Orthogonal)
 ```
 """
-function pmuStateEstimation(monitoring::Measurement, factorization::Type{<:Union{QR, LDLt, LU}} = LU)
+function pmuStateEstimation(monitoring::Measurement, ::Type{T} = LU) where {T <: WlsMethod}
     system = monitoring.system
-    coeff, mean, precision, power, current, inservice, _ = pmuEstimationWls(system, monitoring)
+    coeff, mean, precision, power, current, inservice, crld = pmuEstimationWls(system, monitoring)
+
+    if T <: Union{Orthogonal, PetersWilkinson} && crld
+        throw(ErrorException("A non-diagonal precision matrix prevents the use of the select method."))
+    end
 
     PmuStateEstimation(
         Polar(
@@ -49,40 +53,11 @@ function pmuStateEstimation(monitoring::Measurement, factorization::Type{<:Union
         ),
         power,
         current,
-        WLS{Normal}(
+        WLS{selectType(T)}(
             coeff,
             precision,
             mean,
-            factorized[factorization],
-            OrderedDict{Int64, Int64}(),
-            2 * monitoring.pmu.number,
-            inservice,
-            Dict(:pattern => -1, :run => true)
-        ),
-        system,
-        monitoring
-    )
-end
-
-function pmuStateEstimation(monitoring::Measurement, ::Type{<:Orthogonal})
-    system = monitoring.system
-    coeff, mean, precision, power, current, inservice, correlated = pmuEstimationWls(system, monitoring)
-
-    if correlated
-        throw(ErrorException(
-            "The non-diagonal precision matrix prevents using the orthogonal method.")
-        )
-    end
-
-    PmuStateEstimation(
-        Polar(Float64[], Float64[]),
-        power,
-        current,
-        WLS{Orthogonal}(
-            coeff,
-            precision,
-            mean,
-            factorized[QR],
+            selectFactorization(T),
             OrderedDict{Int64, Int64}(),
             2 * monitoring.pmu.number,
             inservice,
@@ -388,7 +363,8 @@ function solve!(analysis::PmuStateEstimation{WLS{Normal}})
     se = analysis.method
     bus = system.bus
 
-    gain = transpose(se.coefficient) * se.precision * se.coefficient
+    temp = transpose(se.coefficient) * se.precision
+    gain = temp * se.coefficient
 
     if se.signature[:pattern] == -1
         se.signature[:pattern] = 0
@@ -396,9 +372,9 @@ function solve!(analysis::PmuStateEstimation{WLS{Normal}})
     else
         se.factorization = factorization!(gain, se.factorization)
     end
-    b = transpose(se.coefficient) * se.precision * se.mean
+    b = temp * se.mean
 
-    voltageRectangular = solution(fill(0.0, 2 * bus.number), b, se.factorization)
+    ReImVi = solution!(fill(0.0, 2 * bus.number), se.factorization, b)
 
     if isempty(analysis.voltage.magnitude)
         analysis.voltage.magnitude = fill(0.0, bus.number)
@@ -406,7 +382,7 @@ function solve!(analysis::PmuStateEstimation{WLS{Normal}})
     end
 
     @inbounds for i = 1:bus.number
-        voltage = complex(voltageRectangular[i], voltageRectangular[i + bus.number])
+        voltage = complex(ReImVi[i], ReImVi[i + bus.number])
         analysis.voltage.magnitude[i] = abs(voltage)
         analysis.voltage.angle[i] = angle(voltage)
     end
@@ -421,11 +397,9 @@ function solve!(analysis::PmuStateEstimation{WLS{Orthogonal}})
         se.precision.nzval[i] = sqrt(se.precision.nzval[i])
     end
 
-    coefficientScale = se.precision * se.coefficient
-    se.factorization = factorization(coefficientScale, se.factorization)
-    voltageInit = fill(0.0, 2 * bus.number)
+    se.factorization = qr(se.precision * se.coefficient)
 
-    ReImVi = solution(voltageInit, se.precision * se.mean, se.factorization)
+    ReImVi = solution!(fill(0.0, 2 * bus.number), se.factorization, se.precision * se.mean)
 
     if isempty(analysis.voltage.magnitude)
         analysis.voltage.magnitude = fill(0.0, bus.number)
@@ -441,6 +415,48 @@ function solve!(analysis::PmuStateEstimation{WLS{Orthogonal}})
     @inbounds for i = 1:se.number
         se.precision.nzval[i] ^= 2
     end
+end
+
+function solve!(analysis::PmuStateEstimation{WLS{PetersWilkinson}})
+    system = analysis.system
+    se = analysis.method
+    bus = system.bus
+
+    control = UMFPACK.get_umfpack_control(Float64, Int64)
+    control[UMFPACK.JL_UMFPACK_SCALE] = 0
+
+    sqrtPrecision!(se.precision, se.number)
+
+    H = se.precision * se.coefficient
+    se.signature[:pattern] = dropZeros!(H)
+
+    if se.signature[:pattern] == -1
+        se.signature[:pattern] = 0
+        se.factorization = lu(H; control)
+    else
+        lu!(se.factorization, H)
+    end
+
+    z = (se.precision * se.mean)[se.factorization.p]
+
+    Lt = transpose(se.factorization.L)
+    y = (Lt * se.factorization.L) \ (Lt * z)
+
+    ReImVi = UpperTriangular(se.factorization.U) \ y
+    invpermute!(ReImVi, se.factorization.q)
+
+    if isempty(analysis.voltage.magnitude)
+        analysis.voltage.magnitude = fill(0.0, bus.number)
+        analysis.voltage.angle = similar(analysis.voltage.magnitude)
+    end
+
+    @inbounds for i = 1:bus.number
+        voltage = complex(ReImVi[i], ReImVi[i + bus.number])
+        analysis.voltage.magnitude[i] = abs(voltage)
+        analysis.voltage.angle[i] = angle(voltage)
+    end
+
+    squarePrecision!(se.precision, se.number)
 end
 
 function solve!(analysis::PmuStateEstimation{LAV})
@@ -567,7 +583,7 @@ function stateEstimation!(
     power::Bool = false,
     current::Bool = false,
     verbose::Int64 = template.config.verbose
-)  where T <: Union{Normal, Orthogonal}
+) where T <: WlsMethod
 
     system = analysis.system
     printMiddle(system, analysis, verbose)

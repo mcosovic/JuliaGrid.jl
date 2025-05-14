@@ -1,4 +1,5 @@
-export Analysis, AC, DC, Normal, Orthogonal
+export LU, QR, LDLt
+export Analysis, AC, DC, WlsMethod, Normal, Orthogonal, PetersWilkinson
 export AcPowerFlow, NewtonRaphson, FastNewtonRaphson, GaussSeidel, DcPowerFlow
 export AcOptimalPowerFlow, DcOptimalPowerFlow
 export AcStateEstimation, GaussNewton, LAV
@@ -28,23 +29,60 @@ An abstract type representing DC analyses in JuliaGrid.
 abstract type DC <: Analysis end
 
 """
-    Normal
+    WlsMethod
+
+An abstract type representing a method for solving WLS state estimation.
+"""
+abstract type WlsMethod end
+
+"""
+    Normal <: WlsMethod
 
 An abstract type representing weighted least-squares state estimation, where the normal equation is
 solved by factorizing the gain matrix and performing forward/backward substitutions on the
 right-hand-side vector. It is used as a type parameter in [`GaussNewton`](@ref GaussNewton) and
 [`WLS`](@ref WLS) models.
 """
-abstract type Normal end
+abstract type Normal <: WlsMethod end
 
 """
-    Orthogonal
+    Orthogonal <: WlsMethod
 
 An abstract type representing weighted least-squares state estimation, where the normal equation is
 solved using an orthogonal method. It is used as a type parameter in [`GaussNewton`](@ref GaussNewton)
 and [`WLS`](@ref WLS) models.
 """
-abstract type Orthogonal end
+abstract type Orthogonal <: WlsMethod  end
+
+"""
+    PetersWilkinson <: WlsMethod
+
+An abstract type representing weighted least-squares state estimation, where the normal equation is
+solved using an Peters and Wilkinson method. It is used as a type parameter in
+[`GaussNewton`](@ref GaussNewton) and [`WLS`](@ref WLS) models.
+"""
+abstract type PetersWilkinson <: WlsMethod end
+
+"""
+    QR
+
+An abstract type used for representing QR factorization in JuliaGrid.
+"""
+abstract type QR <: Normal end
+
+"""
+    LU
+
+An abstract type used for representing LU factorization in JuliaGrid.
+"""
+abstract type LU <: Normal end
+
+"""
+    LDLt
+
+An abstract type used for representing LDLt factorization in JuliaGrid.
+"""
+abstract type LDLt <: Normal end
 
 ##### Powers in the AC Framework #####
 mutable struct AcPower
@@ -85,7 +123,7 @@ flow model, which will be solved using the Newton-Raphson method.
 - `jacobian::SparseMatrixCSC{Float64, Int64}`: Jacobian matrix.
 - `mismatch::Vector{Float64}`: Vector of mismatches.
 - `increment::Vector{Float64}`: Vector of state variable increments.
-- `factorization::Factorization{Float64}`: Factorization of the Jacobian matrix.
+- `factorization::Factorization`: Factorization of the Jacobian matrix.
 - `pq::Vector{Int64}`: Indices related to demand buses.
 - `pvpq::Vector{Int64}`: Indices related to demand and generator buses.
 - `signature::Signature`: Tracks modifications in key variables.
@@ -95,7 +133,7 @@ mutable struct NewtonRaphson
     jacobian::SparseMatrixCSC{Float64, Int64}
     mismatch::Vector{Float64}
     increment::Vector{Float64}
-    factorization::Factorization{Float64}
+    factorization::FactorSparse
     pq::Vector{Int64}
     pvpq::Vector{Int64}
     signature::Dict{Symbol, Int64}
@@ -107,7 +145,7 @@ mutable struct FastNewtonRaphsonModel
     jacobian::SparseMatrixCSC{Float64, Int64}
     mismatch::Vector{Float64}
     increment::Vector{Float64}
-    factorization::Factorization{Float64}
+    factorization::FactorSparse
 end
 
 """
@@ -182,7 +220,7 @@ end
 
 ##### DC Power Flow #####
 mutable struct DcPowerFlowMethod
-    factorization::Factorization{Float64}
+    factorization::FactorSparse
     signature::Dict{Symbol, Int64}
 end
 
@@ -364,7 +402,7 @@ mutable struct DcOptimalPowerFlow <: DC
 end
 
 """
-    WLS{T <: Union{Normal, Orthogonal}}
+    WLS{T <: WlsMethod}
 
 A composite type representing a linear weighted least-squares state estimation model.
 
@@ -372,17 +410,17 @@ A composite type representing a linear weighted least-squares state estimation m
 - `coefficient::SparseMatrixCSC{Float64, Int64}`: Coefficient matrix.
 - `precision::SparseMatrixCSC{Float64, Int64}`: Precision matrix.
 - `mean::Vector{Float64}`: Mean vector.
-- `factorization::Factorization{Float64}`: Factorization of the coefficient matrix.
+- `factorization::Factorization`: Factorization of the coefficient matrix.
 - `index::OrderedDict{Int64, Int64}`: Indices if needed.
 - `number::Int64`: Number of measurement devices.
 - `inservice`::Int64: Number of equations related to in-service measurement devices.
 - `signature::Signature`: Tracks modifications in key variables.
 """
-mutable struct WLS{T <: Union{Normal, Orthogonal}}
+mutable struct WLS{T <: WlsMethod}
     coefficient::SparseMatrixCSC{Float64, Int64}
     precision::SparseMatrixCSC{Float64, Int64}
     mean::Vector{Float64}
-    factorization::Factorization{Float64}
+    factorization::FactorSparse
     index::OrderedDict{Int64, Int64}
     number::Int64
     inservice::Int64
@@ -390,7 +428,7 @@ mutable struct WLS{T <: Union{Normal, Orthogonal}}
 end
 
 """
-    GaussNewton{T <: Union{Normal, Orthogonal}}
+    GaussNewton{T <: WlsMethod}
 
 A composite type built using the [`gaussNewton`](@ref gaussNewton) function to define the AC state
 estimation model, which will be solved using the Gauss-Newton method.
@@ -401,7 +439,7 @@ estimation model, which will be solved using the Gauss-Newton method.
 - `mean::Vector{Float64}`: Mean vector.
 - `residual::Vector{Float64}`: Residual vector.
 - `increment::Vector{Float64}`: Increment vector.
-- `factorization::Factorization{Float64}`: Factorization of the Jacobian matrix.
+- `factorization::Factorization`: Factorization of the Jacobian matrix.
 - `type::Vector{Int8}`: Indicators of measurement types.
 - `index::Vector{Int64}`: Indices of buses and branches where measurements are located.
 - `range::Vector{Int64}`: Range of measurement devices.
@@ -409,13 +447,13 @@ estimation model, which will be solved using the Gauss-Newton method.
 - `objective::Float64`: Value of the objective function.
 - `iteration::Int64`: The iteration counter.
 """
-mutable struct GaussNewton{T <: Union{Normal, Orthogonal}}
+mutable struct GaussNewton{T <: WlsMethod}
     jacobian::SparseMatrixCSC{Float64, Int64}
     precision::SparseMatrixCSC{Float64, Int64}
     mean::Vector{Float64}
     residual::Vector{Float64}
     increment::Vector{Float64}
-    factorization::Factorization{Float64}
+    factorization::FactorSparse
     type::Vector{Int8}
     index::Vector{Int64}
     range::Vector{Int64}
