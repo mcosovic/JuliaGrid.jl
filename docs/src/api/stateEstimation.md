@@ -19,21 +19,21 @@ using JuliaGrid, Ipopt, HiGHS
 * [`gaussNewton`](@ref gaussNewton)
 * [`acLavStateEstimation`](@ref acLavStateEstimation)
 * [`increment!`](@ref increment!)
-* [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal})
+* [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{T}}) where T <: WlsMethod)
 * [`setInitialPoint!`](@ref setInitialPoint!(::AcStateEstimation))
-* [`stateEstimation!`](@ref stateEstimation!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal})
+* [`stateEstimation!`](@ref stateEstimation!(::AcStateEstimation{GaussNewton{T}}) where T <: WlsMethod)
 
 ###### PMU State Estimation
 * [`pmuStateEstimation`](@ref pmuStateEstimation)
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation)
 * [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}}))
-* [`stateEstimation!`](@ref stateEstimation!(::PmuStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal})
+* [`stateEstimation!`](@ref stateEstimation!(::PmuStateEstimation{WLS{T}}) where T <: WlsMethod)
 
 ###### DC State Estimation
 * [`dcStateEstimation`](@ref dcStateEstimation)
 * [`dcLavStateEstimation`](@ref dcLavStateEstimation)
 * [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}}))
-* [`stateEstimation!`](@ref stateEstimation!(::DcStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal})
+* [`stateEstimation!`](@ref stateEstimation!(::DcStateEstimation{WLS{T}}) where T <: WlsMethod)
 
 ###### Bad Data Analysis
 * [`chiTest`](@ref chiTest)
@@ -57,10 +57,10 @@ pmuPlacement!
 gaussNewton
 acLavStateEstimation
 increment!
-solve!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
+solve!(::AcStateEstimation{GaussNewton{T}}) where T <: WlsMethod
 setInitialPoint!(::AcStateEstimation)
 setInitialPoint!(::AcStateEstimation, ::AC)
-stateEstimation!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}
+stateEstimation!(::AcStateEstimation{GaussNewton{T}}) where T <: WlsMethod
 ```
 
 ---
@@ -70,7 +70,7 @@ stateEstimation!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, O
 pmuStateEstimation
 pmuLavStateEstimation
 solve!(::PmuStateEstimation{WLS{Normal}})
-stateEstimation!(::PmuStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal}
+stateEstimation!(::PmuStateEstimation{WLS{T}}) where T <: WlsMethod
 ```
 
 ---
@@ -80,7 +80,7 @@ stateEstimation!(::PmuStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogon
 dcStateEstimation
 dcLavStateEstimation
 solve!(::DcStateEstimation{WLS{Normal}})
-stateEstimation!(::DcStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal}
+stateEstimation!(::DcStateEstimation{WLS{T}}) where T <: WlsMethod
 ```
 
 ---

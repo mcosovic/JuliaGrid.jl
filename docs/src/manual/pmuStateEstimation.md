@@ -13,7 +13,7 @@ After solving the PMU state estimation, JuliaGrid provides functions for computi
 * [`current!`](@ref current!(::AC)).
 
 Alternatively, instead of using functions responsible for solving state estimation and computing powers and currents, users can use the wrapper function:
-* [`stateEstimation!`](@ref stateEstimation!(::PmuStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal}).
+* [`stateEstimation!`](@ref stateEstimation!(::PmuStateEstimation{WLS{T}}) where T <: WlsMethod).
 
 Users can also access specialized functions for computing specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators within the power system.
 
@@ -114,7 +114,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ---
 
 ##### Wrapper Function
-JuliaGrid provides a wrapper function for PMU state estimation analysis and also supports the computation of powers and currents using the [`stateEstimation!`](@ref stateEstimation!(::PmuStateEstimation{WLS{T}}) where T <: Union{Normal, Orthogonal}) function:
+JuliaGrid provides a wrapper function for PMU state estimation analysis and also supports the computation of powers and currents using the [`stateEstimation!`](@ref stateEstimation!(::PmuStateEstimation{WLS{T}}) where T <: WlsMethod) function:
 ```@example PMUOptimalPlacement
 analysis = pmuStateEstimation(monitoring)
 stateEstimation!(analysis; verbose = 2)

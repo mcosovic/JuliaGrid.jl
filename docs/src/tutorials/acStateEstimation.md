@@ -930,7 +930,7 @@ Next, the [`increment!`](@ref increment!) function provides the maximum absolute
 ```
 
 
-Finally the function [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}) adds the computed increment term to the previous solution to obtain a new solution:
+Finally the function [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{T}}) where T <: WlsMethod) adds the computed increment term to the previous solution to obtain a new solution:
 ```math
   \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)}.
 ```

@@ -7,7 +7,7 @@ To perform nonlinear or AC state estimation, the initial requirement is to have 
 
 To obtain bus voltages and solve the state estimation problem, users need to implement the Gauss-Newton iterative process for the WLS model using:
 * [`increment!`](@ref increment!),
-* [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}).
+* [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{T}}) where T <: WlsMethod).
 
 Alternatively, to obtain the LAV estimator, simply execute the second function.
 
@@ -16,7 +16,7 @@ After solving the AC state estimation, JuliaGrid provides functions for computin
 * [`current!`](@ref current!(::AC)).
 
 Alternatively, instead of designing their own iteration process for the Gauss-Newton method or using the function responsible for solving the LAV model, and computing powers and currents, users can use the wrapper function:
-* [`stateEstimation!`](@ref stateEstimation!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}).
+* [`stateEstimation!`](@ref stateEstimation!(::AcStateEstimation{GaussNewton{T}}) where T <: WlsMethod).
 
 Users can also access specialized functions for computing specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators within the power system.
 
@@ -125,7 +125,7 @@ nothing # hide
     analysis = gaussNewton(monitoring, LDLt)
     ```
 
-To conduct an iterative process using the Gauss-Newton method, it is essential to include the [`increment!`](@ref increment!) and [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{T}}) where T <: Union{Normal, Orthogonal}) functions inside the iteration loop. For example:
+To conduct an iterative process using the Gauss-Newton method, it is essential to include the [`increment!`](@ref increment!) and [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{T}}) where T <: WlsMethod) functions inside the iteration loop. For example:
 ```@example ACSEWLS
 for iteration = 1:20
     increment!(analysis)
