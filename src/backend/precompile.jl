@@ -13,6 +13,7 @@ PrecompileTools.@setup_workload begin
 
     addPmu!(monitoring; bus = 1, magnitude = 1.0, angle = 0.0)
     addPmu!(monitoring; bus = 2, magnitude = 1.0, angle = 0.0)
+    addPmu!(monitoring; from = 1, magnitude = 0.9, angle = -0.1)
     addWattmeter!(pseudo; bus = 1, active = -0.1)
 
     accompile = Dict(
