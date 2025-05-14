@@ -136,8 +136,10 @@ DcStateEstimation
 GaussNewton
 WLS
 LAV
+WlsMethod
 Normal
 Orthogonal
+PetersWilkinson
 ```
 
 ---
