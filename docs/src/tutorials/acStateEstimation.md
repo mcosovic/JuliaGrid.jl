@@ -1026,17 +1026,17 @@ where ``\mathbf W = \bm \Sigma^{-1}``. Subsequently, we can write:
 
 Consequently, we have:
 ```math
-  \barJ (\mathbf x)^T  \barJ (\mathbf x) \Delta \mathbf x = \barJ (\mathbf x)^{T} \barr (\mathbf x),
+  \bar{\mathbf J} (\mathbf x)^T  \bar{\mathbf J} (\mathbf x) \Delta \mathbf x = \bar{\mathbf J} (\mathbf x)^{T} \bar{\mathbf r} (\mathbf x),
 ```
 where:
 ```math
-  \barJ(\mathbf x) = {\mathbf W^{1/2}} \mathbf J (\mathbf x), \;\;\;
-  \barr (\mathbf x) = {\mathbf W^{1/2}} \mathbf r (\mathbf x).
+  \bar{\mathbf J}(\mathbf x) = {\mathbf W^{1/2}} \mathbf J (\mathbf x), \;\;\;
+  \bar{\mathbf r} (\mathbf x) = {\mathbf W^{1/2}} \mathbf r (\mathbf x).
 ```
 
 Therefore, within each iteration of the Gauss-Newton method, JuliaGrid conducts QR factorization on the rectangular matrix:
 ```math
-  \barJ(\mathbf x) = {\mathbf W^{1/2}} \mathbf J (\mathbf x) = \mathbf Q(\mathbf x) \mathbf R(\mathbf x).
+  \bar{\mathbf J}(\mathbf x) = {\mathbf W^{1/2}} \mathbf J (\mathbf x) = \mathbf Q(\mathbf x) \mathbf R(\mathbf x).
 ```
 
 Access to the factorized matrix is possible through:
@@ -1068,26 +1068,26 @@ end
 nothing # hide
 ```
 
-This method applies LU factorisation to the rectangular matrix ``\barJ``:
+This method applies LU factorisation to the rectangular matrix ``\bar{\mathbf J}``:
 ```math
-  \barJ (\mathbf x) = {\mathbf W^{1/2}} \mathbf J (\mathbf x) = \mathbf{L}(\mathbf x)\mathbf{U}(\mathbf x).
+  \bar{\mathbf J} (\mathbf x) = {\mathbf W^{1/2}} \mathbf J (\mathbf x) = \mathbf{L}(\mathbf x)\mathbf{U}(\mathbf x).
 ```
 
 Substituting this into the normal equation:
 ```math
-	  \barJ (\mathbf x)^T \barJ(\mathbf x) \Delta \mathbf x = \barJ(\mathbf x)^{T} \barr (\mathbf x),
+	  \bar{\mathbf J} (\mathbf x)^T \bar{\mathbf J}(\mathbf x) \Delta \mathbf x = \bar{\mathbf J}(\mathbf x)^{T} \bar{\mathbf r} (\mathbf x),
 ```
 yields:
 ```math
-  \mathbf{U}(\mathbf x)^T \mathbf{L}(\mathbf x)^T \mathbf{L}(\mathbf x) \mathbf{U}(\mathbf x) \Delta \mathbf x = \mathbf{U}(\mathbf x)^T \mathbf{L}(\mathbf x)^T \barr (\mathbf x).
+  \mathbf{U}(\mathbf x)^T \mathbf{L}(\mathbf x)^T \mathbf{L}(\mathbf x) \mathbf{U}(\mathbf x) \Delta \mathbf x = \mathbf{U}(\mathbf x)^T \mathbf{L}(\mathbf x)^T \bar{\mathbf r} (\mathbf x).
 ```
 
 By eliminating ``\mathbf{U}(\mathbf x)^T`` from both sides and introducing a new vector ``\Delta \mathbf y = \mathbf{U}(\mathbf x) \Delta \mathbf x``,  we obtain:
 ```math
-  \mathbf{L}(\mathbf x)^T \mathbf{L}(\mathbf x) \Delta \mathbf y = \mathbf{L}(\mathbf x)^T \barr (\mathbf x).
+  \mathbf{L}(\mathbf x)^T \mathbf{L}(\mathbf x) \Delta \mathbf y = \mathbf{L}(\mathbf x)^T \bar{\mathbf r} (\mathbf x).
 ```
 
-The Peters and Wilkinson method first solves this equation to compute ``\Delta \mathbf y``, and then obtains ``\Delta \mathbf x`` by backward substitution using equation ``\Delta \mathbf y = \mathbf{U}(\mathbf x) \Delta \mathbf x``. The main advantage of this approach is that ``\mathbf{L}(\mathbf x)^T \mathbf{L}(\mathbf x)`` is generally less ill-conditioned than ``\barJ (\mathbf x)^T \barJ(\mathbf x)``, which improves numerical stability.
+The Peters and Wilkinson method first solves this equation to compute ``\Delta \mathbf y``, and then obtains ``\Delta \mathbf x`` by backward substitution using equation ``\Delta \mathbf y = \mathbf{U}(\mathbf x) \Delta \mathbf x``. The main advantage of this approach is that ``\mathbf{L}(\mathbf x)^T \mathbf{L}(\mathbf x)`` is generally less ill-conditioned than ``\bar{\mathbf J} (\mathbf x)^T \bar{\mathbf J}(\mathbf x)``, which improves numerical stability.
 
 Access to the factorized matrix is possible through:
 ```@repl ACSETutorial
