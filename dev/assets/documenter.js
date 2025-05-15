@@ -57,7 +57,11 @@ $(document).ready(function() {
       "right": "\\]",
       "display": true
     }
-  ]
+  ],
+  "macros": {
+    "\\barJ": "\\mkern2mu \\bar {\\mkern-2mu\\mathbf{J}}",
+    "\\barr": "\\mkern-1mu \\bar {\\mkern1mu\\mathbf{r}}"
+  }
 }
 
   );
