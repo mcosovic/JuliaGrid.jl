@@ -156,24 +156,6 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 
 ---
 
-##### Alternative Formulation
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [aburbook; Sec. 3.2](@cite).
-
-This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
-```@example PMUOptimalPlacement
-updatePmu!(monitoring; label = "PMU 5 (Bus 3)", correlated = false)
-nothing # hide
-```
-
-Subsequently, by specifying the `Orthogonal` argument in the [`pmuStateEstimation`](@ref pmuStateEstimation) function, JuliaGrid implements a more robust approach to obtain the WLS estimator, which proves particularly beneficial when substantial differences exist among measurement variances:
-```@example PMUOptimalPlacement
-analysis = pmuStateEstimation(monitoring, Orthogonal)
-stateEstimation!(analysis)
-nothing # hide
-```
-
----
-
 ##### Print Results in the REPL
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example PMUOptimalPlacement
@@ -201,6 +183,37 @@ end
 
 !!! tip "Tip"
     We also provide functions to print or save state estimation results, such as estimated values and residuals. For more details, users can consult the [Power and Current Analysis](@ref PMUSEPowerCurrentAnalysisManual) section of this manual.
+
+---
+
+## Alternative Formulations
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such scenarios, users may choose to apply an alternative formulation of the WLS estimator.
+
+These alternative methods are applicable when measurement errors are uncorrelated and the precision matrix is diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
+```@example PMUOptimalPlacement
+updatePmu!(monitoring; label = "PMU 5 (Bus 3)", correlated = false)
+nothing # hide
+```
+
+---
+
+##### Orthogonal Method
+One such alternative is the orthogonal method [aburbook; Sec. 3.2](@cite), which offers increased numerical robustness, especially when measurement variances differ significantly. This method solves the WLS problem using QR factorisation applied to a rectangular matrix formed by multiplying the square root of the precision matrix with the coefficient matrix. To enable this method, specify the `Orthogonal` argument in the [`pmuStateEstimation`](@ref pmuStateEstimation) function:
+```@example PMUOptimalPlacement
+analysis = pmuStateEstimation(monitoring, Orthogonal)
+stateEstimation!(analysis)
+nothing # hide
+```
+
+---
+
+##### Peters and Wilkinson Method
+Another option is the Peters and Wilkinson method [aburbook; Sec. 3.4](@cite), which applies LU factorisation to the same rectangular matrix, constructed using the square root of the precision matrix and the coefficient matrix. This method can be selected by passing the `PetersWilkinson` argument to the [`pmuStateEstimation`](@ref pmuStateEstimation) function:
+```@example PMUOptimalPlacement
+analysis = pmuStateEstimation(monitoring, PetersWilkinson)
+stateEstimation!(analysis)
+nothing # hide
+```
 
 ---
 

@@ -422,14 +422,14 @@ function solution!(x::Vector{Float64}, F::FactorSparse, b::Vector{Float64})
     end
 end
 
-function dropZeros!(A::SparseMatrixCSC{Float64, Int64})
+function dropZeros!(A::SparseMatrixCSC{Float64, Int64}, pattern::Int64)
     oldHash = hash((A.rowval, A.colptr))
     dropzeros!(A)
 
-    if oldHash != hash((A.rowval, A.colptr))
+    if pattern == 0 && oldHash != hash((A.rowval, A.colptr))
         return -1
     else
-        return 0
+        return pattern
     end
 end
 

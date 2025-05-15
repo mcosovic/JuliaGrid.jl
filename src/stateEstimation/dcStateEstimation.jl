@@ -399,7 +399,7 @@ function solve!(analysis::DcStateEstimation{WLS{PetersWilkinson}})
         se.signature[:run] = false
 
         H = vcat(se.precision * se.coefficient, sparse([1], [bus.layout.slack], [1.0], 1, bus.number))
-        se.signature[:pattern] = dropZeros!(H)
+        se.signature[:pattern] = dropZeros!(H, se.signature[:pattern])
 
         if se.signature[:pattern] == -1
             se.signature[:pattern] = 0

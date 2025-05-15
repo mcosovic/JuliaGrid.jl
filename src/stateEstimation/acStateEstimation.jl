@@ -939,7 +939,7 @@ function increment!(analysis::AcStateEstimation{GaussNewton{PetersWilkinson}})
     sqrtPrecision!(se.precision, lastindex(se.mean))
 
     H = vcat(se.precision * se.jacobian, sparse([1], [bus.layout.slack], [1.0], 1, 2 * bus.number))
-    se.signature[:pattern] = dropZeros!(H)
+    se.signature[:pattern] = dropZeros!(H, se.signature[:pattern])
 
     if se.signature[:pattern] == -1
         se.signature[:pattern] = 0

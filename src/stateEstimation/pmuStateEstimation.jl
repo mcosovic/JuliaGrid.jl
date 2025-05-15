@@ -428,7 +428,7 @@ function solve!(analysis::PmuStateEstimation{WLS{PetersWilkinson}})
     sqrtPrecision!(se.precision, se.number)
 
     H = se.precision * se.coefficient
-    se.signature[:pattern] = dropZeros!(H)
+    se.signature[:pattern] = dropZeros!(H, se.signature[:pattern])
 
     if se.signature[:pattern] == -1
         se.signature[:pattern] = 0

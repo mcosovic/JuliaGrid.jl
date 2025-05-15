@@ -82,18 +82,6 @@ nothing # hide
 
 ---
 
-##### Alternative Formulation
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [aburbook; Sec. 3.2](@cite).
-
-Specifically, by specifying the `Orthogonal` argument in the [`dcStateEstimation`](@ref dcStateEstimation) function, JuliaGrid implements a more robust approach to obtain the WLS estimator, which proves particularly beneficial when substantial differences exist among measurement variances:
-```@example WLSDCStateEstimationSolution
-analysis = dcStateEstimation(monitoring, Orthogonal)
-stateEstimation!(analysis)
-nothing # hide
-```
-
----
-
 ##### Print Results in the REPL
 Users have the option to print the results in the REPL using any units that have been configured, such as:
 ```@example WLSDCStateEstimationSolution
@@ -121,6 +109,32 @@ end
 
 !!! tip "Tip"
     We also provide functions to print state estimation results, such as estimated values and residuals. For more details, users can consult the [Power Analysis](@ref DCSEPowerAnalysisManual) section of this manual.
+
+---
+
+
+## Alternative Formulations
+The conventional approach to solving the WLS state estimation problem generally performs well. However, it is well known that, under certain conditions often encountered in real-world systems, this method may suffer from numerical instabilities. These issues can prevent the algorithm from reaching a satisfactory solution. In such scenarios, users may choose to apply an alternative formulation of the WLS estimator.
+
+---
+
+##### Orthogonal Method
+One such alternative is the orthogonal method [aburbook; Sec. 3.2](@cite), which offers increased numerical robustness, particularly in cases where measurement variances differ significantly. By specifying the `Orthogonal` argument in the [`dcStateEstimation`](@ref dcStateEstimation) function, users can solve the WLS problem via QR factorisation applied to a rectangular matrix formed by multiplying the square root of the precision matrix with the coefficient matrix:
+```@example WLSDCStateEstimationSolution
+analysis = dcStateEstimation(monitoring, Orthogonal)
+stateEstimation!(analysis)
+nothing # hide
+```
+
+---
+
+##### Peters and Wilkinson Method
+Another option is the Peters and Wilkinson method [aburbook; Sec. 3.4](@cite), which applies LU factorisation to the same rectangular matrix, constructed using the square root of the precision matrix and the coefficient matrix. This method can be selected by passing the `PetersWilkinson` argument to the [`dcStateEstimation`](@ref dcStateEstimation) function:
+```@example WLSDCStateEstimationSolution
+analysis = dcStateEstimation(monitoring, PetersWilkinson)
+stateEstimation!(analysis)
+nothing # hide
+```
 
 ---
 
