@@ -404,10 +404,13 @@ The estimated bus voltage magnitudes ``\hat{\mathbf V} = [\hat{V}_i]`` and angle
 
 ---
 
-##### [Alternative Formulation](@id PMUSEOrthogonalWLSStateEstimationTutorials)
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [aburbook; Sec. 3.2](@cite). This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal.
+## [Alternative Formulation](@id PMUSEOrthogonalWLSStateEstimationTutorials)
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such scenarios, users may choose to apply an alternative formulation of the WLS estimator.
 
-To address ill-conditioned situations arising from significant differences in measurement variances, users can employ an alternative approach:
+---
+
+##### Orthogonal Method
+One such alternative is the orthogonal method [aburbook; Sec. 3.2](@cite), which offers increased numerical robustness, particularly in cases where measurement variances differ significantly:
 ```@example PMUSETutorial
 analysis = pmuStateEstimation(monitoring, Orthogonal)
 nothing # hide
@@ -415,16 +418,16 @@ nothing # hide
 
 To explain the method, we begin with the WLS equation:
 ```math
-	\mathbf H^T \mathbf W \mathbf H \hat{\mathbf x} = \mathbf H^T \mathbf W \mathbf z,
+	\mathbf H^T \mathbf W \mathbf H \mathbf x = \mathbf H^T \mathbf W \mathbf z,
 ```
 where ``\mathbf W = \bm \Sigma^{-1}``. Subsequently, we can write:
 ```math
-  \left({\mathbf W^{1/2}} \mathbf H\right)^T {\mathbf W^{1/2}} \mathbf H  \hat{\mathbf x} = \left({\mathbf W^{1/2}} \mathbf H\right)^T {\mathbf W^{1/2}} \mathbf z.
+  \left({\mathbf W^{1/2}} \mathbf H\right)^T {\mathbf W^{1/2}} \mathbf H  \mathbf x = \left({\mathbf W^{1/2}} \mathbf H\right)^T {\mathbf W^{1/2}} \mathbf z.
 ```
 
 Consequently, we have:
 ```math
-  \bar{\mathbf H}^T  \bar{\mathbf H} \hat{\mathbf x} = \bar{\mathbf H}^T  \bar{\mathbf z},
+  \bar{\mathbf H}^T  \bar{\mathbf H} \mathbf x = \bar{\mathbf H}^T  \bar{\mathbf z},
 ```
 where:
 ```math
@@ -449,6 +452,54 @@ Access to the factorized matrix is possible through:
 ```
 
 To obtain the solution, JuliaGrid avoids materializing the orthogonal matrix ``\mathbf Q`` and proceeds to solve the system, resulting in the estimate of bus voltage magnitudes ``\hat{\mathbf V} = [\hat{V}_i]`` and angles ``\hat{\bm \Theta} = [\hat{\theta}_i]``, where ``i \in \mathcal N``:
+```@repl PMUSETutorial
+𝐕 = analysis.voltage.magnitude
+𝚯 = analysis.voltage.angle
+```
+
+---
+
+##### Peters and Wilkinson Method
+Another option is the Peters and Wilkinson method [aburbook; Sec. 3.4](@cite):
+```@example PMUSETutorial
+analysis = pmuStateEstimation(monitoring, PetersWilkinson)
+nothing # hide
+```
+
+This method applies LU factorisation to the rectangular matrix ``\bar{\mathbf{H}}``:
+```math
+  \bar{\mathbf{H}} = {\mathbf W^{1/2}} \mathbf H = \mathbf{L}\mathbf{U}.
+```
+
+Substituting this into the normal equation:
+```math
+  \bar{\mathbf{H}}^{T}  \bar{\mathbf{H}} \mathbf x = \bar{\mathbf{H}}^{T}  \bar{\mathbf{z}},
+```
+yields:
+```math
+  \mathbf{U}^T \mathbf{L}^T \mathbf{L} \mathbf{U} \mathbf x = \mathbf{U}^T \mathbf{L}^T \bar{\mathbf{z}}.
+```
+
+By eliminating ``\mathbf{U}^T`` from both sides and introducing a new vector ``\mathbf{y} = \mathbf{U} \mathbf x``,  we obtain:
+```math
+  \mathbf{L}^T \mathbf{L} \mathbf y = \mathbf{L}^T \bar{\mathbf{z}}.
+```
+
+The Peters and Wilkinson method first solves this equation to compute ``\mathbf{y}``, and then obtains ``\mathbf x`` by backward substitution using equation ``\mathbf{y} = \mathbf{U} \mathbf x``. The main advantage of this approach is that ``\mathbf{L}^T \mathbf{L}`` is generally less ill-conditioned than ``\bar{\mathbf{H}}^{T} \bar{\mathbf{H}}``, which improves numerical stability.
+
+To execute this procedure, use the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function:
+```@example PMUSETutorial
+solve!(analysis)
+nothing # hide
+```
+
+Access to the factorised matrices is available via:
+```@repl PMUSETutorial
+𝐋 = analysis.method.factorization.L
+𝐔 = analysis.method.factorization.U
+```
+
+Finally, the estimates of bus voltage magnitudes ``\hat{\mathbf{V}} = [\hat{V}_i]`` and angles ``\hat{\bm{\Theta}} = [\hat{\theta}_i]``, where ``i \in \mathcal{N}``, can be obtained as:
 ```@repl PMUSETutorial
 𝐕 = analysis.voltage.magnitude
 𝚯 = analysis.voltage.angle

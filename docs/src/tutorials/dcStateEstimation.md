@@ -252,10 +252,13 @@ It is essential to note that the slack bus voltage angle is temporarily excluded
 
 ---
 
-##### [Alternative Formulation](@id DCSEOrthogonalWLSStateEstimationTutorials)
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal factorization [aburbook; Sec. 3.2](@cite).
+## [Alternative Formulations](@id DCSEOrthogonalWLSStateEstimationTutorials)
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such scenarios, users may choose to apply an alternative formulation of the WLS estimator.
 
-To address ill-conditioned situations arising from significant differences in measurement variances, users can employ an alternative approach:
+---
+
+##### Orthogonal Method
+One such alternative is the orthogonal method [aburbook; Sec. 3.2](@cite), which offers increased numerical robustness, particularly in cases where measurement variances differ significantly:
 ```@example DCSETutorial
 analysis = dcStateEstimation(monitoring, Orthogonal)
 nothing # hide
@@ -297,6 +300,53 @@ Access to the factorized matrix is possible through:
 ```
 
 To obtain the solution, JuliaGrid avoids materializing the orthogonal matrix ``\mathbf{Q}`` and proceeds to solve the system, resulting in the estimate of state variables ``\hat{\bm {\Theta}} = [\hat{\theta}_i]``, where ``i \in \mathcal{N}``:
+```@repl DCSETutorial
+𝚯 = analysis.voltage.angle
+```
+
+---
+
+##### Peters and Wilkinson Method
+Another option is the Peters and Wilkinson method [aburbook; Sec. 3.4](@cite):
+```@example DCSETutorial
+analysis = dcStateEstimation(monitoring, PetersWilkinson)
+nothing # hide
+```
+
+This method applies LU factorisation to the rectangular matrix ``\bar{\mathbf{H}}``:
+```math
+  \bar{\mathbf{H}} = {\mathbf W^{1/2}} \mathbf H = \mathbf{L}\mathbf{U}.
+```
+
+Substituting this into the normal equation:
+```math
+  \bar{\mathbf{H}}^{T}  \bar{\mathbf{H}} \bm {\Theta} = \bar{\mathbf{H}}^{T}  \bar{\mathbf{z}},
+```
+yields:
+```math
+  \mathbf{U}^T \mathbf{L}^T \mathbf{L} \mathbf{U} \bm {\Theta} = \mathbf{U}^T \mathbf{L}^T \bar{\mathbf{z}}.
+```
+
+By eliminating ``\mathbf{U}^T`` from both sides and introducing a new vector ``\mathbf{y} = \mathbf{U} \bm {\Theta}``,  we obtain:
+```math
+  \mathbf{L}^T \mathbf{L} \mathbf y = \mathbf{L}^T \bar{\mathbf{z}}.
+```
+
+The Peters and Wilkinson method first solves this equation to compute ``\mathbf{y}``, and then obtains ``\bm{\Theta}`` by backward substitution using equation ``\mathbf{y} = \mathbf{U} \bm {\Theta}``. The main advantage of this approach is that ``\mathbf{L}^T \mathbf{L}`` is generally less ill-conditioned than ``\bar{\mathbf{H}}^{T} \bar{\mathbf{H}}``, which improves numerical stability.
+
+To execute this procedure, use the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function:
+```@example DCSETutorial
+solve!(analysis)
+nothing # hide
+```
+
+Access to the factorised matrices is available via:
+```@repl DCSETutorial
+𝐋 = analysis.method.factorization.L
+𝐔 = analysis.method.factorization.U
+```
+
+Finally, the estimated state variables ``\hat{\bm{\Theta}} = [\hat{\theta}_i]``, where ``i \in \mathcal{N}``, can be obtained as:
 ```@repl DCSETutorial
 𝚯 = analysis.voltage.angle
 ```

@@ -985,8 +985,8 @@ The main computational effort is in step 5, which involves factorizing the gain 
 
 ---
 
-##### [Alternative Formulation](@id ACAlternativeFormulationTutorials)
-The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such cases, users may opt for an alternative formulation of the WLS state estimation, namely, employing an approach called orthogonal method [aburbook; Sec. 3.2](@cite).
+## [Alternative Formulation](@id ACAlternativeFormulationTutorials)
+The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from converging to a satisfactory solution. In such scenarios, users may choose to apply an alternative formulation of the WLS estimator.
 
 This approach is suitable when measurement errors are uncorrelated, and the precision matrix remains diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
 ```@example ACSETutorial
@@ -994,7 +994,12 @@ updatePmu!(monitoring; label = "PMU 2", correlated = false)
 nothing # hide
 ```
 
-To address ill-conditioned situations arising from significant differences in measurement variances, users can now employ the orthogonal factorization approach:
+For simplicity, the iteration index is omitted in the following expressions.
+
+---
+
+##### Orthogonal Method
+One such alternative is the orthogonal method [aburbook; Sec. 3.2](@cite), which offers increased numerical robustness, particularly in cases where measurement variances differ significantly:
 ```@example ACSETutorial
 analysis = gaussNewton(monitoring, Orthogonal)
 
@@ -1010,28 +1015,28 @@ nothing # hide
 
 To explain the method, we begin with the WLS equation:
 ```math
-	  \Big[\mathbf J (\mathbf x^{(\nu)})^T \mathbf W \mathbf J (\mathbf x^{(\nu)})\Big] \mathbf \Delta \mathbf x^{(\nu)} =
-		\mathbf J (\mathbf x^{(\nu)})^T \mathbf W \mathbf r (\mathbf x^{(\nu)})
+	  \Big[\mathbf J (\mathbf x)^T \mathbf W \mathbf J (\mathbf x)\Big] \mathbf \Delta \mathbf x =
+		\mathbf J (\mathbf x)^T \mathbf W \mathbf r (\mathbf x)
 ```
 where ``\mathbf W = \bm \Sigma^{-1}``. Subsequently, we can write:
 ```math
-  \left[{\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)})\right]^T  {\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)})  \Delta \mathbf x^{(\nu)} =
-  \left[{\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)})\right]^T {\mathbf W^{1/2}} \mathbf r (\mathbf x^{(\nu)}).
+  \left[{\mathbf W^{1/2}} \mathbf J (\mathbf x)\right]^T  {\mathbf W^{1/2}} \mathbf J (\mathbf x)  \Delta \mathbf x =
+  \left[{\mathbf W^{1/2}} \mathbf J (\mathbf x)\right]^T {\mathbf W^{1/2}} \mathbf r (\mathbf x).
 ```
 
 Consequently, we have:
 ```math
-  \bar{\mathbf J} (\mathbf x^{(\nu)})^T  \bar{\mathbf J}(\mathbf x^{(\nu)}) \Delta \mathbf x^{(\nu)} = \bar{\mathbf J}(\mathbf x^{(\nu)})^{T}  \bar{\mathbf r} (\mathbf x^{(\nu)}),
+  \bar{\mathbf J} (\mathbf x)^T  \bar{\mathbf J}(\mathbf x) \Delta \mathbf x = \bar{\mathbf J}(\mathbf x)^{T}  \bar{\mathbf r} (\mathbf x),
 ```
 where:
 ```math
-  \bar{\mathbf J}(\mathbf x^{(\nu)}) = {\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)}), \;\;\;
-  \bar{\mathbf r} (\mathbf x^{(\nu)}) = {\mathbf W^{1/2}} \mathbf r (\mathbf x^{(\nu)}).
+  \bar{\mathbf J}(\mathbf x) = {\mathbf W^{1/2}} \mathbf J (\mathbf x), \;\;\;
+  \bar{\mathbf r} (\mathbf x) = {\mathbf W^{1/2}} \mathbf r (\mathbf x).
 ```
 
 Therefore, within each iteration of the Gauss-Newton method, JuliaGrid conducts QR factorization on the rectangular matrix:
 ```math
-  \bar{\mathbf J}(\mathbf x^{(\nu)}) = {\mathbf W^{1/2}} \mathbf J (\mathbf x^{(\nu)}) = \mathbf Q \mathbf R.
+  \bar{\mathbf J}(\mathbf x) = {\mathbf W^{1/2}} \mathbf J (\mathbf x) = \mathbf Q(\mathbf x) \mathbf R(\mathbf x).
 ```
 
 Access to the factorized matrix is possible through:
@@ -1040,7 +1045,58 @@ Access to the factorized matrix is possible through:
 𝐑 = analysis.method.factorization.R
 ```
 
-To obtain the solution, JuliaGrid avoids explicitly forming the orthogonal matrix ``\mathbf Q``. Once the algorithm converges, estimates of bus voltage magnitudes ``\hat{\mathbf V} = [\hat{V}_i]`` and angles ``\hat{\bm \Theta} = [\hat{\theta}_i]``, where ``i \in \mathcal N``  can be accessed using variables:
+To obtain the solution, JuliaGrid avoids explicitly forming the orthogonal matrix ``\mathbf Q(\mathbf x)``. Once the algorithm converges, estimates of bus voltage magnitudes ``\hat{\mathbf V} = [\hat{V}_i]`` and angles ``\hat{\bm \Theta} = [\hat{\theta}_i]``, where ``i \in \mathcal N``  can be accessed using variables:
+```@repl ACSETutorial
+𝐕 = analysis.voltage.magnitude
+𝚯 = analysis.voltage.angle
+```
+
+---
+
+##### Peters and Wilkinson Method
+Another option is the Peters and Wilkinson method [aburbook; Sec. 3.4](@cite):
+```@example ACSETutorial
+analysis = gaussNewton(monitoring, PetersWilkinson)
+
+for iteration = 0:20
+    stopping = increment!(analysis)
+    if stopping < 1e-8
+        break
+    end
+    solve!(analysis)
+end
+nothing # hide
+```
+
+This method applies LU factorisation to the rectangular matrix ``\bar{\mathbf J} (\mathbf x)``:
+```math
+  \bar{\mathbf J} (\mathbf x) = {\mathbf W^{1/2}} \mathbf J (\mathbf x) = \mathbf{L}(\mathbf x)\mathbf{U}(\mathbf x).
+```
+
+Substituting this into the normal equation:
+```math
+	  \bar{\mathbf J} (\mathbf x)^T \bar{\mathbf J}(\mathbf x) \Delta \mathbf x = \bar{\mathbf J}(\mathbf x)^{T} \bar{\mathbf r} (\mathbf x)
+```
+
+yields:
+```math
+  \mathbf{U}(\mathbf x)^T \mathbf{L}(\mathbf x)^T \mathbf{L}(\mathbf x) \mathbf{U}(\mathbf x) \Delta \mathbf x = \mathbf{U}(\mathbf x)^T \mathbf{L}(\mathbf x)^T \bar{\mathbf r} (\mathbf x).
+```
+
+By eliminating ``\mathbf{U}(\mathbf x)^T`` from both sides and introducing a new vector ``\Delta \mathbf y = \mathbf{U}(\mathbf x) \Delta \mathbf x``,  we obtain:
+```math
+  \mathbf{L}(\mathbf x)^T \mathbf{L}(\mathbf x) \Delta \mathbf y = \mathbf{L}(\mathbf x)^T \bar{\mathbf r} (\mathbf x).
+```
+
+The Peters and Wilkinson method first solves this equation to compute ``\Delta \mathbf y``, and then obtains ``\Delta \mathbf x`` by backward substitution using equation ``\Delta \mathbf y = \mathbf{U}(\mathbf x) \Delta \mathbf x``. The main advantage of this approach is that ``\mathbf{L}(\mathbf x)^T \mathbf{L}(\mathbf x)`` is generally less ill-conditioned than ``\bar{\mathbf J} (\mathbf x)^T \bar{\mathbf J}(\mathbf x)``, which improves numerical stability.
+
+Access to the factorized matrix is possible through:
+```@repl ACSETutorial
+𝐋 = analysis.method.factorization.L
+𝐔 = analysis.method.factorization.U
+```
+
+Finally, the estimates of bus voltage magnitudes ``\hat{\mathbf{V}} = [\hat{V}_i]`` and angles ``\hat{\bm{\Theta}} = [\hat{\theta}_i]``, where ``i \in \mathcal{N}``, can be obtained as:
 ```@repl ACSETutorial
 𝐕 = analysis.voltage.magnitude
 𝚯 = analysis.voltage.angle
