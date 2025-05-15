@@ -2,6 +2,19 @@
 
 ---
 
+## Version 0.4.5
+
+Release Date: May 15, 2025
+
+#### Added
+  * Peters-Wilkinson method for solving all state estimation models.
+
+#### Other
+  * Enhanced memory allocation for all power flow algorithms.
+  * Enhanced memory allocation for all WLS state estimation algorithms.
+
+---
+
 ## Version 0.4.4
 
 Release Date: May 8, 2025

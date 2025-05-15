@@ -267,7 +267,7 @@ nothing # hide
 ---
 
 ##### Orthogonal Method
-One such alternative is the orthogonal method [aburbook; Sec. 3.2](@cite), which offers increased numerical robustness, especially when measurement variances differ significantly. This method solves the WLS problem using QR factorisation applied to a rectangular matrix formed by multiplying the square root of the precision matrix with the Jacobian matrix in each iteration of the Gauss-Newton algorithm. To enable this method, specify the `Orthogonal` argument in the [`gaussNewton`](@ref gaussNewton) function:
+One alternative is the orthogonal method [aburbook; Sec. 3.2](@cite), which provides increased numerical robustness, especially with widely varying measurement variances. It solves the WLS problem using QR factorisation on a rectangular matrix formed by multiplying the square root of the precision matrix with the Jacobian in each Gauss-Newton iteration. Enable it by passing the `Orthogonal` argument to the [`gaussNewton`](@ref gaussNewton) function:
 ```@example ACSEWLS
 analysis = gaussNewton(monitoring, Orthogonal)
 stateEstimation!(analysis)
@@ -277,7 +277,7 @@ nothing # hide
 ---
 
 ##### Peters and Wilkinson Method
-Another option is the Peters and Wilkinson method [aburbook; Sec. 3.4](@cite), which applies LU factorisation to the same rectangular matrix, constructed using the square root of the precision matrix and the Jacobian matrix in each Gauss-Newton iteration. This method can be selected by passing the `PetersWilkinson` argument to the [`gaussNewton`](@ref gaussNewton) function:
+Another option is the Peters and Wilkinson method [aburbook; Sec. 3.4](@cite), which uses LU factorisation on the same rectangular matrix built from the square root of the precision matrix and the Jacobian in each Gauss-Newton iteration. It can be selected by passing the `PetersWilkinson` argument to the [`gaussNewton`](@ref gaussNewton) function:
 ```@example ACSEWLS
 analysis = gaussNewton(monitoring, PetersWilkinson)
 stateEstimation!(analysis)

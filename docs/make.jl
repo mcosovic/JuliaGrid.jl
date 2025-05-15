@@ -21,7 +21,14 @@ makedocs(
             "api/measurementModel.md",
             "tutorials/acStateEstimation.md",
             "tutorials/acPowerFlow.md"
-        ]
+        ],
+        mathengine = Documenter.KaTeX(
+            Dict(:macros => Dict(
+                "\\barJ" => "\\mkern2mu \\bar {\\mkern-2mu\\mathbf{J}}",
+                "\\barr" => "\\mkern-1mu \\bar {\\mkern1mu\\mathbf{r}}",
+                ),
+            )
+        )
     ),
     pages = [
         "Introduction" => "index.md",
