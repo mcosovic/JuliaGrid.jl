@@ -74,21 +74,17 @@ addBus!(system; label = "Bus 2", type = 1, active = 0.15, reactive = 0.08)
 addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.12, shiftAngle = 10)
 ```
 """
-function addBranch!(
-    system::PowerSystem;
-    label::IntStrMiss = missing,
-    from::IntStrMiss,
-    to::IntStrMiss,
-    kwargs...
-)
+function addBranch!(system::PowerSystem; from::IntStr, to::IntStr, kwargs...)
+    addBranchMain!(system, from, to, BranchKey(; kwargs...))
+end
+
+function addBranchMain!(system::PowerSystem, from::IntStr, to::IntStr, key::BranchKey)
     branch = system.branch
     param = branch.parameter
     def = template.branch
-    baseVoltg = system.base.voltage
-    key = branchkwargs(; kwargs...)
 
     branch.number += 1
-    setLabel(branch, label, def.label, "branch")
+    setLabel(branch, key.label, def.label, "branch")
 
     if from == to
         throw(ErrorException("Invalid value for from or to keywords."))
@@ -106,7 +102,7 @@ function addBranch!(
     add!(param.turnsRatio, key.turnsRatio, def.turnsRatio)
 
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    baseVoltage = baseVoltg.value[branch.layout.from[end]] * baseVoltg.prefix
+    baseVoltage = system.base.voltage.value[branch.layout.from[end]] * system.base.voltage.prefix
     baseAdmInv = baseImpedance(baseVoltage, basePowerInv, param.turnsRatio[end])
     baseImpInv = 1 / baseAdmInv
 
@@ -163,60 +159,35 @@ provided `kwargs`, and then adds the same branch to the `Analysis` type.
 system = powerSystem("case14.h5")
 analysis = newtonRaphson(system)
 
-addBranch!(analysis; label = 21, reactance = 0.21, susceptance = 0.06)
+addBranch!(analysis; from = 13, to = 14, reactance = 0.21, susceptance = 0.06)
 ```
 """
-function addBranch!(
-    analysis::AcPowerFlow{T};
-    label::IntStrMiss = missing,
-    from::IntStrMiss,
-    to::IntStrMiss,
-    kwargs...
-) where T <: Union{NewtonRaphson, GaussSeidel}
-
-    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
-    addBranch!(analysis.system; label, from, to, kwargs...)
+function addBranch!(analysis::PowerFlow; from::IntStr, to::IntStr, kwargs...)
+    addBranchMain!(analysis.system, from, to, BranchKey(; kwargs...))
+    _addBranch!(analysis)
 end
 
-function addBranch!(
-    analysis::AcPowerFlow{FastNewtonRaphson};
-    label::IntStrMiss = missing,
-    from::IntStrMiss,
-    to::IntStrMiss,
-    kwargs...
-)
+function _addBranch!(analysis::AcPowerFlow{T}) where T <: Union{NewtonRaphson, GaussSeidel}
     errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
-    addBranch!(analysis.system; label, from, to, kwargs...)
+end
+
+function _addBranch!(analysis::AcPowerFlow{FastNewtonRaphson})
+    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
 
     if analysis.system.branch.layout.status[analysis.system.branch.number] == 1
         jacobian(analysis.system, analysis, analysis.system.branch.number)
     end
 end
 
-function addBranch!(
-    analysis::DcPowerFlow;
-    label::IntStrMiss = missing,
-    from::IntStrMiss,
-    to::IntStrMiss,
-    kwargs...
-)
+function _addBranch!(analysis::DcPowerFlow)
     errorTypeConversion(analysis.system.bus.layout.slack, analysis.method.signature[:slack])
-    addBranch!(analysis.system; label, from, to, kwargs...)
 end
 
-function addBranch!(
-    analysis::AcOptimalPowerFlow;
-    label::IntStrMiss = missing,
-    from::IntStrMiss,
-    to::IntStrMiss,
-    kwargs...
-)
+function _addBranch!(analysis::AcOptimalPowerFlow)
     system = analysis.system
     jump = analysis.method.jump
     var = analysis.method.variable
     con = analysis.method.constraint
-
-    addBranch!(system; label, from, to, kwargs...)
 
     if system.branch.layout.status[end] == 1
         i, j = fromto(system, system.branch.number)
@@ -234,19 +205,11 @@ function addBranch!(
     end
 end
 
-function addBranch!(
-    analysis::DcOptimalPowerFlow;
-    label::IntStrMiss = missing,
-    from::IntStrMiss,
-    to::IntStrMiss,
-    kwargs...
-)
+function _addBranch!(analysis::DcOptimalPowerFlow)
     system = analysis.system
     jump = analysis.method.jump
     var = analysis.method.variable
     con = analysis.method.constraint
-
-    addBranch!(system; label, from, to, kwargs...)
 
     if system.branch.layout.status[end] == 1
         i, j = fromto(system, system.branch.number)
@@ -292,13 +255,14 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 updateBranch!(system; label = "Branch 1", reactance = 0.22, susceptance = 0.06)
 ```
 """
-function updateBranch!(system::PowerSystem; label::IntStrMiss, kwargs...)
+function updateBranch!(system::PowerSystem; label::IntStr, kwargs...)
+    updateBranchMain!(system, label, BranchKey(; kwargs...))
+end
+
+function updateBranchMain!(system::PowerSystem, label::IntStr, key::BranchKey)
     branch = system.branch
-    param = branch.parameter
     ac = system.model.ac
     dc = system.model.dc
-    baseVoltg = system.base.voltage
-    key = branchkwargs(; kwargs...)
 
     idx = getIndex(branch, label, "branch")
 
@@ -310,8 +274,8 @@ function updateBranch!(system::PowerSystem; label::IntStrMiss, kwargs...)
     end
     checkStatus(statusNew)
 
-    dcadm = isset(key.reactance, key.turnsRatio)
-    pimodel = isset(dcadm, key.resistance, key.conductance, key.susceptance, key.shiftAngle)
+    dcadm = isset(key.reactance) || isset(key.turnsRatio)
+    pimodel = any(isset, (dcadm, key.resistance, key.conductance, key.susceptance, key.shiftAngle))
 
     if statusNew == 1 && statusOld == 0
         branch.layout.inservice += 1
@@ -329,7 +293,7 @@ function updateBranch!(system::PowerSystem; label::IntStrMiss, kwargs...)
 
     if !isempty(dc.nodalMatrix)
         if statusOld == 1
-            if statusNew == 0 || (statusNew == 1 && isset(dcadm, key.shiftAngle))
+            if statusNew == 0 || (statusNew == 1 && (isset(dcadm) || isset(key.shiftAngle)))
                 dc.admittance[idx] = -dc.admittance[idx]
                 dcShiftUpdate!(system, idx)
                 if statusOld == 1 && (statusNew == 0 || (statusNew == 1 && dcadm))
@@ -341,18 +305,18 @@ function updateBranch!(system::PowerSystem; label::IntStrMiss, kwargs...)
     end
 
     if pimodel
-        update!(param.turnsRatio, key.turnsRatio, idx)
+        update!(branch.parameter.turnsRatio, key.turnsRatio, idx)
 
         baseInv = 1 / (system.base.power.value * system.base.power.prefix)
-        baseVoltage = baseVoltg.value[branch.layout.from[idx]] * baseVoltg.prefix
-        baseAdmInv = baseImpedance(baseVoltage, baseInv, param.turnsRatio[idx])
+        baseVoltage = system.base.voltage.value[branch.layout.from[idx]] * system.base.voltage.prefix
+        baseAdmInv = baseImpedance(baseVoltage, baseInv, branch.parameter.turnsRatio[idx])
         baseImpInv = 1 / baseAdmInv
 
-        update!(param.resistance, key.resistance, pfx.impedance, baseImpInv, idx)
-        update!(param.reactance, key.reactance, pfx.impedance, baseImpInv, idx)
-        update!(param.conductance, key.conductance, pfx.admittance, baseAdmInv, idx)
-        update!(param.susceptance, key.susceptance, pfx.admittance, baseAdmInv, idx)
-        update!(param.shiftAngle, key.shiftAngle, pfx.voltageAngle, 1.0, idx)
+        update!(branch.parameter.resistance, key.resistance, pfx.impedance, baseImpInv, idx)
+        update!(branch.parameter.reactance, key.reactance, pfx.impedance, baseImpInv, idx)
+        update!(branch.parameter.conductance, key.conductance, pfx.admittance, baseAdmInv, idx)
+        update!(branch.parameter.susceptance, key.susceptance, pfx.admittance, baseAdmInv, idx)
+        update!(branch.parameter.shiftAngle, key.shiftAngle, pfx.voltageAngle, 1.0, idx)
     end
 
     if !isempty(ac.nodalMatrix)
@@ -364,7 +328,7 @@ function updateBranch!(system::PowerSystem; label::IntStrMiss, kwargs...)
 
     if !isempty(dc.nodalMatrix)
         if statusNew == 1
-            if statusOld == 0 || (statusOld == 1 && isset(dcadm, key.shiftAngle))
+            if statusOld == 0 || (statusOld == 1 && (isset(dcadm) || isset(key.shiftAngle)))
                 dcAdmittanceUpdate!(system, statusNew, idx)
                 dcShiftUpdate!(system, idx)
                 if statusNew == 1 && (statusOld == 0 || (statusOld == 1 && dcadm))
@@ -380,14 +344,12 @@ function updateBranch!(system::PowerSystem; label::IntStrMiss, kwargs...)
     update!(branch.voltage.maxDiffAngle, key.maxDiffAngle, pfx.voltageAngle, 1.0, idx)
     update!(branch.flow.type, key.type, idx)
 
-    if isset(key.minFromBus, key.maxFromBus, key.minToBus, key.maxToBus)
-        pfxLive, baseInvFrom, baseInvTo = flowType(system, pfx, baseInv, idx)
+    pfxLive, baseInvFrom, baseInvTo = flowType(system, pfx, baseInv, idx)
 
-        update!(branch.flow.minFromBus, key.minFromBus, pfxLive, baseInvFrom, idx)
-        update!(branch.flow.maxFromBus, key.maxFromBus, pfxLive, baseInvFrom, idx)
-        update!(branch.flow.minToBus, key.minToBus, pfxLive, baseInvTo, idx)
-        update!(branch.flow.maxToBus, key.maxToBus, pfxLive, baseInvTo, idx)
-    end
+    update!(branch.flow.minFromBus, key.minFromBus, pfxLive, baseInvFrom, idx)
+    update!(branch.flow.maxFromBus, key.maxFromBus, pfxLive, baseInvFrom, idx)
+    update!(branch.flow.minToBus, key.minToBus, pfxLive, baseInvTo, idx)
+    update!(branch.flow.maxToBus, key.maxToBus, pfxLive, baseInvTo, idx)
 end
 
 """
@@ -410,25 +372,22 @@ analysis = newtonRaphson(system)
 updateBranch!(analysis; label = 2, reactance = 0.32, susceptance = 0.07)
 ```
 """
-function updateBranch!(
-    analysis::AcPowerFlow{T};
-    label::IntStrMiss,
-    kwargs...
-) where T <: Union{NewtonRaphson, GaussSeidel}
-
-    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
-    updateBranch!(analysis.system; label, kwargs...)
+function updateBranch!(analysis::PowerFlow; label::IntStr, kwargs...)
+    updateBranchMain!(analysis.system, label, BranchKey(; kwargs...))
+    _updateBranch!(analysis, getIndex(analysis.system.branch, label, "branch"))
 end
 
-function updateBranch!(analysis::AcPowerFlow{FastNewtonRaphson}; label::IntStrMiss, kwargs...)
+function _updateBranch!(analysis::AcPowerFlow{T}, ::Int64) where T <: Union{NewtonRaphson, GaussSeidel}
+    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
+end
+
+function _updateBranch!(analysis::AcPowerFlow{FastNewtonRaphson}, idx::Int64)
     system = analysis.system
     jcbP = analysis.method.active.jacobian
     jcbQ = analysis.method.reactive.jacobian
 
     errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
-    updateBranch!(system; label, kwargs...)
 
-    idx = getIndex(system.branch, label, "branch")
     from, to = fromto(system, idx)
 
     if from != system.bus.layout.slack && to != system.bus.layout.slack
@@ -485,20 +444,16 @@ function updateBranch!(analysis::AcPowerFlow{FastNewtonRaphson}; label::IntStrMi
     end
 end
 
-function updateBranch!(analysis::DcPowerFlow; label::IntStrMiss, kwargs...)
+function _updateBranch!(analysis::DcPowerFlow, ::Int64)
     errorTypeConversion(analysis.system.bus.layout.slack, analysis.method.signature[:slack])
-    updateBranch!(analysis.system; label, kwargs...)
 end
 
-function updateBranch!(analysis::AcOptimalPowerFlow; label::IntStrMiss, kwargs...)
+function _updateBranch!(analysis::AcOptimalPowerFlow, idx::Int64)
     system = analysis.system
     jump = analysis.method.jump
     var = analysis.method.variable
     con = analysis.method.constraint
 
-    updateBranch!(system; label, kwargs...)
-
-    idx = getIndex(system.branch, label, "branch")
     i, j = fromto(system, idx)
 
     remove!(jump, con.balance.active, i)
@@ -519,15 +474,12 @@ function updateBranch!(analysis::AcOptimalPowerFlow; label::IntStrMiss, kwargs..
     end
 end
 
-function updateBranch!(analysis::DcOptimalPowerFlow; label::IntStrMiss, kwargs...)
+function _updateBranch!(analysis::DcOptimalPowerFlow, idx::Int64)
     system = analysis.system
     jump = analysis.method.jump
     var = analysis.method.variable
     con = analysis.method.constraint
 
-    updateBranch!(system; label, kwargs...)
-
-    idx = getIndex(system.branch, label, "branch")
     i, j = fromto(system, idx)
 
     remove!(jump, con.balance.active, i)
@@ -659,32 +611,4 @@ function flowType(system::PowerSystem, pfx::PrefixLive, basePowerInv::Float64, i
     else
         throw(ErrorException("The value $type of the branch flow rating type is illegal."))
     end
-end
-
-##### Branch Keywords #####
-function branchkwargs(;
-    status::IntMiss = missing,
-    resistance::FltIntMiss = missing,
-    reactance::FltIntMiss = missing,
-    susceptance::FltIntMiss = missing,
-    conductance::FltIntMiss = missing,
-    turnsRatio::FltIntMiss = missing,
-    shiftAngle::FltIntMiss = missing,
-    minDiffAngle::FltIntMiss = missing,
-    maxDiffAngle::FltIntMiss = missing,
-    minFromBus::FltIntMiss = missing,
-    maxFromBus::FltIntMiss = missing,
-    minToBus::FltIntMiss = missing,
-    maxToBus::FltIntMiss = missing,
-    type::IntMiss = missing
-)
-    (
-    status = status,
-    resistance = resistance, reactance = reactance,
-    susceptance = susceptance, conductance = conductance,
-    turnsRatio = turnsRatio, shiftAngle = shiftAngle,
-    minDiffAngle = minDiffAngle, maxDiffAngle = maxDiffAngle,
-    minFromBus = minFromBus, maxFromBus = maxFromBus,
-    minToBus = minToBus, maxToBus = maxToBus, type = type
-    )
 end

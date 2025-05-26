@@ -121,7 +121,7 @@ function injectionPower(analysis::DcPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
 
     system = analysis.system
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
+    idx = getIndex(system.bus, label, "bus")
 
     if idx == system.bus.layout.slack
         return Pi(system.bus, system.model.dc, analysis.voltage, idx)
@@ -134,7 +134,7 @@ function injectionPower(analysis::DcOptimalPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
 
     system = analysis.system
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
+    idx = getIndex(system.bus, label, "bus")
 
     Pi = copy(-system.bus.demand.active[idx])
     if haskey(system.bus.supply.generator, idx)
@@ -148,11 +148,9 @@ end
 
 function injectionPower(analysis::DcStateEstimation; label::IntStr)
     errorVoltage(analysis.voltage.angle)
+    idx = getIndex(analysis.system.bus, label, "bus")
 
-    system = analysis.system
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
-
-    Pi(system.bus, system.model.dc, analysis.voltage, idx)
+    Pi(analysis.system.bus, analysis.system.model.dc, analysis.voltage, idx)
 end
 
 """
@@ -176,7 +174,7 @@ function supplyPower(analysis::DcPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
 
     system = analysis.system
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
+    idx = getIndex(system.bus, label, "bus")
 
     dc = system.model.dc
     bus = system.bus
@@ -192,7 +190,7 @@ function supplyPower(analysis::DcOptimalPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
 
     system = analysis.system
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
+    idx = getIndex(analysis.system.bus, label, "bus")
 
     supplyActive = 0.0
     if haskey(system.bus.supply.generator, idx)
@@ -208,7 +206,7 @@ function supplyPower(analysis::DcStateEstimation; label::IntStr)
     errorVoltage(analysis.voltage.angle)
 
     system = analysis.system
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
+    idx = getIndex(system.bus, label, "bus")
 
     bus = system.bus
 
@@ -240,7 +238,7 @@ function fromPower(analysis::DC; label::IntStr)
     admittance = system.model.dc.admittance
     shiftAngle = system.branch.parameter.shiftAngle
 
-    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+    idx = getIndex(system.branch, label, "branch")
     i, j = fromto(system, idx)
 
     admittance[idx] * (angle[i] - angle[j] - shiftAngle[idx])
@@ -271,7 +269,7 @@ function toPower(analysis::DC; label::IntStr)
     admittance = system.model.dc.admittance
     shiftAngle = system.branch.parameter.shiftAngle
 
-    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+    idx = getIndex(system.branch, label, "branch")
     i, j = fromto(system, idx)
 
     -admittance[idx] * (angle[i] - angle[j] - shiftAngle[idx])
@@ -298,7 +296,7 @@ function generatorPower(analysis::DcPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
 
     system = analysis.system
-    idx = system.generator.label[getLabel(system.generator, label, "generator")]
+    idx = getIndex(system.generator, label, "generator")
 
     dc = system.model.dc
     bus = system.bus
@@ -324,9 +322,7 @@ end
 
 function generatorPower(analysis::DcOptimalPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
-
-    system = analysis.system
-    idx = system.generator.label[getLabel(system.generator, label, "generator")]
+    idx = getIndex(analysis.system.generator, label, "generator")
 
     analysis.power.generator.active[idx]
 end

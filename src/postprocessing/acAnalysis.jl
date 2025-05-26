@@ -236,10 +236,7 @@ active, reactive = injectionPower(analysis; label = 1)
 function injectionPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
-    system = analysis.system
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
-
-    PiQi(system.model.ac, analysis.voltage, idx)
+    PiQi(analysis.system.model.ac, analysis.voltage, getIndex(analysis.system.bus, label, "bus"))
 end
 
 """
@@ -263,7 +260,7 @@ function supplyPower(analysis::AcPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
+    idx = getIndex(system.bus, label, "bus")
 
     if system.bus.layout.type[idx] != 1
         Pi, Qi = PiQi(system.model.ac, analysis.voltage, idx)
@@ -288,7 +285,7 @@ function supplyPower(analysis::AcOptimalPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
+    idx = getIndex(system.bus, label, "bus")
 
     supplyActive = 0.0
     supplyReactive = 0.0
@@ -306,7 +303,7 @@ function supplyPower(analysis::Union{PmuStateEstimation, AcStateEstimation}; lab
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
+    idx = getIndex(system.bus, label, "bus")
 
     Pi, Qi = injectionPower(analysis; label = label)
 
@@ -333,10 +330,7 @@ active, reactive = shuntPower(analysis; label = 9)
 function shuntPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
-    system = analysis.system
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
-
-    PsQs(system.bus, analysis.voltage, idx)
+    PsQs(analysis.system.bus, analysis.voltage, getIndex(analysis.system.bus, label, "bus"))
 end
 
 """
@@ -360,7 +354,7 @@ function fromPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+    idx = getIndex(system.branch, label, "branch")
 
     if system.branch.layout.status[idx] == 1
         Vi, Vj = ViVj(system, analysis.voltage, idx)
@@ -391,7 +385,7 @@ function toPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+    idx = getIndex(system.branch, label, "branch")
 
     if system.branch.layout.status[idx] == 1
         Vi, Vj = ViVj(system, analysis.voltage, idx)
@@ -423,7 +417,7 @@ function chargingPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+    idx = getIndex(system.branch, label, "branch")
 
     if system.branch.layout.status[idx] == 1
         return PcQc(system.branch, analysis.voltage, idx)
@@ -454,7 +448,7 @@ function seriesPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+    idx = getIndex(system.branch, label, "branch")
 
     if system.branch.layout.status[idx] == 1
         return PlQl(system.model.ac, ViVjVij(system, analysis.voltage, idx)[3], idx)
@@ -486,7 +480,7 @@ function generatorPower(analysis::AcPowerFlow; label::IntStr)
     system = analysis.system
     gen = system.generator
 
-    idx = gen.label[getLabel(gen, label, "generator")]
+    idx = getIndex(gen, label, "generator")
     idxBus = gen.layout.bus[idx]
 
     if gen.layout.status[idx] == 1
@@ -574,7 +568,7 @@ function generatorPower(analysis::AcOptimalPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
 
     system = analysis.system
-    idx = system.generator.label[getLabel(system.generator, label, "generator")]
+    idx = getIndex(system.generator, label, "generator")
 
     return analysis.power.generator.active[idx], analysis.power.generator.reactive[idx]
 end
@@ -653,11 +647,9 @@ magnitude, angle = injectionCurrent(analysis; label = 1)
 """
 function injectionCurrent(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
+    idx = getIndex(analysis.system.bus, label, "bus")
 
-    system = analysis.system
-    idx = system.bus.label[getLabel(system.bus, label, "bus")]
-
-    absang(Ii(system.model.ac, analysis.voltage, idx))
+    absang(Ii(analysis.system.model.ac, analysis.voltage, idx))
 end
 
 """
@@ -684,7 +676,7 @@ function fromCurrent(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+    idx = getIndex(system.branch, label, "branch")
 
     if system.branch.layout.status[idx] == 1
         Vi, Vj = ViVj(system, analysis.voltage, idx)
@@ -717,7 +709,7 @@ function toCurrent(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+    idx = getIndex(system.branch, label, "branch")
 
     if system.branch.layout.status[idx] == 1
         Vi, Vj = ViVj(system, analysis.voltage, idx)
@@ -751,7 +743,7 @@ function seriesCurrent(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = system.branch.label[getLabel(system.branch, label, "branch")]
+    idx = getIndex(system.branch, label, "branch")
 
     if system.branch.layout.status[idx] == 1
         return IsΨs(system.model.ac, ViVjVij(system, analysis.voltage, idx)[3], idx)
@@ -787,7 +779,7 @@ function Ii(ac::AcModel, V::Polar, i::Int64)
 end
 
 function PsQs(bus::Bus, V::Polar, i::Int64)
-    reim(V.magnitude[i]^2 * conj(bus.shunt.conductance[i] + im * bus.shunt.susceptance[i]))
+    reim(V.magnitude[i]^2 * conj(complex(bus.shunt.conductance[i], bus.shunt.susceptance[i])))
 end
 
 function PiQi(ac::AcModel, V::Polar, idx::Int64)

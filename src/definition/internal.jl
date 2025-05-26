@@ -324,10 +324,148 @@ Base.@kwdef mutable struct PrefixLive
 end
 const pfx = PrefixLive()
 
+Base.@kwdef struct BusKey
+    label::IntStrMiss = missing
+    type::IntMiss = missing
+    active::FltIntMiss = missing
+    reactive::FltIntMiss = missing
+    conductance::FltIntMiss = missing
+    susceptance::FltIntMiss = missing
+    magnitude::FltIntMiss = missing
+    angle::FltIntMiss = missing
+    minMagnitude::FltIntMiss = missing
+    maxMagnitude::FltIntMiss = missing
+    base::FltIntMiss = missing
+    area::IntMiss = missing
+    lossZone::FltIntMiss = missing
+end
 
+Base.@kwdef struct BranchKey
+    label::IntStrMiss = missing
+    status::IntMiss = missing
+    resistance::FltIntMiss = missing
+    reactance::FltIntMiss = missing
+    susceptance::FltIntMiss = missing
+    conductance::FltIntMiss = missing
+    turnsRatio::FltIntMiss = missing
+    shiftAngle::FltIntMiss = missing
+    minDiffAngle::FltIntMiss = missing
+    maxDiffAngle::FltIntMiss = missing
+    minFromBus::FltIntMiss = missing
+    maxFromBus::FltIntMiss = missing
+    minToBus::FltIntMiss = missing
+    maxToBus::FltIntMiss = missing
+    type::IntMiss = missing
+end
 
+Base.@kwdef struct GeneratorKey
+    label::IntStrMiss = missing
+    area::IntMiss = missing
+    status::IntMiss = missing
+    active::FltIntMiss = missing
+    reactive::FltIntMiss = missing
+    magnitude::FltIntMiss = missing
+    minActive::FltIntMiss = missing
+    maxActive::FltIntMiss = missing
+    minReactive::FltIntMiss = missing
+    maxReactive::FltIntMiss = missing
+    lowActive::FltIntMiss = missing
+    minLowReactive::FltIntMiss = missing
+    maxLowReactive::FltIntMiss = missing
+    upActive::FltIntMiss = missing
+    minUpReactive::FltIntMiss = missing
+    maxUpReactive::FltIntMiss = missing
+    loadFollowing::FltIntMiss = missing
+    reserve10min::FltIntMiss = missing
+    reserve30min::FltIntMiss = missing
+    reactiveRamp::FltIntMiss = missing
+end
 
-# const factorized = Dict{DataType, Factorization{Float64}}()
-# factorized[LU] = lu(sparse(Matrix(1.0I, 1, 1)))
-# factorized[QR] = qr(sparse(Matrix(1.0I, 1, 1)))
-# factorized[LDLt] = ldlt(sparse(Matrix(1.0I, 1, 1)))
+Base.@kwdef struct CostKey
+    active::FltIntMiss = missing
+    reactive::FltIntMiss = missing
+    polynomial::Vector{Float64} = Float64[]
+    piecewise::Matrix{Float64} = Array{Float64}(undef, 0, 0)
+end
+
+Base.@kwdef struct VoltmeterKey
+    label::IntStrMiss = missing
+    magnitude::FltIntMiss = missing
+    variance::FltIntMiss = missing
+    status::IntMiss = missing
+    noise::Bool = template.voltmeter.noise
+end
+
+Base.@kwdef struct AmmeterKey
+    label::IntStrMiss = missing
+    from::IntStrMiss = missing
+    to::IntStrMiss = missing
+    magnitude::FltIntMiss = missing
+    variance::FltIntMiss = missing
+    varianceFrom::FltIntMiss = missing
+    varianceTo::FltIntMiss = missing
+    status::IntMiss = missing
+    statusFrom::FltIntMiss = missing
+    statusTo::FltIntMiss = missing
+    square::BoolMiss = missing
+    noise::Bool = template.ammeter.noise
+end
+
+Base.@kwdef struct WattmeterKey
+    label::IntStrMiss = missing
+    bus::IntStrMiss = missing
+    from::IntStrMiss = missing
+    to::IntStrMiss = missing
+    active::FltIntMiss = missing
+    variance::FltIntMiss = missing
+    varianceBus::FltIntMiss = missing
+    varianceFrom::FltIntMiss = missing
+    varianceTo::FltIntMiss = missing
+    status::IntMiss = missing
+    statusBus::FltIntMiss = missing
+    statusFrom::FltIntMiss = missing
+    statusTo::FltIntMiss = missing
+    noise::Bool = template.wattmeter.noise
+end
+
+Base.@kwdef struct VarmeterKey
+    label::IntStrMiss = missing
+    bus::IntStrMiss = missing
+    from::IntStrMiss = missing
+    to::IntStrMiss = missing
+    reactive::FltIntMiss = missing
+    variance::FltIntMiss = missing
+    varianceBus::FltIntMiss = missing
+    varianceFrom::FltIntMiss = missing
+    varianceTo::FltIntMiss = missing
+    status::IntMiss = missing
+    statusBus::FltIntMiss = missing
+    statusFrom::FltIntMiss = missing
+    statusTo::FltIntMiss = missing
+    noise::Bool = template.varmeter.noise
+end
+
+Base.@kwdef struct PmuKey
+    label::IntStrMiss = missing
+    bus::IntStrMiss = missing
+    from::IntStrMiss = missing
+    to::IntStrMiss = missing
+    magnitude::FltIntMiss = missing
+    varianceMagnitude::FltIntMiss = missing
+    varianceMagnitudeBus::FltIntMiss = missing
+    varianceMagnitudeFrom::FltIntMiss = missing
+    varianceMagnitudeTo::FltIntMiss = missing
+    angle::FltIntMiss = missing
+    varianceAngle::FltIntMiss = missing
+    varianceAngleBus::FltIntMiss = missing
+    varianceAngleFrom::FltIntMiss = missing
+    varianceAngleTo::FltIntMiss = missing
+    status::FltIntMiss = missing
+    statusBus::FltIntMiss = missing
+    statusFrom::FltIntMiss = missing
+    statusTo::FltIntMiss = missing
+    correlated::BoolMiss = missing
+    polar::BoolMiss = missing
+    square::BoolMiss = missing
+    noise::Bool = template.pmu.noise
+end

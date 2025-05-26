@@ -54,21 +54,15 @@ addVoltmeter!(monitoring; label = "Voltmeter 1", bus = "Bus 1", magnitude = 145.
 addVoltmeter!(monitoring; label = "Voltmeter 2", bus = "Bus 1", magnitude = 132.0)
 ```
 """
-function addVoltmeter!(
-    monitoring::Measurement;
-    label::IntStrMiss = missing,
-    bus::IntStrMiss,
-    magnitude::FltIntMiss,
-    kwargs...
-)
+function addVoltmeter!(monitoring::Measurement; bus::IntStr, magnitude::FltInt, kwargs...)
     system = monitoring.system
     volt = monitoring.voltmeter
     def = template.voltmeter
-    key = meterkwargs(template.voltmeter.noise; kwargs...)
+    key = VoltmeterKey(; kwargs...)
 
     volt.number += 1
     lblBus = getLabel(system.bus, bus, "bus")
-    setLabel(volt, label, def.label, lblBus)
+    setLabel(volt, key.label, def.label, lblBus)
 
     idxBus = system.bus.label[lblBus]
     push!(volt.layout.index, idxBus)
@@ -126,30 +120,31 @@ function addVoltmeter!(monitoring::Measurement, analysis::AC; kwargs...)
     volt = monitoring.voltmeter
     def = template.voltmeter
     baseVoltg = system.base.voltage
-    key = meterkwargs(template.voltmeter.noise; kwargs...)
+    key = VoltmeterKey(; kwargs...)
 
-    status = givenOrDefault(key.status, def.status)
+    status = coalesce(key.status, def.status)
     checkWideStatus(status)
 
     if status != -1
-        volt.layout.index = collect(1:system.bus.number)
-        volt.label = OrderedDict{template.voltmeter.key, Int64}()
-        sizehint!(volt.label, volt.number)
+        if isempty(volt.label)
+            volt.label = OrderedDict{template.voltmeter.key, Int64}()
+            sizehint!(volt.label, system.bus.number)
+        end
 
-        volt.magnitude.mean = similar(analysis.voltage.magnitude)
-        volt.magnitude.variance = similar(analysis.voltage.magnitude)
-        volt.magnitude.status = fill(Int8(status), system.bus.number)
+        append!(volt.magnitude.mean, similar(analysis.voltage.magnitude))
+        append!(volt.magnitude.variance, similar(analysis.voltage.magnitude))
+        append!(volt.magnitude.status, fill(Int8(status), system.bus.number))
+        append!(volt.layout.index, collect(1:system.bus.number))
 
-        label = collect(keys(system.bus.label))
-        @inbounds for i = 1:system.bus.number
+        @inbounds for (label, i) in system.bus.label
             volt.number += 1
 
-            lblBus = getLabel(system.bus, label[i], "bus")
+            lblBus = getLabel(system.bus, label, "bus")
             setLabel(volt, missing, def.label, lblBus)
             baseInv = sqrt(3) / (baseVoltg.prefix * baseVoltg.value[i])
 
             add!(
-                volt.magnitude, i, key.noise, pfx.voltageMagnitude,
+                volt.magnitude, volt.number, key.noise, pfx.voltageMagnitude,
                 analysis.voltage.magnitude[i], key.variance, def.variance, status, baseInv
             )
         end
@@ -186,24 +181,20 @@ addVoltmeter!(monitoring; label = "Voltmeter 1", bus = "Bus 1", magnitude = 1.1)
 updateVoltmeter!(monitoring; label = "Voltmeter 1", magnitude = 0.9)
 ```
 """
-function updateVoltmeter!(
-    monitoring::Measurement;
-    label::IntStrMiss,
-    magnitude::FltIntMiss = missing,
-    kwargs...
-)
-    system = monitoring.system
-    volt = monitoring.voltmeter
-    key = meterkwargs(template.voltmeter.noise; kwargs...)
+function updateVoltmeter!(monitoring::Measurement; label::IntStr, kwargs...)
+    updateVoltmeterMain!(monitoring, label, VoltmeterKey(; kwargs...))
+end
 
-    idx = getIndex(volt, label, "voltmeter")
-    idxBus = volt.layout.index[idx]
+function updateVoltmeterMain!(monitoring::Measurement, label::IntStr, key::VoltmeterKey)
+    system = monitoring.system
+    voltmeter = monitoring.voltmeter
+
+    idx = getIndex(voltmeter, label, "voltmeter")
+    idxBus = voltmeter.layout.index[idx]
     baseInv = sqrt(3) / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
 
-    updateMeter(
-        volt.magnitude, idx, magnitude, key.variance,
-        key.status, key.noise, pfx.voltageMagnitude, baseInv
-    )
+    update!(voltmeter.magnitude.variance, key.variance, pfx.voltageMagnitude, baseInv, idx)
+    update!(voltmeter.magnitude, key.magnitude, key, pfx.voltageMagnitude, baseInv, idx)
 end
 
 """
@@ -228,19 +219,15 @@ stateEstimation!(analysis)
 updateVoltmeter!(analysis; label = 2, magnitude = 0.9)
 ```
 """
-function updateVoltmeter!(
-    analysis::AcStateEstimation{GaussNewton{T}};
-    label::IntStrMiss,
-    magnitude::FltIntMiss = missing,
-    kwargs...
-) where T <: WlsMethod
+function updateVoltmeter!(analysis::AcStateEstimation; label::IntStr, kwargs...)
+    updateVoltmeterMain!(analysis.monitoring, label, VoltmeterKey(; kwargs...))
+    _updateVoltmeter!(analysis, getIndex(analysis.monitoring.voltmeter, label, "voltmeter"))
+end
 
+function _updateVoltmeter!(analysis::AcStateEstimation{GaussNewton{T}}, idx::Int64) where T <: WlsMethod
     volt = analysis.monitoring.voltmeter
     wls = analysis.method
 
-    updateVoltmeter!(analysis.monitoring; label, magnitude, kwargs...)
-
-    idx = getIndex(volt, label, "voltmeter")
     idxBus = volt.layout.index[idx]
 
     idxBus += analysis.system.bus.number
@@ -254,18 +241,10 @@ function updateVoltmeter!(
     wls.type[idx] = status * 1
 end
 
-function updateVoltmeter!(
-    analysis::AcStateEstimation{LAV};
-    label::IntStrMiss,
-    magnitude::FltIntMiss = missing,
-    kwargs...
-)
+function _updateVoltmeter!(analysis::AcStateEstimation{LAV}, idx::Int64)
     volt = analysis.monitoring.voltmeter
     lav = analysis.method
 
-    updateVoltmeter!(analysis.monitoring; label, magnitude, kwargs...)
-
-    idx = getIndex(volt, label, "voltmeter")
     idxBus = volt.layout.index[idx]
 
     remove!(lav, idx)

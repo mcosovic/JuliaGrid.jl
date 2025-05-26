@@ -329,9 +329,9 @@ end
 function printSolver(analysis::AcPowerFlow, delP::Float64, delQ::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if analysis.method.iteration % 10 == 0
-            println("-"^63)
-            println("Iteration   Maximum Active Mismatch   Maximum Reactive Mismatch")
-            println("-"^63)
+            print("-"^63 * "\n")
+            print("Iteration   Maximum Active Mismatch   Maximum Reactive Mismatch\n")
+            print("-"^63 * "\n")
         end
         print(format(Format("%*i "), 9, analysis.method.iteration))
         print(format(Format("%*.8e"), 25, delP))
@@ -414,15 +414,15 @@ function printExit(analysis::AC, maxExceeded::Bool, converged::Bool, verbose::In
     if verbose != 0
         method = printMethodName(analysis)
         if converged
-            println(
+            print(
                 "EXIT: The solution was found using the " * method *
-                " method in $(analysis.method.iteration) iterations."
+                " method in $(analysis.method.iteration) iterations.\n"
             )
         else
             if maxExceeded
-                println("EXIT: The " * method * " method exceeded the maximum number of iterations.")
+                print("EXIT: The " * method * " method exceeded the maximum number of iterations.\n")
             else
-                println("EXIT: The " * method * " method failed to converge.")
+                print("EXIT: The " * method * " method failed to converge.\n")
             end
         end
     end
@@ -451,7 +451,7 @@ end
 
 function printExit(::DcPowerFlow, verbose::Int64)
     if verbose != 0
-        println("EXIT: The solution of the DC power flow was found.")
+        print("EXIT: The solution of the DC power flow was found.\n")
     end
 end
 

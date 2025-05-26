@@ -60,16 +60,13 @@ system = powerSystem()
 addBus!(system; label = "Bus 1", active = 25.0, angle = 10.026, base = 132.0)
 ```
 """
-function addBus!(system::PowerSystem; label::IntStrMiss = missing, kwargs...)
+function addBus!(system::PowerSystem; kwargs...)
     bus = system.bus
-    demand = bus.demand
-    shunt = bus.shunt
-    voltg = bus.voltage
     def = template.bus
-    key = buskwargs(; kwargs...)
+    key = BusKey(; kwargs...)
 
     bus.number += 1
-    setLabel(bus, label, def.label, "bus")
+    setLabel(bus, key.label, def.label, "bus")
 
     add!(bus.layout.type, key.type, def.type)
     if bus.layout.type[end] ∉ (1, 2, 3)
@@ -83,23 +80,19 @@ function addBus!(system::PowerSystem; label::IntStrMiss = missing, kwargs...)
     end
 
     baseInv = 1 / (system.base.power.value * system.base.power.prefix)
-    add!(demand.active, key.active, def.active, pfx.activePower, baseInv)
-    add!(demand.reactive, key.reactive, def.reactive, pfx.reactivePower, baseInv)
-    add!(shunt.conductance, key.conductance, def.conductance, pfx.activePower, baseInv)
-    add!(shunt.susceptance, key.susceptance, def.susceptance, pfx.reactivePower, baseInv)
+    add!(bus.demand.active, key.active, def.active, pfx.activePower, baseInv)
+    add!(bus.demand.reactive, key.reactive, def.reactive, pfx.reactivePower, baseInv)
+    add!(bus.shunt.conductance, key.conductance, def.conductance, pfx.activePower, baseInv)
+    add!(bus.shunt.susceptance, key.susceptance, def.susceptance, pfx.reactivePower, baseInv)
 
-    if isset(key.base)
-        baseVoltage = key.base * pfx.baseVoltage
-    else
-        baseVoltage = def.base
-    end
+    baseVoltage = isset(key.base) ? key.base * pfx.baseVoltage : def.base
     push!(system.base.voltage.value, baseVoltage / system.base.voltage.prefix)
 
     baseInv = sqrt(3) / baseVoltage
-    add!(voltg.magnitude, key.magnitude, def.magnitude, pfx.voltageMagnitude, baseInv)
-    add!(voltg.minMagnitude, key.minMagnitude, def.minMagnitude, pfx.voltageMagnitude, baseInv)
-    add!(voltg.maxMagnitude, key.maxMagnitude, def.maxMagnitude, pfx.voltageMagnitude, baseInv)
-    add!(voltg.angle, key.angle, def.angle, pfx.voltageAngle, 1.0)
+    add!(bus.voltage.magnitude, key.magnitude, def.magnitude, pfx.voltageMagnitude, baseInv)
+    add!(bus.voltage.minMagnitude, key.minMagnitude, def.minMagnitude, pfx.voltageMagnitude, baseInv)
+    add!(bus.voltage.maxMagnitude, key.maxMagnitude, def.maxMagnitude, pfx.voltageMagnitude, baseInv)
+    add!(bus.voltage.angle, key.angle, def.angle, pfx.voltageAngle, 1.0)
 
     add!(bus.layout.area, key.area, def.area)
     add!(bus.layout.lossZone, key.lossZone, def.lossZone)
@@ -153,10 +146,13 @@ addBus!(system; label = "Bus 1", type = 3, active = 0.25, reactive = -0.04)
 updateBus!(system; label = "Bus 1", active = 0.15, susceptance = 0.15)
 ```
 """
-function updateBus!(system::PowerSystem; label::IntStrMiss, kwargs...)
+function updateBus!(system::PowerSystem; label::IntStr, kwargs...)
+    updateBusMain!(system, label, BusKey(; kwargs...))
+end
+
+function updateBusMain!(system::PowerSystem, label::IntStr, key::BusKey)
     bus = system.bus
     ac = system.model.ac
-    key = buskwargs(; kwargs...)
     idx = getIndex(bus, label, "bus")
 
     if isset(key.type)
@@ -174,7 +170,7 @@ function updateBus!(system::PowerSystem; label::IntStrMiss, kwargs...)
         if key.type == 3
             if bus.layout.slack ∉ (0, idx)
                 throw(ErrorException(
-                    "To set bus with label " * label * " as the slack bus, reassign " *
+                    "To set bus with label $label as the slack bus, reassign " *
                     "the current slack bus to either a generator or demand bus.")
                 )
             end
@@ -187,7 +183,7 @@ function updateBus!(system::PowerSystem; label::IntStrMiss, kwargs...)
     update!(bus.demand.active, key.active, pfx.activePower, baseInv, idx)
     update!(bus.demand.reactive, key.reactive, pfx.reactivePower, baseInv, idx)
 
-    if isset(key.conductance, key.susceptance)
+    if isset(key.conductance) || isset(key.susceptance)
         if !isempty(ac.nodalMatrix)
             ac.model += 1
 
@@ -239,27 +235,23 @@ analysis = newtonRaphson(system)
 updateBus!(analysis; label = 2, active = 0.15, susceptance = 0.15)
 ```
 """
-function updateBus!(analysis::AcPowerFlow{NewtonRaphson}; label::IntStrMiss, kwargs...)
-    system = analysis.system
-
-    updateBus!(system; label, kwargs...)
-    errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
-
-    idx = getIndex(system.bus, label, "bus")
-
-    if system.bus.layout.type[idx] == 1
-        analysis.voltage.magnitude[idx] = system.bus.voltage.magnitude[idx]
-    end
-    analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
+function updateBus!(analysis::PowerFlow; label::IntStr, kwargs...)
+    updateBusMain!(analysis.system, label, BusKey(; kwargs...))
+    _updateBus!(analysis, getIndex(analysis.system.bus, label, "bus"))
 end
 
-function updateBus!(analysis::AcPowerFlow{FastNewtonRaphson}; label::IntStrMiss, kwargs...)
+function _updateBus!(analysis::AcPowerFlow{NewtonRaphson}, idx::Int64)
+    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
+
+    if analysis.system.bus.layout.type[idx] == 1
+        analysis.voltage.magnitude[idx] = analysis.system.bus.voltage.magnitude[idx]
+    end
+    analysis.voltage.angle[idx] = analysis.system.bus.voltage.angle[idx]
+end
+
+function _updateBus!(analysis::AcPowerFlow{FastNewtonRaphson}, idx::Int64)
     system = analysis.system
-
-    updateBus!(system; label, kwargs...)
     errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
-
-    idx = getIndex(system.bus, label, "bus")
 
     if system.bus.layout.type[idx] == 1
         analysis.voltage.magnitude[idx] = system.bus.voltage.magnitude[idx]
@@ -283,41 +275,28 @@ function updateBus!(analysis::AcPowerFlow{FastNewtonRaphson}; label::IntStrMiss,
     analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
 end
 
-function updateBus!(analysis::AcPowerFlow{GaussSeidel}; label::IntStrMiss, kwargs...)
+function _updateBus!(analysis::AcPowerFlow{GaussSeidel}, idx::Int64)
     system = analysis.system
-    bus = system.bus
-    volt = analysis.voltage
-
-    updateBus!(system; label, kwargs...)
     errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
 
-    idx = getIndex(bus, label, "bus")
-
-    if bus.layout.type[idx] == 1
-        volt.magnitude[idx] = bus.voltage.magnitude[idx]
+    if system.bus.layout.type[idx] == 1
+        analysis.voltage.magnitude[idx] = system.bus.voltage.magnitude[idx]
     end
 
-    volt.angle[idx] = bus.voltage.angle[idx]
-    analysis.method.voltage[idx] = volt.magnitude[idx] * cis(volt.angle[idx])
+    analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
+    analysis.method.voltage[idx] = analysis.voltage.magnitude[idx] * cis(analysis.voltage.angle[idx])
 end
 
-function updateBus!(analysis::DcPowerFlow; label::IntStrMiss, kwargs...)
-    system = analysis.system
-
-    updateBus!(system; label, kwargs...)
-    errorTypeConversion(system.bus.layout.slack, analysis.method.signature[:slack])
+function _updateBus!(analysis::DcPowerFlow, ::Int64)
+    errorTypeConversion(analysis.system.bus.layout.slack, analysis.method.signature[:slack])
 end
 
-function updateBus!(analysis::AcOptimalPowerFlow; label::IntStrMiss, kwargs...)
+function _updateBus!(analysis::AcOptimalPowerFlow, idx::Int64)
     system = analysis.system
     bus = system.bus
     jump = analysis.method.jump
     var = analysis.method.variable
     con = analysis.method.constraint
-
-    updateBus!(system; label, kwargs...)
-
-    idx = getIndex(bus, label, "bus")
 
     remove!(jump, con.balance.active, idx)
     remove!(jump, con.balance.reactive, idx)
@@ -337,15 +316,11 @@ function updateBus!(analysis::AcOptimalPowerFlow; label::IntStrMiss, kwargs...)
     end
 end
 
-function updateBus!(analysis::DcOptimalPowerFlow; label::IntStrMiss, kwargs...)
+function _updateBus!(analysis::DcOptimalPowerFlow, idx::Int64)
     system = analysis.system
     jump = analysis.method.jump
     var = analysis.method.variable
     con = analysis.method.constraint
-
-    updateBus!(system; label, kwargs...)
-
-    idx = getIndex(system.bus, label, "bus")
 
     remove!(jump, con.balance.active, idx)
     addBalance(system, jump, var, con, idx)
@@ -440,29 +415,4 @@ macro bus(kwargs...)
             end
         end
     end
-end
-
-##### Bus Keywords #####
-function buskwargs(;
-    type::IntMiss = missing,
-    active::FltIntMiss = missing,
-    reactive::FltIntMiss = missing,
-    conductance::FltIntMiss = missing,
-    susceptance::FltIntMiss = missing,
-    magnitude::FltIntMiss = missing,
-    angle::FltIntMiss = missing,
-    minMagnitude::FltIntMiss = missing,
-    maxMagnitude::FltIntMiss = missing,
-    base::FltIntMiss = missing,
-    area::IntMiss = missing,
-    lossZone::FltIntMiss = missing
-)
-    (
-    type = type,
-    active = active, reactive = reactive,
-    conductance = conductance, susceptance = susceptance,
-    magnitude = magnitude, angle = angle,
-    minMagnitude = minMagnitude, maxMagnitude = maxMagnitude,
-    base = base, area = area, lossZone = lossZone
-    )
 end

@@ -65,20 +65,20 @@ function setLabel(
     ::String;
     prefix::String = ""
 )
-    labelStr, labelInt = typeLabel(component.label, label)
-    if haskey(component.label, labelStr)
-        throw(ErrorException("The label " * labelStr * " is not unique."))
+    labelInt = typeLabel(component.label, label)
+    if haskey(component.label, label)
+        throw(ErrorException("The label " * label * " is not unique."))
     end
 
     if !isnothing(labelInt)
         component.layout.label = max(component.layout.label, labelInt)
     end
 
-    setindex!(component.label, component.number, labelStr)
+    setindex!(component.label, component.number, label)
 end
 
 function typeLabel(::OrderedDict{String, Int64}, label::String)
-    label, tryparse(Int64, label)
+    tryparse(Int64, label)
 end
 
 function typeLabel(::OrderedDict{String, Int64}, label::Int64)
@@ -185,11 +185,11 @@ function getLabel(container::LabelDict, idx::Int64)
 end
 
 ##### Get Index #####
-function getIndex(container::Union{P, M}, label::String, name::String)
+@inline function getIndex(container::Union{P, M}, label::String, name::String)
     container.label[getLabel(container, label, name)]
 end
 
-function getIndex(container::Union{P, M}, label::Int64, name::String)
+@inline function getIndex(container::Union{P, M}, label::Int64, name::String)
     container.label[getLabel(container, label, name)]
 end
 
@@ -251,14 +251,14 @@ function topu(value::FltIntMiss, pfxLive::Float64, baseInv::Float64)
     return value
 end
 
-function givenOrDefault(value::Union{FltIntMiss, Int8}, default::Union{FltIntMiss, Int8})
-    if ismissing(value)
-        value = default
-    end
+# function givenOrDefault(value::Union{FltIntMiss, Int8, Bool}, default::Union{FltIntMiss, Int8, Bool})
+#     coalesce(value, default)
+#     if ismissing(value)
+#         value = default
+#     end
 
-    return value
-end
-
+#     return value
+# end
 
 ##### Add Values #####
 function add!(
@@ -287,11 +287,11 @@ function add!(
 end
 
 function add!(
-    vector::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}},
-    value::Union{FltIntMiss, Int8},
-    default::Union{FltIntMiss, Int8}
+    vector::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}, Vector{Bool}},
+    value::Union{FltIntMiss, Int8, Bool},
+    default::Union{FltIntMiss, Int8, Bool}
 )
-    push!(vector, givenOrDefault(value, default))
+    push!(vector, coalesce(value, default))
 end
 
 function addGenInBus!(system::PowerSystem, busIdx::Int64, genIdx::Int64)
@@ -334,8 +334,8 @@ function isstored(A::SparseMatrixCSC{Float64, Int64}, i::Int64, j::Int64)
 end
 
 ##### Check if Values are Provided #####
-function isset(keys::Vararg{Union{FltIntMiss, String, Bool}})
-    any(!ismissing, keys)
+function isset(key::Union{FltIntMiss, String, Bool})
+    !ismissing(key)
 end
 
 ##### Check Status #####

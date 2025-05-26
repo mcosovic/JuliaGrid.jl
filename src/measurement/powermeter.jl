@@ -63,20 +63,13 @@ addWattmeter!(monitoring; label = "Wattmeter 1", bus = "Bus 2", active = 40.0)
 addWattmeter!(monitoring; label = "Wattmeter 2", from = "Branch 1", active = 10.0)
 ```
 """
-function addWattmeter!(
-    monitoring::Measurement;
-    label::IntStrMiss = missing,
-    bus::IntStrMiss = missing,
-    from::IntStrMiss = missing,
-    to::IntStrMiss = missing,
-    active::FltInt,
-    kwargs...
-)
-    key = meterkwargs(template.wattmeter.noise; kwargs...)
+function addWattmeter!(monitoring::Measurement; active::FltInt, kwargs...)
+    key = WattmeterKey(; kwargs...)
 
     addPowerMeter!(
-        monitoring.system, monitoring.wattmeter, monitoring.wattmeter.active, template.wattmeter,
-        pfx.activePower, label, bus, from, to, active, key.variance, key.status, key.noise
+        monitoring.system, monitoring.wattmeter, monitoring.wattmeter.active,
+        template.wattmeter, pfx.activePower, key.label, key.bus, key.from, key.to,
+        active, key.variance, key.status, key.noise
     )
 end
 
@@ -145,20 +138,13 @@ addVarmeter!(monitoring; label = "Varmeter 1", bus = "Bus 2", reactive = 40.0)
 addVarmeter!(monitoring; label = "Varmeter 2", from = "Branch 1", reactive = 10.0)
 ```
 """
-function addVarmeter!(
-    monitoring::Measurement;
-    label::IntStrMiss = missing,
-    bus::IntStrMiss = missing,
-    from::IntStrMiss = missing,
-    to::IntStrMiss = missing,
-    reactive::FltInt,
-    kwargs...
-)
-    key = meterkwargs(template.wattmeter.noise; kwargs...)
+function addVarmeter!(monitoring::Measurement; reactive::FltInt, kwargs...)
+    key = VarmeterKey(; kwargs...)
 
     addPowerMeter!(
-        monitoring.system, monitoring.varmeter, monitoring.varmeter.reactive, template.varmeter,
-        pfx.reactivePower, label, bus, from, to, reactive, key.variance, key.status, key.noise
+        monitoring.system, monitoring.varmeter, monitoring.varmeter.reactive,
+        template.varmeter, pfx.reactivePower, key.label, key.bus, key.from, key.to,
+        reactive, key.variance, key.status, key.noise
     )
 end
 
@@ -280,24 +266,17 @@ powerFlow!(system, analysis; power = true)
 addWattmeter!(monitoring, analysis; varianceBus = 1e-3, statusFrom = 0)
 ```
 """
-function addWattmeter!(
-    monitoring::Measurement,
-    analysis::AC;
-    varianceBus::FltIntMiss = missing,
-    varianceFrom::FltIntMiss = missing,
-    varianceTo::FltIntMiss = missing,
-    statusBus::FltIntMiss = missing,
-    statusFrom::FltIntMiss = missing,
-    statusTo::FltIntMiss = missing,
-    noise::Bool = template.wattmeter.noise
-)
+function addWattmeter!(monitoring::Measurement, analysis::AC; kwargs...)
     wattmeter = monitoring.wattmeter
     power = analysis.power
+
+    key = WattmeterKey(; kwargs...)
 
     addPowermeter!(
         monitoring.system, wattmeter, wattmeter.active, power.injection.active,
         power.from.active, power.to.active, template.wattmeter, pfx.activePower,
-        varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo, noise
+        key.varianceBus, key.varianceFrom, key.varianceTo, key.statusBus, key.statusFrom,
+        key.statusTo, key.noise
     )
 end
 
@@ -359,24 +338,17 @@ powerFlow!(system, analysis; power = true)
 addVarmeter!(monitoring, analysis; varianceFrom = 1e-3, statusBus = 0)
 ```
 """
-function addVarmeter!(
-    monitoring::Measurement,
-    analysis::AC;
-    varianceBus::FltIntMiss = missing,
-    varianceFrom::FltIntMiss = missing,
-    varianceTo::FltIntMiss = missing,
-    statusBus::FltIntMiss = missing,
-    statusFrom::FltIntMiss = missing,
-    statusTo::FltIntMiss = missing,
-    noise::Bool = template.varmeter.noise
-)
+function addVarmeter!(monitoring::Measurement, analysis::AC; kwargs...)
     varmeter = monitoring.varmeter
     power = analysis.power
+
+    key = VarmeterKey(; kwargs...)
 
     addPowermeter!(
         monitoring.system, varmeter, varmeter.reactive, power.injection.reactive,
         power.from.reactive, power.to.reactive, template.varmeter, pfx.reactivePower,
-        varianceBus, varianceFrom, varianceTo, statusBus, statusFrom, statusTo, noise
+        key.varianceBus, key.varianceFrom, key.varianceTo, key.statusBus, key.statusFrom,
+        key.statusTo, key.noise
     )
 end
 
@@ -400,42 +372,42 @@ function addPowermeter!(
 )
     errorPower(powerBus)
 
-    statusBus = givenOrDefault(statusBus, def.statusBus)
+    statusBus = coalesce(statusBus, def.statusBus)
     checkWideStatus(statusBus)
 
-    statusFrom = givenOrDefault(statusFrom, def.statusFrom)
+    statusFrom = coalesce(statusFrom, def.statusFrom)
     checkWideStatus(statusFrom)
 
-    statusTo = givenOrDefault(statusTo, def.statusTo)
+    statusTo = coalesce(statusTo, def.statusTo)
     checkWideStatus(statusTo)
 
     if statusBus != -1 || statusFrom != -1 || statusTo != -1
-        deviceNumber = 0
+        addNew = 0
         if statusBus != -1
-            deviceNumber += system.bus.number
+            addNew += system.bus.number
         end
         if statusFrom != -1
-            deviceNumber += system.branch.layout.inservice
+            addNew += system.branch.layout.inservice
         end
         if statusTo != -1
-            deviceNumber += system.branch.layout.inservice
+            addNew += system.branch.layout.inservice
         end
 
-        monitoring.label = OrderedDict{def.key, Int64}()
-        sizehint!(monitoring.label, deviceNumber)
-        monitoring.number = 0
+        if isempty(monitoring.label)
+            monitoring.label = OrderedDict{def.key, Int64}()
+            sizehint!(monitoring.label, addNew)
+        end
 
-        monitoring.layout.index = fill(0, deviceNumber)
-        monitoring.layout.bus = fill(false, deviceNumber)
-        monitoring.layout.from = fill(false, deviceNumber)
-        monitoring.layout.to = fill(false, deviceNumber)
+        append!(monitoring.layout.index, fill(0, addNew))
+        append!(monitoring.layout.bus, fill(false, addNew))
+        append!(monitoring.layout.from, fill(false, addNew))
+        append!(monitoring.layout.to, fill(false, addNew))
 
-        measure.mean = fill(0.0, deviceNumber)
-        measure.variance = similar(measure.mean)
-        measure.status = fill(Int8(0), deviceNumber)
+        append!(measure.mean, fill(0.0, addNew))
+        append!(measure.variance, fill(0.0, addNew))
+        append!(measure.status, fill(Int8(0), addNew))
 
         baseInv = 1 / (system.base.power.value * system.base.power.prefix)
-
         if statusBus != -1
             @inbounds for (label, i) in system.bus.label
                 monitoring.number += 1
@@ -445,7 +417,7 @@ function addPowermeter!(
                 monitoring.layout.bus[i] = true
 
                 add!(
-                    measure, i, noise, pfxPower, powerBus[i], varianceBus,
+                    measure, monitoring.number, noise, pfxPower, powerBus[i], varianceBus,
                     def.varianceBus, statusBus, baseInv
                 )
             end
@@ -516,22 +488,19 @@ addWattmeter!(monitoring; label = "Wattmeter 1", from = "Branch 1", active = 1.1
 updateWattmeter!(monitoring; label = "Wattmeter 1", active = 1.2, variance = 1e-4)
 ```
 """
-function updateWattmeter!(
-    monitoring::Measurement;
-    label::IntStrMiss,
-    active::FltIntMiss = missing,
-    kwargs...
-)
+function updateWattmeter!(monitoring::Measurement; label::IntStr, kwargs...)
+    updateWattmeterMain!(monitoring, label, WattmeterKey(; kwargs...))
+end
+
+function updateWattmeterMain!(monitoring::Measurement, label::IntStr, key::WattmeterKey)
     system = monitoring.system
     watt = monitoring.wattmeter
-    key = meterkwargs(template.wattmeter.noise; kwargs...)
 
     idx = getIndex(watt, label, "wattmeter")
+    baseInv = 1 / (system.base.power.value * system.base.power.prefix)
 
-    updateMeter(
-        watt.active, idx, active, key.variance, key.status, key.noise,
-        pfx.activePower, 1 / (system.base.power.value * system.base.power.prefix)
-    )
+    update!(watt.active.variance, key.variance, pfx.activePower, baseInv, idx)
+    update!(watt.active, key.active, key, pfx.activePower, baseInv, idx)
 
     if !watt.layout.bus[idx]
         idxBrch = watt.layout.index[idx]
@@ -561,21 +530,17 @@ stateEstimation!(analysis)
 updateWattmeter!(analysis; label = 4, active = 0.5, variance = 1e-4)
 ```
 """
-function updateWattmeter!(
-    analysis::AcStateEstimation{GaussNewton{T}};
-    label::IntStrMiss,
-    active::FltIntMiss = missing,
-    kwargs...
-) where T <: WlsMethod
+function updateWattmeter!(analysis::StateEstimation; label::IntStr, kwargs...)
+    updateWattmeterMain!(analysis.monitoring, label, WattmeterKey(; kwargs...))
+    _updateWattmeter!(analysis, getIndex(analysis.monitoring.wattmeter, label, "wattmeter"))
+end
 
+function _updateWattmeter!(analysis::AcStateEstimation{GaussNewton{T}}, idxWatt::Int64) where T <: WlsMethod
     bus = analysis.system.bus
     nodal = analysis.system.model.ac.nodalMatrix
     watt = analysis.monitoring.wattmeter
     wls = analysis.method
 
-    updateWattmeter!(analysis.monitoring; label, active, kwargs...)
-
-    idxWatt = getIndex(watt, label, "wattmeter")
     idxBusBrch = watt.layout.index[idxWatt]
     idx = wls.range[3] + idxWatt - 1
 
@@ -606,18 +571,10 @@ function updateWattmeter!(
     wls.precision[idx, idx] = 1 / watt.active.variance[idxWatt]
 end
 
-function updateWattmeter!(
-    analysis::AcStateEstimation{LAV};
-    label::IntStrMiss,
-    active::FltIntMiss = missing,
-    kwargs...
-)
+function _updateWattmeter!(analysis::AcStateEstimation{LAV}, idxWatt::Int64)
     watt = analysis.monitoring.wattmeter
     lav = analysis.method
 
-    updateWattmeter!(analysis.monitoring; label, active, kwargs...)
-
-    idxWatt = getIndex(watt, label, "wattmeter")
     idxBusBrch = watt.layout.index[idxWatt]
     idx = lav.range[3] + idxWatt - 1
 
@@ -637,22 +594,13 @@ function updateWattmeter!(
     end
 end
 
-function updateWattmeter!(
-    analysis::DcStateEstimation{WLS{T}};
-    label::IntStrMiss,
-    active::FltIntMiss = missing,
-    kwargs...
-) where T <: WlsMethod
-
+function _updateWattmeter!(analysis::DcStateEstimation{WLS{T}}, idxWatt::Int64) where T <: WlsMethod
     system = analysis.system
     dc = system.model.dc
     nodal = dc.nodalMatrix
     watt = analysis.monitoring.wattmeter
     wls = analysis.method
 
-    updateWattmeter!(analysis.monitoring; label, active, kwargs...)
-
-    idxWatt = getIndex(watt, label, "wattmeter")
     idxBusBrch = watt.layout.index[idxWatt]
 
     oldCoeff = wls.coefficient[idxWatt, :]
@@ -691,19 +639,11 @@ function updateWattmeter!(
     end
 end
 
-function updateWattmeter!(
-    analysis::DcStateEstimation{LAV};
-    label::IntStrMiss,
-    active::FltIntMiss = missing,
-    kwargs...
-)
+function _updateWattmeter!(analysis::DcStateEstimation{LAV}, idxWatt::Int64)
     dc = analysis.system.model.dc
     watt = analysis.monitoring.wattmeter
     lav = analysis.method
 
-    updateWattmeter!(analysis.monitoring; label, active, kwargs...)
-
-    idxWatt = getIndex(watt, label, "wattmeter")
     idxBusBrch = watt.layout.index[idxWatt]
 
     remove!(lav, idxWatt)
@@ -757,22 +697,19 @@ addVarmeter!(monitoring; label = "Varmeter 1", from = "Branch 1", reactive = 1.1
 updateVarmeter!(monitoring; label = "Varmeter 1", reactive = 1.2, variance = 1e-4)
 ```
 """
-function updateVarmeter!(
-    monitoring::Measurement;
-    label::IntStrMiss,
-    reactive::FltIntMiss = missing,
-    kwargs...
-)
+function updateVarmeter!(monitoring::Measurement; label::IntStr, kwargs...)
+    updateVarmeterMain!(monitoring, label, VarmeterKey(; kwargs...))
+end
+
+function updateVarmeterMain!(monitoring::Measurement, label::IntStr, key::VarmeterKey)
     system = monitoring.system
     var = monitoring.varmeter
-    key = meterkwargs(template.varmeter.noise; kwargs...)
 
     idx = getIndex(var, label, "varmeter")
+    baseInv = 1 / (system.base.power.value * system.base.power.prefix)
 
-    updateMeter(
-        var.reactive, idx, reactive, key.variance, key.status, key.noise,
-        pfx.reactivePower, 1 / (system.base.power.value * system.base.power.prefix)
-    )
+    update!(var.reactive.variance, key.variance, pfx.reactivePower, baseInv, idx)
+    update!(var.reactive, key.reactive, key, pfx.reactivePower, baseInv, idx)
 
     if !var.layout.bus[idx]
         idxBrch = var.layout.index[idx]
@@ -802,21 +739,17 @@ stateEstimation!(analysis)
 updateVarmeter!(analysis; label = 4, reactive = 0.3, variance = 1e-3)
 ```
 """
-function updateVarmeter!(
-    analysis::AcStateEstimation{GaussNewton{T}};
-    label::IntStrMiss,
-    reactive::FltIntMiss = missing,
-    kwargs...
-) where T <: WlsMethod
+function updateVarmeter!(analysis::AcStateEstimation; label::IntStr, kwargs...)
+    updateVarmeterMain!(analysis.monitoring, label, VarmeterKey(; kwargs...))
+    _updateVarmeter!(analysis, getIndex(analysis.monitoring.varmeter, label, "varmeter"))
+end
 
+function _updateVarmeter!(analysis::AcStateEstimation{GaussNewton{T}}, idxVar::Int64) where T <: WlsMethod
     bus = analysis.system.bus
     nodal = analysis.system.model.ac.nodalMatrix
     var = analysis.monitoring.varmeter
     wls = analysis.method
 
-    updateVarmeter!(analysis.monitoring; label, reactive, kwargs...)
-
-    idxVar = getIndex(var, label, "varmeter")
     idxBusBrch = var.layout.index[idxVar]
     idx = wls.range[4] + idxVar - 1
 
@@ -847,18 +780,10 @@ function updateVarmeter!(
     wls.precision[idx, idx] = 1 / var.reactive.variance[idxVar]
 end
 
-function updateVarmeter!(
-    analysis::AcStateEstimation{LAV};
-    label::IntStrMiss,
-    reactive::FltIntMiss = missing,
-    kwargs...
-)
+function _updateVarmeter!(analysis::AcStateEstimation{LAV}, idxVar::Int64)
     var = analysis.monitoring.varmeter
     lav = analysis.method
 
-    updateVarmeter!(analysis.monitoring; label, reactive, kwargs...)
-
-    idxVar = getIndex(var, label, "varmeter")
     idxBusBrch = var.layout.index[idxVar]
     idx = lav.range[4] + idxVar - 1
 

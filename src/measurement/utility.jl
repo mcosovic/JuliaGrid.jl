@@ -1,50 +1,28 @@
-##### Meter Keywords #####
-function meterkwargs(
-    defnoise::Bool;
-    variance::FltIntMiss = missing,
-    status::IntMiss = missing,
-    noise::Bool = defnoise,
-)
-    (variance = variance, status = status, noise = noise)
-end
-
-##### PMU Keywords #####
-function pmukwargs(
-    def::PmuTemplate;
-    magnitude::FltIntMiss = missing,
-    angle::FltIntMiss = missing,
-    varianceMagnitude::FltIntMiss = missing,
-    varianceAngle::FltIntMiss = missing,
-    status::FltIntMiss = missing,
-    noise::Bool = def.noise,
-    correlated::BoolMiss = missing,
-    polar::BoolMiss = missing
-)
-    (
-    magnitude = magnitude, angle = angle,
-    varianceMagnitude = varianceMagnitude, varianceAngle = varianceAngle,
-    status = status, noise = noise, correlated = correlated, polar = polar
-    )
-end
-
 ##### Check Meter Location #####
-function checkLocation(locations::IntStrMiss...)
-    flag = fill(false, lastindex(locations))
-    count = 0
-    @inbounds for (index, value) in enumerate(locations)
-        if isset(value)
-            count += 1
-            flag[index] = true
-        end
-    end
-
-    if count == 0
+function checkLocation(from::IntStrMiss, to::IntStrMiss)
+    if isset(from) && isset(to)
+        throw(ErrorException("Concurrent location keyword definition is not allowed."))
+    elseif ismissing(from) && ismissing(to)
         throw(ErrorException("At least one of the location keywords must be provided."))
-    elseif count > 1
+    elseif isset(from)
+        return from, true, false
+    else
+        return to, false, true
+    end
+end
+
+function checkLocation(bus::IntStrMiss, from::IntStrMiss, to::IntStrMiss)
+    if isset(bus) && ismissing(from) && ismissing(to)
+        return bus, true, false, false
+    elseif ismissing(bus) && isset(from) && ismissing(to)
+        return from, false, true, false
+    elseif ismissing(bus) && ismissing(from) && isset(to)
+        return to, false, false, true
+    elseif ismissing(bus) && ismissing(from) && ismissing(to)
+        throw(ErrorException("At least one of the location keywords must be provided."))
+    else
         throw(ErrorException("Concurrent location keyword definition is not allowed."))
     end
-
-    return locations[flag][1], flag...
 end
 
 ##### Set Mean, Variance, and Status #####
@@ -73,28 +51,24 @@ function setMeter(
     checkVariance(meter.variance[end])
 end
 
-##### Update Mean, Variance, and Status #####
-function updateMeter(
+#### Update Mean, Variance, and Status #####
+function update!(
     meter::GaussMeter,
-    idx::Int64,
     mean::FltIntMiss,
-    variance::FltIntMiss,
-    status::IntMiss,
-    noise::Bool,
+    key::Union{VoltmeterKey, AmmeterKey, WattmeterKey, VarmeterKey, PmuKey},
     pfxLive::Float64,
-    baseInv::Float64
+    baseInv::Float64,
+    idx::Int64
 )
-    update!(meter.variance, variance, pfxLive, baseInv, idx)
-
     if isset(mean)
         meter.mean[idx] = topu(mean, pfxLive, baseInv)
-        if noise
+        if key.noise
             meter.mean[idx] += meter.variance[idx]^(1/2) * randn(1)[1]
         end
     end
 
-    if isset(status)
-        meter.status[idx] = status
+    if isset(key.status)
+        meter.status[idx] = key.status
     end
     checkStatus(meter.status[idx])
     checkVariance(meter.variance[idx])

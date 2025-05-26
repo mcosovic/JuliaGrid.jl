@@ -80,29 +80,15 @@ addPmu!(monitoring; label = "PMU 1", bus = "Bus 1", magnitude = 145, angle = -5.
 addPmu!(monitoring; label = "PMU 2", from = "Branch 1", magnitude = 481, angle = 5.7)
 ```
 """
-function addPmu!(
-    monitoring::Measurement;
-    label::IntStrMiss = missing,
-    bus::IntStrMiss = missing,
-    from::IntStrMiss = missing,
-    to::IntStrMiss = missing,
-    magnitude::FltIntMiss,
-    angle::FltIntMiss,
-    varianceMagnitude::FltIntMiss = missing,
-    varianceAngle::FltIntMiss = missing,
-    status::FltIntMiss = missing,
-    noise::Bool = template.pmu.noise,
-    correlated::Bool = template.pmu.correlated,
-    polar::Bool = template.pmu.polar,
-    square::Bool = template.pmu.square
-)
+function addPmu!(monitoring::Measurement; magnitude::FltInt, angle::FltInt, kwargs...)
     system = monitoring.system
     baseVoltg = system.base.voltage
     branch = system.branch
     pmu = monitoring.pmu
     def = template.pmu
+    key = PmuKey(; kwargs...)
 
-    location, busFlag, fromFlag, toFlag = checkLocation(bus, from, to)
+    location, busFlag, fromFlag, toFlag = checkLocation(key.bus, key.from, key.to)
 
     branchFlag = false
     if !busFlag
@@ -125,7 +111,7 @@ function addPmu!(
             lblBus = getLabel(system.bus, location, "bus")
             idx = system.bus.label[lblBus]
 
-            setLabel(pmu, label, def.label, lblBus)
+            setLabel(pmu, key.label, def.label, lblBus)
 
             defVarianceMagnitude = def.varianceMagnitudeBus
             defVarianceAngle = def.varianceAngleBus
@@ -137,7 +123,7 @@ function addPmu!(
             baseInv = sqrt(3) / (baseVoltg.value[idx] * baseVoltg.prefix)
         else
             if fromFlag
-                setLabel(pmu, label, def.label, lblBrch; prefix = "From ")
+                setLabel(pmu, key.label, def.label, lblBrch; prefix = "From ")
 
                 defVarianceMagnitude = def.varianceMagnitudeFrom
                 defVarianceAngle = def.varianceAngleFrom
@@ -145,7 +131,7 @@ function addPmu!(
 
                 baseVoltage = baseVoltg.value[branch.layout.from[idx]] * baseVoltg.prefix
             else
-                setLabel(pmu, label, def.label, lblBrch; prefix = "To ")
+                setLabel(pmu, key.label, def.label, lblBrch; prefix = "To ")
 
                 defVarianceMagnitude = def.varianceMagnitudeTo
                 defVarianceAngle = def.varianceAngleTo
@@ -153,7 +139,7 @@ function addPmu!(
 
                 baseVoltage = baseVoltg.value[branch.layout.to[idx]] * baseVoltg.prefix
             end
-            push!(pmu.layout.square, square)
+            add!(pmu.layout.square, key.square, def.square)
 
             pfxMagnitude = pfx.currentMagnitude
             pfxAngle = pfx.currentAngle
@@ -163,15 +149,15 @@ function addPmu!(
         end
 
         push!(pmu.layout.index, idx)
-        push!(pmu.layout.correlated, correlated)
-        push!(pmu.layout.polar, polar)
+        add!(pmu.layout.correlated, key.correlated, def.correlated)
+        add!(pmu.layout.polar, key.polar, def.polar)
 
         setMeter(
-            pmu.magnitude, magnitude, varianceMagnitude, status, noise,
+            pmu.magnitude, magnitude, key.varianceMagnitude, key.status, key.noise,
             defVarianceMagnitude, defStatus, pfxMagnitude, baseInv
         )
         setMeter(
-            pmu.angle, angle, varianceAngle, status, noise,
+            pmu.angle, angle, key.varianceAngle, key.status, key.noise,
             defVarianceAngle, defStatus, pfxAngle, 1.0
         )
     end
@@ -251,23 +237,7 @@ powerFlow!(analysis; current = true)
 addPmu!(monitoring, analysis; varianceMagnitudeBus = 1e-3)
 ```
 """
-function addPmu!(
-    monitoring::Measurement,
-    analysis::AC;
-    varianceMagnitudeBus::FltIntMiss = missing,
-    varianceAngleBus::FltIntMiss = missing,
-    statusBus::FltIntMiss = missing,
-    varianceMagnitudeFrom::FltIntMiss = missing,
-    varianceAngleFrom::FltIntMiss = missing,
-    statusFrom::FltIntMiss = missing,
-    varianceMagnitudeTo::FltIntMiss = missing,
-    varianceAngleTo::FltIntMiss = missing,
-    statusTo::FltIntMiss = missing,
-    correlated::Bool = template.pmu.correlated,
-    polar::Bool = template.pmu.polar,
-    square::Bool = template.pmu.square,
-    noise::Bool = template.pmu.noise
-)
+function addPmu!(monitoring::Measurement, analysis::AC; kwargs...)
     system = monitoring.system
     errorVoltage(analysis.voltage.magnitude)
 
@@ -275,50 +245,52 @@ function addPmu!(
     pmu = monitoring.pmu
     current = analysis.current
     def = template.pmu
+    key = PmuKey(; kwargs...)
 
-    pmu.number = 0
-
-    statusBus = givenOrDefault(statusBus, def.statusBus)
+    statusBus = coalesce(key.statusBus, def.statusBus)
     checkWideStatus(statusBus)
 
-    statusFrom = givenOrDefault(statusFrom, def.statusFrom)
+    statusFrom = coalesce(key.statusFrom, def.statusFrom)
     checkWideStatus(statusFrom)
 
-    statusTo = givenOrDefault(statusTo, def.statusTo)
+    statusTo = coalesce(key.statusTo, def.statusTo)
     checkWideStatus(statusTo)
 
     if statusBus != -1 || statusFrom != -1 || statusTo != -1
-        pmuNumber = 0
+        addNew = 0
         if statusBus != -1
-            pmuNumber += system.bus.number
+            addNew += system.bus.number
         end
         if statusFrom != -1
             errorCurrent(analysis.current.from.magnitude)
-            pmuNumber += system.branch.layout.inservice
+            addNew += system.branch.layout.inservice
         end
         if statusTo != -1
             errorCurrent(analysis.current.from.magnitude)
-            pmuNumber += system.branch.layout.inservice
+            addNew += system.branch.layout.inservice
         end
 
-        pmu.label = OrderedDict{template.pmu.key, Int64}()
-        sizehint!(pmu.label, pmuNumber)
+        if isempty(pmu.label)
+            pmu.label = OrderedDict{template.pmu.key, Int64}()
+            sizehint!(pmu.label, addNew)
+        end
 
-        pmu.layout.index = fill(0, pmuNumber)
-        pmu.layout.bus = fill(false, pmuNumber)
-        pmu.layout.from = fill(false, pmuNumber)
-        pmu.layout.to = fill(false, pmuNumber)
-        pmu.layout.correlated = fill(correlated, pmuNumber)
-        pmu.layout.polar = fill(polar, pmuNumber)
-        pmu.layout.square = fill(square, pmuNumber)
+        append!(pmu.layout.index, fill(0, addNew))
+        append!(pmu.layout.bus, fill(false, addNew))
+        append!(pmu.layout.from, fill(false, addNew))
+        append!(pmu.layout.to, fill(false, addNew))
 
-        pmu.magnitude.mean = fill(0.0, pmuNumber)
-        pmu.magnitude.variance = similar(pmu.magnitude.mean)
-        pmu.magnitude.status = fill(Int8(0), pmuNumber)
+        append!(pmu.layout.correlated, fill(coalesce(key.correlated, def.correlated), addNew))
+        append!(pmu.layout.polar, fill(coalesce(key.polar, def.polar), addNew))
+        append!(pmu.layout.square, fill(coalesce(key.square, def.square), addNew))
 
-        pmu.angle.mean = similar(pmu.magnitude.mean)
-        pmu.angle.variance = similar(pmu.magnitude.mean)
-        pmu.angle.status = similar(pmu.magnitude.status)
+        append!(pmu.magnitude.mean, fill(0.0, addNew))
+        append!(pmu.magnitude.variance, fill(0.0, addNew))
+        append!(pmu.magnitude.status, fill(Int8(0), addNew))
+
+        append!(pmu.angle.mean, fill(0.0, addNew))
+        append!(pmu.angle.variance, fill(0.0, addNew))
+        append!(pmu.angle.status, fill(Int8(0), addNew))
 
         if statusBus != -1
             @inbounds for (label, i) in system.bus.label
@@ -332,12 +304,13 @@ function addPmu!(
                 baseInv = sqrt(3) / (baseVoltg.prefix * baseVoltg.value[i])
 
                 add!(
-                    pmu.magnitude, i, noise, pfx.voltageMagnitude, analysis.voltage.magnitude[i],
-                    varianceMagnitudeBus, def.varianceMagnitudeBus, statusBus, baseInv
+                    pmu.magnitude, pmu.number, key.noise, pfx.voltageMagnitude,
+                    analysis.voltage.magnitude[i], key.varianceMagnitudeBus,
+                    def.varianceMagnitudeBus, statusBus, baseInv
                 )
                 add!(
-                    pmu.angle, i, noise, pfx.voltageAngle, analysis.voltage.angle[i],
-                    varianceAngleBus, def.varianceAngleBus, statusBus, 1.0
+                    pmu.angle, pmu.number, key.noise, pfx.voltageAngle, analysis.voltage.angle[i],
+                    key.varianceAngleBus, def.varianceAngleBus, statusBus, 1.0
                 )
             end
         end
@@ -357,13 +330,13 @@ function addPmu!(
 
                         baseFromInv = baseCurrentInv(baseInv, baseVoltg.value[i] * baseVoltg.prefix)
                         add!(
-                            pmu.magnitude, pmu.number, noise, pfx.currentMagnitude,
-                            current.from.magnitude[k], varianceMagnitudeFrom,
+                            pmu.magnitude, pmu.number, key.noise, pfx.currentMagnitude,
+                            current.from.magnitude[k], key.varianceMagnitudeFrom,
                             def.varianceMagnitudeFrom, statusFrom, baseFromInv,
                         )
                         add!(
-                            pmu.angle, pmu.number, noise, pfx.currentAngle,
-                            current.from.angle[k], varianceAngleFrom,
+                            pmu.angle, pmu.number, key.noise, pfx.currentAngle,
+                            current.from.angle[k], key.varianceAngleFrom,
                             def.varianceAngleFrom, statusFrom, 1.0
                         )
                     end
@@ -377,13 +350,13 @@ function addPmu!(
 
                         baseToInv = baseCurrentInv(baseInv, baseVoltg.value[j] * baseVoltg.prefix)
                         add!(
-                            pmu.magnitude, pmu.number, noise, pfx.currentMagnitude,
-                            current.to.magnitude[k], varianceMagnitudeTo,
+                            pmu.magnitude, pmu.number, key.noise, pfx.currentMagnitude,
+                            current.to.magnitude[k], key.varianceMagnitudeTo,
                             def.varianceMagnitudeTo, statusTo, baseToInv,
                         )
                         add!(
-                            pmu.angle, pmu.number, noise, pfx.currentAngle,
-                            current.to.angle[k], varianceAngleTo,
+                            pmu.angle, pmu.number, key.noise, pfx.currentAngle,
+                            current.to.angle[k], key.varianceAngleTo,
                             def.varianceAngleTo, statusTo, 1.0
                         )
                     end
@@ -422,16 +395,14 @@ addPmu!(monitoring; label = "PMU 1", bus = "Bus 1", magnitude = 1.1, angle = -0.
 updatePmu!(monitoring; label = "PMU 1", magnitude = 1.05)
 ```
 """
-function updatePmu!(
-    monitoring::Measurement;
-    label::IntStr,
-    square::BoolMiss = missing,
-    kwargs...
-)
+function updatePmu!(monitoring::Measurement; label::IntStr, kwargs...)
+    updatePmuMain!(monitoring, label, PmuKey(; kwargs...))
+end
+
+function updatePmuMain!(monitoring::Measurement, label::IntStr, key::PmuKey)
     system = monitoring.system
     baseVoltg = system.base.voltage
     pmu = monitoring.pmu
-    key = pmukwargs(template.pmu; kwargs...)
 
     idx = pmu.label[getLabel(pmu, label, "PMU")]
     idxBusBrch = pmu.layout.index[idx]
@@ -442,8 +413,8 @@ function updatePmu!(
 
         baseInv = sqrt(3) / (baseVoltg.value[idxBusBrch] * baseVoltg.prefix)
     else
-        if isset(square)
-            pmu.layout.square[idx] = square
+        if isset(key.square)
+            pmu.layout.square[idx] = key.square
         end
 
         pfxMagnitude = pfx.currentMagnitude
@@ -461,14 +432,11 @@ function updatePmu!(
         pmu.layout.polar[idx] = key.polar
     end
 
-    updateMeter(
-        pmu.magnitude, idx, key.magnitude, key.varianceMagnitude,
-        key.status, key.noise, pfxMagnitude, baseInv
-    )
-    updateMeter(
-        pmu.angle, idx, key.angle, key.varianceAngle,
-        key.status, key.noise, pfxAngle, 1.0
-    )
+    update!(pmu.magnitude.variance, key.varianceMagnitude, pfxMagnitude, baseInv, idx)
+    update!(pmu.magnitude, key.magnitude, key, pfxMagnitude, baseInv, idx)
+
+    update!(pmu.angle.variance, key.varianceAngle, pfxAngle, 1.0, idx)
+    update!(pmu.angle, key.angle, key, pfxAngle, 1.0, idx)
 
     if !pmu.layout.bus[idx]
         idxBrch = pmu.layout.index[idx]
@@ -498,20 +466,16 @@ stateEstimation!(analysis)
 updatePmu!(analysis; label = 4, magnitude = 0.95, angle = -0.1)
 ```
 """
-function updatePmu!(
-    analysis::AcStateEstimation{GaussNewton{T}};
-    label::IntStrMiss,
-    square::BoolMiss = missing,
-    kwargs...
-) where T <: WlsMethod
+function updatePmu!(analysis::T; label::IntStr, kwargs...) where T <: Union{AcStateEstimation, PmuStateEstimation, DcStateEstimation}
+    updatePmuMain!(analysis.monitoring, label, PmuKey(; kwargs...))
+    _updatePmu!(analysis, getIndex(analysis.monitoring.pmu, label, "PMU"))
+end
 
+function _updatePmu!(analysis::AcStateEstimation{GaussNewton{T}}, idxPmu::Int64) where T <: WlsMethod
     bus = analysis.system.bus
     pmu = analysis.monitoring.pmu
     wls = analysis.method
 
-    updatePmu!(analysis.monitoring; label, square, kwargs...)
-
-    idxPmu = getIndex(pmu, label, "PMU")
     idxBusBrch = pmu.layout.index[idxPmu]
 
     idx = wls.range[5] + 2 * (idxPmu - 1)
@@ -630,19 +594,11 @@ function updatePmu!(
     end
 end
 
-function updatePmu!(
-    analysis::AcStateEstimation{LAV};
-    label::IntStrMiss,
-    square::BoolMiss = missing,
-    kwargs...
-)
+function _updatePmu!(analysis::AcStateEstimation{LAV}, idxPmu::Int64)
     system = analysis.system
     pmu = analysis.monitoring.pmu
     lav = analysis.method
 
-    updatePmu!(analysis.monitoring; label, square, kwargs...)
-
-    idxPmu = getIndex(pmu, label, "PMU")
     idxBusBrch = pmu.layout.index[idxPmu]
 
     idx = lav.range[5] + 2 * (idxPmu - 1)
@@ -703,19 +659,10 @@ function updatePmu!(
     end
 end
 
-function updatePmu!(
-    analysis::PmuStateEstimation{WLS{T}};
-    label::IntStrMiss,
-    square::BoolMiss = missing,
-    kwargs...
-) where T <: WlsMethod
-
+function _updatePmu!(analysis::PmuStateEstimation{WLS{T}}, idx::Int64) where T <: WlsMethod
     pmu = analysis.monitoring.pmu
     wls = analysis.method
 
-    updatePmu!(analysis.monitoring; label, square, kwargs...)
-
-    idx = getIndex(pmu, label, "PMU")
     row = 2 * idx - 1
     rox = row + 1
 
@@ -774,18 +721,10 @@ function updatePmu!(
     end
 end
 
-function updatePmu!(
-    analysis::PmuStateEstimation{LAV};
-    label::IntStrMiss,
-    square::BoolMiss = missing,
-    kwargs...
-)
+function _updatePmu!(analysis::PmuStateEstimation{LAV}, idx::Int64)
     pmu = analysis.monitoring.pmu
     lav = analysis.method
 
-    updatePmu!(analysis.monitoring; label, square, kwargs...)
-
-    idx = getIndex(pmu, label, "PMU")
     idxBusBrch = pmu.layout.index[idx]
     idxRe = 2 * idx - 1
     idxIm = idxRe + 1
@@ -819,20 +758,10 @@ function updatePmu!(
     end
 end
 
-function updatePmu!(
-    analysis::DcStateEstimation{WLS{T}};
-    label::IntStr,
-    square::BoolMiss = missing,
-    kwargs...
-) where T <: WlsMethod
-
+function _updatePmu!(analysis::DcStateEstimation{WLS{T}}, idxPmu::Int64) where T <: WlsMethod
     slack = analysis.system.bus.layout.slack
     pmu = analysis.monitoring.pmu
     wls = analysis.method
-
-    updatePmu!(analysis.monitoring; label, square, kwargs...)
-
-    idxPmu = getIndex(pmu, label, "PMU")
 
     if pmu.layout.bus[idxPmu]
         idx = analysis.method.index[idxPmu]
@@ -852,18 +781,9 @@ function updatePmu!(
     end
 end
 
-function updatePmu!(
-    analysis::DcStateEstimation{LAV};
-    label::IntStr,
-    square::BoolMiss = missing,
-    kwargs...
-)
+function _updatePmu!(analysis::DcStateEstimation{LAV}, idxPmu::Int64)
     pmu = analysis.monitoring.pmu
     lav = analysis.method
-
-    updatePmu!(analysis.monitoring; label, square, kwargs...)
-
-    idxPmu = pmu.label[getLabel(pmu, label, "PMU")]
 
     if pmu.layout.bus[idxPmu]
         idx = lav.index[idxPmu]

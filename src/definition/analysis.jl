@@ -642,3 +642,8 @@ mutable struct ChiTest
     treshold::Float64
     objective::Float64
 end
+
+##### Types #####
+const PowerFlow = Union{AcPowerFlow, DcPowerFlow, AcOptimalPowerFlow, DcOptimalPowerFlow}
+const StateEstimation = Union{AcStateEstimation, DcStateEstimation}
+const OptimalPowerFlow = Union{AcOptimalPowerFlow, DcOptimalPowerFlow}

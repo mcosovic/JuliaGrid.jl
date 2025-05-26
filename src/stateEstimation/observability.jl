@@ -388,7 +388,7 @@ system, monitoring, pseudo = ems("case14.h5", "monitoring.h5", "pseudo.h5")
 statusWattmeter!(monitoring; inservice = 10)
 islands = islandTopological(monitoring)
 
-restorationGram!(monitoring, pseudomonitoring, islands)
+restorationGram!(monitoring, pseudo, islands)
 ```
 """
 function restorationGram!(
