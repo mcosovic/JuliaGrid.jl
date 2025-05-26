@@ -2,6 +2,18 @@
 
 ---
 
+## Version 0.4.6
+
+Release Date: May 26, 2025
+
+#### Fixed
+  * Precompilation of the functions.
+
+#### Other
+  * Reduced memory allocations.
+
+---
+
 ## Version 0.4.5
 
 Release Date: May 15, 2025
