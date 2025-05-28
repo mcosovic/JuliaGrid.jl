@@ -213,12 +213,13 @@ function _addBranch!(analysis::DcOptimalPowerFlow)
 
     if system.branch.layout.status[end] == 1
         i, j = fromto(system, system.branch.number)
+        expr = AffExpr()
 
         remove!(jump, con.balance.active, i)
-        addBalance(system, jump, var, con, i)
+        addBalance(system, jump, var, con, expr, i)
 
         remove!(jump, con.balance.active, j)
-        addBalance(system, jump, var, con, j)
+        addBalance(system, jump, var, con, expr, j)
 
         addFlow(system, jump, var.voltage.angle, con.flow.active, system.branch.number)
         addAngle(system, jump, var.voltage.angle, con.voltage.angle, system.branch.number)
@@ -481,12 +482,13 @@ function _updateBranch!(analysis::DcOptimalPowerFlow, idx::Int64)
     con = analysis.method.constraint
 
     i, j = fromto(system, idx)
+    expr = AffExpr()
 
     remove!(jump, con.balance.active, i)
-    addBalance(system, jump, var, con, i)
+    addBalance(system, jump, var, con, expr, i)
 
     remove!(jump, con.balance.active, j)
-    addBalance(system, jump, var, con, j)
+    addBalance(system, jump, var, con, expr, j)
 
     remove!(jump, con.flow.active, idx)
     remove!(jump, con.voltage.angle, idx)

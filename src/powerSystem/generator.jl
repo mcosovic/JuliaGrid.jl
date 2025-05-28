@@ -217,7 +217,7 @@ function _addGenerator!(analysis::DcOptimalPowerFlow)
     end
 
     remove!(jump, con.balance.active, idxBus)
-    addBalance(system, jump, var, con, idxBus)
+    addBalance(system, jump, var, con, AffExpr(), idxBus)
 end
 
 """
@@ -510,7 +510,7 @@ function _updateGenerator!(analysis::DcOptimalPowerFlow, idx::Int64)
     set_objective_function(jump, obj)
 
     remove!(jump, con.balance.active, idxBus)
-    addBalance(system, jump, analysis.method.variable, con, idxBus)
+    addBalance(system, jump, analysis.method.variable, con, AffExpr(), idxBus)
 end
 
 """

@@ -117,8 +117,9 @@ function dcOptimalPowerFlow(
 
     @objective(jump, Min, obj)
 
+    expr = AffExpr()
     @inbounds for i = 1:bus.number
-        addBalance(system, jump, var, con, i)
+        addBalance(system, jump, var, con, expr, i)
     end
 
     @inbounds for i = 1:system.branch.number
@@ -285,6 +286,7 @@ function addBalance(
     jump::JuMP.Model,
     var::DcVariableRef,
     con::DcConstraintRef,
+    expr::AffExpr,
     i::Int64
 )
     bus = system.bus
@@ -294,18 +296,19 @@ function addBalance(
     angle = var.voltage.angle
     ref = con.balance.active
 
-    expr = AffExpr()
     for ptr in dc.nodalMatrix.colptr[i]:(dc.nodalMatrix.colptr[i + 1] - 1)
         j = dc.nodalMatrix.rowval[ptr]
-        add_to_expression!(expr, dc.nodalMatrix.nzval[ptr], -angle[j])
+        add_to_expression!(expr, dc.nodalMatrix.nzval[ptr], angle[j])
     end
 
     rhs = bus.demand.active[i] + bus.shunt.conductance[i] + dc.shiftPower[i]
     if haskey(bus.supply.generator, i)
-        ref[i] = @constraint(jump, expr + sum(power[k] for k in bus.supply.generator[i]) == rhs)
+        ref[i] = @constraint(jump, sum(power[k] for k in bus.supply.generator[i]) - expr == rhs)
     else
-        ref[i] = @constraint(jump, expr == rhs)
+        ref[i] = @constraint(jump, -expr == rhs)
     end
+
+    empty!(expr.terms)
 end
 
 ##### Flow Constraints #####
@@ -321,9 +324,12 @@ function addFlow(
 
     if branch.flow.minFromBus[i] != 0.0 || branch.flow.maxFromBus[i] != 0.0
         from, to = fromto(system, i)
-        expr = dc.admittance[i] * (angle[from] - angle[to] - branch.parameter.shiftAngle[i])
 
-        con[i] = @constraint(jump, branch.flow.minFromBus[i] <= expr <= branch.flow.maxFromBus[i])
+        con[i] = @constraint(
+            jump, branch.flow.minFromBus[i] <=
+            dc.admittance[i] * (angle[from] - angle[to] - branch.parameter.shiftAngle[i])
+            <= branch.flow.maxFromBus[i]
+        )
     end
 end
 

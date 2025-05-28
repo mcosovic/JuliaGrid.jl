@@ -323,7 +323,7 @@ function _updateBus!(analysis::DcOptimalPowerFlow, idx::Int64)
     con = analysis.method.constraint
 
     remove!(jump, con.balance.active, idx)
-    addBalance(system, jump, var, con, idx)
+    addBalance(system, jump, var, con, AffExpr(), idx)
 
     analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
 
