@@ -598,6 +598,7 @@ function _updatePmu!(analysis::AcStateEstimation{LAV}, idxPmu::Int64)
     system = analysis.system
     pmu = analysis.monitoring.pmu
     lav = analysis.method
+    voltage = lav.variable.voltage
 
     idxBusBrch = pmu.layout.index[idxPmu]
 
@@ -606,37 +607,38 @@ function _updatePmu!(analysis::AcStateEstimation{LAV}, idxPmu::Int64)
     remove!(lav, idx)
     remove!(lav, idx + 1)
 
+    quad1 = QuadExpr()
+    quad2 = QuadExpr()
     if pmu.layout.polar[idxPmu] # PMU Polar Bus and Branch
         if pmu.magnitude.status[idxPmu] == 1
             add!(lav, idx)
 
             if pmu.layout.bus[idxPmu]
-                expr = lav.variable.voltage.magnitude[idxBusBrch]
-                sq = 1
+                addConstrLav!(lav, voltage.magnitude[idxBusBrch], pmu.magnitude.mean[idxPmu], idx)
             else
                 if pmu.layout.from[idxPmu]
-                    expr = Iij(system, lav.variable.voltage, pmu.layout.square[idxPmu], idxBusBrch)
+                    expr = Iij(system, voltage, pmu.layout.square[idxPmu], quad1, quad2, idxBusBrch)
                 else
-                    expr = Iji(system, lav.variable.voltage, pmu.layout.square[idxPmu], idxBusBrch)
+                    expr = Iji(system, voltage, pmu.layout.square[idxPmu], quad1, quad2, idxBusBrch)
                 end
                 sq = if2exp(pmu.layout.square[idxPmu])
+                 addConstrLav!(lav, expr, pmu.magnitude.mean[idxPmu]^sq, AffExpr(), idx)
             end
-
-            addConstrLav!(lav, expr, pmu.magnitude.mean[idxPmu]^sq, idx)
         end
 
         if pmu.angle.status[idxPmu] == 1
             add!(lav, idx + 1)
 
             if pmu.layout.bus[idxPmu]
-                expr = lav.variable.voltage.angle[idxBusBrch]
-            elseif pmu.layout.from[idxPmu]
-                expr = ψij(system, lav.variable.voltage, idxBusBrch)
+                addConstrLav!(lav, voltage.angle[idxBusBrch], pmu.angle.mean[idxPmu], idx + 1)
             else
-                expr = ψji(system, lav.variable.voltage, idxBusBrch)
+                if pmu.layout.from[idxPmu]
+                    expr = ψij(system, voltage, idxBusBrch)
+                else
+                    expr = ψji(system, voltage, idxBusBrch)
+                end
+                addConstrLav!(lav, expr, pmu.angle.mean[idxPmu], AffExpr(), idx + 1)
             end
-
-            addConstrLav!(lav, expr, pmu.angle.mean[idxPmu], idx + 1)
         end
     else # PMU Rectangular Bus and Branch
         if pmu.magnitude.status[idxPmu] == 1 && pmu.angle.status[idxPmu] == 1
@@ -644,17 +646,17 @@ function _updatePmu!(analysis::AcStateEstimation{LAV}, idxPmu::Int64)
             add!(lav, idx + 1)
 
             if pmu.layout.bus[idxPmu]
-                ReExpr, ImExpr = ReImVi(lav.variable.voltage, idxBusBrch)
+                ReExpr, ImExpr = ReImVi(voltage, idxBusBrch)
             elseif pmu.layout.from[idxPmu]
-                ReExpr, ImExpr = ReImIij(system, lav.variable.voltage, idxBusBrch)
+                ReExpr, ImExpr = ReImIij(system, voltage, idxBusBrch)
             else
-                ReExpr, ImExpr = ReImIji(system, lav.variable.voltage, idxBusBrch)
+                ReExpr, ImExpr = ReImIji(system, voltage, idxBusBrch)
             end
             ReMean = pmu.magnitude.mean[idxPmu] * cos(pmu.angle.mean[idxPmu])
             ImMean = pmu.magnitude.mean[idxPmu] * sin(pmu.angle.mean[idxPmu])
 
-            addConstrLav!(lav, ReExpr, ReMean, idx)
-            addConstrLav!(lav, ImExpr, ImMean, idx + 1)
+            addConstrLav!(lav, ReExpr, ReMean, AffExpr(), idx)
+            addConstrLav!(lav, ImExpr, ImMean, AffExpr(), idx + 1)
         end
     end
 end
@@ -751,7 +753,9 @@ function _updatePmu!(analysis::PmuStateEstimation{LAV}, idx::Int64)
             else
                 p = ReImIjiCoefficient(analysis.system.branch, analysis.system.model.ac, idxBusBrch)
             end
-            reExpr, imExpr = ReImIij(analysis.system, lav.variable.voltage, p, idxBusBrch)
+            reExpr = AffExpr()
+            imExpr = AffExpr()
+            ReImIij(analysis.system, lav.variable.voltage, p, reExpr, imExpr, idxBusBrch)
         end
         addConstrLav!(lav, reExpr, reMean, idxRe)
         addConstrLav!(lav, imExpr, imMean, idxIm)

@@ -683,13 +683,15 @@ function pmuPlacement(
 
     placement = @variable(jump, 0 <= placement[i = 1:bus.number] <= 1, Int)
 
+    angleJacobian = AffExpr()
     @inbounds for i = 1:bus.number
-        angleJacobian = @expression(jump, AffExpr())
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
             k = ac.nodalMatrix.rowval[j]
             add_to_expression!(angleJacobian, placement[k])
         end
         @constraint(jump, angleJacobian >= 1)
+
+        empty!(angleJacobian.terms)
     end
 
     @objective(jump, Min, sum(placement))

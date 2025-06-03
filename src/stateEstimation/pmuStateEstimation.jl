@@ -270,6 +270,8 @@ function pmuLavStateEstimation(
     deviation = lav.variable.deviation
 
     cnt = 1
+    reExpr = AffExpr()
+    imExpr = AffExpr()
     @inbounds for (i, k) in enumerate(pmu.layout.index)
         if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
             sinθ, cosθ = sincos(pmu.angle.mean[i])
@@ -277,22 +279,27 @@ function pmuLavStateEstimation(
             imMean = pmu.magnitude.mean[i] * sinθ
 
             if pmu.layout.bus[i]
-                reExpr = voltage.real[pmu.layout.index[i]]
-                imExpr = voltage.imag[pmu.layout.index[i]]
+                addConstrLav!(lav, voltage.real[pmu.layout.index[i]], reMean, cnt)
+                addObjectLav!(lav, objective, cnt)
+
+                addConstrLav!(lav, voltage.imag[pmu.layout.index[i]], imMean, cnt + 1)
+                addObjectLav!(lav, objective, cnt + 1)
             else
                 if pmu.layout.from[i]
                     piModel = ReImIijCoefficient(branch, ac, k)
                 else
                     piModel = ReImIjiCoefficient(branch, ac, k)
                 end
-                reExpr, imExpr = ReImIij(system, voltage, piModel, k)
+                ReImIij(system, voltage, piModel, reExpr, imExpr, k)
+
+                addConstrLav!(lav, reExpr, reMean, cnt)
+                addObjectLav!(lav, objective, cnt)
+                empty!(reExpr.terms)
+
+                addConstrLav!(lav, imExpr, imMean, cnt + 1)
+                addObjectLav!(lav, objective, cnt + 1)
+                empty!(imExpr.terms)
             end
-
-            addConstrLav!(lav, reExpr, reMean, cnt)
-            addObjectLav!(lav, objective, cnt)
-
-            addConstrLav!(lav, imExpr, imMean, cnt + 1)
-            addObjectLav!(lav, objective, cnt + 1)
         else
             fix!(deviation, cnt)
             fix!(deviation, cnt + 1)

@@ -146,10 +146,13 @@ function acOptimalPowerFlow(
 
     setObjective(jump, obj)
 
+    aff = AffExpr()
+    quad1 = QuadExpr()
+    quad2 = QuadExpr()
     @inbounds for i = 1:branch.number
         if branch.layout.status[i] == 1
-            addAngle(system, jump, θ, con.voltage.angle, i)
-            addFlow(system, jump, var.voltage, con, i)
+            addAngle(system, jump, θ, con.voltage.angle, aff, i)
+            addFlow(system, jump, var.voltage, con, quad1, quad2, i)
         end
     end
 
@@ -538,7 +541,7 @@ function addCapability(
 )
     if minPower[idx] != maxPower[idx]
         if minPower[idx] != -Inf && maxPower[idx] != Inf
-            con[idx] = @constraint(jump, minPower[idx] <= var[idx] <= maxPower[idx])
+           con[idx] = @constraint(jump, var[idx] in MOI.Interval(minPower[idx], maxPower[idx]))
         end
     else
         fix!(var[idx], minPower[idx], con, idx)
@@ -556,7 +559,7 @@ function addMagnitude(
     V = system.bus.voltage
 
     if V.minMagnitude[idx] != V.maxMagnitude[idx]
-        con[idx] = @constraint(jump, V.minMagnitude[idx] <= magnitude[idx] <= V.maxMagnitude[idx])
+        con[idx] = @constraint(jump, magnitude[idx] in MOI.Interval(V.minMagnitude[idx], V.maxMagnitude[idx]))
     else
         fix!(magnitude[idx], V.minMagnitude[idx], con, idx)
     end
@@ -568,6 +571,7 @@ function addAngle(
     jump::JuMP.Model,
     angle::Vector{VariableRef},
     con::Dict{Int64, ConstraintRef},
+    expr::JuMP.GenericAffExpr{Float64, JuMP.VariableRef},
     idx::Int64
 )
     minθ = system.branch.voltage.minDiffAngle[idx]
@@ -576,7 +580,12 @@ function addAngle(
     if minθ > -2*pi || maxθ < 2*pi
         i, j = fromto(system, idx)
 
-        con[idx] = @constraint(jump, minθ <= angle[i] - angle[j] <= maxθ)
+        JuMP.add_to_expression!(expr, 1.0, angle[i])
+        JuMP.add_to_expression!(expr, -1.0, angle[j])
+
+        con[idx] = @constraint(jump, minθ <= expr <= maxθ)
+
+        empty!(expr.terms)
     end
 end
 
@@ -607,8 +616,8 @@ function addBalance(
         if i != j
             Gij, Bij, sinθij, cosθij = GijBijθij(ac, θ, i, j, ptr)
 
-            exprP += V[j] * (Gij * cosθij + Bij * sinθij)
-            exprQ += V[j] * (Gij * sinθij - Bij * cosθij)
+            exprP = @expression(jump, exprP + V[j] * (Gij * cosθij + Bij * sinθij))
+            exprQ = @expression(jump, exprQ + V[j] * (Gij * sinθij - Bij * cosθij))
         end
     end
 
@@ -685,6 +694,8 @@ function addFlow(
     jump::JuMP.Model,
     voltage::PolarVariableRef,
     con::AcConstraintRef,
+    quad1::QuadExpr,
+    quad2::QuadExpr,
     idx::Int64
 )
     branch = system.branch
@@ -702,12 +713,14 @@ function addFlow(
     if from || to
         if branch.flow.type[idx] == 1
             if from
-                expr = Pij(system, voltage, idx)
+                expr = Pij(system, voltage, quad1, quad2, idx)
                 conFrom[idx] = @constraint(jump, minFrom <= expr <= maxFrom)
+                emptyExpr!(quad1, quad2)
             end
             if to
-                expr = Pji(system, voltage, idx)
+                expr = Pji(system, voltage, quad1, quad2, idx)
                 conTo[idx] = @constraint(jump, minTo <= expr <= maxTo)
+                emptyExpr!(quad1, quad2)
             end
 
         elseif branch.flow.type[idx] == 2 || branch.flow.type[idx] == 3
@@ -715,16 +728,18 @@ function addFlow(
             sq = if2exp(square)
 
             if from
-                expr = Sij(system, voltage, square, idx)
+                expr = Sij(system, voltage, square, quad1, quad2, idx)
                 minFrom ^= sq
                 maxFrom ^= sq
                 conFrom[idx] = @constraint(jump, minFrom <= expr <= maxFrom)
+                emptyExpr!(quad1, quad2)
             end
             if to
-                expr = Sji(system, voltage, square, idx)
+                expr = Sji(system, voltage, square, quad1, quad2, idx)
                 minTo ^= sq
                 maxTo ^= sq
                 conTo[idx] = @constraint(jump, minTo <= expr <= maxTo)
+                emptyExpr!(quad1, quad2)
             end
 
         elseif branch.flow.type[idx] == 4 || branch.flow.type[idx] == 5
@@ -732,18 +747,21 @@ function addFlow(
             sq = if2exp(square)
 
             if from
-                expr = Iij(system, voltage, square, idx)
+                expr = Iij(system, voltage, square, quad1, quad2, idx)
                 minFrom ^= sq
                 maxFrom ^= sq
                 conFrom[idx] = @constraint(jump, minFrom <= expr <= maxFrom)
+                emptyExpr!(quad1, quad2)
             end
             if to
-                expr = Iji(system, voltage, square, idx)
+                expr = Iji(system, voltage, square, quad1, quad2, idx)
                 minTo ^= sq
                 maxTo ^= sq
                 conTo[idx] = @constraint(jump, minTo <= expr <= maxTo)
+                emptyExpr!(quad1, quad2)
             end
         end
+
     end
 end
 

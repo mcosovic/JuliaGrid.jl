@@ -14,23 +14,20 @@ function Pi(system::PowerSystem, voltage::PolarVariableRef, i::Int64)
         end
     end
 
-    V[i] * expr
+    NonlinearExpr(:*, V[i], expr)
 end
 
-function Pi(system::PowerSystem, voltage::AngleVariableRef, i::Int64)
+function Pi(system::PowerSystem, voltage::AngleVariableRef, expr::AffExpr, i::Int64)
     nodal = system.model.dc.nodalMatrix
 
-    expr = AffExpr()
     @inbounds for ptr in nodal.colptr[i]:(nodal.colptr[i + 1] - 1)
         j = nodal.rowval[ptr]
         add_to_expression!(expr, nodal.nzval[ptr] * voltage.angle[j])
     end
-
-    expr
 end
 
 ##### From-Bus Active Power Flow #####
-function Pij(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
+function Pij(system::PowerSystem, voltage::PolarVariableRef, Vi2::QuadExpr, ViVj::QuadExpr, idx::Int64)
     i, j = fromto(system, idx)
 
     V = voltage.magnitude
@@ -39,17 +36,32 @@ function Pij(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
     p = PijCoefficient(system.branch, system.model.ac, idx)
     k1, k2 = plusΦ(p.B, p.C, system.branch.parameter.shiftAngle[idx])
 
-    p.A * V[i]^2 - V[i] * V[j] * (k1 * cos(θij) + k2 * sin(θij))
+    add_to_expression!(Vi2, p.A, V[i], V[i])
+    add_to_expression!(ViVj, V[i], V[j])
+
+    cosθij = NonlinearExpr(:*, k1, NonlinearExpr(:cos, θij))
+    sinθij = NonlinearExpr(:*, k2, NonlinearExpr(:sin, θij))
+
+    NonlinearExpr(:-, Vi2, NonlinearExpr(:*, ViVj, NonlinearExpr(:+, cosθij, sinθij)))
 end
 
-function Pij(system::PowerSystem, voltage::AngleVariableRef, admittance::Float64, idx::Int64)
+function Pij(system::PowerSystem, voltage::AngleVariableRef, admittance::Float64, expr::AffExpr, idx::Int64)
     i, j = fromto(system, idx)
+    add_to_expression!(expr, admittance, voltage.angle[i])
+    add_to_expression!(expr, -admittance, voltage.angle[j])
+end
 
-    admittance * voltage.angle[i] - admittance * voltage.angle[j]
+function Pij(system::PowerSystem, angle::Vector{VariableRef}, expr::AffExpr, idx::Int64)
+    dc = system.model.dc
+
+    i, j = fromto(system, idx)
+    add_to_expression!(expr, dc.admittance[idx], angle[i])
+    add_to_expression!(expr, -dc.admittance[idx], angle[j])
+    add_to_expression!(expr, -dc.admittance[idx] * system.branch.parameter.shiftAngle[idx])
 end
 
 ##### To-Bus Active Power Flow #####
-function Pji(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
+function Pji(system::PowerSystem, voltage::PolarVariableRef, Vj2::QuadExpr, ViVj::QuadExpr, idx::Int64)
     i, j = fromto(system, idx)
 
     V = voltage.magnitude
@@ -58,7 +70,13 @@ function Pji(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
     p = PjiCoefficient(system.branch, system.model.ac, idx)
     k1, k2 = minusΦ(p.B, p.C, system.branch.parameter.shiftAngle[idx])
 
-    p.A * V[j]^2 - V[i] * V[j] * (k1 * cos(θij) - k2 * sin(θij))
+    add_to_expression!(Vj2, p.A, V[j], V[j])
+    add_to_expression!(ViVj, V[i], V[j])
+
+    cosθij = NonlinearExpr(:*, k1, NonlinearExpr(:cos, θij))
+    sinθij = NonlinearExpr(:*, k2, NonlinearExpr(:sin, θij))
+
+    NonlinearExpr(:-, Vj2, NonlinearExpr(:*, ViVj, NonlinearExpr(:-, cosθij, sinθij)))
 end
 
 ##### Reactive Power Injection #####
@@ -77,11 +95,11 @@ function Qi(system::PowerSystem, voltage::PolarVariableRef, i::Int64)
         end
     end
 
-    V[i] * expr
+    NonlinearExpr(:*, V[i], expr)
 end
 
 ##### From-Bus Reactive Power Flow #####
-function Qij(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
+function Qij(system::PowerSystem, voltage::PolarVariableRef, Vi2::QuadExpr, ViVj::QuadExpr, idx::Int64)
     i, j = fromto(system, idx)
 
     V = voltage.magnitude
@@ -90,11 +108,17 @@ function Qij(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
     p = QijCoefficient(system.branch, system.model.ac, idx)
     k1, k2 = minusΦ(p.C, p.B, system.branch.parameter.shiftAngle[idx])
 
-    -p.A * V[i]^2 + V[i] * V[j] * (k1 * cos(θij) - k2 * sin(θij))
+    add_to_expression!(Vi2, -p.A, V[i], V[i])
+    add_to_expression!(ViVj, V[i], V[j])
+
+    cosθij = NonlinearExpr(:*, k1, NonlinearExpr(:cos, θij))
+    sinθij = NonlinearExpr(:*, k2, NonlinearExpr(:sin, θij))
+
+    NonlinearExpr(:+, Vi2, NonlinearExpr(:*, ViVj, NonlinearExpr(:-, cosθij, sinθij)))
 end
 
 ##### To-Bus Reactive Power Flow #####
-function Qji(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
+function Qji(system::PowerSystem, voltage::PolarVariableRef, Vj2::QuadExpr, ViVj::QuadExpr,  idx::Int64)
     i, j = fromto(system, idx)
 
     V = voltage.magnitude
@@ -103,11 +127,17 @@ function Qji(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
     p = QjiCoefficient(system.branch, system.model.ac, idx)
     k1, k2 = plusΦ(p.C, p.B, system.branch.parameter.shiftAngle[idx])
 
-    -p.A * V[j]^2 + V[i] * V[j] * (k1 * cos(θij) + k2 * sin(θij))
+    add_to_expression!(Vj2, -p.A, V[j], V[j])
+    add_to_expression!(ViVj, V[i], V[j])
+
+    cosθij = NonlinearExpr(:*, k1, NonlinearExpr(:cos, θij))
+    sinθij = NonlinearExpr(:*, k2, NonlinearExpr(:sin, θij))
+
+    NonlinearExpr(:+, Vj2, NonlinearExpr(:*, ViVj, NonlinearExpr(:+, cosθij, sinθij)))
 end
 
 ##### From-Bus Current Magnitude #####
-function Iij(system::PowerSystem, voltage::PolarVariableRef, square::Bool, idx::Int64)
+function Iij(system::PowerSystem, voltage::PolarVariableRef, square::Bool, Vi2::QuadExpr, Vj2::QuadExpr, idx::Int64)
     i, j = fromto(system, idx)
 
     V = voltage.magnitude
@@ -116,15 +146,24 @@ function Iij(system::PowerSystem, voltage::PolarVariableRef, square::Bool, idx::
     p = IijCoefficient(system.branch, system.model.ac, idx)
     k1, k2 = minusΦ(p.C, p.D, system.branch.parameter.shiftAngle[idx])
 
+    add_to_expression!(Vi2, p.A , V[i], V[i])
+    add_to_expression!(Vi2, p.B, V[j], V[j])
+    add_to_expression!(Vj2, 2, V[i], V[j])
+
+    cosθij = NonlinearExpr(:*, k1, NonlinearExpr(:cos, θij))
+    sinθij = NonlinearExpr(:*, k2, NonlinearExpr(:sin, θij))
+
+    Iij = NonlinearExpr(:-, Vi2, NonlinearExpr(:*, Vj2, NonlinearExpr(:-, cosθij, sinθij)))
+
     if square
-        p.A * V[i]^2 + p.B * V[j]^2 - 2 * V[i] * V[j] * (k1 * cos(θij) - k2 * sin(θij))
+        return Iij
     else
-        sqrt(p.A * V[i]^2 + p.B * V[j]^2 - 2 * V[i] * V[j] * (k1 * cos(θij) - k2 * sin(θij)))
+        return NonlinearExpr(:sqrt, Iij)
     end
 end
 
 ##### To-Bus Current Magnitude #####
-function Iji(system::PowerSystem, voltage::PolarVariableRef, square::Bool, idx::Int64)
+function Iji(system::PowerSystem, voltage::PolarVariableRef, square::Bool, Vi2::QuadExpr, Vj2::QuadExpr, idx::Int64)
     i, j = fromto(system, idx)
 
     V = voltage.magnitude
@@ -133,10 +172,19 @@ function Iji(system::PowerSystem, voltage::PolarVariableRef, square::Bool, idx::
     p = IjiCoefficient(system.branch, system.model.ac, idx)
     k1, k2 = plusΦ(p.C, p.D, system.branch.parameter.shiftAngle[idx])
 
+    add_to_expression!(Vi2, p.A , V[i], V[i])
+    add_to_expression!(Vi2, p.B, V[j], V[j])
+    add_to_expression!(Vj2, 2, V[i], V[j])
+
+    cosθij = NonlinearExpr(:*, k1, NonlinearExpr(:cos, θij))
+    sinθij = NonlinearExpr(:*, k2, NonlinearExpr(:sin, θij))
+
+    Iji = NonlinearExpr(:-, Vi2, NonlinearExpr(:*, Vj2, NonlinearExpr(:+, cosθij, sinθij)))
+
     if square
-        p.A * V[i]^2 + p.B * V[j]^2 - 2 * V[i] * V[j] * (k1 * cos(θij) + k2 * sin(θij))
+        return Iji
     else
-        sqrt(p.A * V[i]^2 + p.B * V[j]^2 - 2 * V[i] * V[j] * (k1 * cos(θij) + k2 * sin(θij)))
+        return NonlinearExpr(:sqrt, Iji)
     end
 end
 
@@ -144,43 +192,67 @@ end
 function ψij(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
     IijRe, IijIm = ReImIij(system, voltage, idx)
 
-    atan(IijIm, IijRe)
+    NonlinearExpr(:atan, IijIm, IijRe)
 end
 
 ##### To-Bus Current Angle #####
 function ψji(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
     IjiRe, IjiIm = ReImIji(system, voltage, idx)
 
-    atan(IjiIm, IjiRe)
+    NonlinearExpr(:atan, IjiIm, IjiRe)
 end
 
 ##### From-Bus Apparent Power #####
-function Sij(system::PowerSystem, voltage::PolarVariableRef, square::Bool, idx::Int64)
+function Sij(system::PowerSystem, voltage::PolarVariableRef, square::Bool, Vi2::QuadExpr, Vj2::QuadExpr, idx::Int64)
     i, j = fromto(system, idx)
 
     V = voltage.magnitude
     θij = voltage.angle[i] - voltage.angle[j]
     p = IijCoefficient(system.branch, system.model.ac, idx)
 
+    Vi4 = NonlinearExpr(:*, p.A, V[i]^4)
+
+    add_to_expression!(Vi2, p.B, V[i], V[i])
+    add_to_expression!(Vj2, V[j], V[j])
+    Vi2Vj2 = NonlinearExpr(:*, Vi2, Vj2)
+
+    Vi3Vj = NonlinearExpr(:*, -2, V[i]^3, V[j])
+    cosθij = NonlinearExpr(:*, p.C, NonlinearExpr(:cos, θij))
+    sinθij = NonlinearExpr(:*, p.D, NonlinearExpr(:sin, θij))
+
+    Sij = NonlinearExpr(:+, Vi4, Vi2Vj2, NonlinearExpr(:*, Vi3Vj, NonlinearExpr(:-, cosθij, sinθij)))
+
     if square
-        p.A * V[i]^4 + p.B * V[i]^2 * V[j]^2 - 2 * V[i]^3 * V[j] * (p.C * cos(θij) - p.D * sin(θij))
+        return Sij
     else
-        sqrt(p.A * V[i]^4 + p.B * V[i]^2 * V[j]^2 - 2 * V[i]^3 * V[j] * (p.C * cos(θij) - p.D * sin(θij)))
+        return NonlinearExpr(:sqrt, Sij)
     end
 end
 
 ##### To-Bus Apparent Power #####
-function Sji(system::PowerSystem, voltage::PolarVariableRef, square::Bool, idx::Int64)
+function Sji(system::PowerSystem, voltage::PolarVariableRef, square::Bool, Vi2::QuadExpr, Vj2::QuadExpr, idx::Int64)
     i, j = fromto(system, idx)
 
     V = voltage.magnitude
     θij = voltage.angle[i] - voltage.angle[j]
     p = IjiCoefficient(system.branch, system.model.ac, idx)
 
+    add_to_expression!(Vi2, p.A, V[i], V[i])
+    add_to_expression!(Vj2, V[j], V[j])
+    Vi2Vj2 = NonlinearExpr(:*, Vi2, Vj2)
+
+    Vj4 = NonlinearExpr(:*, p.B, V[j]^4)
+
+    Vi3Vj = NonlinearExpr(:*, -2, V[i], V[j]^3)
+    cosθij = NonlinearExpr(:*, p.C, NonlinearExpr(:cos, θij))
+    sinθij = NonlinearExpr(:*, p.D, NonlinearExpr(:sin, θij))
+
+    Sji = NonlinearExpr(:+, Vi2Vj2, Vj4, NonlinearExpr(:*, Vi3Vj, NonlinearExpr(:+, cosθij, sinθij)))
+
     if square
-        p.A * V[i]^2 * V[j]^2 + p.B * V[j]^4 - 2 * V[i] * V[j]^3 * (p.C * cos(θij) + p.D * sin(θij))
+        return Sji
     else
-        sqrt(p.A * V[i]^2 * V[j]^2 + p.B * V[j]^4 - 2 * V[i] * V[j]^3 * (p.C * cos(θij) + p.D * sin(θij)))
+        return NonlinearExpr(:sqrt, Sji)
     end
 end
 
@@ -222,38 +294,18 @@ function ReImIijCoefficient(branch::Branch, ac::AcModel, idx::Int64)
     )
 end
 
-function ReImIij(system::PowerSystem, voltage::PolarVariableRef, p::PiModel, idx::Int64)
+function ReImIij(system::PowerSystem, voltage::RectangularVariableRef, p::PiModel, reExpr::AffExpr, imExpr::AffExpr, idx::Int64)
     i, j = fromto(system, idx)
 
-    AffExpr(0.0,
-        voltage.angle[i] => p.A,
-        voltage.magnitude[i] => p.B,
-        voltage.angle[j] => p.C,
-        voltage.magnitude[j]=> p.D,
-    ),
-    AffExpr(0.0,
-        voltage.angle[i] => -p.B,
-        voltage.magnitude[i] => p.A,
-        voltage.angle[j] => -p.D,
-        voltage.magnitude[j]=> p.C,
-    )
-end
+    add_to_expression!(reExpr, p.A, voltage.real[i])
+    add_to_expression!(reExpr, p.B, voltage.imag[i])
+    add_to_expression!(reExpr, p.C, voltage.real[j])
+    add_to_expression!(reExpr, p.D, voltage.imag[j])
 
-function ReImIij(system::PowerSystem, voltage::RectangularVariableRef, p::PiModel, idx::Int64)
-    i, j = fromto(system, idx)
-
-    AffExpr(0.0,
-        voltage.real[i] => p.A,
-        voltage.imag[i] => p.B,
-        voltage.real[j] => p.C,
-        voltage.imag[j]=> p.D,
-    ),
-    AffExpr(0.0,
-        voltage.real[i] => -p.B,
-        voltage.imag[i] => p.A,
-        voltage.real[j] => -p.D,
-        voltage.imag[j]=> p.C,
-    )
+    add_to_expression!(imExpr, -p.B, voltage.real[i])
+    add_to_expression!(imExpr, p.A, voltage.imag[i])
+    add_to_expression!(imExpr, -p.D, voltage.real[j])
+    add_to_expression!(imExpr, p.C, voltage.imag[j])
 end
 
 ##### To-Bus Current Real and Imaginary Components #####
@@ -292,8 +344,8 @@ end
 ##### Read Data for Injection Measurements #####
 function GijBijθij(ac::AcModel, angle::Vector{VariableRef}, i::Int64, j::Int64, ptr::Int64)
     θij = angle[i] - angle[j]
-    sinθij = sin(θij)
-    cosθij = cos(θij)
+    sinθij = NonlinearExpr(:sin, θij)
+    cosθij = NonlinearExpr(:cos, θij)
     Gij, Bij = reim(ac.nodalMatrixTranspose.nzval[ptr])
 
     return Gij, Bij, sinθij, cosθij
@@ -310,13 +362,18 @@ end
 
 ##### Add Constraints #####
 function addConstrLav!(lav::LAV, expr::AffExpr, z::Float64, idx::Int64)
-    dev = lav.variable.deviation
-    lav.residual[idx] = @constraint(lav.jump, expr + dev.positive[idx] - dev.negative[idx] == z)
+    add_to_expression!(expr, lav.variable.deviation.positive[idx])
+    add_to_expression!(expr, -1.0, lav.variable.deviation.negative[idx])
+
+    lav.residual[idx] = @constraint(lav.jump, expr == z)
 end
 
-function addConstrLav!(lav::LAV, expr::NonlinearExpr, z::Float64, idx::Int64)
-    dev = lav.variable.deviation
-    lav.residual[idx] = @constraint(lav.jump, expr + dev.positive[idx] - dev.negative[idx] == z)
+function addConstrLav!(lav::LAV, expr::NonlinearExpr, z::Float64, aff::AffExpr, idx::Int64)
+    add_to_expression!(aff, lav.variable.deviation.positive[idx])
+    add_to_expression!(aff, -1.0, lav.variable.deviation.negative[idx])
+
+    lav.residual[idx] = @constraint(lav.jump, expr + aff == z)
+    empty!(aff.terms)
 end
 
 function addConstrLav!(lav::LAV, var::VariableRef, z::Float64, idx::Int64)
@@ -326,12 +383,23 @@ end
 
 ##### Add Objective #####
 function addObjectLav!(lav::LAV, objective::AffExpr, idx::Int64)
-    dev = lav.variable.deviation
-    add_to_expression!(objective, dev.positive[idx] + dev.negative[idx])
+    add_to_expression!(objective, lav.variable.deviation.positive[idx])
+    add_to_expression!(objective, lav.variable.deviation.negative[idx])
 end
 
 #### Fix Values #####
 function fix!(deviation::DeviationVariableRef, idx::Int64)
     fix(deviation.positive[idx], 0.0; force = true)
     fix(deviation.negative[idx], 0.0; force = true)
+end
+
+##### Reset Expression #####
+function emptyExpr!(expr::AffExpr)
+    expr.constant = 0.0
+    empty!(expr.terms)
+end
+
+function emptyExpr!(quad1::QuadExpr, quad2::QuadExpr)
+    empty!(quad1.terms)
+    empty!(quad2.terms)
 end

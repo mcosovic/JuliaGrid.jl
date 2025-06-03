@@ -255,11 +255,12 @@ function dcLavStateEstimation(
 
     fix(voltage.angle[bus.layout.slack], 0.0; force = true)
 
+    expr = AffExpr()
     @inbounds for (i, k) in enumerate(wattmeter.layout.index)
         if monitoring.wattmeter.active.status[i] == 1
             if wattmeter.layout.bus[i]
                 mean = meanPi(bus, dc, wattmeter, i, k)
-                expr = Pi(system, voltage, k)
+                Pi(system, voltage, expr, k)
             else
                 if wattmeter.layout.from[i]
                     admittance = dc.admittance[k]
@@ -268,10 +269,11 @@ function dcLavStateEstimation(
                 end
 
                 mean = meanPij(branch, wattmeter, admittance, i, k)
-                expr = Pij(system, voltage, admittance, k)
+                expr = Pij(system, voltage, admittance, expr, k)
             end
             addConstrLav!(lav, expr, mean, i)
             addObjectLav!(lav, objective, i)
+            empty!(expr.terms)
         else
             fix!(deviation, i)
         end

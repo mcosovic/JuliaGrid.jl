@@ -200,8 +200,8 @@ function _addBranch!(analysis::AcOptimalPowerFlow)
         remove!(jump, con.balance.reactive, j)
         addBalance(system, jump, var, con, j)
 
-        addFlow(system, jump, var.voltage, con, system.branch.number)
-        addAngle(system, jump, var.voltage.angle, con.voltage.angle, system.branch.number)
+        addFlow(system, jump, var.voltage, con, QuadExpr(), QuadExpr(), system.branch.number)
+        addAngle(system, jump, var.voltage.angle, con.voltage.angle, AffExpr(), system.branch.number)
     end
 end
 
@@ -221,8 +221,8 @@ function _addBranch!(analysis::DcOptimalPowerFlow)
         remove!(jump, con.balance.active, j)
         addBalance(system, jump, var, con, expr, j)
 
-        addFlow(system, jump, var.voltage.angle, con.flow.active, system.branch.number)
-        addAngle(system, jump, var.voltage.angle, con.voltage.angle, system.branch.number)
+        addFlow(system, jump, var.voltage.angle, con.flow.active, expr, system.branch.number)
+        addAngle(system, jump, var.voltage.angle, con.voltage.angle, expr, system.branch.number)
     end
 end
 
@@ -470,8 +470,8 @@ function _updateBranch!(analysis::AcOptimalPowerFlow, idx::Int64)
     remove!(jump, con.voltage.angle, idx)
 
     if system.branch.layout.status[idx] == 1
-        addFlow(system, jump, var.voltage, con, idx)
-        addAngle(system, jump, var.voltage.angle, con.voltage.angle, idx)
+        addFlow(system, jump, var.voltage, con, QuadExpr(), QuadExpr(), idx)
+        addAngle(system, jump, var.voltage.angle, con.voltage.angle, AffExpr(), idx)
     end
 end
 
@@ -494,8 +494,8 @@ function _updateBranch!(analysis::DcOptimalPowerFlow, idx::Int64)
     remove!(jump, con.voltage.angle, idx)
 
     if system.branch.layout.status[idx] == 1
-        addFlow(system, jump, var.voltage.angle, con.flow.active, idx)
-        addAngle(system, jump, var.voltage.angle, con.voltage.angle, idx)
+        addFlow(system, jump, var.voltage.angle, con.flow.active, expr, idx)
+        addAngle(system, jump, var.voltage.angle, con.voltage.angle, expr, idx)
     end
 end
 

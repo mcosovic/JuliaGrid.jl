@@ -124,8 +124,8 @@ function dcOptimalPowerFlow(
 
     @inbounds for i = 1:system.branch.number
         if system.branch.layout.status[i] == 1
-            addFlow(system, jump, angle, con.flow.active, i)
-            addAngle(system, jump, angle, con.voltage.angle, i)
+            addFlow(system, jump, angle, con.flow.active, expr, i)
+            addAngle(system, jump, angle, con.voltage.angle, expr, i)
         end
     end
 
@@ -292,21 +292,19 @@ function addBalance(
     bus = system.bus
     dc = system.model.dc
 
-    power = var.power.active
-    angle = var.voltage.angle
-    ref = con.balance.active
-
     for ptr in dc.nodalMatrix.colptr[i]:(dc.nodalMatrix.colptr[i + 1] - 1)
         j = dc.nodalMatrix.rowval[ptr]
-        add_to_expression!(expr, dc.nodalMatrix.nzval[ptr], angle[j])
+        add_to_expression!(expr, -dc.nodalMatrix.nzval[ptr], var.voltage.angle[j])
+    end
+
+    if haskey(bus.supply.generator, i)
+        for k in bus.supply.generator[i]
+            add_to_expression!(expr, var.power.active[k])
+        end
     end
 
     rhs = bus.demand.active[i] + bus.shunt.conductance[i] + dc.shiftPower[i]
-    if haskey(bus.supply.generator, i)
-        ref[i] = @constraint(jump, sum(power[k] for k in bus.supply.generator[i]) - expr == rhs)
-    else
-        ref[i] = @constraint(jump, -expr == rhs)
-    end
+    con.balance.active[i] = @constraint(jump, expr == rhs)
 
     empty!(expr.terms)
 end
@@ -317,19 +315,16 @@ function addFlow(
     jump::JuMP.Model,
     angle::Vector{VariableRef},
     con::Dict{Int64, ConstraintRef},
+    expr::AffExpr,
     i::Int64
 )
-    branch = system.branch
-    dc = system.model.dc
+    minPij = system.branch.flow.minFromBus[i]
+    maxPij = system.branch.flow.maxFromBus[i]
 
-    if branch.flow.minFromBus[i] != 0.0 || branch.flow.maxFromBus[i] != 0.0
-        from, to = fromto(system, i)
+    if minPij != 0.0 || maxPij != 0.0
+        con[i] = @constraint(jump, minPij <= Pij(system, angle, expr, i) <= maxPij)
 
-        con[i] = @constraint(
-            jump, branch.flow.minFromBus[i] <=
-            dc.admittance[i] * (angle[from] - angle[to] - branch.parameter.shiftAngle[i])
-            <= branch.flow.maxFromBus[i]
-        )
+        emptyExpr!(expr)
     end
 end
 

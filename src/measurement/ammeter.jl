@@ -354,17 +354,20 @@ function _updateAmmeter!(analysis::AcStateEstimation{LAV}, idxAmp::Int64)
     idx = analysis.monitoring.voltmeter.number + idxAmp
 
     remove!(lav, idx)
+
+    quad1 = QuadExpr()
+    quad2 = QuadExpr()
     if amp.magnitude.status[idxAmp] == 1
         add!(lav, idx)
 
         if amp.layout.from[idxAmp]
-            expr = Iij(analysis.system, lav.variable.voltage, amp.layout.square[idxAmp], idxBrch)
+            expr = Iij(analysis.system, lav.variable.voltage, amp.layout.square[idxAmp], quad1, quad2, idxBrch)
         else
-            expr = Iji(analysis.system, lav.variable.voltage, amp.layout.square[idxAmp], idxBrch)
+            expr = Iji(analysis.system, lav.variable.voltage, amp.layout.square[idxAmp], quad1, quad2, idxBrch)
         end
 
         sq = if2exp(amp.layout.square[idxAmp])
-        addConstrLav!(lav, expr, amp.magnitude.mean[idxAmp]^sq, idx)
+        addConstrLav!(lav, expr, amp.magnitude.mean[idxAmp]^sq, AffExpr(), idx)
     end
 end
 

@@ -585,12 +585,12 @@ function _updateWattmeter!(analysis::AcStateEstimation{LAV}, idxWatt::Int64)
         if watt.layout.bus[idxWatt]
             expr = Pi(analysis.system, lav.variable.voltage, idxBusBrch)
         elseif watt.layout.from[idxWatt]
-            expr = Pij(analysis.system, lav.variable.voltage, idxBusBrch)
+            expr = Pij(analysis.system, lav.variable.voltage, QuadExpr(), QuadExpr(), idxBusBrch)
         else
-            expr = Pji(analysis.system, lav.variable.voltage, idxBusBrch)
+            expr = Pji(analysis.system, lav.variable.voltage, QuadExpr(), QuadExpr(), idxBusBrch)
         end
 
-        addConstrLav!(lav, expr, watt.active.mean[idxWatt], idx)
+        addConstrLav!(lav, expr, watt.active.mean[idxWatt], AffExpr(), idx)
     end
 end
 
@@ -647,12 +647,14 @@ function _updateWattmeter!(analysis::DcStateEstimation{LAV}, idxWatt::Int64)
     idxBusBrch = watt.layout.index[idxWatt]
 
     remove!(lav, idxWatt)
+
+    expr = AffExpr()
     if watt.active.status[idxWatt] == 1
         add!(lav, idxWatt)
 
         if watt.layout.bus[idxWatt]
             mean = meanPi(analysis.system.bus, dc, watt, idxWatt, idxBusBrch)
-            expr = Pi(analysis.system, lav.variable.voltage, idxBusBrch)
+            Pi(analysis.system, lav.variable.voltage, expr, idxBusBrch)
         else
             if watt.layout.from[idxWatt]
                 admittance = dc.admittance[idxBusBrch]
@@ -660,7 +662,7 @@ function _updateWattmeter!(analysis::DcStateEstimation{LAV}, idxWatt::Int64)
                 admittance = -dc.admittance[idxBusBrch]
             end
             mean = meanPij(analysis.system.branch, watt, admittance, idxWatt, idxBusBrch)
-            expr = Pij(analysis.system,  lav.variable.voltage, admittance, idxBusBrch)
+            Pij(analysis.system,  lav.variable.voltage, admittance, expr, idxBusBrch)
         end
 
         addConstrLav!(lav, expr, mean, idxWatt)
@@ -794,11 +796,11 @@ function _updateVarmeter!(analysis::AcStateEstimation{LAV}, idxVar::Int64)
         if var.layout.bus[idxVar]
             expr = Qi(analysis.system, lav.variable.voltage, idxBusBrch)
         elseif var.layout.from[idxVar]
-            expr = Qij(analysis.system, lav.variable.voltage, idxBusBrch)
+            expr = Qij(analysis.system, lav.variable.voltage, QuadExpr(), QuadExpr(), idxBusBrch)
         else
-            expr = Qji(analysis.system, lav.variable.voltage, idxBusBrch)
+            expr = Qji(analysis.system, lav.variable.voltage, QuadExpr(), QuadExpr(), idxBusBrch)
         end
-        addConstrLav!(lav, expr, var.reactive.mean[idxVar], idx)
+        addConstrLav!(lav, expr, var.reactive.mean[idxVar], AffExpr(), idx)
     end
 end
 
