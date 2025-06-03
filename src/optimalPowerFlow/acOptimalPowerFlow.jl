@@ -541,7 +541,7 @@ function addCapability(
 )
     if minPower[idx] != maxPower[idx]
         if minPower[idx] != -Inf && maxPower[idx] != Inf
-           con[idx] = @constraint(jump, var[idx] in MOI.Interval(minPower[idx], maxPower[idx]))
+           con[idx] = @constraint(jump, minPower[idx] <= var[idx] <= maxPower[idx])
         end
     else
         fix!(var[idx], minPower[idx], con, idx)
@@ -559,7 +559,7 @@ function addMagnitude(
     V = system.bus.voltage
 
     if V.minMagnitude[idx] != V.maxMagnitude[idx]
-        con[idx] = @constraint(jump, magnitude[idx] in MOI.Interval(V.minMagnitude[idx], V.maxMagnitude[idx]))
+        con[idx] = @constraint(jump, V.minMagnitude[idx] <= magnitude[idx] <= V.maxMagnitude[idx])
     else
         fix!(magnitude[idx], V.minMagnitude[idx], con, idx)
     end
