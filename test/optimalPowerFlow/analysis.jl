@@ -125,18 +125,18 @@ system14 = powerSystem(path * "case14optimal.m")
         addDual!(opf, :slack; index = 1, dual = 10.0)
         @test opf.method.dual.slack.angle[1][:equality] == 10.0
 
-        addDual!(opf, :capability, :active; label = "G1", lower = 20.0, upper = 30.0)
+        addDual!(opf, :capability, :active; index = 1, lower = 20.0, upper = 30.0)
         @test opf.method.dual.capability.active[1][:lower] == 20.0
         @test opf.method.dual.capability.active[1][:upper] == 30.0
 
-        addDual!(opf, :capability, :reactive; label = "G1", lower = 40.0, upper = 50.0)
+        addDual!(opf, :capability, :reactive; index = 1, lower = 40.0, upper = 50.0)
         @test opf.method.dual.capability.reactive[1][:lower] == 40.0
         @test opf.method.dual.capability.reactive[1][:upper] == 50.0
 
-        addDual!(opf, :capability, :upper; label = "G2", dual = 60.0)
+        addDual!(opf, :capability, :upper; index = 2, dual = 60.0)
         @test opf.method.dual.capability.upper[2][:upper] == 60.0
 
-        addDual!(opf, :capability, :lower; label = "G2", dual = 70.0)
+        addDual!(opf, :capability, :lower; index = 2, dual = 70.0)
         @test opf.method.dual.capability.lower[2][:upper] == 70.0
 
         addDual!(opf, :balance, :active; index = 2, dual = 80.0)
@@ -145,7 +145,7 @@ system14 = powerSystem(path * "case14optimal.m")
         addDual!(opf, :balance, :reactive; index = 2, dual = 90.0)
         @test opf.method.dual.balance.reactive[2][:equality] == 90.0
 
-        addDual!(opf, :voltage, :magnitude; label = 6, lower = 100.0, upper = 110.0)
+        addDual!(opf, :voltage, :magnitude; index = 6, lower = 100.0, upper = 110.0)
         @test opf.method.dual.voltage.magnitude[6][:lower] == 100.0
         @test opf.method.dual.voltage.magnitude[6][:upper] == 110.0
 
@@ -170,19 +170,19 @@ system14 = powerSystem(path * "case14optimal.m")
         @test isempty(opf.method.constraint.slack.angle[1])
         @test isempty(opf.method.dual.slack.angle[1])
 
-        remove!(opf, :capability, :active; label = "G1")
+        remove!(opf, :capability, :active; index = 1)
         @test isempty(opf.method.constraint.capability.active[1])
         @test isempty(opf.method.dual.capability.active[1])
 
-        remove!(opf, :capability, :reactive; label = "G1")
+        remove!(opf, :capability, :reactive; index = 1)
         @test isempty(opf.method.constraint.capability.reactive[1])
         @test isempty(opf.method.dual.capability.reactive[1])
 
-        remove!(opf, :capability, :upper; label = "G2")
+        remove!(opf, :capability, :upper; index = 2)
         @test isempty(opf.method.constraint.capability.upper[2])
         @test isempty(opf.method.dual.capability.upper[2])
 
-        remove!(opf, :capability, :lower; label = "G2")
+        remove!(opf, :capability, :lower; index = 2)
         @test isempty(opf.method.constraint.capability.lower[2])
         @test isempty(opf.method.dual.capability.lower[2])
 
@@ -194,7 +194,7 @@ system14 = powerSystem(path * "case14optimal.m")
         @test isempty(opf.method.constraint.balance.reactive[2])
         @test isempty(opf.method.dual.balance.reactive[2])
 
-        remove!(opf, :voltage, :magnitude; label = 6)
+        remove!(opf, :voltage, :magnitude; index = 6)
         @test isempty(opf.method.constraint.voltage.magnitude[6])
         @test isempty(opf.method.dual.voltage.magnitude[6])
 
