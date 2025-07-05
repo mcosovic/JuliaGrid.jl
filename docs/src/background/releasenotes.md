@@ -4,7 +4,7 @@
 
 ## Version 0.5.0
 
-Release Date: July 6, 2025
+Release Date: July 5, 2025
 
 #### Breaking
   * Introduced a new parser for PSSE case files.
