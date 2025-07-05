@@ -78,7 +78,7 @@ function power!(analysis::DcOptimalPowerFlow)
     end
 
     @inbounds for i = 1:system.bus.number
-        power.injection.active[i] = power.supply.active[i] - system.bus.demand.active[i]
+        power.injection.active[i] = Pi(system.bus, system.model.dc, analysis.voltage, i)
     end
 
     allPowerBranch(analysis)
@@ -130,23 +130,7 @@ function injectionPower(analysis::DcPowerFlow; label::IntStr)
     end
 end
 
-function injectionPower(analysis::DcOptimalPowerFlow; label::IntStr)
-    errorVoltage(analysis.voltage.angle)
-
-    system = analysis.system
-    idx = getIndex(system.bus, label, "bus")
-
-    Pi = copy(-system.bus.demand.active[idx])
-    if haskey(system.bus.supply.generator, idx)
-        @inbounds for i in system.bus.supply.generator[idx]
-            Pi += analysis.power.generator.active[i]
-        end
-    end
-
-    return Pi
-end
-
-function injectionPower(analysis::DcStateEstimation; label::IntStr)
+function injectionPower(analysis::Union{DcOptimalPowerFlow, DcStateEstimation}; label::IntStr)
     errorVoltage(analysis.voltage.angle)
     idx = getIndex(analysis.system.bus, label, "bus")
 

@@ -528,8 +528,8 @@ function printBranchData(
         header(io, prt)
         printf(io, prt.pfmt, prt, label, :lbB)
 
-        printf(io, prt, buses, system.branch.layout.from[i], :lbF)
-        printf(io, prt, buses, system.branch.layout.to[i], :lbT)
+        printf(io, prt, system.branch.layout.from[i], buses, :lbF)
+        printf(io, prt, system.branch.layout.to[i], buses, :lbT)
 
         printf(io, prt, i, scale[:P], analysis.power.from.active, :Pij)
         printf(io, prt, i, scale[:Q], analysis.power.from.reactive, :Qij)
@@ -822,8 +822,8 @@ function printBranchData(
         header(io, prt)
         printf(io, prt.pfmt, prt, label, :lbB)
 
-        printf(io, prt, buses, system.branch.layout.from[i], :lbF)
-        printf(io, prt, buses, system.branch.layout.to[i], :lbT)
+        printf(io, prt, system.branch.layout.from[i], buses, :lbF)
+        printf(io, prt, system.branch.layout.from[i], buses, :lbT)
 
         printf(io, prt, i, scale[:P], analysis.power.from.active, :Pij)
         printf(io, prt, i, scale[:P], analysis.power.to.active, :Pji)
@@ -1023,7 +1023,7 @@ function printGeneratorData(
         header(io, prt)
         printf(io, prt.pfmt, prt, label, :lbG)
 
-        printf(io, prt, buses, system.generator.layout.bus[i], :lbB)
+        printf(io, prt, system.generator.layout.bus[i], buses, :lbB)
         printf(io, prt, i, scale[:P], analysis.power.generator.active, :Pge)
         printf(io, prt, i, scale[:Q], analysis.power.generator.reactive, :Qge)
         printf(io, prt, i, system.generator.layout.status, :sts)
@@ -1159,7 +1159,7 @@ function printGeneratorData(
         header(io, prt)
         printf(io, prt.pfmt, prt, label, :lbG)
 
-        printf(io, prt, buses, system.generator.layout.bus[i], :lbB)
+        printf(io, prt, system.generator.layout.bus[i], buses, :lbB)
         printf(io, prt, i, scale[:P], analysis.power.generator.active, :Pge)
         printf(io, prt, i, system.generator.layout.status, :sts)
 

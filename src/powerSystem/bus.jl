@@ -295,46 +295,56 @@ function _updateBus!(analysis::AcOptimalPowerFlow, idx::Int64)
     system = analysis.system
     bus = system.bus
     jump = analysis.method.jump
-    var = analysis.method.variable
+    moi = backend(jump)
     con = analysis.method.constraint
+    dual = analysis.method.dual
+    v = analysis.method.variable.voltage
+    vtg = bus.voltage
 
-    remove!(jump, con.balance.active, idx)
-    remove!(jump, con.balance.reactive, idx)
-    addBalance(system, jump, var, con, idx)
+    remove!(jump, moi, con.balance.active, dual.balance.active, idx)
+    remove!(jump, moi, con.balance.reactive, dual.balance.reactive, idx)
+    addBalance(system, jump, analysis.method.variable, con, idx)
 
-    remove!(jump, con.voltage.magnitude, idx)
-    addMagnitude(system, jump, var.voltage.magnitude, con.voltage.magnitude, idx)
+    remove!(jump, moi, con.voltage.magnitude, dual.voltage.magnitude, idx)
+    setBound!(v.magnitude,vtg.minMagnitude, vtg.maxMagnitude, idx)
+    setConstraint!(v.magnitude, con.voltage.magnitude, vtg.minMagnitude, vtg.maxMagnitude, idx)
 
     if analysis.method.signature[:slack] == idx && bus.layout.type[idx] != 3
-        unfix!(jump, var.voltage.angle[idx], con.slack.angle, idx)
+        unfix!(jump, moi, v.angle[idx], con.slack.angle, idx)
         analysis.method.signature[:slack] = 0
     end
 
     if bus.layout.type[idx] == 3
-        fix!(var.voltage.angle[idx], bus.voltage.angle[idx], con.slack.angle, idx)
-        analysis.method.signature[:slack] = idx
+        if isvalid(jump, moi, v.angle[idx])
+            fix!(v.angle[idx], bus.voltage.angle[idx], con.slack.angle, idx)
+            analysis.method.signature[:slack] = idx
+        end
     end
 end
 
 function _updateBus!(analysis::DcOptimalPowerFlow, idx::Int64)
     system = analysis.system
     jump = analysis.method.jump
+    moi = backend(jump)
     var = analysis.method.variable
     con = analysis.method.constraint
+    dual = analysis.method.dual
 
-    remove!(jump, con.balance.active, idx)
+    remove!(jump, moi, con.balance.active, dual.balance.active, idx)
     addBalance(system, jump, var, con, AffExpr(), idx)
 
     analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
 
     if analysis.method.signature[:slack] == idx && system.bus.layout.type[idx] != 3
-        unfix!(jump, var.voltage.angle[idx], con.slack.angle, idx)
+        unfix!(jump, moi, var.voltage.angle[idx], con.slack.angle, idx)
         analysis.method.signature[:slack] = 0
     end
 
     if system.bus.layout.type[idx] == 3
-        fix!(var.voltage.angle[idx], system.bus.voltage.angle[idx], con.slack.angle, idx)
-        analysis.method.signature[:slack] = idx
+        if isvalid(jump, moi, var.voltage.angle[idx])
+            fix!(var.voltage.angle[idx], system.bus.voltage.angle[idx], con.slack.angle, idx)
+            analysis.method.signature[:slack] = idx
+        end
     end
 end
 

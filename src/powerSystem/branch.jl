@@ -186,39 +186,44 @@ end
 function _addBranch!(analysis::AcOptimalPowerFlow)
     system = analysis.system
     jump = analysis.method.jump
+    moi = backend(jump)
     var = analysis.method.variable
     con = analysis.method.constraint
+    dual = analysis.method.dual
 
     if system.branch.layout.status[end] == 1
         i, j = fromto(system, system.branch.number)
 
-        remove!(jump, con.balance.active, i)
-        remove!(jump, con.balance.reactive, i)
+        remove!(jump, moi, con.balance.active, dual.balance.active, i)
+        remove!(jump, moi, con.balance.reactive, dual.balance.reactive, i)
         addBalance(system, jump, var, con, i)
 
-        remove!(jump, con.balance.active, j)
-        remove!(jump, con.balance.reactive, j)
+        remove!(jump, moi, con.balance.active, dual.balance.active, j)
+        remove!(jump, moi, con.balance.reactive, dual.balance.reactive, j)
         addBalance(system, jump, var, con, j)
 
-        addFlow(system, jump, var.voltage, con, QuadExpr(), QuadExpr(), system.branch.number)
-        addAngle(system, jump, var.voltage.angle, con.voltage.angle, AffExpr(), system.branch.number)
+        expr = AffQuadExpr()
+        addFlow(system, jump, var.voltage, con, expr, system.branch.number)
+        addAngle(system, jump, var.voltage.angle, con.voltage.angle, expr.aff, system.branch.number)
     end
 end
 
 function _addBranch!(analysis::DcOptimalPowerFlow)
     system = analysis.system
     jump = analysis.method.jump
+    moi = backend(jump)
     var = analysis.method.variable
     con = analysis.method.constraint
+    dual = analysis.method.dual
 
     if system.branch.layout.status[end] == 1
         i, j = fromto(system, system.branch.number)
         expr = AffExpr()
 
-        remove!(jump, con.balance.active, i)
+        remove!(jump, moi, con.balance.active, dual.balance.active, i)
         addBalance(system, jump, var, con, expr, i)
 
-        remove!(jump, con.balance.active, j)
+        remove!(jump, moi, con.balance.active, dual.balance.active, j)
         addBalance(system, jump, var, con, expr, j)
 
         addFlow(system, jump, var.voltage.angle, con.flow.active, expr, system.branch.number)
@@ -452,46 +457,51 @@ end
 function _updateBranch!(analysis::AcOptimalPowerFlow, idx::Int64)
     system = analysis.system
     jump = analysis.method.jump
+    moi = backend(jump)
     var = analysis.method.variable
     con = analysis.method.constraint
+    dual = analysis.method.dual
 
     i, j = fromto(system, idx)
 
-    remove!(jump, con.balance.active, i)
-    remove!(jump, con.balance.reactive, i)
+    remove!(jump, moi, con.balance.active, dual.balance.active, i)
+    remove!(jump, moi, con.balance.reactive, dual.balance.reactive, i)
     addBalance(system, jump, var, con, i)
 
-    remove!(jump, con.balance.active, j)
-    remove!(jump, con.balance.reactive, j)
+    remove!(jump, moi, con.balance.active, dual.balance.active, j)
+    remove!(jump, moi, con.balance.reactive, dual.balance.reactive, j)
     addBalance(system, jump, var, con, j)
 
-    remove!(jump, con.flow.from, idx)
-    remove!(jump, con.flow.to, idx)
-    remove!(jump, con.voltage.angle, idx)
+    remove!(jump, moi, con.flow.from, dual.flow.from, idx)
+    remove!(jump, moi, con.flow.to, dual.flow.to, idx)
+    remove!(jump, moi, con.voltage.angle, dual.voltage.angle, idx)
 
     if system.branch.layout.status[idx] == 1
-        addFlow(system, jump, var.voltage, con, QuadExpr(), QuadExpr(), idx)
-        addAngle(system, jump, var.voltage.angle, con.voltage.angle, AffExpr(), idx)
+        expr = AffQuadExpr()
+        addFlow(system, jump, var.voltage, con, expr, idx)
+        addAngle(system, jump, var.voltage.angle, con.voltage.angle, expr.aff, idx)
     end
 end
 
 function _updateBranch!(analysis::DcOptimalPowerFlow, idx::Int64)
     system = analysis.system
     jump = analysis.method.jump
+    moi = backend(jump)
     var = analysis.method.variable
     con = analysis.method.constraint
+    dual = analysis.method.dual
 
     i, j = fromto(system, idx)
     expr = AffExpr()
 
-    remove!(jump, con.balance.active, i)
+    remove!(jump, moi, con.balance.active, dual.balance.active, i)
     addBalance(system, jump, var, con, expr, i)
 
-    remove!(jump, con.balance.active, j)
+    remove!(jump, moi, con.balance.active, dual.balance.active, j)
     addBalance(system, jump, var, con, expr, j)
 
-    remove!(jump, con.flow.active, idx)
-    remove!(jump, con.voltage.angle, idx)
+    remove!(jump, moi, con.flow.active, dual.flow.active, idx)
+    remove!(jump, moi, con.voltage.angle, dual.voltage.angle, idx)
 
     if system.branch.layout.status[idx] == 1
         addFlow(system, jump, var.voltage.angle, con.flow.active, expr, idx)

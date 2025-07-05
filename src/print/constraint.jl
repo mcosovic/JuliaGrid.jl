@@ -81,6 +81,8 @@ function printBusConstraint(
             continue
         end
 
+        P, Q = balance(bus, analysis, label, i)
+
         header(io, prt)
         printf(io, prt.pfmt, prt, label, :labl)
 
@@ -95,14 +97,14 @@ function printBusConstraint(
         end
 
         if isValid(jump, cons.balance.active, i)
-            printf(io, prt, i, scale[:P], cons.balance.active, :Popt)
+            printf(io, prt, scale[:P], P, :Popt)
             printf(io, prt, i, scale[:P], dual.balance.active, :Pdul)
         else
             printf(io, prt.hfmt, prt, "", :Popt, :Pdul)
         end
 
         if isValid(jump, cons.balance.reactive, i)
-            printf(io, prt, i, scale[:Q], cons.balance.reactive, :Qopt)
+            printf(io, prt, scale[:Q], Q, :Qopt)
             printf(io, prt, i, scale[:Q], dual.balance.reactive, :Qdul)
         else
             printf(io, prt.hfmt, prt, "", :Qopt, :Qdul)
@@ -217,6 +219,8 @@ function busCons(
             label = getLabel(bus, label, "bus")
             i = bus.label[label]
 
+            P, Q = balance(bus, analysis, label, i)
+
             fmax(width, show, label, head[:labl])
 
             if isValid(analysis.method.jump, cons.voltage.magnitude, i)
@@ -228,12 +232,12 @@ function busCons(
             end
 
             if isValid(analysis.method.jump, cons.balance.active, i)
-                fmax(fmt, width, show, i, scale[:P], cons.balance.active, head[:Popt])
+                fmax(fmt, width, show, scale[:P], P, head[:Popt])
                 fmax(fmt, width, show, i, scale[:P], dual.balance.active, head[:Pdul])
             end
 
             if isValid(analysis.method.jump, cons.balance.reactive, i)
-                fmax(fmt, width, show, i, scale[:Q], cons.balance.reactive, head[:Qopt])
+                fmax(fmt, width, show, scale[:Q], Q, head[:Qopt])
                 fmax(fmt, width, show, i, scale[:Q], dual.balance.reactive, head[:Qdul])
             end
         else
@@ -243,6 +247,7 @@ function busCons(
 
             @inbounds for (label, i) in bus.label
                 scaleV = scaleVoltage(pfx, system, i)
+                P, Q = balance(bus, analysis, label, i)
 
                 fmax(width, show, label, head[:labl])
 
@@ -251,12 +256,12 @@ function busCons(
                 end
 
                 if isValid(analysis.method.jump, cons.balance.active, i)
-                    fminmax(show, i, scale[:P], Popt, cons.balance.active, head[:Popt])
+                    fminmax(show, scale[:P], Popt, P, head[:Popt])
                     fminmax(show, i, scale[:P], Pdul, dual.balance.active, head[:Pdul])
                 end
 
                 if isValid(analysis.method.jump, cons.balance.reactive, i)
-                    fminmax(show, i, scale[:Q], Qopt, cons.balance.reactive, head[:Qopt])
+                    fminmax(show, scale[:Q], Qopt, Q, head[:Qopt])
                     fminmax(show, i, scale[:Q], Qdul, dual.balance.reactive, head[:Qdul])
                 end
 
@@ -334,7 +339,7 @@ function printBusConstraint(
         printf(io, prt.pfmt, prt, label, :labl)
 
         if isValid(analysis.method.jump, cons.balance.active, i)
-            printf(io, prt, i, scale[:P], cons.balance.active, :Popt)
+            printf(io, prt, scale[:P], balance(bus, analysis, label, i), :Popt)
             printf(io, prt, i, scale[:P], dual.balance.active, :Pdul)
         end
 
@@ -406,7 +411,7 @@ function busCons(
             fmax(width, show, label, head[:labl])
 
             if isValid(analysis.method.jump, cons.balance.active, i)
-                fmax(fmt, width, show, i, scale[:P], cons.balance.active, head[:Popt])
+                fmax(fmt, width, show, scale[:P], balance(bus, analysis, label, i), head[:Popt])
                 fmax(fmt, width, show, i, scale[:P], dual.balance.active, head[:Pdul])
             end
         else
@@ -416,7 +421,7 @@ function busCons(
                 fmax(width, show, label, head[:labl])
 
                 if isValid(analysis.method.jump, cons.balance.active, i)
-                    fminmax(show, i, scale[:P], Popt, cons.balance.active, head[:Popt])
+                    fminmax(show, scale[:P], Popt, balance(bus, analysis, label, i), head[:Popt])
                     fminmax(show, i, scale[:P], Pdul, dual.balance.active, head[:Pdul])
                 end
             end
@@ -547,7 +552,7 @@ function printBranchConstraint(
 
                 if isValid(jump, cons.voltage.angle, i)
                     printf(io, prt, i, scale[:θ], brch.voltage.minDiffAngle, :θijmin)
-                    printf(io, prt, i, scale[:θ], cons.voltage.angle, :θijopt)
+                    printf(io, prt, scale[:θ], anglediff(system, analysis, i), :θijopt)
                     printf(io, prt, i, scale[:θ], brch.voltage.maxDiffAngle, :θijmax)
                     printf(io, prt, i, scale[:θ], dual.voltage.angle, :θijdul)
                 else
@@ -555,39 +560,33 @@ function printBranchConstraint(
                 end
 
                 if isValid(jump, cons.flow.from, i)
+                    Fij = flowFrom(system, analysis, label, i)
+
                     if brch.flow.minFromBus[i] < 0 && brch.flow.type[i] != 1
                         printf(io, prt, 0.0, :Pijmin)
                     else
                         printf(io, prt, i, scaleFrom, brch.flow.minFromBus, :Pijmin)
                     end
-                    if brch.flow.type[i] == 3 || brch.flow.type[i] == 5
-                        printf(io, prt, i, scaleFrom, cons.flow.from, :Pijopt; native = false)
-                        printf(io, prt, i, scaleFrom, brch.flow.maxFromBus, :Pijmax)
-                        printf(io, prt, i, scaleFrom, dual.flow.from, cons.flow.from, :Pijdul)
-                    else
-                        printf(io, prt, i, scaleFrom, cons.flow.from, :Pijopt)
-                        printf(io, prt, i, scaleFrom, brch.flow.maxFromBus, :Pijmax)
-                        printf(io, prt, i, scaleFrom, dual.flow.from, :Pijdul)
-                    end
+
+                    printf(io, prt, scaleFrom, Fij, :Pijopt)
+                    printf(io, prt, i, scaleFrom, brch.flow.maxFromBus, :Pijmax)
+                    printf(io, prt, i, scaleFrom, Fij, dual.flow.from, brch.flow.type, :Pijdul)
+
                 else
                     printf(io, prt.hfmt, prt, "", :Pijmin, :Pijopt, :Pijmax, :Pijdul)
                 end
 
                 if isValid(jump, cons.flow.to, i)
+                    Fji = flowTo(system, analysis, label, i)
+
                     if brch.flow.minToBus[i] < 0 && brch.flow.type[i] != 1
                         printf(io, prt, 0.0, :Pjimin)
                     else
                         printf(io, prt, i, scaleTo, brch.flow.minToBus, :Pjimin)
                     end
-                    if brch.flow.type[i] == 3 || brch.flow.type[i] == 5
-                        printf(io, prt, i, scaleTo, cons.flow.to, :Pjiopt; native = false)
-                        printf(io, prt, i, scaleTo, brch.flow.maxToBus, :Pjimax)
-                        printf(io, prt, i, scaleTo, dual.flow.to, cons.flow.from, :Pjidul)
-                    else
-                        printf(io, prt, i, scaleTo, cons.flow.to, :Pjiopt)
-                        printf(io, prt, i, scaleTo, brch.flow.maxToBus, :Pjimax)
-                        printf(io, prt, i, scaleTo, dual.flow.to, :Pjidul)
-                    end
+                    printf(io, prt, scaleTo, Fji, :Pjiopt)
+                    printf(io, prt, i, scaleTo, brch.flow.maxToBus, :Pjimax)
+                    printf(io, prt, i, scaleTo, Fji, dual.flow.to, brch.flow.type, :Pjidul)
                 else
                     printf(io, prt.hfmt, prt, "", :Pjimin, :Pjiopt, :Pjimax, :Pjidul)
                 end
@@ -737,36 +736,30 @@ function branchCons(
 
             if isValid(analysis.method.jump, cons.voltage.angle, i)
                 fmax(fmt, width, show, i, scale[:θ], brch.voltage.minDiffAngle, head[:θijmin])
-                fmax(fmt, width, show, i, scale[:θ], cons.voltage.angle, head[:θijopt])
+                fmax(fmt, width, show, scale[:θ], anglediff(system, analysis, i), head[:θijopt])
                 fmax(fmt, width, show, i, scale[:θ], brch.voltage.maxDiffAngle, head[:θijmax])
                 fmax(fmt, width, show, i, scale[:θ], dual.voltage.angle, head[:θijdul])
             end
 
             if isValid(analysis.method.jump, cons.flow.from, i)
+                Fij = flowFrom(system, analysis, label, i)
+
                 if !(brch.flow.minFromBus[i] < 0 && brch.flow.type[i] != 1)
                     fmax(fmt, width, show, i, scaleFrom, brch.flow.minFromBus, head[:Pijmin])
                 end
-                if brch.flow.type[i] == 3 || brch.flow.type[i] == 5
-                    fmax(fmt, width, show, i, scaleFrom, cons.flow.from, head[:Pijopt]; native = false)
-                    fmax(fmt, width, show, i, scaleFrom, dual.flow.from, cons.flow.from, head[:Pijdul])
-                else
-                    fmax(fmt, width, show, i, scaleFrom, cons.flow.from, head[:Pijopt])
-                    fmax(fmt, width, show, i, scaleFrom, dual.flow.from, head[:Pijdul])
-                end
+                fmax(fmt, width, show, scaleFrom, Fij, head[:Pijopt])
+                fmax(fmt, width, show, i, scaleFrom, Fij, dual.flow.from, brch.flow.type, head[:Pijdul])
                 fmax(fmt, width, show, i, scaleFrom, brch.flow.maxFromBus, head[:Pijmax])
             end
 
             if isValid(analysis.method.jump, cons.flow.to, i)
+                Fji = flowTo(system, analysis, label, i)
+
                 if !(brch.flow.minToBus[i] < 0 && brch.flow.type[i] != 1)
                     fmax(fmt, width, show, i, scaleTo, brch.flow.minToBus, head[:Pjimin])
                 end
-                if brch.flow.type[i] == 3 || brch.flow.type[i] == 5
-                    fmax(fmt, width, show, i, scaleTo, cons.flow.to, head[:Pjiopt]; native = false)
-                    fmax(fmt, width, show, i, scaleTo, dual.flow.to, cons.flow.to, head[:Pjidul])
-                else
-                    fmax(fmt, width, show, i, scaleTo, cons.flow.to, head[:Pjiopt])
-                    fmax(fmt, width, show, i, scaleTo, dual.flow.to, head[:Pjidul])
-                end
+                fmax(fmt, width, show, scaleTo, Fji, head[:Pjiopt])
+                fmax(fmt, width, show, i, scaleTo, Fji, dual.flow.to, brch.flow.type, head[:Pjidul])
                 fmax(fmt, width, show, i, scaleTo, brch.flow.maxToBus, head[:Pjimax])
             end
         else
@@ -786,35 +779,29 @@ function branchCons(
                     fmax(width, show, label, head[:labl])
 
                     if isValid(analysis.method.jump, cons.voltage.angle, i)
-                        fminmax(show, i, scale[:θ], θopt, cons.voltage.angle, head[:θijopt])
+                        fminmax(show, scale[:θ], θopt, anglediff(system, analysis, i), head[:θijopt])
                         fminmax(show, i, scale[:θ], θdul, dual.voltage.angle, head[:θijdul])
                     end
 
                     if isValid(analysis.method.jump, cons.flow.from, i)
+                        Fij = flowFrom(system, analysis, label, i)
+
                         if !(brch.flow.minFromBus[i] < 0 && brch.flow.type[i] != 1)
                             fminmax(show, i, scaleFrom, Fmin, brch.flow.minFromBus, head[:Pijmin])
                         end
-                        if brch.flow.type[i] == 3 || brch.flow.type[i] == 5
-                            fminmax(show, i, scaleFrom, Fopt, cons.flow.from, head[:Pijopt]; native = false)
-                            fminmax(show, i, scaleFrom, Fdul, dual.flow.from, cons.flow.from, head[:Pijdul])
-                        else
-                            fminmax(show, i, scaleFrom, Fopt, cons.flow.from, head[:Pijopt])
-                            fminmax(show, i, scaleFrom, Fdul, dual.flow.from, head[:Pijdul])
-                        end
+                        fminmax(show, scaleFrom, Fopt, Fij, head[:Pijopt])
+                        fminmax(show, i, scaleFrom, Fij, Fdul, dual.flow.from, brch.flow.type, head[:Pijdul])
                         fminmax(show, i, scaleFrom, Fmax, brch.flow.maxFromBus, head[:Pijmax])
                     end
 
                     if isValid(analysis.method.jump, cons.flow.to, i)
+                        Fji = flowTo(system, analysis, label, i)
+
                         if !(brch.flow.minToBus[i] < 0 && brch.flow.type[i] != 1)
                             fminmax(show, i, scaleTo, Tmin, brch.flow.minToBus, head[:Pjimin])
                         end
-                        if brch.flow.type[i] == 3 || brch.flow.type[i] == 5
-                            fminmax(show, i, scaleTo, Topt, cons.flow.to, head[:Pjiopt]; native = false)
-                            fminmax(show, i, scaleTo, Tdul, dual.flow.to, cons.flow.from, head[:Pjidul])
-                        else
-                            fminmax(show, i, scaleTo, Topt, cons.flow.to, head[:Pjiopt])
-                            fminmax(show, i, scaleTo, Tdul, dual.flow.to, head[:Pjidul])
-                        end
+                        fminmax(show, scaleTo, Topt, Fji, head[:Pjiopt])
+                        fminmax(show, i, scaleTo, Fji, Tdul, dual.flow.to, brch.flow.type, head[:Pjidul])
                         fminmax(show, i, scaleTo, Tmax, brch.flow.maxToBus, head[:Pjimax])
                     end
                 end
@@ -886,7 +873,7 @@ function printBranchConstraint(
 
         if isValid(jump, cons.voltage.angle, i)
             printf(io, prt, i, scale[:θ], brch.voltage.minDiffAngle, :θijmin)
-            printf(io, prt, i, scale[:θ], cons.voltage.angle, :θijopt)
+            printf(io, prt, scale[:θ], anglediff(system, analysis, i), :θijopt)
             printf(io, prt, i, scale[:θ], brch.voltage.maxDiffAngle, :θijmax)
             printf(io, prt, i, scale[:θ], dual.voltage.angle, :θijdul)
         else
@@ -895,7 +882,7 @@ function printBranchConstraint(
 
         if isValid(jump, cons.flow.active, i)
             printf(io, prt, i, scale[:P], brch.flow.minFromBus, :Pijmin)
-            printf(io, prt, i, scale[:P], cons.flow.active, :Pijopt)
+            printf(io, prt, scale[:P], fromPower(analysis; label), :Pijopt)
             printf(io, prt, i, scale[:P], brch.flow.maxFromBus, :Pijmax)
             printf(io, prt, i, scale[:P], dual.flow.active, :Pijdul)
         else
@@ -1011,14 +998,14 @@ function branchCons(
 
             if isValid(analysis.method.jump, cons.voltage.angle, i)
                 fmax(fmt, width, show, i, scale[:θ], brch.voltage.minDiffAngle, head[:θijmin])
-                fmax(fmt, width, show, i, scale[:θ], cons.voltage.angle, head[:θijopt])
+                fmax(fmt, width, show, scale[:θ], anglediff(system, analysis, i), head[:θijopt])
                 fmax(fmt, width, show, i, scale[:θ], brch.voltage.maxDiffAngle, head[:θijmax])
                 fmax(fmt, width, show, i, scale[:θ], dual.voltage.angle, head[:θijdul])
             end
 
             if isValid(analysis.method.jump, cons.flow.active, i)
                 fmax(fmt, width, show, i, scale[:P], brch.flow.minFromBus, head[:Pijmin])
-                fmax(fmt, width, show, i, scale[:P], cons.flow.active, head[:Pijopt])
+                fmax(fmt, width, show, scale[:P], fromPower(analysis; label), head[:Pijopt])
                 fmax(fmt, width, show, i, scale[:P], brch.flow.maxFromBus, head[:Pijmax])
                 fmax(fmt, width, show, i, scale[:P], dual.flow.active, head[:Pijdul])
             end
@@ -1031,13 +1018,13 @@ function branchCons(
                 fmax(width, show, label, head[:labl])
 
                 if isValid(analysis.method.jump, cons.voltage.angle, i)
-                    fminmax(show, i, scale[:θ], θopt, cons.voltage.angle, head[:θijopt])
+                    fminmax(show, scale[:θ], θopt, anglediff(system, analysis, i), head[:θijopt])
                     fminmax(show, i, scale[:θ], θdul, dual.voltage.angle, head[:θijdul])
                 end
 
                 if isValid(analysis.method.jump, cons.flow.active, i)
                     fminmax(show, i, scale[:P], Fmin, brch.flow.minFromBus, head[:Pijmin])
-                    fminmax(show, i, scale[:P], Fopt, cons.flow.active, head[:Pijopt])
+                    fminmax(show, scale[:P], Fopt, fromPower(analysis; label), head[:Pijopt])
                     fminmax(show, i, scale[:P], Fmax, brch.flow.maxFromBus, head[:Pijmax])
                     fminmax(show, i, scale[:P], Fdul, dual.flow.active, head[:Pijdul])
                 end
@@ -1160,7 +1147,7 @@ function printGeneratorConstraint(
 
         if isValid(jump, cons.capability.active, i)
             printf(io, prt, i, scale[:P], gen.capability.minActive, :Pmin)
-            printf(io, prt, i, scale[:P], cons.capability.active, :Popt)
+            printf(io, prt, i, scale[:P], analysis.power.generator.active, :Popt)
             printf(io, prt, i, scale[:P], gen.capability.maxActive, :Pmax)
             printf(io, prt, i, scale[:P], dual.capability.active, :Pdul)
         else
@@ -1169,7 +1156,7 @@ function printGeneratorConstraint(
 
         if isValid(jump, cons.capability.reactive, i)
             printf(io, prt, i, scale[:Q], gen.capability.minReactive, :Qmin)
-            printf(io, prt, i, scale[:Q], cons.capability.reactive, :Qopt)
+            printf(io, prt, i, scale[:Q], analysis.power.generator.reactive, :Qopt)
             printf(io, prt, i, scale[:Q], gen.capability.maxReactive, :Qmax)
             printf(io, prt, i, scale[:Q], dual.capability.reactive, :Qdul)
         else
@@ -1286,14 +1273,14 @@ function genCons(
 
             if isValid(analysis.method.jump, cons.capability.active, i)
                 fmax(fmt, width, show, i, scale[:P], gen.capability.minActive, head[:Pmin])
-                fmax(fmt, width, show, i, scale[:P], cons.capability.active, head[:Popt])
+                fmax(fmt, width, show, i, scale[:P], analysis.power.generator.active, head[:Popt])
                 fmax(fmt, width, show, i, scale[:P], gen.capability.maxActive, head[:Pmax])
                 fmax(fmt, width, show, i, scale[:P], dual.capability.active, head[:Pdul])
             end
 
             if isValid(analysis.method.jump, cons.capability.reactive, i)
                 fmax(fmt, width, show, i, scale[:Q], gen.capability.minReactive, head[:Qmin])
-                fmax(fmt, width, show, i, scale[:Q], cons.capability.reactive, head[:Qopt])
+                fmax(fmt, width, show, i, scale[:Q], analysis.power.generator.reactive, head[:Qopt])
                 fmax(fmt, width, show, i, scale[:Q], gen.capability.maxReactive, head[:Qmax])
                 fmax(fmt, width, show, i, scale[:Q], dual.capability.reactive, head[:Qdul])
             end
@@ -1305,12 +1292,12 @@ function genCons(
                 fmax(width, show, label, head[:labl])
 
                 if isValid(analysis.method.jump, cons.capability.active, i)
-                    fminmax(show, i, scale[:P], Popt, cons.capability.active, head[:Popt])
+                    fminmax(show, i, scale[:P], Popt, analysis.power.generator.active, head[:Popt])
                     fminmax(show, i, scale[:P], Pdul, dual.capability.active, head[:Pdul])
                 end
 
                 if isValid(analysis.method.jump, cons.capability.reactive, i)
-                    fminmax(show, i, scale[:Q], Qopt, cons.capability.reactive, head[:Qopt])
+                    fminmax(show, i, scale[:Q], Qopt, analysis.power.generator.reactive, head[:Qopt])
                     fminmax(show, i, scale[:Q], Qdul, dual.capability.reactive, head[:Qdul])
                 end
             end
@@ -1376,7 +1363,7 @@ function printGeneratorConstraint(
 
         if isValid(jump, cons.capability.active, i)
             printf(io, prt, i, scale[:P], gen.capability.minActive, :Pmin)
-            printf(io, prt, i, scale[:P], cons.capability.active, :Popt)
+            printf(io, prt, i, scale[:P], analysis.power.generator.active, :Popt)
             printf(io, prt, i, scale[:P], gen.capability.maxActive, :Pmax)
             printf(io, prt, i, scale[:P], dual.capability.active, :Pdul)
         else
@@ -1464,7 +1451,7 @@ function genCons(
 
             if isValid(analysis.method.jump, cons.capability.active, i)
                 fmax(fmt, width, show, i, scale[:P], gen.capability.minActive, head[:Pmin])
-                fmax(fmt, width, show, i, scale[:P], cons.capability.active, head[:Popt])
+                fmax(fmt, width, show, i, scale[:P], analysis.power.generator.active, head[:Popt])
                 fmax(fmt, width, show, i, scale[:P], gen.capability.maxActive, head[:Pmax])
                 fmax(fmt, width, show, i, scale[:P], dual.capability.active, head[:Pdul])
             end
@@ -1476,7 +1463,7 @@ function genCons(
                 fmax(width, show, label, head[:labl])
 
                 if isValid(analysis.method.jump, cons.capability.active, i)
-                    fminmax(show, i, scale[:P], Popt, cons.capability.active, head[:Popt])
+                    fminmax(show, i, scale[:P], Popt, analysis.power.generator.active, head[:Popt])
                     fminmax(show, i, scale[:P], Pdul, dual.capability.active, head[:Pdul])
                 end
             end
@@ -1504,16 +1491,18 @@ function genCons(
     )
 end
 
-function notLine(jump::JuMP.Model, i::Int64, constraints::Dict{Int64, ConstraintRef}...)
-    hasInLine = false
-    for constraint in constraints
-        if haskey(constraint, i) && is_valid(jump, constraint[i])
-            hasInLine = true
-            break
+function notLine(jump::JuMP.Model, i::Int64, cons::ConDict...)
+    for con in cons
+        if haskey(con, i)
+            for type in keys(con[i])
+                if is_valid(jump, con[i][type])
+                    return false
+                end
+            end
         end
     end
 
-    return !hasInLine
+    return true
 end
 
 function flowType(type::Int64, unitList::UnitList)
@@ -1543,8 +1532,8 @@ function checkFlowType(system::PowerSystem, analysis::AcOptimalPowerFlow)
 
     count = [0; 0; 0; 0; 0]
     for (i, type) in enumerate(system.branch.flow.type)
-        fromFlag = haskey(from, i) && is_valid(jump, from[i])
-        toFlag = haskey(to, i) && is_valid(jump, to[i])
+        fromFlag = haskey(from, i) && any(key -> is_valid(jump, from[i][key]), keys(from[i]))
+        toFlag = haskey(to, i) && any(key -> is_valid(jump, to[i][key]), keys(to[i]))
         if fromFlag || toFlag
             count[type] += 1
         end
@@ -1553,9 +1542,9 @@ function checkFlowType(system::PowerSystem, analysis::AcOptimalPowerFlow)
     max_index = argmax(count)
     flowType = copy(system.branch.flow.type)
     for (i, type) in enumerate(system.branch.flow.type)
-        fromFlag = !(haskey(from, i) && is_valid(jump, from[i]))
-        toFlag = !(haskey(to, i) && is_valid(jump, to[i]))
-        angleFlag = haskey(angle, i) && is_valid(jump, angle[i])
+        fromFlag = !(haskey(from, i) && any(key -> is_valid(jump, from[i][key]), keys(from[i])))
+        toFlag = !(haskey(to, i) && any(key -> is_valid(jump, to[i][key]), keys(to[i])))
+        angleFlag = haskey(angle, i) && any(key -> is_valid(jump, angle[i][key]), keys(angle[i]))
 
         if angleFlag && fromFlag && toFlag
             flowType[i] = max_index

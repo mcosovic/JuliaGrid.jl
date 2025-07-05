@@ -1,7 +1,7 @@
 name = "JuliaGrid"
 uuid = "040ba96c-7d3d-4d4a-931c-37903f53a565"
 authors = ["Mirsad Cosovic <mirsad.cosovic@gmail.com>"]
-version = "0.4.6"
+version = "0.5.0"
 
 [deps]
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
@@ -11,6 +11,7 @@ OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+KLU = "ef3ab10e-7fda-4108-b977-705223b18434"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 
@@ -24,6 +25,7 @@ PrecompileTools = "1"
 Printf = "<0.0.1, 1.9"
 Random = "<0.0.1, 1.9"
 SparseArrays = "<0.0.1, 1.9"
+KLU = "0.6"
 julia = "1.9"
 
 [extras]

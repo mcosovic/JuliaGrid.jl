@@ -2,75 +2,35 @@
 
 ---
 
-## Version 0.4.6
+## Version 0.5.0
 
-Release Date: May 26, 2025
+Release Date: July 6, 2025
 
-#### Fixed
-  * Precompilation of the functions.
-
-#### Other
-  * Reduced memory allocations.
-
----
-
-## Version 0.4.5
-
-Release Date: May 15, 2025
+#### Breaking
+  * Introduced a new parser for PSSE case files.
+  * Added support for KLU factorization.
+  * Reformulated interval constraints in optimal power flow as two separate constraints.
+  * Introduced support for extending the optimal power flow formulation.
+  * Implemented the Peters-Wilkinson method for solving all state estimation models.
 
 #### Added
-  * Peters-Wilkinson method for solving all state estimation models.
-
-#### Other
-  * Enhanced memory allocation for all power flow algorithms.
-  * Enhanced memory allocation for all WLS state estimation algorithms.
-
----
-
-## Version 0.4.4
-
-Release Date: May 8, 2025
-
-#### Added
-  * Functions to print the templates currently in use.
-
----
-
-## Version 0.4.3
-
-Release Date: May 6, 2025
-
-#### Added
-  * Functions to print the unit system in use for keywords.
-  * Support for configuring the label type for each power system component group and measurement type.
-  * Support for reading bus names from Matpower and PSSE imports.
-
----
-
-## Version 0.4.2
-
-Release Date: April 29, 2025
-
-#### Added
-  * Parser for PSSE case files.
-
----
-
-## Version 0.4.1
-
-Release Date: April 21, 2025
-
-#### Added
-  * Functions for printing data related to a specific component.
+  * Functions to display the currently active templates.
+  * Functions to show the unit system used for keyword interpretation.
+  * Functions to print data associated with specific components.
+  * Support for configuring label types for each group of power system components and measurement types.
+  * Ability to read bus names from MATPOWER and PSSE imports.
   * Support for the `setInitialPoint!` function across all LAV estimators.
 
 #### Fixed
-  * Corrected verbosity settings for optimization methods when `silent` is enabled.
+  * Fixed issues related to function precompilation.
+  * Corrected verbosity settings in optimization methods when the `silent` flag is enabled.
 
 #### Other
-  * Updated default values for generator output power limits.
-  * Enhanced efficiency of merging flow islands.
-  * Eliminated the requirement for a generator on the slack bus in state estimation.
+  * Optimized memory allocation in all power flow algorithms.
+  * Improved memory handling in all WLS state estimation algorithms.
+  * Updated default generator output power limits.
+  * Improved efficiency in merging disconnected flow islands.
+  * Removed the requirement for a generator at the slack bus in state estimation models.
 
 ---
 

@@ -23,7 +23,7 @@ Users can also access specialized functions for computing specific types of [pow
 To set up the DC optimal power flow, we begin by creating the model. To illustrate this, consider the following:
 ```@example dcopf
 using JuliaGrid # hide
-using JuMP, HiGHS
+using JuMP, Ipopt
 
 system = powerSystem()
 
@@ -51,9 +51,16 @@ nothing # hide
 
 Next, the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function is utilized to formulate the DC optimal power flow problem:
 ```@example dcopf
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 nothing # hide
 ```
+
+!!! note "Info"
+    All non-box two-sided constraints are modeled as intervals by default. However, users can choose to represent them as two separate constraints, one for the lower bound and one for the upper bound, by setting:
+    ```julia DCPowerFlowSolution
+    analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; interval = false)
+    ```
+    Although this approach may be less efficient in terms of model creation and could lead to longer execution times depending on the solver, it allows for precise definition of the starting dual values.
 
 ---
 
@@ -78,35 +85,23 @@ fieldnames(typeof(analysis.method.variable.power))
 ##### Variable Names
 Users have the option to define custom variable names for printing equations, which can help present them in a more compact form. For example:
 ```@example dcopf
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer; active = "P", angle = "θ")
+analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; active = "P", angle = "θ")
 nothing # hide
 ```
 
 ---
 
 ##### Add Variables
-The user has the ability to easily add new variables to the defined DC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@variable) macro from the JuMP package:
+Once the `DcOptimalPowerFlow` type is established, users can add new variables representing generator active power outputs by introducing additional generators. For example:
 ```@example dcopf
-JuMP.@variable(analysis.method.jump, newVariable)
+addGenerator!(analysis; label = "Generator 4", bus = "Bus 1", active = 0.1, maxActive = 0.2)
 nothing # hide
 ```
+This command adds both a new variable and the corresponding box constraint to the optimization model.
 
-We can verify that the new variable is included in the defined model by using the function:
+To confirm that the variable has been successfully added, you can use the following function:
 ```@repl dcopf
-JuMP.is_valid(analysis.method.jump, newVariable)
-```
-
----
-
-##### Delete Variables
-To delete a variable, the [`delete`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.delete) function from the JuMP package can be used:
-```@example dcopf
-JuMP.delete(analysis.method.jump, newVariable)
-```
-
-After deletion, the variable is no longer part of the model:
-```@repl dcopf
-JuMP.is_valid(analysis.method.jump, newVariable)
+JuMP.is_valid(analysis.method.jump, analysis.method.variable.power.active[4])
 ```
 
 ---
@@ -117,8 +112,31 @@ JuliGrid keeps track of all the references to internally formed constraints in t
 fieldnames(typeof(analysis.method.constraint))
 ```
 
+They fall into two main categories: box constraints and non-box constraints.
+
 !!! note "Info"
     We suggest that readers refer to the tutorial on [DC Optimal Power Flow](@ref DCOptimalPowerFlowTutorials) for insights into the implementation.
+
+---
+
+##### Box Constraints
+The `slack` constraint is represented as an `equality` tied to the fixed voltage angle at the slack bus.
+
+The `capability` constraints define variable bounds on active power generation and are always implemented as two separate constraints: one for the `lower` bound and one for the `upper` bound. If the bounds are equal or the generator is out-of-service, JuliaGrid models the constraint as an `equality` instead.
+
+---
+
+##### Non-Box Constraints
+The `balance` constraints correspond to active power balance equations defined at each bus and are modeled as `equality` constraints.
+
+The `voltage` constraints are associated with the minimum and maximum voltage angle difference between the from-bus and to-bus ends of each branch and are modeled as `interval` constraints by default. If the bounds are equal, an `equality` constraint is used instead.
+
+The `flow` constraints, which refer to active power flow limits at the from-bus end of each branch, are also modeled as `interval` constraints by default. If the bounds are equal, an `equality` constraint is used.
+
+If preferred, both `voltage` and `flow` constraints can be represented as two separate one-sided constraints, one for the `lower` and one for the `upper` bound, by setting the keyword argument `interval = false` when calling the [`dcOptimalPowerFlow`](@ref dcOptimalPowerFlow) function.
+
+Finally, the `piecewise` constraints are introduced when piecewise linear cost functions with multiple segments are defined, and they impose only `upper` bounds.
+
 
 ---
 
@@ -140,6 +158,25 @@ print(system.bus.label, analysis.method.constraint.slack.angle)
 
 ---
 
+##### Generator Active Power Capability Constraints
+The `capability` field contains references to the box inequality constraints associated with the minimum and maximum active power outputs of the generators. These limits are specified using the `minActive` and `maxActive` keywords within the [`addGenerator!`](@ref addGenerator!) function:
+```@repl dcopf
+print(system.generator.label, analysis.method.constraint.capability.active)
+```
+
+Let us now set `Generator 2` out of service using the [`updateGenerator!`](@ref updateGenerator!) function:
+```@example dcopf
+updateGenerator!(analysis; label = "Generator 2", status = 0)
+nothing # hide
+```
+
+We can now observe that the updated constraints reflect the current state of the system:
+```@repl dcopf
+print(system.generator.label, analysis.method.constraint.capability.active)
+```
+
+---
+
 ##### Bus Active Power Balance Constraints
 The `balance` field contains references to the equality constraints associated with the active power balance equations defined for each bus. The constant terms in these equations are determined by the `active` and `conductance` keywords within the [`addBus!`](@ref addBus!) function. Additionally, if there are phase shift transformers in the system, the constant terms can also be affected by the `shiftAngle` keyword within the [`addBranch!`](@ref addBranch!) function:
 ```@repl dcopf
@@ -149,7 +186,7 @@ print(system.bus.label, analysis.method.constraint.balance.active)
 During the execution of functions that add or update power system components, these constraints are automatically adjusted to reflect the current configuration of the power system, for example:
 ```@example dcopf
 updateBus!(analysis; label = "Bus 3", active = 0.1)
-updateGenerator!(analysis; label = "Generator 2", status = 0)
+updateGenerator!(analysis; label = "Generator 2", status = 1)
 nothing # hide
 ```
 
@@ -167,7 +204,7 @@ print(system.branch.label, analysis.method.constraint.voltage.angle)
 ```
 
 !!! note "Info"
-    Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
+    If `minDiffAngle = -2π` and `maxDiffAngle = 2π`, or both are set to `zero` for a given branch, JuliaGrid will skip adding the corresponding inequality constraint.
 
 Additionally, by employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these constraints as follows:
 ```@example dcopf
@@ -205,26 +242,6 @@ print(system.branch.label, analysis.method.constraint.flow.active)
 
 ---
 
-##### Generator Active Power Capability Constraints
-The `capability` field contains references to the inequality constraints associated with the minimum and maximum active power outputs of the generators. These limits are specified using the `minActive` and `maxActive` keywords within the [`addGenerator!`](@ref addGenerator!) function:
-```@repl dcopf
-print(system.generator.label, analysis.method.constraint.capability.active)
-```
-
-As demonstrated, the active power output of `Generator 2` is currently fixed at zero due to the earlier action of setting this generator out-of-service. Let us adjust this specific constraint using the [`updateGenerator!`](@ref updateGenerator!) function:
-```@example dcopf
-updateGenerator!(analysis; label = "Generator 2", status = 1, maxActive = 0.5)
-nothing # hide
-```
-
-Subsequently, the updated set of active power capability constraints can be examined as follows:
-```@repl dcopf
-print(system.generator.label, analysis.method.constraint.capability.active)
-```
-
-It is important to note that bringing back `Generator 2` into service will also have an impact on the balance constraint, which will once again be influenced by the generator's output.
-
----
 
 ##### Active Power Piecewise Constraints
 In the context of active power modelling, the `piecewise` field serves as a reference to the inequality constraints related to linear piecewise cost functions. These constraints are created using the [`cost!`](@ref cost!) function with `active = 1` specified when dealing with piecewise linear cost functions comprising multiple segments. JuliaGrid takes care of establishing the appropriate inequality constraints for each segment of the piecewise linear cost:
@@ -237,46 +254,50 @@ It is worth noting that these constraints can also be automatically updated usin
 ---
 
 ##### Add Constraints
-Users can effortlessly introduce additional constraints into the defined DC optimal power flow model by utilizing the [`addBranch!`](@ref addBranch!) or [`addGenerator!`](@ref addGenerator!) functions. Specifically, if a user wishes to include a new branch or generator in an already defined `PowerSystem` and `DcOptimalPowerFlow` type:
+Users can easily introduce new constraints into the DC optimal power flow by using the [`addBranch!`](@ref addBranch!) function. For example, to add a new branch to an existing `PowerSystem` and corresponding `DcOptimalPowerFlow` model:
 ```@example dcopf
 addBranch!(analysis; label = "Branch 4", from = "Bus 1", to = "Bus 2", reactance = 1)
-addGenerator!(analysis; label = "Generator 4", bus = "Bus 1", maxActive = 0.2)
 nothing # hide
 ```
 
-As a result, the flow and capability constraints will be adjusted as follows:
+As a result, the flow constraints will be adjusted as follows:
 ```@repl dcopf
 print(system.branch.label, analysis.method.constraint.flow.active)
-print(system.generator.label, analysis.method.constraint.capability.active)
 ```
 
----
-
-##### Add User-Defined Constraints
-Users also have the option to include their custom constraints within the established DC optimal power flow model by employing the [`@constraint`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@constraint) macro. For example, the addition of a new constraint can be achieved as follows:
-```@example dcopf
-JuMP.@constraint(analysis.method.jump, 0 <= analysis.method.variable.power.active[4] <= 0.3)
-nothing # hide
-```
+Similarly, the [`addGenerator!`](@ref addGenerator!) function adds both a new variable and its associated box constraint.
 
 ---
 
 ##### Delete Constraints
-To delete a constraint, users can make use of the [`delete`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.delete) function from the JuMP package. When handling constraints that have been internally created, users can refer to the constraint references stored in the `constraint` field of the `DcOptimalPowerFlow` type.
+When a branch or generator is taken out-of-service, JuliaGrid automatically adjusts the optimization problem to reflect that action, which may include removing certain constraints.
 
-For example, if the intention is to eliminate constraints related to the capability of `Generator 4`, the following code snippet can be employed:
+In some cases, it may also be useful to remove specific constraints manually. This can be done using the [`remove!`](@ref remove!) function by specifying the constraint type: `:slack`, `:capability`, `:balance`, `:voltage`, `:flow` or `:piecewise`.
+
+For example, to delete the constraint associated with the voltage angle difference at `Branch 2`, use:
 ```@example dcopf
-JuMP.delete(analysis.method.jump, analysis.method.constraint.capability.active[4])
+remove!(analysis, :voltage; label = "Branch 2")
 nothing # hide
 ```
 
+Alternatively, instead of using a label, constraints can also be deleted by index:
+```@example dcopf
+remove!(analysis, :voltage; index = 4)
+nothing # hide
+```
+
+After these operations, the remaining voltage angle difference constraints can be displayed as follows:
+```@repl dcopf
+print(system.branch.label, analysis.method.constraint.voltage.angle)
+```
+
 !!! note "Info"
-    In the event that a user deletes a constraint and subsequently executes a function that updates bus, branch, or generator parameters, and if the deleted constraint is affected by these functions, JuliaGrid will automatically reinstate that constraint. Users should exercise caution when deleting constraints, as this action is considered potentially harmful since it operates independently of power system data.
+    In the event that a user deletes a constraint and subsequently executes a function that updates bus, branch, or generator parameters, and if the deleted constraint is affected by these functions, JuliaGrid will automatically reinstate that constraint.
 
 ---
 
 ## [Objective Function](@id DCObjectiveFunctionManual)
-The objective function of the DC optimal power flow is constructed using polynomial and piecewise linear cost functions of the generators, which are defined using the [`cost!`](@ref cost!) functions. Only polynomial cost functions of up to the second degree are included in the objective. Specifically, if a higher-degree polynomial is provided, JuliaGrid will discard all terms beyond the second degree and still include the resulting truncated polynomial in the objective function.
+The objective of the DC optimal power flow is constructed using polynomial and piecewise linear cost functions of the generators, which are defined using the [`cost!`](@ref cost!) functions. Only polynomial cost functions of up to the second degree are included in the objective. Specifically, if a higher-degree polynomial is provided, JuliaGrid will discard all terms beyond the second degree and still include the resulting truncated polynomial in the objective function.
 
 In the provided example, the objective function that needs to be minimized to obtain the optimal values of the active power outputs of the generators and the bus voltage angles is as follows:
 ```@repl dcopf
@@ -296,20 +317,6 @@ cost!(analysis; generator = "Generator 3", active = 2, polynomial = [853.4; 257;
 This results in the updated objective function, which can be observed as follows:
 ```@repl dcopf
 analysis.method.objective
-```
-
----
-
-##### User-Defined Objective Function
-Users can modify the objective function using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_objective_function) function from the JuMP package. This operation is considered destructive because it is independent of power system data; however, in certain scenarios, it may be more straightforward than using the [`cost!`](@ref cost!) function for updates. Moreover, using this methodology, users can combine a defined function with a newly defined expression. Here is an example of how it can be achieved:
-```@example dcopf
-expr = 100.2 * analysis.method.variable.power.active[1]^2 + 123
-JuMP.set_objective_function(analysis.method.jump, analysis.method.objective - expr)
-```
-
-We can now observe the updated objective function as follows:
-```@repl dcopf
-JuMP.objective_function(analysis.method.jump)
 ```
 
 ---
@@ -344,9 +351,23 @@ setInitialPoint!(analysis, flow)
 ---
 
 ##### Initial Dual Values
-Dual variables, often referred to as Lagrange multipliers or Kuhn-Tucker multipliers, represent the shadow prices or marginal costs associated with constraints. The assignment of initial dual values occurs when the [`solve!`](@ref solve!(::DcOptimalPowerFlow)) function is executed. Initially, the initial dual values are unknown, but users can access and manually set them. For example:
+Dual variables, often referred to as Lagrange multipliers or Kuhn-Tucker multipliers, represent the shadow prices or marginal costs associated with constraints. The assignment of initial dual values occurs when the [`solve!`](@ref solve!(::DcOptimalPowerFlow)) function is executed. By default, dual values are undefined, but users can manually assign them using the [`addDual!`](@ref addDual!) function.
+
+If a constraint is defined as an equality, an interval, or has only a lower or upper bound, it corresponds to a single dual variable. In such cases, an initial value can be set using the `dual` keyword. For example:
 ```@example dcopf
-analysis.method.dual.balance.active[1] = 0.4
+addDual!(analysis, :balance; label = "Bus 1", dual = 1e-3)
+nothing # hide
+```
+
+For constraints with both lower and upper bounds, users can assign initial dual values separately using the `lower` and `upper` keywords. For example:
+```@example dcopf
+addDual!(analysis, :capability; label = "Generator 1", lower = 500.0, upper = 0.0)
+nothing # hide
+```
+
+Alternatively, dual variables can be added by specifying the constraint index instead of a label:
+```@example dcopf
+addDual!(analysis, :capability; index = 1, lower = 500.0, upper = 0.0)
 nothing # hide
 ```
 
@@ -378,7 +399,7 @@ JuMP.objective_value(analysis.method.jump)
 ##### Dual Variables
 The values of the dual variables are stored in the `dual` field of the `DcOptimalPowerFlow` type. For example:
 ```@repl dcopf
-analysis.method.dual.balance.active[1]
+print(system.bus.label, analysis.method.dual.balance.active)
 ```
 
 ---
@@ -387,7 +408,7 @@ analysis.method.dual.balance.active[1]
 JuliaGrid provides a wrapper function for DC optimal power flow analysis and also supports the computation of powers using the [powerFlow!](@ref powerFlow!(::DcOptimalPowerFlow)) function:
 ```@example dcopf
 setInitialPoint!(analysis) # hide
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 powerFlow!(analysis; verbose = 1)
 nothing # hide
 ```
@@ -485,11 +506,94 @@ The primal initial values will now be identical to those that would be obtained 
 
 ---
 
+## [Extended Formulation](@id DcExtendedFormulationManual)
+The JuMP model created by JuliaGrid is stored in the `method.jump` field of the `DcOptimalPowerFlow` type. This allows users to modify the model directly using JuMP macros and functions as needed. However, when making such modifications, users become responsible for tasks like setting initial values and extracting solutions, since these changes operate outside the standard JuliaGrid workflow.
+
+Beyond this approach, JuliaGrid also provides a way to extend the standard DC optimal power flow formulation within its own framework. This lets users take advantage of features such as warm start and automatic solution storage, as described below.
+
+---
+
+#### Add Variable
+User-defined variables can be added to the DC optimal power flow model using the [`@addVariable`](@ref @addVariable) macro. It also allows immediate assignment of initial primal and dual values. For example:
+```@example dcopf
+@addVariable(analysis, 0.0 <= y <= 0.2, primal = 0.1, lower = 10.0, upper = 0.0)
+nothing # hide
+```
+
+We can also define collections of variables:
+```@example dcopf
+@addVariable(analysis, 0.0 <= x[i = 1:2] <= 0.4, primal = [0.1, 0.2], upper = [0.0; -2.5])
+nothing # hide
+```
+
+---
+
+##### Add Constraints
+Custom constraints can be added to the DC optimal power flow model using the [`@addConstraint`](@ref @addConstraint) macro. These constraints are not limited to user-defined variables; any optimization variable defined up to that point can be used. Let us focus on the voltage angle variables:
+```@example dcopf
+θ = analysis.method.variable.voltage.angle
+nothing # hide
+```
+
+Next, a new constraint can be defined, and at the same time, an initial dual value can be specified:
+```@example dcopf
+@addConstraint(analysis, 0.1 <= x[1] + 2 * x[2] + y + θ[2] <= 0.2, dual = 0.0)
+nothing # hide
+```
+
+Collections of constraints can also be defined:
+```@example dcopf
+@addConstraint(analysis, [i = 1:2], x[i] + 2 * θ[i] <= 0.6, dual = [0.0; 0.5])
+nothing # hide
+```
+
+---
+
+##### Delete Constraints
+To remove a constraint, use the [`remove!`](@ref remove!) function with the `:constraint` symbol. For example, to remove the first added constraint:
+```@example dcopf
+remove!(analysis, :constraint; index = 1)
+nothing # hide
+```
+
+---
+
+##### Objective Function
+Users can modify the objective function using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_objective_function) function from the JuMP package. Here is an example of how it can be achieved:
+```@example dcopf
+expr = 1100.2 * analysis.method.variable.power.active[1]^2 - 50 * x[1] - x[2]^2 + y + 123
+JuMP.set_objective_function(analysis.method.jump, analysis.method.objective - expr)
+nothing # hide
+```
+
+We can now observe the updated objective function as follows:
+```@repl dcopf
+JuMP.objective_function(analysis.method.jump)
+```
+
+---
+
+##### Optimal Power Flow Solution
+Users can now solve the extended formulation using:
+```@example dcopf
+powerFlow!(analysis; verbose = 1)
+nothing # hide
+```
+
+After solving, users can access the optimal values as follows:
+```@repl dcopf
+analysis.power.generator.active
+analysis.voltage.angle
+analysis.extended.solution
+```
+
+---
+
 ## [Power Analysis](@id DCOptimalPowerAnalysisManual)
 After obtaining the solution from the DC optimal power flow, we can calculate powers related to buses and branches using the [`power!`](@ref power!(::DcPowerFlow)) function. For instance, let us consider the power system for which we obtained the DC optimal power flow solution:
 ```@example dcopfpower
 using JuliaGrid, JuMP # hide
-using HiGHS
+using Ipopt
 @default(unit) # hide
 @default(template) # hide
 
@@ -511,7 +615,7 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 0.2, maxAct
 cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.2; 500; 80])
 cost!(system; generator = "Generator 2", active = 1, piecewise = [10.8 12.3; 14.7 16.8])
 
-analysis = dcOptimalPowerFlow(system, HiGHS.Optimizer)
+analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 powerFlow!(analysis)
 nothing # hide
 ```

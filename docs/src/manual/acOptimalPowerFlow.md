@@ -57,6 +57,13 @@ analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 nothing # hide
 ```
 
+!!! note "Info"
+    All non-box two-sided constraints are modeled as intervals by default. However, users can choose to represent them as two separate constraints, one for the lower bound and one for the upper bound, by setting:
+    ```julia DCPowerFlowSolution
+    analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; interval = false)
+    ```
+    Although this approach may be less efficient in terms of model creation and could lead to longer execution times depending on the solver, it allows for precise definition of the starting dual values.
+
 ---
 
 ## [Optimization Variables](@id ACOptimizationVariablesManual)
@@ -87,40 +94,53 @@ nothing # hide
 ---
 
 ##### Add Variables
-Users can easily add new variables to the defined AC optimal power flow model by using the [`@variable`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@variable) macro:
+Once the `AcOptimalPowerFlow` type is established, users can add new variables representing generator active power outputs by introducing additional generators. For example:
 ```@example acopf
-JuMP.@variable(analysis.method.jump, newVariable)
+addGenerator!(analysis; label = "Generator 3", bus = "Bus 1", maxActive = 0.2, status = 1)
 nothing # hide
 ```
+This command adds both a new variables and the corresponding box constraints to the optimization model.
 
-We can verify that the new variable is included in the defined model by using the function:
+To confirm that the variable has been successfully added, you can use the following function:
 ```@repl acopf
-JuMP.is_valid(analysis.method.jump, newVariable)
+JuMP.is_valid(analysis.method.jump, analysis.method.variable.power.active[3])
+JuMP.is_valid(analysis.method.jump, analysis.method.variable.power.reactive[3])
 ```
 
 ---
 
-##### Delete Variables
-The variable can be deleted, but this operation is only applicable if the objective function is either affine or quadratic. To achieve this, we can utilize the [`delete`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.delete) function provided by the JuMP, as demonstrated below:
-```@example acopf
-JuMP.delete(analysis.method.jump, newVariable)
-```
-
-After deletion, the variable is no longer part of the model:
-```@repl acopf
-JuMP.is_valid(analysis.method.jump, newVariable)
-```
-
----
-
-## [Constraint Functions](@id DCConstraintFunctionsManual)
+## [Constraint Functions](@id ACConstraintFunctionsManual)
 JuliaGrid keeps track of all the references to internally formed constraints in the `constraint` field of the `AcOptimalPowerFlow` type. These constraints are divided into six fields:
 ```@repl acopf
 fieldnames(typeof(analysis.method.constraint))
 ```
 
+They fall into two main categories: box constraints and non-box constraints.
+
 !!! note "Info"
     We suggest that readers refer to the tutorial on [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials) for insights into the implementation.
+
+---
+
+##### Box Constraints
+The `slack` constraint is represented as an `equality` tied to the fixed voltage angle at the slack bus.
+
+The `capability` constraints define variable bounds on both active and reactive power generation and are always implemented as two separate constraints: one for the `lower` bound and one for the `upper` bound. If the bounds are equal, or if the generator is out-of-service, JuliaGrid models the constraint as an `equality` instead.
+
+The `magnitude` field of the `voltage` constraints defines bounds on bus voltage magnitude values and is also implemented using a `lower` and an `upper` bound. If the bounds are equal, JuliaGrid models the constraint as an `equality` instead.
+
+---
+
+##### Non-Box Constraints
+The `balance` constraints correspond to the active and reactive power balance equations defined at each bus and are modeled as `equality` constraints.
+
+The `angle` field of the `voltage` constraints are associated with the minimum and maximum voltage angle difference between the from-bus and to-bus ends of each branch and are modeled as `interval` constraints by default. If the bounds are equal, an `equality` constraint is used instead.
+
+The `flow` constraints, which refer to branch flow limits at both ends of each branch, are also modeled as `interval` constraints by default. If the bounds are equal, an `equality` constraint is used.
+
+If preferred, both the `angle` field of the `voltage` constraints and the `flow` constraints can be represented as two separate one-sided constraints, one for the `lower` and one for the `upper` bound, by setting the keyword argument `interval = false` when calling the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function.
+
+Finally, the `piecewise` constraints are introduced when piecewise linear cost functions with multiple segments are defined, and they impose only `upper` bounds.
 
 ---
 
@@ -289,43 +309,50 @@ analysis.method.variable.power.actwise[2]
 ---
 
 ##### Add Constraints
-Users can effortlessly introduce additional constraints into the defined AC optimal power flow model by utilizing the [`addBranch!`](@ref addBranch!) or [`addGenerator!`](@ref addGenerator!) functions. Specifically, if a user wishes to include a new branch or generator in an already defined `PowerSystem` and `AcOptimalPowerFlow` type:
+Users can effortlessly introduce additional constraints into the defined AC optimal power flow model by utilizing the [`addBranch!`](@ref addBranch!) functions. Specifically, if a user wishes to include a new branch or generator in an already defined `PowerSystem` and `AcOptimalPowerFlow` type:
 ```@example acopf
 addBranch!(analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
-addGenerator!(analysis; label = "Generator 3", bus = "Bus 2", active = 2, status = 1)
 nothing # hide
 ```
 
-This will affect all constraints related to branches and generators, but it will also update balance constraints to configure the optimization model to match the current state of the power system. For example, we can observe the following updated constraints:
+This will affect all constraints related to branches, but it will also update balance constraints to configure the optimization model to match the current state of the power system. For example, we can observe the following updated constraints:
 ```@repl acopf
 print(system.branch.label, analysis.method.constraint.voltage.angle)
-print(system.generator.label, analysis.method.constraint.capability.active)
 ```
 
----
-
-##### Add User-Defined Constraints
-Users also have the option to include their custom constraints within the established AC optimal power flow model by employing the [`@constraint`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.@constraint) macro. For example, the addition of a new constraint can be achieved as follows:
-```@example acopf
-JuMP.@constraint(analysis.method.jump, 0 <= analysis.method.variable.power.active[3] <= 0.3)
-nothing # hide
-```
+Similarly, the [`addGenerator!`](@ref addGenerator!) function adds both new variables and its associated box constraints.
 
 ---
 
 ##### Delete Constraints
-To delete a constraint, users can make use of the [`delete`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.delete) function from the JuMP package. When handling constraints that have been internally created, users can refer to the constraint references stored in the `constraint` field of the `AcOptimalPowerFlow` type.
+When a branch or generator is taken out-of-service, JuliaGrid automatically adjusts the optimization problem to reflect that action, which may include removing certain constraints.
 
-For example, if the intention is to eliminate constraints related to the capability of `Generator 3`, we can use:
+In some cases, users may also want to manually remove specific constraints. This can be done using the [`remove!`](@ref remove!) function by specifying the constraint type: `:slack`, `:capability`, `:balance`, `:voltage`, `:flow`, or `:piecewise`.
+
+For constraint types such as `:capability`, `:balance`, and `:piecewise`, users must also specify whether the constraint targets `:active` or `:reactive` power. Similarly, for `:voltage`, the options are `:magnitude` or `:angle`, and for `:flow`, the options are `:from` or `:to`.
+
+For example, to delete the constraint associated with the voltage angle difference at `Branch 2`, use:
 ```@example acopf
-JuMP.delete(analysis.method.jump, analysis.method.constraint.capability.active[3])
+remove!(analysis, :voltage, :angle; label = "Branch 2")
 nothing # hide
 ```
 
+Alternatively, instead of using a label, constraints can also be deleted by index:
+```@example acopf
+remove!(analysis, :voltage, :angle; index = 4)
+nothing # hide
+```
+
+After these operations, the remaining voltage angle difference constraints can be displayed as follows:
+```@repl acopf
+print(system.branch.label, analysis.method.constraint.voltage.angle)
+```
+
 !!! note "Info"
-    In the event that a user deletes a constraint and subsequently executes a function that updates bus, branch, or generator parameters, and if the deleted constraint is affected by these functions, JuliaGrid will automatically reinstate that constraint. Users should exercise caution when deleting constraints, as this action is considered potentially harmful since it operates independently of power system data.
+    In the event that a user deletes a constraint and subsequently executes a function that updates bus, branch, or generator parameters, and if the deleted constraint is affected by these functions, JuliaGrid will automatically reinstate that constraint.
 
 ---
+
 
 ## [Objective Function](@id ACObjectiveFunctionManual)
 The objective function of the AC optimal power flow is formulated using polynomial and piecewise linear cost functions associated with the generators, defined using the [`cost!`](@ref cost!) functions.
@@ -353,23 +380,7 @@ JuMP.objective_function(analysis.method.jump)
 
 ---
 
-##### User-Defined Objective Function
-Users can modify the objective function using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_objective_function) function from the JuMP package. This operation is considered destructive because it is independent of power system data; however, in certain scenarios, it may be more straightforward than using the [`cost!`](@ref cost!) function for updates. Moreover, using this methodology, users can combine a defined function with a newly defined expression.
-
-In this context, we can utilize the saved objective function within the `objective` field of the `AcOptimalPowerFlow` type. For example, we can easily eliminate nonlinear parts and alter the quadratic component of the objective:
-```@example acopf
-expr = 5.0 * analysis.method.variable.power.active[1]^2
-JuMP.set_objective_function(analysis.method.jump, analysis.method.objective.quadratic - expr)
-```
-
-We can now observe the updated objective function as follows:
-```@repl acopf
-JuMP.objective_function(analysis.method.jump)
-```
-
----
-
-## [Setup Initial Values](@id ACSetupPrimalStartingValuesManual)
+## [Setup Initial Values](@id AcSetupPrimalStartingValuesManual)
 In JuliaGrid, the assignment of initial primal and dual values for optimization variables and constraints takes place when the [`solve!`](@ref solve!(::AcOptimalPowerFlow)) function is executed.
 
 ---
@@ -400,15 +411,29 @@ setInitialPoint!(analysis, flow)
 ---
 
 ##### Initial Dual Values
-Dual variables, often referred to as Lagrange multipliers or Kuhn-Tucker multipliers, represent the shadow prices or marginal costs associated with constraints. The assignment of initial dual values occurs when the [`solve!`](@ref solve!(::AcOptimalPowerFlow)) function is executed. Initially, the initial dual values are unknown, but users can access and manually set them. For example:
+Dual variables, often referred to as Lagrange multipliers or Kuhn-Tucker multipliers, represent the shadow prices or marginal costs associated with constraints. The assignment of initial dual values occurs when the [`solve!`](@ref solve!(::AcOptimalPowerFlow)) function is executed. By default, dual values are undefined, but users can manually assign them using the [`addDual!`](@ref addDual!) function.
+
+If a constraint is defined as an equality, an interval, or has only a lower or upper bound, it corresponds to a single dual variable. In such cases, an initial value can be set using the `dual` keyword. For example:
 ```@example acopf
-analysis.method.dual.balance.active[1] = 0.4
+addDual!(analysis, :balance, :active; label = "Bus 1", dual = 1e-3)
+nothing # hide
+```
+
+For constraints with both lower and upper bounds, users can assign initial dual values separately using the `lower` and `upper` keywords. For example:
+```@example acopf
+addDual!(analysis, :capability, :reactive; label = "Generator 1", lower = 500.0, upper = 0.0)
+nothing # hide
+```
+
+Alternatively, dual variables can be added by specifying the constraint index instead of a label:
+```@example acopf
+addDual!(analysis, :capability, :reactive; index = 1, lower = 500.0, upper = 0.0)
 nothing # hide
 ```
 
 ---
 
-## [Optimal Power Flow Solution](@id ACOptimalPowerFlowSolutionManual)
+## [Optimal Power Flow Solution](@id AcOptimalPowerFlowSolutionManual)
 To establish the AC optimal power flow problem, we utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, we can use the [`solve!`](@ref solve!(::AcOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles:
 ```@example acopf
 solve!(analysis)
@@ -434,7 +459,7 @@ JuMP.objective_value(analysis.method.jump)
 ##### Dual Variables
 The values of the dual variables are stored in the `dual` field of the `AcOptimalPowerFlow` type. For example:
 ```@repl acopf
-analysis.method.dual.balance.active[1]
+print(system.bus.label, analysis.method.dual.balance.active)
 ```
 
 ---
@@ -489,13 +514,15 @@ CSV.write("constraint.csv", CSV.File(take!(io); delim = "|"))
 ---
 
 ## Primal and Dual Warm Start
-Utilizing the `AcOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a warm start. In this scenario, the initial primal and dual values for the subsequent solving step correspond to the solution obtained from the previous step.
+Utilizing the `AcOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a warm start. In this scenario, the initial primal and dual values for the subsequent solving step correspond to the solution obtained from the previous step, including any user-defined data previously integrated in JuliaGrid.
 
 ---
 
 ##### Primal Variables
 In the previous example, the following solution was obtained, representing the values of the primal variables:
 ```@repl acopf
+generator = analysis.power.generator;
+
 print(system.generator.label, generator.active, generator.reactive)
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
@@ -512,18 +539,20 @@ print(system.generator.label, analysis.method.dual.capability.reactive)
 ##### Modify Optimal Power Flow
 Now, let us introduce changes to the power system from the previous example:
 ```@example acopf
-updateGenerator!(analysis; label = "Generator 2", maxActive = 0.2)
+updateGenerator!(analysis; label = "Generator 3", maxActive = 0.05)
 nothing # hide
 ```
 
 Next, we want to solve this modified optimal power flow problem. If we use [`solve!`](@ref solve!(::AcOptimalPowerFlow)) at this point, the primal and dual initial values will be set to the previously obtained values:
 ```@example acopf
-powerFlow!(analysis)
+powerFlow!(analysis, verbose = 1)
 nothing # hide
 ```
 
 As a result, we obtain a new solution:
 ```@repl acopf
+generator = analysis.power.generator;
+
 print(system.generator.label, generator.active, generator.reactive)
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
@@ -537,6 +566,91 @@ setInitialPoint!(analysis)
 nothing # hide
 ```
 The primal initial values will now be identical to those that would be obtained if the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function were executed after all the updates have been applied, while all dual variable values will be removed.
+
+---
+
+## [Extended Formulation](@id AcExtendedFormulationManual)
+The JuMP model created by JuliaGrid is stored in the `method.jump` field of the `AcOptimalPowerFlow` type. This allows users to modify the model directly using JuMP macros and functions as needed. However, when making such modifications, users become responsible for tasks like setting initial values and extracting solutions, since these changes operate outside the standard JuliaGrid workflow.
+
+Beyond this approach, JuliaGrid also provides a way to extend the standard AC optimal power flow formulation within its own framework. This lets users take advantage of features such as warm start and automatic solution storage, as described below.
+
+---
+
+##### Add Variable
+User-defined variables can be added to the DC optimal power flow model using the [`@addVariable`](@ref @addVariable) macro. It also allows immediate assignment of initial primal and dual values. For example:
+```@example acopf
+@addVariable(analysis, 0.0 <= y <= 0.2, primal = 0.1, lower = 10.0, upper = 0.0)
+nothing # hide
+```
+
+We can also define collections of variables:
+```@example acopf
+@addVariable(analysis, 0.0 <= x[i = 1:2] <= 0.4, primal = [0.1, 0.2], upper = [0.0; -2.5])
+nothing # hide
+```
+
+---
+
+##### Add Constraints
+Custom constraints can be added to the DC optimal power flow model using the [`@addConstraint`](@ref @addConstraint) macro. These constraints are not limited to user-defined variables; any optimization variable defined up to that point can be used. Let us focus on the voltage angle variables:
+```@example acopf
+θ = analysis.method.variable.voltage.angle
+nothing # hide
+```
+
+Next, a new constraint can be defined, and at the same time, an initial dual value can be specified:
+```@example acopf
+@addConstraint(analysis, 0.1 <= x[1] + 2 * x[2] + y + θ[2] <= 1.2, dual = 0.0)
+nothing # hide
+```
+
+Collections of constraints can also be defined:
+```@example acopf
+@addConstraint(analysis, [i = 1:2], x[i] + 2 * θ[i] <= 0.6, dual = [0.0; 0.5])
+nothing # hide
+```
+
+---
+
+##### Delete Constraints
+To remove a constraint, use the [`remove!`](@ref remove!) function with the `:constraint` symbol. For example, to remove the first added constraint:
+```@example acopf
+remove!(analysis, :constraint; index = 1)
+nothing # hide
+```
+
+---
+
+##### Objective Function
+Users can modify the objective function using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_objective_function) function from the JuMP package. In JuliaGrid, the original objective is stored in the `objective` field of the `AcOptimalPowerFlow` type, which can be accessed and customized as needed. This makes it possible to simultaneously remove nonlinear components and adjust the quadratic part of the objective function:
+```@example acopf
+expr = 50 * x[1] - x[2]^2 + y + 123
+JuMP.set_objective_function(analysis.method.jump, analysis.method.objective.quadratic - expr)
+nothing # hide
+```
+
+We can now observe the updated objective function as follows:
+```@repl acopf
+JuMP.objective_function(analysis.method.jump)
+```
+
+---
+
+##### Optimal Power Flow Solution
+Users can now solve the extended formulation using:
+```@example acopf
+powerFlow!(analysis; verbose = 1)
+nothing # hide
+```
+
+After solving, users can access the optimal values as follows:
+```@repl acopf
+analysis.power.generator.active
+analysis.power.generator.reactive
+analysis.voltage.magnitude
+analysis.voltage.angle
+analysis.extended.solution
+```
 
 ---
 

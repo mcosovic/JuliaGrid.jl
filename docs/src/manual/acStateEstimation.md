@@ -120,7 +120,7 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    Here, the user triggers LU factorization as the default method for solving the system of linear equations within each iteration of the Gauss-Newton method. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`:
+    Here, the user triggers LU factorization as the default method for solving the system of linear equations within each iteration of the Gauss-Newton method. However, the user also has the option to select alternative factorization methods such as `KLU`, `LDLt` or `QR`:
     ```julia ACSEObservabilityAnalysis
     analysis = gaussNewton(monitoring, LDLt)
     ```

@@ -7,7 +7,16 @@ const IntStr = Union{Int64, String}
 const IntStrMiss = Union{Int64, String, Missing}
 const LabelDict = Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
 const Signature = Dict{Symbol, Union{Int64, Dict{Int64, Float64}}}
-const FactorSparse = Union{UMFPACK.UmfpackLU{Float64, Int64}, SPQR.QRSparse{Float64, Int64}, CHOLMOD.Factor{Float64}}
+const ConDict = OrderedDict{Int64, Dict{Symbol, ConstraintRef}}
+const DualDict = OrderedDict{Int64, Dict{Symbol, Float64}}
+const DualDictVec = OrderedDict{Int64, Dict{Symbol, Vector{Float64}}}
+const ConDictVec = OrderedDict{Int64, Dict{Symbol, Vector{ConstraintRef}}}
+const FactorSparse = Union{
+    UMFPACK.UmfpackLU{Float64, Int64},
+    SPQR.QRSparse{Float64, Int64},
+    CHOLMOD.Factor{Float64},
+    KLUFactorization{Float64, Int64}
+}
 
 ##### Polar Coordinate #####
 mutable struct Polar
@@ -21,13 +30,13 @@ mutable struct PolarVariableRef
 end
 
 mutable struct PolarConstraintRef
-    magnitude::Dict{Int64, ConstraintRef}
-    angle::Dict{Int64, ConstraintRef}
+    magnitude::ConDict
+    angle::ConDict
 end
 
 mutable struct PolarDual
-    magnitude::Dict{Int64, Float64}
-    angle::Dict{Int64, Float64}
+    magnitude::DualDict
+    angle::DualDict
 end
 
 mutable struct Angle
@@ -39,11 +48,11 @@ mutable struct AngleVariableRef
 end
 
 mutable struct AngleConstraintRef
-    angle::Dict{Int64, ConstraintRef}
+    angle::ConDict
 end
 
 mutable struct AngleDual
-    angle::Dict{Int64, Float64}
+    angle::DualDict
 end
 
 ##### Cartesian Coordinate #####
@@ -60,13 +69,13 @@ mutable struct CartesianVariableRef
 end
 
 mutable struct CartesianConstraintRef
-    active::Dict{Int64, ConstraintRef}
-    reactive::Dict{Int64, ConstraintRef}
+    active::ConDict
+    reactive::ConDict
 end
 
 mutable struct CartesianDual
-    active::Dict{Int64, Float64}
-    reactive::Dict{Int64, Float64}
+    active::DualDict
+    reactive::DualDict
 end
 
 mutable struct Real
@@ -79,11 +88,11 @@ mutable struct RealVariableRef
 end
 
 mutable struct RealConstraintRef
-    active::Dict{Int64, ConstraintRef}
+    active::ConDict
 end
 
 mutable struct RealDual
-    active::Dict{Int64, Float64}
+    active::DualDict
 end
 
 mutable struct RectangularVariableRef

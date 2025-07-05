@@ -607,8 +607,6 @@ function _updatePmu!(analysis::AcStateEstimation{LAV}, idxPmu::Int64)
     remove!(lav, idx)
     remove!(lav, idx + 1)
 
-    quad1 = QuadExpr()
-    quad2 = QuadExpr()
     if pmu.layout.polar[idxPmu] # PMU Polar Bus and Branch
         if pmu.magnitude.status[idxPmu] == 1
             add!(lav, idx)
@@ -617,12 +615,12 @@ function _updatePmu!(analysis::AcStateEstimation{LAV}, idxPmu::Int64)
                 addConstrLav!(lav, voltage.magnitude[idxBusBrch], pmu.magnitude.mean[idxPmu], idx)
             else
                 if pmu.layout.from[idxPmu]
-                    expr = Iij(system, voltage, pmu.layout.square[idxPmu], quad1, quad2, idxBusBrch)
+                    expr = Iij(system, voltage, pmu.layout.square[idxPmu], AffQuadExpr(), idxBusBrch)
                 else
-                    expr = Iji(system, voltage, pmu.layout.square[idxPmu], quad1, quad2, idxBusBrch)
+                    expr = Iji(system, voltage, pmu.layout.square[idxPmu], AffQuadExpr(), idxBusBrch)
                 end
                 sq = if2exp(pmu.layout.square[idxPmu])
-                 addConstrLav!(lav, expr, pmu.magnitude.mean[idxPmu]^sq, AffExpr(), idx)
+                addConstrLav!(lav, expr, pmu.magnitude.mean[idxPmu]^sq, AffExpr(), idx)
             end
         end
 

@@ -255,7 +255,7 @@ function dcLavStateEstimation(
 
     fix(voltage.angle[bus.layout.slack], 0.0; force = true)
 
-    expr = AffExpr()
+    expr = @expression(lav.jump, AffExpr())
     @inbounds for (i, k) in enumerate(wattmeter.layout.index)
         if monitoring.wattmeter.active.status[i] == 1
             if wattmeter.layout.bus[i]

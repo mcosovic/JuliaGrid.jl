@@ -69,6 +69,9 @@ Recognizing that ``Y_{ij} =  G_{ij} + \mathrm{j} B_{ij}``, ``\bar{V}_i = V_i \ma
 	\end{aligned}
 ```
 
+---
+
+## [Bus Types](@id BusTypesTutorials)
 As demonstrated by the above equations, the bus ``i \in \mathcal N`` contains four unknown variables: the active power injection ``P_i``, reactive power injection ``Q_i``, bus voltage magnitude ``V_i``, and bus voltage angle ``\theta_i``.
 
 To solve these equations, it is necessary to specify two known variables. Although any two variables can be selected mathematically, the choice is determined by the devices that are connected to a particular bus. The standard options are listed in the table below, and these options are used to define the bus types [wood2013power](@cite).
@@ -80,14 +83,14 @@ To solve these equations, it is necessary to specify two known variables. Althou
 | Slack            | 3         | ``V_i``, ``\theta_i`` | ``P_i``, ``Q_i``      |
 |                  |           |                       |                       |
 
-Consequently, JuliaGrid operates with sets ``\mathcal{N}_\mathrm{pq}`` and ``\mathcal{N}_\mathrm{pv}`` that contain demand and generator buses, respectively, and exactly one slack bus in the set ``\mathcal{N}_\mathrm{sb}``. The bus types are stored in the variable:
+Consequently, JuliaGrid operates with sets ``\mathcal{N}_\mathrm{pq}`` and ``\mathcal{N}_\mathrm{pv}`` that contain demand and generator buses, respectively, and exactly one slack bus in the set ``\mathcal{N}_\mathrm{sb}``, JuliaGrid cannot handle systems with multiple slack buses. The bus types are stored in the variable:
 ```@repl PowerFlowSolution
 system.bus.layout.type
 ```
 
-It should be noted that JuliaGrid cannot handle systems with multiple slack buses. Additionally, when using functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), and [`gaussSeidel`](@ref gaussSeidel), the bus type can be modified as discussed in the section on [Bus Type Modification](@ref BusTypeModificationManual).
+When functions such as [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) are used, the bus types are checked and may be modified automatically. Specifically, if a bus is labeled as a generator bus (`type = 2`) but does not have a connected in-service generator, it will be reclassified as a demand bus (`type = 1`). The same applies to the slack bus (`type = 3`), if it lacks an in-service generator, it is also converted to a demand bus (`type = 1`). In that case, the first generator bus (`type = 2`) with a connected in-service generator is promoted to slack bus (`type = 3`).
 
-Furthermore, active power injections ``P_i`` and reactive power injections ``Q_i`` can be expressed as:
+Once the bus types have been determined, we need the active power injections ``P_i`` and reactive power injections ``Q_i`` for demand and generator buses. However, standard power system data does not directly provide these injection values. Instead, they are computed as:
 ```math
   \begin{aligned}
   	P_i &= P_{\mathrm{p}i} - P_{\mathrm{d}i} \\

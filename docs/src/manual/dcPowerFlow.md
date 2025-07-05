@@ -17,53 +17,6 @@ Users can also access specialized functions for computing specific types of [pow
 
 ---
 
-## [Bus Type Modification](@id DCBusTypeModificationManual)
-During the initialization process, the designated slack bus, which is initially set, undergoes examination and can be altered using the [`dcPowerFlow`](@ref dcPowerFlow) function. Here is an example:
-```julia
-system = powerSystem()
-
-addBus!(system; label = "Bus 1", type = 3)
-addBus!(system; label = "Bus 2", type = 2)
-addBus!(system; label = "Bus 3", type = 2)
-
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
-addBranch!(system; label = "Branch 2", from = "Bus 2", to = "Bus 3", reactance = 0.01)
-
-addGenerator!(system; label = "Generator 1", bus = "Bus 3")
-
-analysis = dcPowerFlow(system)
-```
-
-In this example, the slack bus (`type = 3`) corresponds to the `Bus 1`. However, this bus does not have an in-service generator connected to it. JuliaGrid considers this a mistake and attempts to assign a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this particular example, the `Bus 3` will become the new slack bus. As a result, we can observe the updated array of bus types:
-```@setup busType
-using JuliaGrid # hide
-@default(unit) # hide
-@default(template) # hide
-
-system = powerSystem()
-
-addBus!(system; label = "Bus 1", type = 3)
-addBus!(system; label = "Bus 2", type = 2, active = 0.1)
-addBus!(system; label = "Bus 3", type = 2, active = 0.05)
-
-addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
-addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 3", reactance = 0.01)
-addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.01)
-
-addGenerator!(system; bus = "Bus 3", active = 3.2)
-
-analysis = dcPowerFlow(system)
-```
-
-```@repl busType
-print(system.bus.label, system.bus.layout.type)
-```
-
-!!! note "Info"
-    The bus that is defined as the slack bus (`type = 3`) but lacks a connected in-service generator will have its type changed to the demand bus (`type = 1`). Meanwhile, the first generator bus (`type = 2`) with an in-service generator connected to it will be assigned as the new slack bus (`type = 3`).
-
----
-
 ## [Power Flow Solution](@id DCPowerFlowSolutionManual)
 To solve the DC power flow problem using JuliaGrid, we start by creating the `PowerSystem` type and defining the DC model with the [`dcModel!`](@ref dcModel!) function. Here is an example:
 ```@example DCPowerFlowSolution
@@ -94,10 +47,11 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    Here, the user triggers LU factorization as the default method for solving the DC power flow problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`, for instance:
+    By default, the user activates `LU` factorization to solve the system of linear equations. Users may also choose the `LDLt`, `QR` or `KLU` factorization methods explicitly:
     ```julia DCPowerFlowSolution
-    analysis = dcPowerFlow(system, LDLt)
+    analysis = dcPowerFlow(system, KLU)
     ```
+    The `KLU` method, using the Gilbert-Peierls algorithm, can significantly speed up power flow computations [davisklu](@cite).
 
 To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!(::DcPowerFlow)) function as follows:
 ```@example DCPowerFlowSolution
@@ -269,9 +223,7 @@ In this scenario, JuliaGrid will recognize instances where the user has not modi
 ---
 
 ##### Limitations
-The [`dcPowerFlow`](@ref dcPowerFlow) function oversees bus type validations, as detailed in the [Bus Type Modification](@ref DCBusTypeModificationManual) section. Consequently, if a user intends to change the slack bus or leaves an existing slack bus without a generator, proceeding directly to the power flow calculation is not feasible.
-
-In these instances, JuliaGrid will raise an error:
+Attempting to change the slack bus or leaving the existing slack bus without a connected generator, and then proceeding directly to the power flow calculation, is not feasible. In such cases, JuliaGrid will raise an error:
 ```@repl DCPowerFlowSolution
 updateGenerator!(analysis; label = "Generator 1", status = 0)
 ```

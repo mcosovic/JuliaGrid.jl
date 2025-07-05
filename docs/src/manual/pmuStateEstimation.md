@@ -92,7 +92,7 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    Here, the user triggers LU factorization as the default method for solving the PMU state estimation problem. However, the user also has the option to select alternative factorization methods such as `LDLt` or `QR`:
+    Here, the user triggers LU factorization as the default method for solving the PMU state estimation problem. However, the user also has the option to select alternative factorization methods such as `KLU`, `LDLt` or `QR`:
     ```julia PMUOptimalPlacement
     analysis = pmuStateEstimation(monitoring, QR)
     ```

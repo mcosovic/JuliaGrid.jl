@@ -161,14 +161,17 @@ function _addGenerator!(analysis::AcOptimalPowerFlow)
     system = analysis.system
     gen = system.generator
     jump = analysis.method.jump
+    moi = backend(jump)
     var = analysis.method.variable
     con = analysis.method.constraint
+    dual = analysis.method.dual
+    cbt = system.generator.capability
 
     idx = gen.number
     idxBus = gen.layout.bus[end]
 
-    push!(var.power.active, @variable(jump, base_name = "$(jump.ext[:active])[$idx]"))
-    push!(var.power.reactive, @variable(jump, base_name = "$(jump.ext[:reactive])[$idx]"))
+    add!(jump, var.power.active, cbt.minActive, cbt.maxActive, jump.ext[:active], idx)
+    add!(jump, var.power.reactive, cbt.minReactive, cbt.maxReactive, jump.ext[:reactive], idx)
 
     push!(analysis.power.generator.active, gen.output.active[end])
     push!(analysis.power.generator.reactive, gen.output.reactive[end])
@@ -176,47 +179,39 @@ function _addGenerator!(analysis::AcOptimalPowerFlow)
     if gen.layout.status[end] == 1
         capabilityCurve(system, jump, var, con, idx)
 
-        addCapability(
-            jump, var.power.active, con.capability.active,
-            gen.capability.minActive, gen.capability.maxActive, idx
-        )
-        addCapability(
-            jump, var.power.reactive, con.capability.reactive,
-            gen.capability.minReactive, gen.capability.maxReactive, idx
-        )
+        setConstraint!(var.power.active, con.capability.active, cbt.minActive, cbt.maxActive, idx)
+        setConstraint!(var.power.reactive, con.capability.reactive, cbt.minReactive, cbt.maxReactive, idx)
     else
-        fix!(var.power.active[idx], 0.0, con.capability.active, idx)
-        fix!(var.power.reactive[idx], 0.0, con.capability.reactive, idx)
+        fix!(var.power.active[idx], 0.0, con.capability.active, idx; force = true)
+        fix!(var.power.reactive[idx], 0.0, con.capability.reactive, idx; force = true)
     end
 
-    remove!(jump, con.balance.active, idxBus)
-    remove!(jump, con.balance.reactive, idxBus)
+    remove!(jump, moi, con.balance.active, dual.balance.active, idxBus)
+    remove!(jump, moi, con.balance.reactive, dual.balance.reactive, idxBus)
     addBalance(system, jump, var, con, idxBus)
 end
 
 function _addGenerator!(analysis::DcOptimalPowerFlow)
     system = analysis.system
-    gen = system.generator
     jump = analysis.method.jump
+    moi = backend(jump)
     var = analysis.method.variable
     con = analysis.method.constraint
+    cbt = system.generator.capability
 
-    idx = gen.number
-    idxBus =  gen.layout.bus[end]
+    idx = system.generator.number
+    idxBus = system.generator.layout.bus[end]
 
-    push!(var.power.active, @variable(jump, base_name = "$(jump.ext[:active])[$idx]"))
-    push!(analysis.power.generator.active, gen.output.active[end])
+    add!(jump, var.power.active, cbt.minActive, cbt.maxActive, jump.ext[:active], idx)
+    push!(analysis.power.generator.active, system.generator.output.active[end])
 
-    if gen.layout.status[end] == 1
-        addCapability(
-            jump, var.power.active, con.capability.active,
-            gen.capability.minActive, gen.capability.maxActive, idx
-        )
+    if system.generator.layout.status[end] == 1
+        setConstraint!(var.power.active, con.capability.active, cbt.minActive, cbt.maxActive, idx)
     else
-        fix!(var.power.active[idx], 0.0, con.capability.active, idx)
+        fix!(var.power.active[idx], 0.0, con.capability.active, idx; force = true)
     end
 
-    remove!(jump, con.balance.active, idxBus)
+    remove!(jump, moi, con.balance.active, analysis.method.dual.balance.active, idxBus)
     addBalance(system, jump, var, con, AffExpr(), idxBus)
 end
 
@@ -281,6 +276,9 @@ function updateGeneratorMain!(system::PowerSystem, label::IntStr, key::Generator
             for (k, i) in enumerate(bus.supply.generator[idxBus])
                 if i == idx
                     deleteat!(bus.supply.generator[idxBus], k)
+                    if isempty(bus.supply.generator[idxBus])
+                        delete!(bus.supply.generator, idxBus)
+                    end
                     break
                 end
             end
@@ -419,8 +417,10 @@ function _updateGenerator!(analysis::AcOptimalPowerFlow, idx::Int64)
     cbt = system.generator.capability
 
     jump = analysis.method.jump
+    moi = backend(jump)
     var = analysis.method.variable
     con = analysis.method.constraint
+    dual = analysis.method.dual
     obj = analysis.method.objective
     quad = analysis.method.objective.quadratic
 
@@ -437,40 +437,43 @@ function _updateGenerator!(analysis::AcOptimalPowerFlow, idx::Int64)
     if lastindex(analysis.power.generator.active) == system.generator.number
         analysis.power.generator.active[idx] = system.generator.output.active[idx]
         analysis.power.generator.reactive[idx] = system.generator.output.reactive[idx]
-    else
-        push!(var.power.active, @variable(jump, base_name = "$(jump.ext[:active])[$idx]"))
-        push!(var.power.reactive, @variable(jump, base_name = "$(jump.ext[:reactive])[$idx]"))
 
+        remove!(jump, moi, con.capability.active, dual.capability.active, idx)
+        remove!(jump, moi, con.capability.reactive, dual.capability.reactive, idx)
+
+        setBound!(P, cbt.minActive, cbt.maxActive, idx)
+        setBound!(Q, cbt.minReactive, cbt.maxReactive, idx)
+    else
+        add!(jump, P, cbt.minActive, cbt.maxActive, jump.ext[:active], idx)
+        add!(jump,Q, cbt.minReactive, cbt.maxReactive, jump.ext[:reactive], idx)
         push!(analysis.power.generator.active, system.generator.output.active[idx])
         push!(analysis.power.generator.reactive, system.generator.output.reactive[idx])
     end
 
-    remove!(jump, con.capability.active, idx)
-    remove!(jump, con.capability.reactive, idx)
-    remove!(jump, con.capability.lower, idx)
-    remove!(jump, con.capability.upper, idx)
+    remove!(jump, moi, con.capability.lower, dual.capability.lower, idx)
+    remove!(jump, moi, con.capability.upper, dual.capability.upper, idx)
 
     @objective(jump, Min, 0.0)
 
-    removeObjective!(jump, P, H, con.piecewise.active, quad, freeP, idx)
-    removeObjective!(jump, Q, G, con.piecewise.reactive, quad, freeQ, idx)
+    removeObjective!(jump, moi, P, H, con.piecewise.active, dual.piecewise.active, quad, freeP, idx)
+    removeObjective!(jump, moi, Q, G, con.piecewise.reactive, dual.piecewise.reactive, quad, freeQ, idx)
     removeNonlinear!(analysis.method.objective, idx)
 
     if system.generator.layout.status[idx] == 1
         addObjective(system, jump, var, con, obj, freeP, freeQ, idx)
 
         capabilityCurve(system, jump, var, con, idx)
-        addCapability(jump, P, con.capability.active, cbt.minActive, cbt.maxActive, idx)
-        addCapability(jump, Q, con.capability.reactive, cbt.minReactive, cbt.maxReactive, idx)
+        setConstraint!(P, con.capability.active, cbt.minActive, cbt.maxActive, idx)
+        setConstraint!(Q, con.capability.reactive, cbt.minReactive, cbt.maxReactive, idx)
     else
-        fix!(var.power.active[idx], 0.0, con.capability.active, idx)
-        fix!(var.power.reactive[idx], 0.0, con.capability.reactive, idx)
+        fix!(P[idx], 0.0, con.capability.active, idx; force = true)
+        fix!(Q[idx], 0.0, con.capability.reactive, idx; force = true)
     end
 
     setObjective(jump, obj)
 
-    remove!(jump, con.balance.active, idxBus)
-    remove!(jump, con.balance.reactive, idxBus)
+    remove!(jump, moi, con.balance.active, dual.balance.active, idxBus)
+    remove!(jump, moi, con.balance.reactive, dual.balance.reactive, idxBus)
     addBalance(system, jump, var, con, idxBus)
 end
 
@@ -480,9 +483,11 @@ function _updateGenerator!(analysis::DcOptimalPowerFlow, idx::Int64)
     cost = system.generator.cost.active
 
     jump = analysis.method.jump
+    moi = backend(jump)
     power = analysis.method.variable.power.active
     helper = analysis.method.variable.power.actwise
     con = analysis.method.constraint
+    dual = analysis.method.dual
     obj = analysis.method.objective
 
     free = analysis.method.signature[:free]
@@ -492,24 +497,26 @@ function _updateGenerator!(analysis::DcOptimalPowerFlow, idx::Int64)
 
     if lastindex(analysis.power.generator.active) == system.generator.number
         analysis.power.generator.active[idx] = system.generator.output.active[idx]
+
+        remove!(jump, moi, con.capability.active, dual.capability.active, idx)
+        setBound!(power, cbt.minActive, cbt.maxActive, idx)
     else
-        push!(power, @variable(jump, base_name = "$(jump.ext[:active])[$idx]"))
+        add!(jump, power, cbt.minActive, cbt.maxActive, jump.ext[:active], idx)
         push!(analysis.power.generator.active, system.generator.output.active[idx])
     end
 
-    remove!(jump, con.capability.active, idx)
-    removeObjective!(jump, power, helper, con.piecewise.active, obj, free, idx)
+    removeObjective!(jump, moi, power, helper, con.piecewise.active, dual.piecewise.active, obj, free, idx)
 
     if system.generator.layout.status[idx] == 1
-        addObjective(system, cost, jump, power, helper, con, obj, actwise, free, idx)
-        addCapability(jump, power, con.capability.active, cbt.minActive, cbt.maxActive, idx)
+        addObjective(system, cost, jump, power, helper, con, obj, free, idx)
+        setConstraint!(power, con.capability.active, cbt.minActive, cbt.maxActive, idx)
     else
-        fix!(power[idx], 0.0, con.capability.active, idx)
+        fix!(power[idx], 0.0, con.capability.active, idx; force = true)
     end
 
     set_objective_function(jump, obj)
 
-    remove!(jump, con.balance.active, idxBus)
+    remove!(jump, moi, con.balance.active, analysis.method.dual.balance.active, idxBus)
     addBalance(system, jump, analysis.method.variable, con, AffExpr(), idxBus)
 end
 
@@ -740,8 +747,10 @@ function _cost!(analysis::AcOptimalPowerFlow, idx::Int64)
     system = analysis.system
 
     jump = analysis.method.jump
+    moi = backend(jump)
     var = analysis.method.variable
     con = analysis.method.constraint
+    dual = analysis.method.dual.piecewise
     obj = analysis.method.objective
 
     P = var.power.active
@@ -755,8 +764,8 @@ function _cost!(analysis::AcOptimalPowerFlow, idx::Int64)
     if system.generator.layout.status[idx] == 1
         @objective(jump, Min, 0.0)
 
-        removeObjective!(jump, P, H, con.piecewise.active, obj.quadratic, freeP, idx)
-        removeObjective!(jump, Q, G, con.piecewise.reactive, obj.quadratic, freeQ, idx)
+        removeObjective!(jump, moi, P, H, con.piecewise.active, dual.active, obj.quadratic, freeP, idx)
+        removeObjective!(jump, moi, Q, G, con.piecewise.reactive, dual.reactive, obj.quadratic, freeQ, idx)
         removeNonlinear!(analysis.method.objective, idx)
 
         addObjective(system, jump, var, con, obj, freeP, freeQ, idx)
@@ -770,18 +779,20 @@ function _cost!(analysis::DcOptimalPowerFlow, idx::Int64)
     cost = system.generator.cost.active
 
     jump = analysis.method.jump
+    moi = backend(jump)
     power = analysis.method.variable.power.active
     helper = analysis.method.variable.power.actwise
     con = analysis.method.constraint
+    dual = analysis.method.dual.piecewise
     obj = analysis.method.objective
 
     free = analysis.method.signature[:free]
     actwise = jump.ext[:actwise]
 
     if system.generator.layout.status[idx] == 1
-        removeObjective!(jump, power, helper, con.piecewise.active, obj, free, idx)
+        removeObjective!(jump, moi, power, helper, con.piecewise.active, dual.active, obj, free, idx)
 
-        addObjective(system, cost, jump, power, helper, con, obj, actwise, free, idx)
+        addObjective(system, cost, jump, power, helper, con, obj, free, idx)
         set_objective_function(jump, obj)
     end
 end

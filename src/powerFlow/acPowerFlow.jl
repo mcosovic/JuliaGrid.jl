@@ -8,6 +8,7 @@ The function requires the `PowerSystem` type to establish the framework. Next, t
 argument, while optional, determines the method used to solve the linear system of equations within
 each iteration. It can take one of the following values:
 - `LU`: Utilizes LU factorization (default).
+- `KLU`: Utilizes KLU factorization.
 - `QR`: Utilizes QR factorization.
 
 # Updates
@@ -35,7 +36,7 @@ acModel!(system)
 analysis = newtonRaphson(system, QR)
 ```
 """
-function newtonRaphson(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LU}}
+function newtonRaphson(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LU, KLU}}
     ac = system.model.ac
     bus = system.bus
 
@@ -151,6 +152,7 @@ The function requires the `PowerSystem` type to establish the framework. Next, t
 argument, while optional, determines the method used to solve the linear system of equations within
 each iteration. It can take one of the following values:
 - `LU`: Utilizes LU factorization (default).
+- `KLU`: Utilizes KLU factorization.
 - `QR`: Utilizes QR factorization.
 
 # Updates
@@ -178,7 +180,7 @@ acModel!(system)
 analysis = fastNewtonRaphsonBX(system, QR)
 ```
 """
-function fastNewtonRaphsonBX(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LU}}
+function fastNewtonRaphsonBX(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LU, KLU}}
     fastNewtonRaphsonModel(system, T, true)
 end
 
@@ -192,6 +194,7 @@ The function requires the `PowerSystem` type to establish the framework. Next, t
 argument, while optional, determines the method used to solve the linear system of equations within
 each iteration. It can take one of the following values:
 - `LU`: Utilizes LU factorization (default).
+- `KLU`: Utilizes KLU factorization.
 - `QR`: Utilizes QR factorization.
 
 # Updates
@@ -219,11 +222,11 @@ acModel!(system)
 analysis = fastNewtonRaphsonXB(system, QR)
 ```
 """
-function fastNewtonRaphsonXB(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LU}}
+function fastNewtonRaphsonXB(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LU, KLU}}
     fastNewtonRaphsonModel(system, T, false)
 end
 
-function fastNewtonRaphsonModel(system::PowerSystem, T::Type{<:Union{QR, LU}}, bx::Bool)
+function fastNewtonRaphsonModel(system::PowerSystem, T::Type{<:Union{QR, LU, KLU}}, bx::Bool)
     bus = system.bus
     branch = system.branch
     ac = system.model.ac

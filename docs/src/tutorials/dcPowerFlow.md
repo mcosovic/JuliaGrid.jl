@@ -37,6 +37,13 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 ---
 
+## Bus Types
+In the context of [Bus Types](@ref BusTypesTutorials), demand and generator buses are treated identically in the DC power flow model. The only bus type that matters is the slack bus, whose voltage angle is known.
+
+JuliaGrid verifies the slack bus during initialization, and its assignment can be adjusted within the [`dcPowerFlow`](@ref dcPowerFlow) function. Specifically, if a bus is labeled as the slack bus (`type = 3`) but does not have a connected in-service generator, it will be reclassified as a demand bus (`type = 1`). In that case, the first generator bus (`type = 2`) with a connected in-service generator is promoted to the slack bus (`type = 3`).
+
+---
+
 ## [Power Flow Solution](@id DCPowerFlowSolutionTutorials)
 As discussed in section [DC Model](@ref DCModelTutorials), the DC power flow problem can be represented by a set of linear equations:
 ```math

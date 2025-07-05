@@ -1,4 +1,4 @@
-export LU, QR, LDLt
+export LU, QR, LDLt, KLU
 export Analysis, AC, DC, WlsMethod, Normal, Orthogonal, PetersWilkinson
 export AcPowerFlow, NewtonRaphson, FastNewtonRaphson, GaussSeidel, DcPowerFlow
 export AcOptimalPowerFlow, DcOptimalPowerFlow
@@ -76,6 +76,13 @@ abstract type QR <: Normal end
 An abstract type used for representing LU factorization in JuliaGrid.
 """
 abstract type LU <: Normal end
+
+"""
+    KLU
+
+An abstract type used for representing KLU factorization in JuliaGrid.
+"""
+abstract type KLU <: Normal end
 
 """
     LDLt
@@ -250,20 +257,20 @@ struct AcVariableRef
 end
 
 mutable struct AcFlowConstraintRef
-    from::Dict{Int64, ConstraintRef}
-    to::Dict{Int64, ConstraintRef}
+    from::ConDict
+    to::ConDict
 end
 
 struct AcPiecewiseConstraintRef
-    active::Dict{Int64, Vector{ConstraintRef}}
-    reactive::Dict{Int64, Vector{ConstraintRef}}
+    active::ConDictVec
+    reactive::ConDictVec
 end
 
 struct AcCapabilityConstraintRef
-    active::Dict{Int64, ConstraintRef}
-    reactive::Dict{Int64, ConstraintRef}
-    lower::Dict{Int64, ConstraintRef}
-    upper::Dict{Int64, ConstraintRef}
+    active::ConDict
+    reactive::ConDict
+    lower::ConDict
+    upper::ConDict
 end
 
 struct AcConstraintRef
@@ -276,20 +283,20 @@ struct AcConstraintRef
 end
 
 mutable struct AcFlowDual
-    from::Dict{Int64, Float64}
-    to::Dict{Int64, Float64}
+    from::DualDict
+    to::DualDict
 end
 
 mutable struct AcCapabilityDual
-    active::Dict{Int64, Float64}
-    reactive::Dict{Int64, Float64}
-    lower::Dict{Int64, Float64}
-    upper::Dict{Int64, Float64}
+    active::DualDict
+    reactive::DualDict
+    lower::DualDict
+    upper::DualDict
 end
 
 mutable struct AcPiecewiseDual
-    active::Dict{Int64, Vector{Float64}}
-    reactive::Dict{Int64, Vector{Float64}}
+    active::DualDictVec
+    reactive::DualDictVec
 end
 
 struct AcDual
@@ -320,6 +327,18 @@ mutable struct AcOptimalPowerFlowMethod
     signature::Signature
 end
 
+mutable struct ExtendedDual
+    variable::OrderedDict{Int64, Dict{Symbol, Float64}}
+    constraint::OrderedDict{Int64, Float64}
+end
+
+mutable struct Extended
+    solution::Vector{Float64}
+    variable::OrderedDict{Int64, VariableRef}
+    constraint:: OrderedDict{Int64, ConstraintRef}
+    dual::ExtendedDual
+end
+
 """
     AcOptimalPowerFlow <: AC
 
@@ -331,6 +350,7 @@ the AC optimal power flow model.
 - `power::AcPower`: Active and reactive powers at buses, branches, and generators.
 - `current::AcCurrent`: Currents at buses and branches.
 - `method::AcOptimalPowerFlowMethod`: The JuMP model, including variables, constraints, and objective.
+- `extended::Extended`: User-defined variables and constraints.
 - `system::PowerSystem`: The reference to the power system.
 """
 mutable struct AcOptimalPowerFlow <: AC
@@ -338,6 +358,7 @@ mutable struct AcOptimalPowerFlow <: AC
     power::AcPower
     current::AcCurrent
     method::AcOptimalPowerFlowMethod
+    extended::Extended
     system::PowerSystem
 end
 
@@ -348,28 +369,28 @@ struct DcVariableRef
 end
 
 struct DcPiecewiseConstraintRef
-    active::Dict{Int64, Vector{ConstraintRef}}
+    active::ConDictVec
 end
 
 struct DcConstraintRef
     slack::AngleConstraintRef
+    capability::RealConstraintRef
     balance::RealConstraintRef
     voltage::AngleConstraintRef
     flow::RealConstraintRef
-    capability::RealConstraintRef
     piecewise::DcPiecewiseConstraintRef
 end
 
 mutable struct DcPiecewiseDual
-    active::Dict{Int64, Vector{Float64}}
+    active::DualDictVec
 end
 
 struct DcDual
     slack::AngleDual
+    capability::RealDual
     balance::RealDual
     voltage::AngleDual
     flow::RealDual
-    capability::RealDual
     piecewise::DcPiecewiseDual
 end
 
@@ -392,12 +413,14 @@ the DC optimal power flow model.
 - `voltage::Angle`: Bus voltage angles.
 - `power::DcPower`: Active powers at buses, branches, and generators.
 - `method::DcOptimalPowerFlowMethod`: The JuMP model, including variables, constraints, and objective.
+- `extended::Extended`: User-defined variables and constraints.
 - `system::PowerSystem`: The reference to the power system.
 """
 mutable struct DcOptimalPowerFlow <: DC
     voltage::Angle
     power::DcPower
     method::DcOptimalPowerFlowMethod
+    extended::Extended
     system::PowerSystem
 end
 

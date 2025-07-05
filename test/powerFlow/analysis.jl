@@ -22,6 +22,12 @@
         testCurrent(analysis)
     end
 
+    @testset "IEEE 14: KLU Factorization" begin
+        analysis = newtonRaphson(system14, KLU)
+        powerFlow!(analysis)
+        testVoltage(matpwr14, analysis)
+    end
+
     ########## IEEE 30-bus Test Case ##########
     system30 = powerSystem(path * "case30test.m")
     matpwr30 = h5read(path * "results.h5", "case30test/newtonRaphson")
@@ -74,6 +80,12 @@ end
         testVoltage(matpwr14, analysis)
     end
 
+    @testset "IEEE 14: KLU Factorization" begin
+        analysis = fastNewtonRaphsonBX(system14, KLU)
+        powerFlow!(analysis; iteration = 30)
+        testVoltage(matpwr14, analysis)
+    end
+
     ########## IEEE 30-bus Test Case ##########
     system30 = powerSystem(path * "case30test.m")
     matpwr30 = h5read(path * "results.h5", "case30test/fastNewtonRaphsonBX")
@@ -109,6 +121,12 @@ end
     powerFlow!(analysis; iteration = 30)
 
     @testset "IEEE 14: Matpower" begin
+        testVoltage(matpwr14, analysis)
+    end
+
+    @testset "IEEE 14: KLU Factorization" begin
+        analysis = fastNewtonRaphsonXB(system14, KLU)
+        powerFlow!(analysis; iteration = 30)
         testVoltage(matpwr14, analysis)
     end
 
@@ -227,6 +245,12 @@ end
         testBus(analysis)
         testBranch(analysis)
         testGenerator(analysis)
+    end
+
+    @testset "IEEE 14: KLU Factorization" begin
+        analysis = dcPowerFlow(system14, KLU)
+        powerFlow!(analysis)
+        @test analysis.voltage.angle ≈ matpwr14["voltage"]
     end
 
     ########## IEEE 30-bus Test Case ##########

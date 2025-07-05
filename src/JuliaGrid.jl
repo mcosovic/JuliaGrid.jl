@@ -10,6 +10,7 @@ import OrderedCollections: OrderedDict
 import Printf: format, @printf, Format
 import Random: randperm, shuffle, shuffle!
 import Distributions: quantile, Chisq
+import KLU: klu, klu!, KLUFactorization
 
 ######### Types and Constants ##########
 include("definition/internal.jl")
@@ -59,10 +60,14 @@ export reactiveLimit!, adjustAngle!, setInitialPoint!
 export dcPowerFlow
 
 ######### Optimal Power Flow ##########
+include("optimalPowerFlow/utility.jl")
 include("optimalPowerFlow/acOptimalPowerFlow.jl")
 include("optimalPowerFlow/dcOptimalPowerFlow.jl")
+include("optimalPowerFlow/extended.jl")
 export acOptimalPowerFlow
 export dcOptimalPowerFlow
+export addDual!, remove!
+export @addVariable, @addConstraint
 
 ######### Measurement ##########
 include("measurement/load.jl")

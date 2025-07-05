@@ -20,6 +20,14 @@ using JuliaGrid, Ipopt
 * [`setInitialPoint!`](@ref setInitialPoint!(::DcOptimalPowerFlow))
 * [`powerFlow!`](@ref powerFlow!(::DcOptimalPowerFlow))
 
+###### Extended Formulation
+* [`@addVariable`](@ref @addVariable)
+* [`@addConstraint`](@ref @addConstraint)
+
+###### Utility Functions
+* [`addDual!`](@ref addDual!)
+* [`remove!`](@ref remove!)
+
 ---
 
 ## AC Optimal Power Flow
@@ -40,4 +48,18 @@ solve!(::DcOptimalPowerFlow)
 setInitialPoint!(::DcOptimalPowerFlow)
 setInitialPoint!(::DcOptimalPowerFlow, ::DC)
 powerFlow!(::DcOptimalPowerFlow)
+```
+
+---
+
+## Extended Formulation
+```@docs
+@addVariable
+@addConstraint
+```
+
+## Utility Functions
+```@docs
+addDual!
+remove!
 ```

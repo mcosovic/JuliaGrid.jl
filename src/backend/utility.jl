@@ -391,6 +391,14 @@ function factorization!(A::SparseMatrixCSC{Float64, Int64}, F::CHOLMOD.Factor{Fl
     ldlt!(F, A)
 end
 
+function factorization(A::SparseMatrixCSC{Float64, Int64}, ::KLUFactorization{Float64, Int64})
+    klu(A)
+end
+
+function factorization!(A::SparseMatrixCSC{Float64, Int64}, F::KLUFactorization{Float64, Int64})
+    klu!(F, A)
+end
+
 function factorization(A::SparseMatrixCSC{Float64, Int64}, ::SPQR.QRSparse{Float64, Int64})
     qr(A)
 end
@@ -403,19 +411,21 @@ end
 selectFactorization(::Type{LDLt}) = ldlt(sparse(Matrix(1.0I, 1, 1)))
 selectFactorization(::Type{LU}) = lu(sparse(Matrix(1.0I, 1, 1)))
 selectFactorization(::Type{QR}) = qr(sparse(Matrix(1.0I, 1, 1)))
+selectFactorization(::Type{KLU}) = klu(sparse(Matrix(1.0I, 1, 1)))
 selectFactorization(::Type{Orthogonal}) = qr(sparse(Matrix(1.0I, 1, 1)))
 selectFactorization(::Type{PetersWilkinson}) = lu(sparse(Matrix(1.0I, 1, 1)))
 
 ##### Select Type #####
 selectType(::Type{LDLt}) = Normal
 selectType(::Type{LU}) = Normal
+selectType(::Type{KLU}) = Normal
 selectType(::Type{QR}) = Normal
 selectType(::Type{Orthogonal}) = Orthogonal
 selectType(::Type{PetersWilkinson}) = PetersWilkinson
 
 ##### Solution #####
 function solution!(x::Vector{Float64}, F::FactorSparse, b::Vector{Float64})
-    if isa(F, UMFPACK.UmfpackLU{Float64, Int64})
+    if isa(F, UMFPACK.UmfpackLU{Float64, Int64}) || isa(F, KLUFactorization{Float64, Int64})
         ldiv!(x, F, b)
     else
         x .= F \ b
@@ -487,6 +497,13 @@ function checkSlackBus(system::PowerSystem)
     end
 end
 
+function checkSlackBus(jump::JuMP.Model, con::ConDict, slack::Int64)
+    if !(haskey(con, slack) && haskey(con[slack], :equality) && is_valid(jump, con[slack][:equality]))
+        throw(ErrorException("The slack bus constraint is missing."))
+    end
+end
+
+
 ##### Add Angle of the Slack Bus #####
 function addSlackAngle!(system::PowerSystem, analysis::DC)
     analysis.voltage.angle[system.bus.layout.slack] = 0.0
@@ -518,45 +535,70 @@ function print(io::IO, label::LabelDict, data::Dict{Int64, Float64})
     end
 end
 
-function print(io::IO, label::LabelDict, obj::Dict{Int64, ConstraintRef})
+function print(io::IO, label::LabelDict, con::ConDict)
     for (key, idx) in label
-        if haskey(obj, idx) && is_valid(owner_model(obj[idx]), obj[idx])
-            expr = constraint_string(MIME("text/plain"), obj[idx])
-            println(io::IO, key, ": ", simplifyExpression(expr))
+        if haskey(con, idx)
+            exprs = String[]
+            for type in keys(con[idx])
+                if is_valid(owner_model(con[idx][type]), con[idx][type])
+                    expr = constraint_string(MIME("text/plain"), con[idx][type])
+                    push!(exprs, simplifyExpression(expr))
+                end
+            end
+            if !isempty(exprs)
+                println(io::IO, key, ": ", join(exprs, ", "))
+            end
         end
     end
 end
 
-function print(io::IO, obj::Dict{Int64, ConstraintRef})
-    for key in sort(collect(keys(obj)))
-        if is_valid(owner_model(obj[key]), obj[key])
-            expr = constraint_string(MIME("text/plain"), obj[key])
-            println(io::IO, simplifyExpression(expr))
+function print(io::IO, con::ConDict)
+    for idx in keys(con)
+        for type in keys(con[idx])
+            if is_valid(owner_model(con[idx][type]), con[idx][type])
+                expr = constraint_string(MIME("text/plain"), con[idx][type])
+                println(io::IO, simplifyExpression(expr))
+            end
         end
     end
 end
 
-function print(io::IO, label::LabelDict, obj::Dict{Int64, Vector{ConstraintRef}})
+function print(io::IO, label::LabelDict, con::ConDictVec)
     for (key, idx) in label
-        if haskey(obj, idx)
-            for cons in obj[idx]
-                if is_valid(owner_model(cons), cons)
-                    println(io::IO, key, ": ", cons)
+        if haskey(con, idx)
+            for type in keys(con[idx])
+                for i = 1:lastindex(con[idx][type])
+                    if is_valid(owner_model(con[idx][type][i]), con[idx][type][i])
+                        println(io::IO, key, ": ", con[idx][type][i])
+                    end
                 end
             end
         end
     end
 end
 
-function print(io::IO, obj::Dict{Int64, Vector{ConstraintRef}})
-    for key in sort(collect(keys(obj)))
-        for cons in obj[key]
-            if is_valid(owner_model(cons), cons)
-                println(io::IO, cons)
+function print(io::IO, con::ConDictVec)
+    for idx in keys(con)
+        for type in keys(con[idx])
+            for i = 1:lastindex(con[idx][type])
+                if is_valid(owner_model(con[idx][type][i]), con[idx][type][i])
+                    println(io::IO, con[idx][type][i])
+                end
             end
         end
     end
 end
+
+function print(io::IO, label::LabelDict, dual::DualDict)
+    for (key, idx) in label
+        if haskey(dual, idx)
+            for type in keys(dual[idx])
+                println(io::IO, key, ": ", dual[idx][type])
+            end
+        end
+    end
+end
+
 
 function simplifyExpression(expr::String)
     expr = replace(expr, r"[-]?0\.0\s*\*\s*(cos|sin)\(\s*[^()]*\s*\)" => "0")
@@ -682,6 +724,19 @@ function errorTransfer(a::Vector{Float64}, b::Vector{Float64})
     if lastindex(a) != lastindex(b)
         throw(DimensionMismatch("Voltages could not be transferred because of mismatched array sizes."))
     end
+end
+
+function errorAddDualValid()
+    throw(ErrorException(
+        "Cannot assign a dual variable: the corresponding constraint does not exist in the model.")
+    )
+end
+
+function errorAddDualKeyword()
+    throw(ErrorException(
+        "Cannot assign a dual variable: the constraint exists, but the required keywords " *
+        "for dual assignment are missing or incorrect.")
+    )
 end
 
 function checkVariance(variance::Float64)

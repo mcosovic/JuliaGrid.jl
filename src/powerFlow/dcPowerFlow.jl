@@ -8,6 +8,7 @@ The function requires the `PowerSystem` type to establish the framework. Next, t
 argument, while optional, determines the method used to solve the linear system of equations. It can
 take one of the following values:
 - `LU`: Utilizes LU factorization (default).
+- `KLU`: Utilizes KLU factorization.
 - `LDLt`: Utilizes LDLt factorization.
 - `QR`: Utilizes QR factorization.
 
@@ -37,7 +38,7 @@ dcModel!(system)
 analysis = dcPowerFlow(system, QR)
 ```
 """
-function dcPowerFlow(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LDLt, LU}}
+function dcPowerFlow(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LDLt, LU, KLU}}
     checkSlackBus(system)
     model!(system, system.model.dc)
     changeSlackBus!(system)

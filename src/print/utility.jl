@@ -89,7 +89,8 @@ function layout(
     fmt::Dict{String, String},
     width::Dict{String, Int64},
     show::OrderedDict{String, Bool},
-    delimiter::String, style::Bool
+    delimiter::String,
+    style::Bool
 )
     pfmt = Dict{String, Format}()
     hfmt = Dict{String, Format}(
@@ -210,15 +211,12 @@ function _width(_width::Int64, span::Int64, style::Bool)
     max(span, _width) * style
 end
 
-function _show(
-    _show::Bool,
-    value::Union{Vector{Float64}, Dict{Int64, ConstraintRef}, Dict{Int64, Float64}}
-)
-    !isempty(value) & _show
+function _show(_show::Bool, value::Union{Vector{Float64}, ConDict, DualDict})
+    !isempty(value) && _show
 end
 
 function _show(_show::Bool, value::Bool)
-    value & _show
+    value && _show
 end
 
 function _header(headerMain::String, headerStyle::String, style::Bool)
@@ -285,7 +283,8 @@ end
 function printing!(
     width::Dict{String, Int64},
     show::OrderedDict{String, Bool},
-    title::Bool, style::Bool,
+    title::Bool,
+    style::Bool,
     heading::String
 )
     howMany = 0
@@ -427,94 +426,69 @@ function printf(io::IO, prt::Print, dicts::Dict{String, String}...)
     end
 end
 
-function printf(
-    io::IO,
-    fmt::Dict{String, Format},
-    prt::Print,
-    value::Union{String, Int64},
-    keys::Symbol...
-)
+function printf(io::IO, fmt::Dict{String, Format}, prt::Print, val::IntStr, keys::Symbol...)
     for key in keys
         name = prt.head[key]
         if prt.show[name]
-            print(io, format(fmt[name], prt.width[name], value))
+            print(io, format(fmt[name], prt.width[name], val))
         end
     end
 end
 
-function printf(
-    io::IO,
-    prt::Print,
-    i::Int64,
-    scale::Float64,
-    vector::Vector{Float64},
-    key::Symbol
-)
+function printf(io::IO, prt::Print, val::Float64, key::Symbol)
     name = prt.head[key]
     if prt.show[name]
-        print(io, format(prt.pfmt[name], prt.width[name], vector[i] * scale))
+        print(io, format(prt.pfmt[name], prt.width[name], val))
     end
 end
 
-function printf(
-    io::IO,
-    prt::Print,
-    i::Int64,
-    scale::Float64,
-    constr::Dict{Int64, ConstraintRef},
-    key::Symbol;
-    native::Bool = true
-)
+function printf(io::IO, prt::Print, scale::Float64, val::Float64, key::Symbol)
     name = prt.head[key]
     if prt.show[name]
-        if native
-            print(io, format(prt.pfmt[name], prt.width[name], value(constr[i]) * scale))
+        print(io, format(prt.pfmt[name], prt.width[name], val * scale))
+    end
+end
+
+function printf(io::IO, prt::Print, i::Int64, val::Union{Vector{String}, Vector{<:Integer}}, key::Symbol)
+    name = prt.head[key]
+    if prt.show[name]
+        print(io, format(prt.pfmt[name], prt.width[name], val[i]))
+    end
+end
+
+function printf(io::IO, prt::Print, i::Int64, scale::Float64, val::Vector{Float64}, key::Symbol)
+    name = prt.head[key]
+    if prt.show[name]
+        print(io, format(prt.pfmt[name], prt.width[name], val[i] * scale))
+    end
+end
+
+function printf(io::IO, prt::Print, i::Int64, val::LabelDict, key::Symbol)
+    name = prt.head[key]
+    if prt.show[name]
+        print(io, format(prt.pfmt[name], prt.width[name], getLabel(val, i)))
+    end
+end
+
+function printf(io::IO, prt::Print, i::Int64, scale::Float64, dual::DualDict, key::Symbol)
+    name = prt.head[key]
+    if prt.show[name]
+        dualValue = argmax(kv -> abs(kv[2]), dual[i])[2]
+
+        print(io, format(prt.pfmt[name], prt.width[name], dualValue / scale))
+    end
+end
+
+function printf(io::IO, prt::Print, i::Int64, scale::Float64, opt::Float64, dual::DualDict, flag::Vector{Int8}, key::Symbol)
+    name = prt.head[key]
+    if prt.show[name]
+        dualValue = argmax(kv -> abs(kv[2]), dual[i])[2]
+
+        if flag[i] == 3 || flag[i] == 5
+            print(io, format(prt.pfmt[name], prt.width[name], (2 * opt * dualValue) / scale))
         else
-            print(io, format(prt.pfmt[name], prt.width[name], sqrt(value(constr[i])) * scale))
+            print(io, format(prt.pfmt[name], prt.width[name], dualValue / scale))
         end
-    end
-end
-
-function printf(
-    io::IO,
-    prt::Print,
-    i::Int64,
-    scale::Float64,
-    dual::Dict{Int64, Float64},
-    key::Symbol;
-)
-    name = prt.head[key]
-    if prt.show[name]
-        print(io, format(prt.pfmt[name], prt.width[name], dual[i] / scale))
-    end
-end
-
-function printf(
-    io::IO,
-    prt::Print,
-    i::Int64,
-    scale::Float64,
-    dual::Dict{Int64, Float64},
-    constr::Dict{Int64, ConstraintRef},
-    key::Symbol;
-)
-    name = prt.head[key]
-    if prt.show[name]
-        print(io, format(prt.pfmt[name], prt.width[name], 2 * dual[i] * sqrt(value(constr[i])) / scale))
-    end
-end
-
-function printf(io::IO, prt::Print, value::Float64, key::Symbol)
-    name = prt.head[key]
-    if prt.show[name]
-        print(io, format(prt.pfmt[name], prt.width[name], value))
-    end
-end
-
-function printf(io::IO, prt::Print, i::Int64, vector::Vector{Int8}, key::Symbol)
-    name = prt.head[key]
-    if prt.show[name]
-        print(io, format(prt.pfmt[name], prt.width[name], vector[i]))
     end
 end
 
@@ -534,26 +508,6 @@ function printf(
     end
 end
 
-function printf(
-    io::IO,
-    prt::Print,
-    value::Union{Vector{String}, Vector{Int64}},
-    i::Int64,
-    key::Symbol
-)
-    name = prt.head[key]
-    if prt.show[name]
-        print(io, format(prt.pfmt[name], prt.width[name], value[i]))
-    end
-end
-
-function printf(io::IO, prt::Print, value::LabelDict, i::Int64, key::Symbol)
-    name = prt.head[key]
-    if prt.show[name]
-        print(io, format(prt.pfmt[name], prt.width[name], getLabel(value, i)))
-    end
-end
-
 function printf(io::IO, prt::Print)
     if prt.style
         print(io, prt.delimiter)
@@ -567,14 +521,59 @@ function printf(io::IO, prt::Print)
 end
 
 ##### Find Maximum Values #####
+function fmax(width::Dict{String, Int64}, show::OrderedDict{String, Bool}, value::IntStr, key::String)
+    if show[key]
+        width[key] = max(textwidth(string(value)), width[key])
+    end
+end
+
 function fmax(
     width::Dict{String, Int64},
     show::OrderedDict{String, Bool},
-    value::IntStr,
+    label::OrderedDict{Int64, Int64},
+    heading::String
+)
+    if show[heading]
+        minmax = extrema(collect(keys(label)))
+        width[heading] = max(maximum(textwidth, string.(minmax)), width[heading])
+    end
+end
+
+function fmax(
+    width::Dict{String, Int64},
+    show::OrderedDict{String, Bool},
+    label::OrderedDict{String, Int64},
+    heading::String
+)
+    if show[heading]
+        width[heading] = max(maximum(textwidth, collect(keys(label))), width[heading])
+    end
+end
+
+function fmax(
+    fmt::Dict{String, String},
+    width::Dict{String, Int64},
+    show::OrderedDict{String, Bool},
+    i::Int64,
+    scale::Float64,
+    val::Vector{Float64},
     key::String
 )
     if show[key]
-        width[key] = max(textwidth(string(value)), width[key])
+        width[key] = max(textwidth(format(Format(fmt[key]), 0, val[i] * scale)), width[key])
+    end
+end
+
+function fmax(
+    fmt::Dict{String, String},
+    width::Dict{String, Int64},
+    show::OrderedDict{String, Bool},
+    val::Vector{Float64},
+    key::String
+)
+    if show[key]
+        maxVal = maximum(val)
+        width[key] = max(textwidth(format(Format(fmt[key]), 0, maxVal)), width[key])
     end
 end
 
@@ -595,62 +594,11 @@ function fmax(
     width::Dict{String, Int64},
     show::OrderedDict{String, Bool},
     scale::Float64,
-    vector::Vector{Float64},
+    value::Float64,
     key::String
 )
     if show[key]
-        maxVal = maximum(vector)
-        width[key] = max(textwidth(format(Format(fmt[key]), 0, maxVal * scale)), width[key])
-    end
-end
-
-function fmax(
-    fmt::Dict{String, String},
-    width::Dict{String, Int64},
-    show::OrderedDict{String, Bool},
-    vector::Vector{Float64},
-    key::String
-)
-    if show[key]
-        maxVal = maximum(vector)
-        width[key] = max(textwidth(format(Format(fmt[key]), 0, maxVal)), width[key])
-    end
-end
-
-function fmax(
-    fmt::Dict{String, String},
-    width::Dict{String, Int64},
-    show::OrderedDict{String, Bool},
-    i::Int64,
-    scale::Float64,
-    vector::Vector{Float64},
-    key::String
-)
-    if show[key]
-        width[key] = max(textwidth(format(Format(fmt[key]), 0, vector[i] * scale)), width[key])
-    end
-end
-
-function fmax(
-    width::Dict{String, Int64},
-    show::OrderedDict{String, Bool},
-    label::OrderedDict{String, Int64},
-    heading::String
-)
-    if show[heading]
-        width[heading] = max(maximum(textwidth, collect(keys(label))), width[heading])
-    end
-end
-
-function fmax(
-    width::Dict{String, Int64},
-    show::OrderedDict{String, Bool},
-    label::OrderedDict{Int64, Int64},
-    heading::String
-)
-    if show[heading]
-        minmax = extrema(collect(keys(label)))
-        width[heading] = max(maximum(textwidth, string.(minmax)), width[heading])
+        width[key] = max(textwidth(format(Format(fmt[key]), 0, value * scale)), width[key])
     end
 end
 
@@ -694,11 +642,12 @@ function fmax(
     show::OrderedDict{String, Bool},
     i::Int64,
     scale::Float64,
-    dual::Dict{Int64, Float64},
-    key::String
+    dual::DualDict,
+    key::String,
 )
     if haskey(dual, i) && show[key]
-        width[key] = max(textwidth(format(Format(fmt[key]), 0, dual[i] / scale)), width[key])
+        dualValue = argmax(kv -> abs(kv[2]), dual[i])[2] / scale
+        width[key] = max(textwidth(format(Format(fmt[key]), 0, dualValue)), width[key])
     end
 end
 
@@ -708,33 +657,21 @@ function fmax(
     show::OrderedDict{String, Bool},
     i::Int64,
     scale::Float64,
-    dual::Dict{Int64, Float64},
-    constraint::Dict{Int64, ConstraintRef},
-    key::String
+    opt::Float64,
+    dual::DualDict,
+    flag::Vector{Int8},
+    key::String,
 )
     if haskey(dual, i) && show[key]
-        dul = 2 * dual[i] * sqrt(value(constraint[i])) / scale
-        width[key] = max(textwidth(format(Format(fmt[key]), 0, dul)), width[key])
-    end
-end
+        dualValue = argmax(kv -> abs(kv[2]), dual[i])[2]
 
-function fmax(
-    fmt::Dict{String, String},
-    width::Dict{String, Int64},
-    show::OrderedDict{String, Bool},
-    i::Int64,
-    scale::Float64,
-    constraint::Dict{Int64, ConstraintRef},
-    key::String;
-    native::Bool = true
-)
-    if show[key]
-        if native
-            val = value(constraint[i]) * scale
+        if flag[i] == 3 || flag[i] == 5
+            dualValue = (2 * opt * dualValue) / scale
         else
-            val = sqrt(value(constraint[i])) * scale
+            dualValue /= scale
         end
-        width[key] = max(textwidth(format(Format(fmt[key]), 0, val)), width[key])
+
+        width[key] = max(textwidth(format(Format(fmt[key]), 0, dualValue)), width[key])
     end
 end
 
@@ -765,23 +702,78 @@ function fminmax(
     if show[key]
         minmax = extrema(vector)
         pfmt = Format(fmt[key])
+
         width[key] = max(
             textwidth(format(pfmt, 0, minmax[1] * scale)),
             textwidth(format(pfmt, 0, minmax[2] * scale)), width[key]
         )
     end
 end
+function fminmax(
+    show::OrderedDict{String, Bool},
+    scale::Float64,
+    minmax::Vector{Float64},
+    value::Float64,
+    key::String,
+)
+    if show[key]
+        minmax[1] = max(value * scale, minmax[1])
+        minmax[2] = min(value * scale, minmax[2])
+    end
+end
+
+function fminmax(
+    show::OrderedDict{String, Bool},
+    i::Int64,
+    scale::Float64,
+    minmax::Vector{Float64},
+    dual::DualDict,
+    key::String,
+)
+    if show[key] && haskey(dual, i)
+        dualValue = argmax(kv -> abs(kv[2]), dual[i])[2] / scale
+
+        minmax[1] = max(dualValue, minmax[1])
+        minmax[2] = min(dualValue, minmax[2])
+    end
+end
+
+function fminmax(
+    show::OrderedDict{String, Bool},
+    i::Int64,
+    scale::Float64,
+    opt::Float64,
+    minmax::Vector{Float64},
+    dual::DualDict,
+    flag::Vector{Int8},
+    key::String,
+)
+    if show[key] && haskey(dual, i)
+        dualValue = argmax(kv -> abs(kv[2]), dual[i])[2]
+
+        if flag[i] == 3 || flag[i] == 5
+            dualValue = (2 * opt * dualValue) / scale
+        else
+            dualValue /= scale
+        end
+
+        minmax[1] = max(dualValue, minmax[1])
+        minmax[2] = min(dualValue, minmax[2])
+    end
+
+end
 
 function fminmax(
     fmt::Dict{String, String},
     width::Dict{String, Int64},
     show::OrderedDict{String, Bool},
-    vector::Vector{Float64},
+    val::Vector{Float64},
     key::String
 )
     if show[key]
-        minmax = extrema(vector)
+        minmax = extrema(val)
         pfmt = Format(fmt[key])
+
         width[key] = max(
             textwidth(format(pfmt, 0, minmax[1])),
             textwidth(format(pfmt, 0, minmax[2])), width[key]
@@ -793,74 +785,15 @@ function fminmax(
     show::OrderedDict{String, Bool},
     i::Int64,
     scale::Float64,
-    vminmax::Vector{Float64},
-    constraint::Dict{Int64, ConstraintRef},
-    key::String;
-    native::Bool = true
-)
-    if show[key]
-        if native
-            primalValue = value(constraint[i]) * scale
-        else
-            primalValue = sqrt(value(constraint[i])) * scale
-        end
-        vminmax[1] = max(primalValue, vminmax[1])
-        vminmax[2] = min(primalValue, vminmax[2])
-    end
-
-    minmax
-end
-
-function fminmax(
-    show::OrderedDict{String, Bool},
-    i::Int64,
-    scale::Float64,
-    vminmax::Vector{Float64},
-    dual::Dict{Int64, Float64},
-    key::String
-)
-    if show[key] && haskey(dual, i)
-        dualValue = dual[i] / scale
-        vminmax[1] = max(dualValue, vminmax[1])
-        vminmax[2] = min(dualValue, vminmax[2])
-    end
-
-    vminmax
-end
-
-function fminmax(
-    show::OrderedDict{String, Bool},
-    i::Int64,
-    scale::Float64,
-    vminmax::Vector{Float64},
-    dual::Dict{Int64, Float64},
-    constraint::Dict{Int64, ConstraintRef},
-    key::String
-)
-    if show[key] && haskey(dual, i)
-        dualValue = 2 * dual[i] * sqrt(value(constraint[i])) / scale
-        vminmax[1] = max(dualValue, vminmax[1])
-        vminmax[2] = min(dualValue, vminmax[2])
-    end
-
-    vminmax
-end
-
-function fminmax(
-    show::OrderedDict{String, Bool},
-    i::Int64,
-    scale::Float64,
-    vminmax::Vector{Float64},
+    minmax::Vector{Float64},
     vector::Vector{Float64},
     key::String
 )
     if show[key]
         val = vector[i] * scale
-        vminmax[1] = max(val, vminmax[1])
-        vminmax[2] = min(val, vminmax[2])
+        minmax[1] = max(val, minmax[1])
+        minmax[2] = min(val, minmax[2])
     end
-
-    vminmax
 end
 
 ##### Utility Functions #####
@@ -908,8 +841,16 @@ function getLabel(
     busLabel
 end
 
-function isValid(jump::JuMP.Model, constraint::Dict{Int64, ConstraintRef}, i::Int64)
-    haskey(constraint, i) && is_valid(jump, constraint[i])
+function isValid(jump::JuMP.Model, con::ConDict, i::Int64)
+    if haskey(con, i)
+        for type in keys(con[i])
+            if is_valid(jump, con[i][type])
+                return true
+            end
+        end
+    end
+
+    return false
 end
 
 ##### Print Keywords #####
@@ -941,313 +882,6 @@ function summarykwargs(;
         title = title, header = header, footer = footer)
 end
 
-function print(
-    system::PowerSystem;
-    bus::IntStrMiss = missing,
-    branch::IntStrMiss = missing,
-    generator::IntStrMiss = missing
-)
-    if isset(bus)
-        printBus(system, bus)
-    elseif isset(branch)
-        printBranch(system, branch)
-    elseif isset(generator)
-        printGenerator(system, generator)
-    end
-end
-
-function printBus(system::PowerSystem, bus::IntStr)
-    idx = getIndex(system.bus, bus, "bus")
-    type = system.bus.layout.type
-
-    println("📁 " * "$bus")
-
-    if checkprint(system.bus.demand, idx)
-        println("├── 📂 Demand Power")
-        println("│   ├── Active: ", system.bus.demand.active[idx])
-        println("│   └── Reactive: ", system.bus.demand.reactive[idx])
-    end
-
-    if checkprint(system.bus.supply, idx)
-        println("├── 📂 Supply Power")
-        println("│   ├── Active: ", system.bus.supply.active[idx])
-        println("│   └── Reactive: ", system.bus.supply.reactive[idx])
-    end
-
-    if checkprint(system.bus.shunt, idx)
-        println("├── 📂 Shunt Power")
-        println("│   ├── Conductance: ", system.bus.shunt.conductance[idx])
-        println("│   └── Susceptance: ", system.bus.shunt.susceptance[idx])
-    end
-
-    println("├── 📂 Initial Voltage")
-    println("│   ├── Magnitude: ", system.bus.voltage.magnitude[idx])
-    println("│   └── Angle: ", system.bus.voltage.angle[idx])
-    println("├── 📂 Voltage Magnitude Limit")
-    println("│   ├── Minimum: ", system.bus.voltage.minMagnitude[idx])
-    println("│   └── Maximum: ", system.bus.voltage.maxMagnitude[idx])
-    println("├── 📂 Base Voltage")
-    println("│   ├── Value: ", system.base.voltage.value[idx])
-    println("│   └── Unit: ", system.base.voltage.unit)
-    println("└── 📂 Layout")
-    println("    ├── Type: ", type[idx] == 1 ? "demand" : type[idx] == 2 ? "generator" : "slack")
-    println("    ├── Area: ", system.bus.layout.area[idx])
-    println("    ├── Loss Zone: ", system.bus.layout.lossZone[idx])
-    println("    └── Index: ", idx)
-end
-
-function printBranch(system::PowerSystem, branch::IntStr)
-    idx = getIndex(system.branch, branch, "branch")
-
-    if system.branch.flow.type[idx] == 1
-        flowType = "Active Power Limit"
-    elseif system.branch.flow.type[idx] in (2, 3)
-        flowType = "Apparent Power Limit"
-    elseif system.branch.flow.type[idx] in (4, 5)
-        flowType = "Current Magnitude Limit"
-    end
-
-    println("📁 " * "$branch")
-    println("├── 📂 Parameter")
-    println("│   ├── Resistance: ", system.branch.parameter.resistance[idx])
-    println("│   ├── Reactance: ", system.branch.parameter.reactance[idx])
-    println("│   ├── Conductance: ", system.branch.parameter.conductance[idx])
-    println("│   ├── Susceptance: ", system.branch.parameter.susceptance[idx])
-    println("│   ├── Turns Ratio: ", system.branch.parameter.turnsRatio[idx])
-    println("│   └── Phase Shift Angle: ", system.branch.parameter.shiftAngle[idx])
-
-    if checkprint(system.branch.flow, idx)
-        println("├── 📂 " * flowType)
-        println("│   ├── From-Bus Minimum: ", system.branch.flow.minFromBus[idx])
-        println("│   ├── From-Bus Maximum: ", system.branch.flow.maxFromBus[idx])
-        println("│   ├── To-Bus Minimum: ", system.branch.flow.minToBus[idx])
-        println("│   ├── To-Bus Maximum: ", system.branch.flow.maxToBus[idx])
-    end
-
-    if system.branch.voltage.minDiffAngle[idx] > -2π || system.branch.voltage.maxDiffAngle[idx] < 2π
-        println("├── 📂 Voltage Angle Difference Limit")
-        println("│   ├── Minimum: ", system.branch.voltage.minDiffAngle[idx])
-        println("│   └── Maximum: ", system.branch.voltage.maxDiffAngle[idx])
-    end
-
-    println("└── 📂 Layout")
-    println("    ├── From-Bus: ", getLabel(system.bus.label, system.branch.layout.from[idx]))
-    println("    ├── To-Bus: ", getLabel(system.bus.label, system.branch.layout.to[idx]))
-    println("    ├── Status: ", system.branch.layout.status[idx])
-    println("    └── Index: ", idx)
-end
-
-function printGenerator(system::PowerSystem, generator::IntStr)
-    idx = getIndex(system.generator, generator, "generator")
-
-    p = system.generator.cost.active
-    q = system.generator.cost.reactive
-    c = system.generator.capability
-
-    println("📁 " * "$generator")
-    println("├── 📂 Output Power")
-    println("│   ├── Active: ", system.generator.output.active[idx])
-    println("│   └── Reactive: ", system.generator.output.reactive[idx])
-
-    if c.minActive[idx] != 0.0 || c.maxActive[idx] != Inf || c.minReactive[idx] != -Inf || c.maxReactive[idx] != Inf
-        println("├── 📂 Output Power Limit")
-        println("│   ├── Minimum Active: ", c.minActive[idx])
-        println("│   ├── Maximum Active: ", c.maxActive[idx])
-        println("│   ├── Minimum Reactive: ", c.minReactive[idx])
-        println("│   └── Maximum Reactive: ", c.maxReactive[idx])
-    end
-
-    if any(x -> x != 0, (
-        c.lowActive[idx], c.minLowReactive[idx], c.maxLowReactive[idx],
-        c.upActive[idx], c.minUpReactive[idx], c.maxUpReactive[idx]))
-
-        println("├── 📂 Capability Curve")
-        println("│   ├── Low Active: ", c.lowActive[idx])
-        println("│   ├── Minimum Reactive: ", c.minLowReactive[idx])
-        println("│   ├── Maximum Reactive: ", c.maxLowReactive[idx])
-        println("│   ├── Up Active: ", c.upActive[idx])
-        println("│   ├── Minimum Reactive: ", c.minUpReactive[idx])
-        println("│   └── Maximum Reactive: ", c.maxUpReactive[idx])
-    end
-
-    println("├── 📂 Voltage")
-    println("│   └── Magnitude: ", system.generator.voltage.magnitude[idx])
-
-    if haskey(p.polynomial, idx) || haskey(p.piecewise, idx)
-        println("├── 📂 Active Power Cost")
-        println("│   ├── Polynomial: ", get(p.polynomial, idx, "undefined"))
-        println("│   ├── Piecewise: ", get(p.piecewise, idx, "undefined"))
-        println("│   ├── In-Use: ", p.model[idx] == 1 ? "piecewise" : p.model[idx] == 2 ? "polynomial" : "undefined")
-    end
-
-    if haskey(q.polynomial, idx) || haskey(q.piecewise, idx)
-        println("├── 📂 Reactive Power Cost")
-        println("│   ├── Polynomial: ", get(q.polynomial, idx, "undefined"))
-        println("│   ├── Piecewise: ", get(q.piecewise, idx, "undefined"))
-        println("│   ├── In-Use: ", q.model[idx] == 1 ? "piecewise" : q.model[idx] == 2 ? "polynomial" : "undefined")
-    end
-
-    println("└── 📂 Layout")
-    println("    ├── Bus: ", getLabel(system.bus.label, system.generator.layout.bus[idx]))
-    println("    ├── Status: ", system.generator.layout.status[idx])
-    println("    └── Index: ", idx)
-end
-
-
-function print(
-    monitoring::Measurement;
-    voltmeter::IntStrMiss = missing,
-    ammeter::IntStrMiss = missing,
-    wattmeter::IntStrMiss = missing,
-    varmeter::IntStrMiss = missing,
-    pmu::IntStrMiss = missing
-)
-    if isset(voltmeter)
-        printVoltmeter(monitoring, voltmeter)
-    elseif isset(ammeter)
-        printAmmeter(monitoring, ammeter)
-    elseif isset(wattmeter)
-        printWattmeter(monitoring, wattmeter)
-    elseif isset(varmeter)
-        printVarmeter(monitoring, varmeter)
-    elseif isset(pmu)
-        printPmu(monitoring, pmu)
-    end
-end
-
-function printVoltmeter(monitoring::Measurement, voltmeter::IntStr)
-    idx = getIndex(monitoring.voltmeter, voltmeter, "voltmeter")
-
-    println("📁 " * "$voltmeter")
-    println("├── 📂 Voltage Magnitude Measurement")
-    println("│   ├── Mean: ", monitoring.voltmeter.magnitude.mean[idx])
-    println("│   ├── Variance: ", monitoring.voltmeter.magnitude.variance[idx])
-    println("│   └── Status: ", monitoring.voltmeter.magnitude.status[idx])
-    println("└── 📂 Layout")
-    println("    ├── Bus: ", getLabel(monitoring.system.bus.label, monitoring.voltmeter.layout.index[idx]))
-    println("    └── Index: ", idx)
-end
-
-function printAmmeter(monitoring::Measurement, ammeter::IntStr)
-    idx = getIndex(monitoring.ammeter, ammeter, "ammeter")
-    label = getLabel(monitoring.system.branch.label, monitoring.ammeter.layout.index[idx])
-
-    println("📁 " * "$ammeter")
-    println("├── 📂 Current Magnitude Measurement")
-    println("│   ├── Mean: ", monitoring.ammeter.magnitude.mean[idx])
-    println("│   ├── Variance: ", monitoring.ammeter.magnitude.variance[idx])
-    println("│   └── Status: ", monitoring.ammeter.magnitude.status[idx])
-    println("└── 📂 Layout")
-
-    if monitoring.ammeter.layout.from[idx]
-        println("    ├── From-Bus: ", label)
-    else
-        println("    ├── To-Bus: ", label)
-    end
-
-    println("    └── Index: ", idx)
-end
-
-function printWattmeter(monitoring::Measurement, wattmeter::IntStr)
-    idx = getIndex(monitoring.wattmeter, wattmeter, "wattmeter")
-
-    if monitoring.wattmeter.layout.bus[idx]
-        label = getLabel(monitoring.system.bus.label, monitoring.wattmeter.layout.index[idx])
-    else
-        label = getLabel(monitoring.system.branch.label, monitoring.wattmeter.layout.index[idx])
-    end
-
-    println("📁 " * "$wattmeter")
-    println("├── 📂 Active Power Measurement")
-    println("│   ├── Mean: ", monitoring.wattmeter.active.mean[idx])
-    println("│   ├── Variance: ", monitoring.wattmeter.active.variance[idx])
-    println("│   └── Status: ", monitoring.wattmeter.active.status[idx])
-    println("└── 📂 Layout")
-
-    if monitoring.wattmeter.layout.bus[idx]
-        println("    ├── Bus: ", label)
-    elseif monitoring.wattmeter.layout.from[idx]
-        println("    ├── From-Bus: ", label)
-    else
-        println("    ├── To-Bus: ", label)
-    end
-
-    println("    └── Index: ", idx)
-end
-
-function printVarmeter(monitoring::Measurement, varmeter::IntStr)
-    idx = getIndex(monitoring.varmeter, varmeter, "varmeter")
-
-    if monitoring.varmeter.layout.bus[idx]
-        label = getLabel(monitoring.system.bus.label, monitoring.varmeter.layout.index[idx])
-    else
-        label = getLabel(monitoring.system.branch.label, monitoring.varmeter.layout.index[idx])
-    end
-
-    println("📁 " * "$varmeter")
-    println("├── 📂 Reactive Power Measurement")
-    println("│   ├── Mean: ", monitoring.varmeter.reactive.mean[idx])
-    println("│   ├── Variance: ", monitoring.varmeter.reactive.variance[idx])
-    println("│   └── Status: ", monitoring.varmeter.reactive.status[idx])
-    println("└── 📂 Layout")
-
-    if monitoring.varmeter.layout.bus[idx]
-        println("    ├── Bus: ", label)
-    elseif monitoring.varmeter.layout.from[idx]
-        println("    ├── From-Bus: ", label)
-    else
-        println("    ├── To-Bus: ", label)
-    end
-
-    println("    └── Index: ", idx)
-end
-
-function printPmu(monitoring::Measurement, pmu::IntStr)
-    idx = getIndex(monitoring.pmu, pmu, "pmu")
-
-    if monitoring.pmu.layout.bus[idx]
-        label = getLabel(monitoring.system.bus.label, monitoring.pmu.layout.index[idx])
-    else
-        label = getLabel(monitoring.system.branch.label, monitoring.pmu.layout.index[idx])
-    end
-
-    println("📁 " * "$pmu")
-
-    if monitoring.pmu.layout.bus[idx]
-        println("├── 📂 Voltage Magnitude Measurement")
-    else
-        println("├── 📂 Current Magnitude Measurement")
-    end
-
-    println("│   ├── Mean: ", monitoring.pmu.magnitude.mean[idx])
-    println("│   ├── Variance: ", monitoring.pmu.magnitude.variance[idx])
-    println("│   └── Status: ", monitoring.pmu.magnitude.status[idx])
-
-    if monitoring.pmu.layout.bus[idx]
-        println("├── 📂 Voltage Angle Measurement")
-    else
-        println("├── 📂 Current Angle Measurement")
-    end
-
-    println("│   ├── Mean: ", monitoring.pmu.angle.mean[idx])
-    println("│   ├── Variance: ", monitoring.pmu.angle.variance[idx])
-    println("│   └── Status: ", monitoring.pmu.angle.status[idx])
-
-    println("└── 📂 Layout")
-
-    if monitoring.pmu.layout.bus[idx]
-        println("    ├── Bus: ", label)
-    elseif monitoring.pmu.layout.from[idx]
-        println("    ├── From-Bus: ", label)
-    else
-        println("    ├── To-Bus: ", label)
-    end
-
-    println("    ├── Polar: ", monitoring.pmu.layout.polar[idx])
-    println("    ├── Correlated: ", monitoring.pmu.layout.correlated[idx])
-    println("    └── Index: ", idx)
-end
-
 function checkprint(obj::S, idx::Int64) where S
     for name in fieldnames(typeof(obj))
         field1 = getfield(obj, name)
@@ -1258,4 +892,47 @@ function checkprint(obj::S, idx::Int64) where S
     end
 
     false
+end
+
+##### Optimal Values #####
+function balance(bus::Bus, analysis::DcOptimalPowerFlow, label::IntStr, idx::Int64)
+    supplyPower(analysis; label) - injectionPower(analysis; label) - bus.demand.active[idx]
+end
+
+function balance(bus::Bus, analysis::AcOptimalPowerFlow, label::IntStr, idx::Int64)
+    Pg, Qg = supplyPower(analysis; label)
+    Pi, Qi = injectionPower(analysis; label)
+
+    Pi - Pg + bus.demand.active[idx], Qi - Qg + bus.demand.reactive[idx]
+end
+
+function anglediff(system::PowerSystem, analysis::OptimalPowerFlow, idx::Int64)
+    from, to = fromto(system, idx)
+    analysis.voltage.angle[from] - analysis.voltage.angle[to]
+end
+
+function flowFrom(system::PowerSystem, analysis::AcOptimalPowerFlow, label::IntStr, idx::Int64)
+    from, to = fromto(system, idx)
+    Pij, Qij = fromPower(analysis; label)
+
+    if system.branch.flow.type[idx] == 1
+        return Pij
+    elseif system.branch.flow.type[idx] == 2 || system.branch.flow.type[idx] == 3
+        return sqrt(Pij^2 + Qij^2)
+    elseif system.branch.flow.type[idx] == 4 || system.branch.flow.type[idx] == 5
+        return sqrt(Pij^2 + Qij^2) / analysis.voltage.magnitude[from]
+    end
+end
+
+function flowTo(system::PowerSystem, analysis::AcOptimalPowerFlow, label::IntStr, idx::Int64)
+    from, to = fromto(system, idx)
+    Pji, Qji = toPower(analysis; label)
+
+    if system.branch.flow.type[idx] == 1
+        return Pji
+    elseif system.branch.flow.type[idx] == 2 || system.branch.flow.type[idx] == 3
+        return sqrt(Pji^2 + Qji^2)
+    elseif system.branch.flow.type[idx] == 4 || system.branch.flow.type[idx] == 5
+        return sqrt(Pji^2 + Qji^2) / analysis.voltage.magnitude[to]
+    end
 end

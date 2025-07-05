@@ -99,7 +99,7 @@ end
 
 function add!(lav::LAV, idx::Int64)
     deviation = lav.variable.deviation
-    remove!(lav.jump, lav.residual, idx)
+    remove!(lav.jump, backend(lav.jump), lav.residual, idx)
 
     if is_fixed(deviation.positive[idx])
         unfix(deviation.positive[idx])
@@ -115,7 +115,7 @@ end
 ##### Delete Meter #####
 function remove!(lav::LAV, idx::Int64)
     deviation = lav.variable.deviation
-    remove!(lav.jump, lav.residual, idx)
+    remove!(lav.jump, backend(lav.jump), lav.residual, idx)
 
     if !is_fixed(deviation.positive[idx])
         fix(deviation.positive[idx], 0.0; force = true)
@@ -123,6 +123,15 @@ function remove!(lav::LAV, idx::Int64)
 
         set_objective_coefficient(lav.jump, deviation.positive[idx], 0)
         set_objective_coefficient(lav.jump, deviation.negative[idx], 0)
+    end
+end
+
+function remove!(jump::JuMP.Model, moi::MOI.ModelLike, con::Dict{Int64, ConstraintRef}, idx::Int64)
+    if haskey(con, idx)
+        if isvalid(jump, moi, con[idx])
+            delete(jump, con[idx])
+        end
+        delete!(con, idx)
     end
 end
 

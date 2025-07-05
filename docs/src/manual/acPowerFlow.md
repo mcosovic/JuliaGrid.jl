@@ -28,56 +28,6 @@ Finally, the package provides two functions for reactive power limit validation 
 
 ---
 
-## [Bus Type Modification](@id BusTypeModificationManual)
-Depending on how the system is constructed, the types of buses that are initially set are checked and can be changed during the construction of the `AcPowerFlow` type.
-
-To explain the details, we consider a power system and assume that the Newton-Raphson method has been chosen:
-```julia
-system = powerSystem()
-
-addBus!(system; label = "Bus 1", type = 3)
-addBus!(system; label = "Bus 2", type = 2)
-addBus!(system; label = "Bus 3", type = 2)
-
-addGenerator!(system; bus = "Bus 2")
-
-analysis = newtonRaphson(system)
-```
-
-Initially, `Bus 1` is set as the slack bus (`type = 3`), and `Bus 2` and `Bus 3` are generator buses (`type = 2`). However, `Bus 3` does not have a generator, and JuliaGrid considers this a mistake and changes the corresponding bus to a demand bus (`type = 1`).
-
-After this step, JuliaGrid verifies the slack bus. Initially, the slack bus (`type = 3`) corresponds to `Bus 1`, but since it does not have an in-service generator connected to it, JuliaGrid recognizes it as another mistake. Therefore, JuliaGrid assigns a new slack bus from the available generator buses (`type = 2`) that have connected in-service generators. In this specific example, `Bus 2` becomes the new slack bus.
-
-```@setup busType
-using JuliaGrid
-@default(unit)
-@default(template)
-
-system = powerSystem()
-
-addBus!(system; label = "Bus 1", type = 3)
-addBus!(system; label = "Bus 2", type = 2)
-addBus!(system; label = "Bus 3", type = 2)
-
-addGenerator!(system; bus = "Bus 2")
-
-analysis = newtonRaphson(system)
-```
-
-As a result, we can observe the updated array of bus types:
-```@repl busType
-print(system.bus.label, system.bus.layout.type)
-```
-
-Note that, if a bus is initially defined as the demand bus (`type = 1`) and later a generator is added to it, the bus type will not be changed to the generator bus (`type = 2`). Instead, it will remain as a demand bus.
-
-!!! note "Info"
-    Only the type of these buses that are defined as generator buses (`type = 2`) but do not have a connected in-service generator will be changed to demand buses (`type = 1`).
-
-    The bus that is defined as the slack bus (`type = 3`) but lacks a connected in-service generator will have its type changed to the demand bus (`type = 1`). Meanwhile, the first generator bus (`type = 2`) with an in-service generator connected to it will be assigned as the new slack bus (`type = 3`).
-
----
-
 ## [Setup Initial Voltages](@id SetupInitialVoltagesManual)
 Let us create the `PowerSystem` type and select the Newton-Raphson method:
 ```@example initializeACPowerFlow
@@ -203,11 +153,11 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    By default, the user activates LU factorization to solve the system of linear equations within each iteration of the Newton-Raphson method. However, users can specifically opt for the `QR` factorization method:
+    By default, the user activates `LU` factorization to solve the system of linear equations within each iteration of the Newton-Raphson method. Users may also choose the `QR` or `KLU` factorization methods explicitly:
     ```julia DCPowerFlowSolution
-    analysis = newtonRaphson(system, QR)
+    analysis = newtonRaphson(system, KLU)
     ```
-    The capability to change the factorization method is exclusively available for the Newton-Raphson and fast Newton-Raphson methods.
+    The `KLU` method, based on the Gilbert-Peierls algorithm, can considerably speed up power flow computations [davisklu](@cite). This option to select a factorization method is available only for the Newton-Raphson and fast Newton-Raphson methods.
 
 This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})). The [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})) computes the voltage magnitudes and angles.
 
@@ -473,9 +423,7 @@ In this scenario, JuliaGrid detects that the parameters affecting the Jacobian m
 ---
 
 ##### Limitations
-The [`newtonRaphson`](@ref newtonRaphson), [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX), [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB), or [`gaussSeidel`](@ref gaussSeidel) function oversees bus type validations, as outlined in the [Bus Type Modification](@ref BusTypeModificationManual) section. Consequently, attempting to change bus types or leaving generator buses without a generator and then proceeding directly to the iteration process is not viable.
-
-In such scenarios, JuliaGrid will raise an error:
+Attempting to change bus types or leaving generator buses without a generator and then proceeding directly to the iteration process is not viable. In such scenarios, JuliaGrid will raise an error:
 ```@repl ACPowerFlowSolution
 updateBus!(analysis; label = "Bus 2", type = 2)
 ```

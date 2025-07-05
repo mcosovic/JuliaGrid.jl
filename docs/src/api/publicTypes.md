@@ -30,6 +30,7 @@ using JuliaGrid
 * [`DC`](@ref DC)
 * [`LDLt`](@ref JuliaGrid.LDLt)
 * [`LU`](@ref JuliaGrid.LU)
+* [`KLU`](@ref JuliaGrid.KLU)
 * [`QR`](@ref JuliaGrid.QR)
 
 ###### Power Flow
@@ -96,6 +97,7 @@ AC
 DC
 JuliaGrid.LDLt
 JuliaGrid.LU
+JuliaGrid.KLU
 JuliaGrid.QR
 ```
 

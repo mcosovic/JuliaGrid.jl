@@ -678,10 +678,8 @@ function acLavStateEstimation(
 
     fix(voltage.angle[bus.layout.slack], bus.voltage.angle[bus.layout.slack]; force = true)
 
+    exprs = AffQuadExpr()
     aff = AffExpr()
-    quad1 = QuadExpr()
-    quad2 = QuadExpr()
-
     @inbounds for (k, idx) in enumerate(volt.layout.index)
         if volt.magnitude.status[k] == 1
             addConstrLav!(lav, voltage.magnitude[idx], volt.magnitude.mean[k], k)
@@ -696,15 +694,15 @@ function acLavStateEstimation(
     @inbounds for (k, idx) in enumerate(amp.layout.index)
         if amp.magnitude.status[k] == 1
             if amp.layout.from[k]
-                expr = Iij(system, voltage, amp.layout.square[k], quad1, quad2, idx)
+                expr = Iij(system, voltage, amp.layout.square[k], exprs, idx)
             else
-                expr = Iji(system, voltage, amp.layout.square[k], quad1, quad2, idx)
+                expr = Iji(system, voltage, amp.layout.square[k], exprs, idx)
             end
 
             sq = if2exp(amp.layout.square[k])
             addConstrLav!(lav, expr, amp.magnitude.mean[k]^sq, aff, cnt)
             addObjectLav!(lav, objective, cnt)
-            emptyExpr!(quad1, quad2)
+            emptyExpr!(exprs)
         else
             fix!(deviation, cnt)
         end
@@ -716,16 +714,14 @@ function acLavStateEstimation(
         if watt.active.status[k] == 1
             if watt.layout.bus[k]
                 expr = Pi(system, voltage, idx)
+            elseif watt.layout.from[k]
+                expr = Pij(system, voltage, exprs, idx)
             else
-                if watt.layout.from[k]
-                    expr = Pij(system, voltage, quad1, quad2, idx)
-                else
-                    expr = Pji(system, voltage, quad1, quad2, idx)
-                end
+                expr = Pji(system, voltage, exprs, idx)
             end
             addConstrLav!(lav, expr, watt.active.mean[k], aff, cnt)
             addObjectLav!(lav, objective, cnt)
-            emptyExpr!(quad1, quad2)
+            emptyExpr!(exprs)
         else
             fix!(deviation, cnt)
         end
@@ -737,16 +733,14 @@ function acLavStateEstimation(
         if var.reactive.status[k] == 1
             if var.layout.bus[k]
                 expr = Qi(system, voltage, idx)
+            elseif var.layout.from[k]
+                expr = Qij(system, voltage, exprs, idx)
             else
-                if var.layout.from[k]
-                    expr = Qij(system, voltage, quad1, quad2, idx)
-                else
-                    expr = Qji(system, voltage, quad1, quad2, idx)
-                end
+                expr = Qji(system, voltage, exprs, idx)
             end
             addConstrLav!(lav, expr, var.reactive.mean[k], aff, cnt)
             addObjectLav!(lav, objective, cnt)
-            emptyExpr!(quad1, quad2)
+            emptyExpr!(exprs)
         else
             fix!(deviation, cnt)
         end
@@ -773,15 +767,15 @@ function acLavStateEstimation(
             else
                 if pmu.magnitude.status[k] == 1
                     if pmu.layout.from[k]
-                        expr = Iij(system, voltage, pmu.layout.square[k], quad1, quad2, idx)
+                        expr = Iij(system, voltage, pmu.layout.square[k], exprs, idx)
                     else
-                        expr = Iji(system, voltage, pmu.layout.square[k], quad1, quad2, idx)
+                        expr = Iji(system, voltage, pmu.layout.square[k], exprs, idx)
                     end
 
                     sq = if2exp(pmu.layout.square[k])
                     addConstrLav!(lav, expr, pmu.magnitude.mean[k]^sq, aff, cnt)
                     addObjectLav!(lav, objective, cnt)
-                    emptyExpr!(quad1, quad2)
+                    emptyExpr!(exprs)
                 else
                     fix!(deviation, cnt)
                 end
@@ -802,13 +796,10 @@ function acLavStateEstimation(
             if pmu.magnitude.status[k] == 1 && pmu.angle.status[k] == 1
                 if pmu.layout.bus[k]
                     ReExpr, ImExpr = ReImVi(voltage, idx)
+                elseif pmu.layout.from[k]
+                    ReExpr, ImExpr = ReImIij(system, voltage, idx)
                 else
-                    if pmu.layout.from[k]
-                        ReExpr, ImExpr = ReImIij(system, voltage, idx)
-
-                    else
-                        ReExpr, ImExpr = ReImIji(system, voltage, idx)
-                    end
+                    ReExpr, ImExpr = ReImIji(system, voltage, idx)
                 end
                 ReMean = pmu.magnitude.mean[k] * cos(pmu.angle.mean[k])
                 ImMean = pmu.magnitude.mean[k] * sin(pmu.angle.mean[k])
