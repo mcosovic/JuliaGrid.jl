@@ -58,18 +58,18 @@ printBusData(analysis)            # Print bus data
 ```julia
 using JuliaGrid
 
-@power(MW, MVAr)                   # Specify the power units
-system = powerSystem("case14.h5")  # Build the power system model
+@power(MW, MVAr)                          # Specify the power units
+system = powerSystem("case14.h5")         # Build the power system model
 
-analysis = dcPowerFlow(system)     # Build the power flow model
-powerFlow!(analysis; power = true) # Compute powers and voltage angles
+analysis = dcPowerFlow(system)            # Build the power flow model
+powerFlow!(analysis; power = true)        # Compute powers and voltage angles
 
-@generator(active = 20.0)          # Define the template
-addGenerator!(analysis; bus = 1)   # Add the new generator
+@generator(active = 20.0)                 # Define the template
+addGenerator!(analysis; bus = "Bus 1 HV") # Add the new generator
 
-powerFlow!(analysis; power = true) # Recompute powers and voltage angles
+powerFlow!(analysis; power = true)        # Recompute powers and voltage angles
 
-printBusSummary(analysis)          # Print bus summary data
+printBusSummary(analysis)                 # Print bus summary data
 ```
 
 ---
@@ -83,8 +83,8 @@ system = powerSystem("case14.h5")                      # Build the power system 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer) # Build the optimal power flow model
 powerFlow!(analysis; current = true, verbose = 3)      # Compute voltages and currents
 
-@branch(resistance = 0.01, reactance = 0.2)            # Define the template
-addBranch!(analysis; from = 1, to = 5)                 # Add the new branch
+updateBranch!(analysis, label = 2, reactance = 0.5)    # Update branch parameters
+updateGenerator!(analysis, label = 3, maxActive = 0.3) # Update generator parameters
 
 powerFlow!(analysis; current = true, verbose = 3)      # Recompute voltages and currents
 ```
