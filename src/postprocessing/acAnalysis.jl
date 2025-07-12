@@ -230,7 +230,7 @@ acModel!(system)
 analysis = newtonRaphson(system)
 powerFlow!(analysis)
 
-active, reactive = injectionPower(analysis; label = 1)
+active, reactive = injectionPower(analysis; label = "Bus 1 HV")
 ```
 """
 function injectionPower(analysis::AC; label::IntStr)
@@ -253,7 +253,7 @@ acModel!(system)
 analysis = newtonRaphson(system)
 powerFlow!(analysis)
 
-active, reactive = supplyPower(analysis; label = 1)
+active, reactive = supplyPower(analysis; label = "Bus 1 HV")
 ```
 """
 function supplyPower(analysis::AcPowerFlow; label::IntStr)
@@ -324,7 +324,7 @@ acModel!(system)
 analysis = newtonRaphson(system)
 powerFlow!(analysis)
 
-active, reactive = shuntPower(analysis; label = 9)
+active, reactive = shuntPower(analysis; label = "Bus 9 LV")
 ```
 """
 function shuntPower(analysis::AC; label::IntStr)
@@ -642,7 +642,7 @@ acModel!(system)
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 powerFlow!(analysis)
 
-magnitude, angle = injectionCurrent(analysis; label = 1)
+magnitude, angle = injectionCurrent(analysis; label = "Bus 1 HV")
 ```
 """
 function injectionCurrent(analysis::AC; label::IntStr)

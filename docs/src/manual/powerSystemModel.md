@@ -67,6 +67,15 @@ system = powerSystem("C:/hdf5/case14.h5")
 
 ---
 
+##### [Partial Load for Faster Import](@id PartialLoadFasterImportManual)
+A significant portion of data in input files may relate to optimal power flow analysis. If AC or DC optimal power flow is not needed, users can skip importing this additional data by setting the `optimal` keyword to `false`. For example:
+```julia
+system = powerSystem("C:/matpower/case14.m"; optimal = false)
+```
+This reduces memory usage and speeds up data loading, which is especially useful for large-scale systems.
+
+---
+
 ##### Model from Scratch
 Alternatively, the model can be built from scratch using built-in functions, for example:
 ```@example buildModelScratch

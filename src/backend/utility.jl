@@ -762,6 +762,15 @@ function errorCovariance(pmu::PMU, varianceIm::Float64, L2::Float64, idx::Int64)
     end
 end
 
+function errorOptimal(system::PowerSystem)
+    if !system.bus.layout.optimal
+        throw(ErrorException(
+            "The power system object lacks optimal power flow data, likely due to " *
+            "optimal = false in the powerSystem function call.")
+        )
+    end
+end
+
 ##### Info Messages #####
 function infoObjective(label::IntStr)
     @info(

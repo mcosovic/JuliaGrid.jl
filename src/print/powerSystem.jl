@@ -45,9 +45,9 @@ powerFlow!(analysis; power = true)
 delimiter = " "
 width = Dict("Voltage" => 9, "Power Injection Active" => 9)
 
-printBusData(analysis; label = 2, delimiter, width, title = true, header = true)
-printBusData(analysis; label = 10, delimiter, width)
-printBusData(analysis; label = 12, delimiter, width, footer = true)
+printBusData(analysis; label = "Bus 2 HV", delimiter, width, title = true, header = true)
+printBusData(analysis; label = "Bus 10 LV", delimiter, width)
+printBusData(analysis; label = "Bus 12 LV", delimiter, width, footer = true)
 ```
 """
 function printBusData(

@@ -26,6 +26,7 @@ mutable struct BusLayout
     slack::Int64
     label::Int64
     pattern::Int64
+    const optimal::Bool
 end
 
 mutable struct BusSupply
@@ -130,13 +131,6 @@ mutable struct GeneratorCapability
     maxUpReactive::Vector{Float64}
 end
 
-mutable struct GeneratorRamping
-    loadFollowing::Vector{Float64}
-    reserve10min::Vector{Float64}
-    reserve30min::Vector{Float64}
-    reactiveRamp::Vector{Float64}
-end
-
 mutable struct Cost
     model::Vector{Int8}
     polynomial::OrderedDict{Int64, Vector{Float64}}
@@ -154,7 +148,6 @@ end
 
 mutable struct GeneratorLayout
     bus::Vector{Int64}
-    area::Vector{Float64}
     status::Vector{Int8}
     inservice::Int64
     label::Int64
@@ -169,7 +162,6 @@ A composite type used in [`PowerSystem`](@ref PowerSystem) to store generator-re
 - `label::LabelDict`: Generator labels.
 - `output::GeneratorOutput`: Active and reactive power outputs.
 - `capability::GeneratorCapability`: Power output constraints.
-- `ramping::GeneratorRamping`: Ramp rate limits.
 - `voltage::GeneratorVoltage`: Voltage magnitude setpoints.
 - `cost::GeneratorCost`: Costs associated with active and reactive power outputs.
 - `layout::GeneratorLayout`: Generator layout, including operational statuses.
@@ -179,7 +171,6 @@ mutable struct Generator
     label::LabelDict
     output::GeneratorOutput
     capability::GeneratorCapability
-    ramping::GeneratorRamping
     voltage::GeneratorVoltage
     cost::GeneratorCost
     layout::GeneratorLayout

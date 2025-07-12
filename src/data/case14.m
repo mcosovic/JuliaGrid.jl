@@ -87,20 +87,20 @@ mpc.gencost = [
 
 %% bus names
 mpc.bus_name = {
-	'Bus 1     HV';
-	'Bus 2     HV';
-	'Bus 3     HV';
-	'Bus 4     HV';
-	'Bus 5     HV';
-	'Bus 6     LV';
-	'Bus 7     ZV';
-	'Bus 8     TV';
-	'Bus 9     LV';
-	'Bus 10    LV';
-	'Bus 11    LV';
-	'Bus 12    LV';
-	'Bus 13    LV';
-	'Bus 14    LV';
+	'Bus 1 HV';
+	'Bus 2 HV';
+	'Bus 3 HV';
+	'Bus 4 HV';
+	'Bus 5 HV';
+	'Bus 6 LV';
+	'Bus 7 ZV';
+	'Bus 8 TV';
+	'Bus 9 LV';
+	'Bus 10 LV';
+	'Bus 11 LV';
+	'Bus 12 LV';
+	'Bus 13 LV';
+	'Bus 14 LV';
 };
 
 % Warnings from cdf2matp conversion:

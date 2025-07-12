@@ -56,7 +56,7 @@ Changing the unit of `active` power is reflected in the following quantities:
   [`@branch`](@ref @branch): if `type = 2`: `minFromBus`, `maxFromBus`, `minToBus`, `maxToBus`;
 * [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!),
   [`@generator`](@ref @generator): `active`, `minActive`, `maxActive`, `lowActive`,
-  `upActive`, `loadFollowing`, `reserve10min`, `reserve30min`;
+  `upActive`;
 * [`cost!`](@ref cost!): if `active`: `piecewise`, `polynomial`;
 * [`addWattmeter!`](@ref addWattmeter!), [`updateWattmeter!`](@ref updateWattmeter!):
   `active`, `variance`;
@@ -67,7 +67,7 @@ Changing the unit of `reactive` power unit is reflected in the following quantit
   `reactive`, `susceptance`;
 * [`addGenerator!`](@ref addGenerator!), [`updateGenerator!`](@ref updateGenerator!),
   [`@generator`](@ref @generator): `reactive`, `minReactive`, `maxReactive`,
-  `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`, `reactiveRamp`;
+  `minLowReactive`, `maxLowReactive`, `minUpReactive`, `maxUpReactive`;
 * [`cost!`](@ref cost!): if `reactive`: `piecewise`, `polynomial`;
 * [`addVarmeter!`](@ref addVarmeter!), [`updateVarmeter!`](@ref updateVarmeter!):
   `reactive`, `variance`;
@@ -482,17 +482,7 @@ macro default(mode::Symbol)
             template.generator.maxUpReactive.value = 0.0
             template.generator.maxUpReactive.pu = true
 
-            template.generator.loadFollowing.value = 0.0
-            template.generator.loadFollowing.pu = true
-            template.generator.reactiveRamp.value = 0.0
-            template.generator.reactiveRamp.pu = true
-            template.generator.reserve10min.value = 0.0
-            template.generator.reserve10min.pu = true
-            template.generator.reserve30min.value = 0.0
-            template.generator.reserve30min.pu = true
-
             template.generator.status = Int8(1)
-            template.generator.area = 0
             template.generator.label = "?"
             template.generator.key = String
         end

@@ -28,12 +28,12 @@ acModel!(system)
 analysis = newtonRaphson(system)
 ```
 
-Set up the Newton-Raphson method utilizing QR factorization:
+Set up the Newton-Raphson method utilizing KLU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
-analysis = newtonRaphson(system, QR)
+analysis = newtonRaphson(system, KLU)
 ```
 """
 function newtonRaphson(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LU, KLU}}
@@ -172,12 +172,12 @@ acModel!(system)
 analysis = fastNewtonRaphsonBX(system)
 ```
 
-Set up the fast Newton-Raphson method utilizing QR factorization:
+Set up the fast Newton-Raphson method utilizing KLU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
-analysis = fastNewtonRaphsonBX(system, QR)
+analysis = fastNewtonRaphsonBX(system, KLU)
 ```
 """
 function fastNewtonRaphsonBX(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LU, KLU}}
@@ -214,12 +214,12 @@ acModel!(system)
 analysis = fastNewtonRaphsonXB(system)
 ```
 
-Set up the fast Newton-Raphson method utilizing QR factorization:
+Set up the fast Newton-Raphson method utilizing KLU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
 
-analysis = fastNewtonRaphsonXB(system, QR)
+analysis = fastNewtonRaphsonXB(system, KLU)
 ```
 """
 function fastNewtonRaphsonXB(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LU, KLU}}
@@ -1008,7 +1008,7 @@ reactiveLimit!(analysis)
 analysis = newtonRaphson(system)
 powerFlow!(analysis)
 
-adjustAngle!(analysis; slack = 1)
+adjustAngle!(analysis; slack = "Bus 1 HV")
 ```
 """
 function adjustAngle!(analysis::AcPowerFlow; slack::IntStrMiss)

@@ -62,6 +62,7 @@ function acOptimalPowerFlow(
     cbt = gen.capability
     vtg = bus.voltage
 
+    errorOptimal(system)
     checkSlackBus(system)
     model!(system, system.model.ac)
 
@@ -753,7 +754,7 @@ acModel!(system)
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 powerFlow!(analysis)
 
-updateBus!(analysis; label = 14, reactive = 0.13, magnitude = 1.2, angle = -0.17)
+updateBus!(analysis; label = "Bus 14 LV", reactive = 0.13, magnitude = 1.2, angle = -0.17)
 
 setInitialPoint!(analysis)
 powerFlow!(analysis)

@@ -1,5 +1,5 @@
 """
-    powerSystem(file::String)
+    powerSystem(file::String; optimal = true)
 
 The function builds the composite type `PowerSystem` and populates `bus`, `branch`,  `generator` and
 `base` fields. Once the type `PowerSystem` has been created, it is possible  to add new buses,
@@ -10,6 +10,10 @@ It requires a string path to:
 - the HDF5 file with the `.h5` extension,
 - the Matpower file with the `.m` extension,
 - the PSSE v33 file with the `.raw` extension.
+
+# Keyword
+Set `optimal = false` to skip importing data related to optimal power flow analysis. This reduces
+memory usage and speeds up the data import process if such analyses are not required.
 
 # Returns
 The `PowerSystem` composite type with the following fields:
@@ -29,7 +33,7 @@ values in volt-amperes and volts. The prefixes for these base values can be chan
 system = powerSystem("case14.h5")
 ```
 """
-function powerSystem(inputFile::String)
+function powerSystem(inputFile::String; optimal::Bool = true)
     packagePath = checkPackagePath()
     fullpath, extension = checkFileFormat(inputFile, packagePath)
 
@@ -37,7 +41,7 @@ function powerSystem(inputFile::String)
         hdf5 = h5open(fullpath, "r")
             setTypeLabel(hdf5, template)
 
-            system = powerSystem()
+            system = powerSystem(; optimal = attributes(hdf5)["optimal"][])
             hdf5Bus(system, hdf5)
             hdf5Branch(system, hdf5)
             hdf5Generator(system, hdf5)
@@ -46,7 +50,7 @@ function powerSystem(inputFile::String)
     end
 
     if extension == ".m"
-        system = powerSystem()
+        system = powerSystem(; optimal)
 
         lines = matpowerRead(system, fullpath)
         master = matpowerBus(system, lines)
@@ -55,7 +59,7 @@ function powerSystem(inputFile::String)
     end
 
     if extension == ".raw"
-        system = powerSystem()
+        system = powerSystem(; optimal)
 
         lines = psseRead(system, fullpath)
         master = psseBus(system, lines)
@@ -78,7 +82,7 @@ empty `PowerSystem` type, with only the base power initialized to 1.0e8 volt-amp
 system = powerSystem()
 ```
 """
-function powerSystem()
+function powerSystem(; optimal::Bool = true)
     PowerSystem(
         Bus(
             OrderedDict{template.bus.key, Int64}(),
@@ -86,7 +90,7 @@ function powerSystem()
             BusSupply(Float64[], Float64[], Dict{Int64, Vector{Int64}}()),
             BusShunt(Float64[], Float64[]),
             BusVoltage(Float64[], Float64[], Float64[], Float64[]),
-            BusLayout(Int8[], Int64[], Int64[], 0, 0, 0),
+            BusLayout(Int8[], Int64[], Int64[], 0, 0, 0, optimal),
             0
         ),
         Branch(
@@ -106,7 +110,6 @@ function powerSystem()
                 Float64[], Float64[], Float64[], Float64[], Float64[],
                 Float64[], Float64[], Float64[], Float64[], Float64[]
             ),
-            GeneratorRamping(Float64[], Float64[], Float64[], Float64[]),
             GeneratorVoltage(Float64[]),
             GeneratorCost(
                 Cost(
@@ -119,7 +122,7 @@ function powerSystem()
                     OrderedDict{Int64, Vector{Float64}}(),
                     OrderedDict{Int64, Matrix{Float64}}()
                 ),            ),
-            GeneratorLayout(Int64[], Float64[], Int8[], 0, 0),
+            GeneratorLayout(Int64[], Int8[], 0, 0),
             0
         ),
         BaseData(
@@ -173,8 +176,11 @@ function hdf5Bus(system::PowerSystem, hdf5::File)
     voltageh5 = hdf5["bus/voltage"]
     bus.voltage.magnitude = readHDF5(voltageh5, "magnitude", bus.number)
     bus.voltage.angle = readHDF5(voltageh5, "angle", bus.number)
-    bus.voltage.minMagnitude = readHDF5(voltageh5, "minMagnitude", bus.number)
-    bus.voltage.maxMagnitude = readHDF5(voltageh5, "maxMagnitude", bus.number)
+
+    if bus.layout.optimal
+        bus.voltage.minMagnitude = readHDF5(voltageh5, "minMagnitude", bus.number)
+        bus.voltage.maxMagnitude = readHDF5(voltageh5, "maxMagnitude", bus.number)
+    end
 end
 
 ##### Load Branch Data from HDF5 File #####
@@ -202,16 +208,18 @@ function hdf5Branch(system::PowerSystem, hdf5::File)
     branch.parameter.turnsRatio = readHDF5(parameterh5, "turnsRatio", branch.number)
     branch.parameter.shiftAngle = readHDF5(parameterh5, "shiftAngle", branch.number)
 
-    voltageh5 = hdf5["branch/voltage"]
-    branch.voltage.minDiffAngle = readHDF5(voltageh5, "minDiffAngle", branch.number)
-    branch.voltage.maxDiffAngle = readHDF5(voltageh5, "maxDiffAngle", branch.number)
+    if system.bus.layout.optimal
+        voltageh5 = hdf5["branch/voltage"]
+        branch.voltage.minDiffAngle = readHDF5(voltageh5, "minDiffAngle", branch.number)
+        branch.voltage.maxDiffAngle = readHDF5(voltageh5, "maxDiffAngle", branch.number)
 
-    flowh5 = hdf5["branch/flow"]
-    branch.flow.minFromBus = readHDF5(flowh5, "minFromBus", branch.number)
-    branch.flow.maxFromBus = readHDF5(flowh5, "maxFromBus", branch.number)
-    branch.flow.minToBus = readHDF5(flowh5, "minToBus", branch.number)
-    branch.flow.maxToBus = readHDF5(flowh5, "maxToBus", branch.number)
-    branch.flow.type = readHDF5(flowh5, "type", branch.number)
+        flowh5 = hdf5["branch/flow"]
+        branch.flow.minFromBus = readHDF5(flowh5, "minFromBus", branch.number)
+        branch.flow.maxFromBus = readHDF5(flowh5, "maxFromBus", branch.number)
+        branch.flow.minToBus = readHDF5(flowh5, "minToBus", branch.number)
+        branch.flow.maxToBus = readHDF5(flowh5, "maxToBus", branch.number)
+        branch.flow.type = readHDF5(flowh5, "type", branch.number)
+    end
 end
 
 ##### Load Generator Data from HDF5 File #####
@@ -225,7 +233,6 @@ function hdf5Generator(system::PowerSystem, hdf5::File)
     gen.layout.bus = read(layouth5, "bus")
     gen.number = length(gen.layout.bus)
 
-    gen.layout.area = readHDF5(layouth5, "area", gen.number)
     gen.layout.status = readHDF5(layouth5, "status", gen.number)
     gen.layout.inservice = attributes(hdf5)["number of in-service generators"][]
     gen.label = OrderedDict(zip(read(hdf5["generator/label"]), collect(1:gen.number)))
@@ -236,34 +243,32 @@ function hdf5Generator(system::PowerSystem, hdf5::File)
     gen.output.reactive = readHDF5(outputh5, "reactive", gen.number)
 
     capabilityh5 = hdf5["generator/capability"]
-    gen.capability.minActive = readHDF5(capabilityh5, "minActive", gen.number)
-    gen.capability.maxActive = readHDF5(capabilityh5, "maxActive", gen.number)
     gen.capability.minReactive = readHDF5(capabilityh5, "minReactive", gen.number)
     gen.capability.maxReactive = readHDF5(capabilityh5, "maxReactive", gen.number)
-    gen.capability.lowActive = readHDF5(capabilityh5, "lowActive", gen.number)
-    gen.capability.minLowReactive = readHDF5(capabilityh5, "minLowReactive", gen.number)
-    gen.capability.maxLowReactive = readHDF5(capabilityh5, "maxLowReactive", gen.number)
-    gen.capability.upActive = readHDF5(capabilityh5, "upActive", gen.number)
-    gen.capability.minUpReactive = readHDF5(capabilityh5, "minUpReactive", gen.number)
-    gen.capability.maxUpReactive = readHDF5(capabilityh5, "maxUpReactive", gen.number)
-
-    rampingh5 = hdf5["generator/ramping"]
-    gen.ramping.loadFollowing = readHDF5(rampingh5, "loadFollowing", gen.number)
-    gen.ramping.reserve10min = readHDF5(rampingh5, "reserve10min", gen.number)
-    gen.ramping.reserve30min = readHDF5(rampingh5, "reserve30min", gen.number)
-    gen.ramping.reactiveRamp = readHDF5(rampingh5, "reactiveRamp", gen.number)
 
     gen.voltage.magnitude = readHDF5(hdf5["generator/voltage"], "magnitude", gen.number)
 
-    costh5 = hdf5["generator/cost/active"]
-    gen.cost.active.model = readHDF5(costh5, "model", gen.number)
-    loadPolynomial!(gen.cost.active, costh5)
-    loadPiecewise!(gen.cost.active, costh5)
+    if system.bus.layout.optimal
+        gen.capability.minActive = readHDF5(capabilityh5, "minActive", gen.number)
+        gen.capability.maxActive = readHDF5(capabilityh5, "maxActive", gen.number)
 
-    costh5 = hdf5["generator/cost/reactive"]
-    gen.cost.reactive.model = readHDF5(costh5, "model", gen.number)
-    loadPolynomial!(gen.cost.reactive, costh5)
-    loadPiecewise!(gen.cost.reactive, costh5)
+        gen.capability.lowActive = readHDF5(capabilityh5, "lowActive", gen.number)
+        gen.capability.minLowReactive = readHDF5(capabilityh5, "minLowReactive", gen.number)
+        gen.capability.maxLowReactive = readHDF5(capabilityh5, "maxLowReactive", gen.number)
+        gen.capability.upActive = readHDF5(capabilityh5, "upActive", gen.number)
+        gen.capability.minUpReactive = readHDF5(capabilityh5, "minUpReactive", gen.number)
+        gen.capability.maxUpReactive = readHDF5(capabilityh5, "maxUpReactive", gen.number)
+
+        costh5 = hdf5["generator/cost/active"]
+        gen.cost.active.model = readHDF5(costh5, "model", gen.number)
+        loadPolynomial!(gen.cost.active, costh5)
+        loadPiecewise!(gen.cost.active, costh5)
+
+        costh5 = hdf5["generator/cost/reactive"]
+        gen.cost.reactive.model = readHDF5(costh5, "model", gen.number)
+        loadPolynomial!(gen.cost.reactive, costh5)
+        loadPiecewise!(gen.cost.reactive, costh5)
+    end
 
     @inbounds for (k, i) in enumerate(gen.layout.bus)
         if gen.layout.status[k] == 1
@@ -364,8 +369,10 @@ function matpowerBus(system::PowerSystem, lines::Vector{Vector{String}})
 
     bus.voltage.magnitude = similar(bus.demand.active)
     bus.voltage.angle = similar(bus.demand.active)
-    bus.voltage.minMagnitude = similar(bus.demand.active)
-    bus.voltage.maxMagnitude = similar(bus.demand.active)
+    if system.bus.layout.optimal
+        bus.voltage.minMagnitude = similar(bus.demand.active)
+        bus.voltage.maxMagnitude = similar(bus.demand.active)
+    end
 
     bus.layout.type = Array{Int8}(undef, bus.number)
     bus.layout.area = fill(0, bus.number)
@@ -375,9 +382,11 @@ function matpowerBus(system::PowerSystem, lines::Vector{Vector{String}})
     system.base.voltage.value = similar(bus.demand.active)
 
     bus.layout.label = 0
-    data = Array{SubString{String}}(undef, 13)
+
+    firstn = system.bus.layout.optimal ? 13 : 11
+    data = Array{SubString{String}}(undef, firstn)
     @inbounds for (k, line) in enumerate(eachsplit.(lines[1]))
-        splitLine!(line, data, 13)
+        splitLine!(line, data, firstn)
 
         labelInt = parse(Int64, data[1])
         bus.layout.label = max(bus.layout.label, labelInt)
@@ -408,13 +417,15 @@ function matpowerBus(system::PowerSystem, lines::Vector{Vector{String}})
 
         bus.layout.lossZone[k] = parse(Int64, data[11])
 
-        if isassigned(data, 12) && isassigned(data, 13)
-            bus.voltage.maxMagnitude[k] = parse(Float64, data[12])
-            bus.voltage.minMagnitude[k] = parse(Float64, data[13])
-        else
-            baseInv = sqrt(3) / system.base.voltage.value[k]
-            bus.voltage.minMagnitude[k] = topu(missing, def.minMagnitude, 1.0, baseInv)
-            bus.voltage.maxMagnitude[k] = topu(missing, def.maxMagnitude, 1.0, baseInv)
+        if system.bus.layout.optimal
+            if isassigned(data, 12) && isassigned(data, 13)
+                bus.voltage.maxMagnitude[k] = parse(Float64, data[12])
+                bus.voltage.minMagnitude[k] = parse(Float64, data[13])
+            else
+                baseInv = sqrt(3) / system.base.voltage.value[k]
+                bus.voltage.minMagnitude[k] = topu(missing, def.minMagnitude, 1.0, baseInv)
+                bus.voltage.maxMagnitude[k] = topu(missing, def.maxMagnitude, 1.0, baseInv)
+            end
         end
 
         if bus.layout.type[k] == 3
@@ -454,22 +465,25 @@ function matpowerBranch(system::PowerSystem, lines::Vector{Vector{String}}, mast
     branch.parameter.turnsRatio = similar(branch.parameter.conductance)
     branch.parameter.shiftAngle = similar(branch.parameter.conductance)
 
-    branch.voltage.minDiffAngle = similar(branch.parameter.conductance)
-    branch.voltage.maxDiffAngle = similar(branch.parameter.resistance)
+    if system.bus.layout.optimal
+        branch.voltage.minDiffAngle = similar(branch.parameter.conductance)
+        branch.voltage.maxDiffAngle = similar(branch.parameter.resistance)
 
-    branch.flow.minFromBus = similar(branch.parameter.conductance)
-    branch.flow.maxFromBus = similar(branch.parameter.conductance)
-    branch.flow.minToBus = similar(branch.parameter.conductance)
-    branch.flow.maxToBus = similar(branch.parameter.conductance)
-    branch.flow.type = fill(Int8(3), branch.number)
+        branch.flow.minFromBus = similar(branch.parameter.conductance)
+        branch.flow.maxFromBus = similar(branch.parameter.conductance)
+        branch.flow.minToBus = similar(branch.parameter.conductance)
+        branch.flow.maxToBus = similar(branch.parameter.conductance)
+        branch.flow.type = fill(Int8(3), branch.number)
+    end
 
     branch.layout.from = fill(0, branch.number)
     branch.layout.to = similar(branch.layout.from)
-    branch.layout.status = similar(branch.flow.type)
+    branch.layout.status = fill(Int8(1), branch.number)
 
-    data = Array{SubString{String}}(undef, 13)
+    firstn = system.bus.layout.optimal ? 13 : 11
+    data = Array{SubString{String}}(undef, firstn)
     @inbounds for (k, line) in enumerate(eachsplit.(lines[2]))
-        splitLine!(line, data, 13)
+        splitLine!(line, data, firstn)
 
         setLabel!(branch.label, template.branch.label, labeltype, k)
 
@@ -480,9 +494,14 @@ function matpowerBranch(system::PowerSystem, lines::Vector{Vector{String}}, mast
         branch.parameter.reactance[k] = parse(Float64, data[4])
         branch.parameter.susceptance[k] = parse(Float64, data[5])
 
-        longTerm = parse(Float64, data[6]) * basePowerInv
-        branch.flow.minFromBus[k] = branch.flow.minToBus[k] = -longTerm
-        branch.flow.maxFromBus[k] = branch.flow.maxToBus[k] = longTerm
+        if system.bus.layout.optimal
+            longTerm = parse(Float64, data[6]) * basePowerInv
+            branch.flow.minFromBus[k] = branch.flow.minToBus[k] = -longTerm
+            branch.flow.maxFromBus[k] = branch.flow.maxToBus[k] = longTerm
+
+            branch.voltage.minDiffAngle[k] = parse(Float64, data[12]) * deg2rad
+            branch.voltage.maxDiffAngle[k] = parse(Float64, data[13]) * deg2rad
+        end
 
         branch.parameter.turnsRatio[k] = parse(Float64, data[9])
         if branch.parameter.turnsRatio[k] == 0.0
@@ -491,9 +510,6 @@ function matpowerBranch(system::PowerSystem, lines::Vector{Vector{String}}, mast
         branch.parameter.shiftAngle[k] = parse(Float64, data[10]) * deg2rad
 
         branch.layout.status[k] = parse(Int8, data[11])
-
-        branch.voltage.minDiffAngle[k] = parse(Float64, data[12]) * deg2rad
-        branch.voltage.maxDiffAngle[k] = parse(Float64, data[13]) * deg2rad
 
         if branch.layout.status[k] == 1
             branch.layout.inservice += 1
@@ -521,31 +537,30 @@ function matpowerGenerator(system::PowerSystem, lines::Vector{Vector{String}}, m
     gen.output.active = fill(0.0, gen.number)
     gen.output.reactive = similar(gen.output.active)
 
-    gen.capability.minActive = similar(gen.output.active)
-    gen.capability.maxActive = similar(gen.output.active)
     gen.capability.minReactive = similar(gen.output.active)
     gen.capability.maxReactive = similar(gen.output.active)
-    gen.capability.lowActive = similar(gen.output.active)
-    gen.capability.minLowReactive = similar(gen.output.active)
-    gen.capability.maxLowReactive = similar(gen.output.active)
-    gen.capability.upActive = similar(gen.output.active)
-    gen.capability.minUpReactive = similar(gen.output.active)
-    gen.capability.maxUpReactive = similar(gen.output.active)
 
-    gen.ramping.loadFollowing = similar(gen.output.active)
-    gen.ramping.reserve10min = similar(gen.output.active)
-    gen.ramping.reserve30min = similar(gen.output.active)
-    gen.ramping.reactiveRamp = similar(gen.output.active)
+    if system.bus.layout.optimal
+        gen.capability.minActive = similar(gen.output.active)
+        gen.capability.maxActive = similar(gen.output.active)
+
+        gen.capability.lowActive = similar(gen.output.active)
+        gen.capability.minLowReactive = similar(gen.output.active)
+        gen.capability.maxLowReactive = similar(gen.output.active)
+        gen.capability.upActive = similar(gen.output.active)
+        gen.capability.minUpReactive = similar(gen.output.active)
+        gen.capability.maxUpReactive = similar(gen.output.active)
+    end
 
     gen.voltage.magnitude = similar(gen.output.active)
 
     gen.layout.bus = fill(0, gen.number)
-    gen.layout.area = similar(gen.output.active)
     gen.layout.status = Array{Int8}(undef, gen.number)
 
-    data = Array{SubString{String}}(undef, 21)
+    firstn = system.bus.layout.optimal ? 16 : 8
+    data = Array{SubString{String}}(undef, firstn)
     @inbounds for (k, line) in enumerate(eachsplit.(lines[3]))
-        splitLine!(line, data, 21)
+        splitLine!(line, data, firstn)
 
         setLabel!(gen.label, template.generator.label, labeltype, k)
 
@@ -561,22 +576,17 @@ function matpowerGenerator(system::PowerSystem, lines::Vector{Vector{String}}, m
 
         gen.layout.status[k] = parse(Int8, data[8])
 
-        gen.capability.maxActive[k] = parse(Float64, data[9]) * basePowerInv
-        gen.capability.minActive[k] = parse(Float64, data[10]) * basePowerInv
+        if system.bus.layout.optimal
+            gen.capability.maxActive[k] = parse(Float64, data[9]) * basePowerInv
+            gen.capability.minActive[k] = parse(Float64, data[10]) * basePowerInv
 
-        gen.capability.lowActive[k] = parse(Float64, data[11]) * basePowerInv
-        gen.capability.upActive[k] = parse(Float64, data[12]) * basePowerInv
-        gen.capability.minLowReactive[k] = parse(Float64, data[13]) * basePowerInv
-        gen.capability.maxLowReactive[k] = parse(Float64, data[14]) * basePowerInv
-        gen.capability.minUpReactive[k] = parse(Float64, data[15]) * basePowerInv
-        gen.capability.maxUpReactive[k] = parse(Float64, data[16]) * basePowerInv
-
-        gen.ramping.loadFollowing[k] = parse(Float64, data[17]) * basePowerInv
-        gen.ramping.reserve10min[k] = parse(Float64, data[18]) * basePowerInv
-        gen.ramping.reserve30min[k] = parse(Float64, data[19]) * basePowerInv
-        gen.ramping.reactiveRamp[k] = parse(Float64, data[20]) * basePowerInv
-
-        gen.layout.area[k] = parse(Float64, data[21])
+            gen.capability.lowActive[k] = parse(Float64, data[11]) * basePowerInv
+            gen.capability.upActive[k] = parse(Float64, data[12]) * basePowerInv
+            gen.capability.minLowReactive[k] = parse(Float64, data[13]) * basePowerInv
+            gen.capability.maxLowReactive[k] = parse(Float64, data[14]) * basePowerInv
+            gen.capability.minUpReactive[k] = parse(Float64, data[15]) * basePowerInv
+            gen.capability.maxUpReactive[k] = parse(Float64, data[16]) * basePowerInv
+        end
 
         if gen.layout.status[k] == 1
             i = gen.layout.bus[k]
@@ -589,19 +599,21 @@ function matpowerGenerator(system::PowerSystem, lines::Vector{Vector{String}}, m
     end
     gen.layout.label = gen.number
 
-    gen.cost.active.model = fill(Int8(0), gen.number)
-    gen.cost.reactive.model = fill(Int8(0), gen.number)
+    if system.bus.layout.optimal
+        gen.cost.active.model = fill(Int8(0), gen.number)
+        gen.cost.reactive.model = fill(Int8(0), gen.number)
 
-    costLine = lines[4]
-    if !isempty(costLine)
-        data = Array{SubString{String}}(undef, length(split(costLine[1])))
+        costLine = lines[4]
+        if !isempty(costLine)
+            data = Array{SubString{String}}(undef, length(split(costLine[1])))
 
-        costLines = eachsplit.(costLine[1:gen.number])
-        costParser(system, gen.cost.active, costLines, data)
+            costLines = eachsplit.(costLine[1:gen.number])
+            costParser(system, gen.cost.active, costLines, data)
 
-        if size(costLine, 1) == 2 * gen.number
-            costLines = eachsplit.(costLine[gen.number + 1:end])
-            costParser(system, gen.cost.reactive, costLines, data)
+            if size(costLine, 1) == 2 * gen.number
+                costLines = eachsplit.(costLine[gen.number + 1:end])
+                costParser(system, gen.cost.reactive, costLines, data)
+            end
         end
     end
 
@@ -755,8 +767,11 @@ function psseBus(system::PowerSystem, lines::Vector{Vector{String}})
 
     bus.voltage.magnitude = similar(bus.supply.active)
     bus.voltage.angle = similar(bus.supply.active)
-    bus.voltage.minMagnitude = similar(bus.supply.active)
-    bus.voltage.maxMagnitude = similar(bus.supply.active)
+
+    if system.bus.layout.optimal
+        bus.voltage.minMagnitude = similar(bus.supply.active)
+        bus.voltage.maxMagnitude = similar(bus.supply.active)
+    end
 
     bus.layout.type = Array{Int8}(undef, bus.number)
     bus.layout.area = fill(0, bus.number)
@@ -766,9 +781,10 @@ function psseBus(system::PowerSystem, lines::Vector{Vector{String}})
     system.base.voltage.value = similar(bus.supply.active)
 
     bus.layout.label = 0
-    data = Array{SubString{String}}(undef, 11)
+    firstn = system.bus.layout.optimal ? 11 : 9
+    data = Array{SubString{String}}(undef, firstn)
     for (k, line) in enumerate(eachsplit.(lines[1], ","))
-        splitLine!(line, data, 11)
+        splitLine!(line, data, firstn)
 
         labelInt = parse(Int64, data[1])
         bus.layout.label = max(bus.layout.label, labelInt)
@@ -790,13 +806,15 @@ function psseBus(system::PowerSystem, lines::Vector{Vector{String}})
 
         system.base.voltage.value[k] = parse(Float64, data[3]) * 1e3
 
-        if isassigned(data, 10) && isassigned(data, 11)
-            bus.voltage.maxMagnitude[k] = parse(Float64, data[10])
-            bus.voltage.minMagnitude[k] = parse(Float64, data[11])
-        else
-            baseInv = sqrt(3) / system.base.voltage.value[k]
-            bus.voltage.minMagnitude[k] = topu(missing, def.minMagnitude, 1.0, baseInv)
-            bus.voltage.maxMagnitude[k] = topu(missing, def.maxMagnitude, 1.0, baseInv)
+        if system.bus.layout.optimal
+            if isassigned(data, 10) && isassigned(data, 11)
+                bus.voltage.maxMagnitude[k] = parse(Float64, data[10])
+                bus.voltage.minMagnitude[k] = parse(Float64, data[11])
+            else
+                baseInv = sqrt(3) / system.base.voltage.value[k]
+                bus.voltage.minMagnitude[k] = topu(missing, def.minMagnitude, 1.0, baseInv)
+                bus.voltage.maxMagnitude[k] = topu(missing, def.maxMagnitude, 1.0, baseInv)
+            end
         end
 
         bus.layout.type[k] = parse(Int8, data[4])
@@ -889,18 +907,20 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
     branch.parameter.turnsRatio = fill(1.0, branch.number)
     branch.parameter.shiftAngle = fill(0.0, branch.number)
 
-    branch.voltage.minDiffAngle = similar(branch.parameter.conductance)
-    branch.voltage.maxDiffAngle = similar(branch.parameter.resistance)
+    if system.bus.layout.optimal
+        branch.voltage.minDiffAngle = similar(branch.parameter.conductance)
+        branch.voltage.maxDiffAngle = similar(branch.parameter.resistance)
 
-    branch.flow.minFromBus = similar(branch.parameter.conductance)
-    branch.flow.maxFromBus = similar(branch.parameter.conductance)
-    branch.flow.minToBus = similar(branch.parameter.conductance)
-    branch.flow.maxToBus = similar(branch.parameter.conductance)
-    branch.flow.type = fill(Int8(3), branch.number)
+        branch.flow.minFromBus = similar(branch.parameter.conductance)
+        branch.flow.maxFromBus = similar(branch.parameter.conductance)
+        branch.flow.minToBus = similar(branch.parameter.conductance)
+        branch.flow.maxToBus = similar(branch.parameter.conductance)
+        branch.flow.type = fill(Int8(3), branch.number)
+    end
 
     branch.layout.from = fill(0, branch.number)
     branch.layout.to = similar(branch.layout.from)
-    branch.layout.status = similar(branch.flow.type)
+    branch.layout.status = fill(Int8(3), branch.number)
 
     data = Array{SubString{String}}(undef, 14)
     for (k, line) in enumerate(eachsplit.(lines[5], ","))
@@ -915,14 +935,16 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
         branch.parameter.reactance[k] = parse(Float64, data[5])
         branch.parameter.susceptance[k] = parse(Float64, data[6])
 
-        longTerm = parse(Float64, data[7]) * basePowerInv
-        branch.flow.minFromBus[k] = branch.flow.minToBus[k] = -longTerm
-        branch.flow.maxFromBus[k] = branch.flow.maxToBus[k] = longTerm
-
         branch.layout.status[k] = parse(Int8, data[14])
 
-        branch.voltage.minDiffAngle[k] = topu(missing, def.minDiffAngle, pfx.voltageAngle, 1.0)
-        branch.voltage.maxDiffAngle[k] = topu(missing, def.maxDiffAngle, pfx.voltageAngle, 1.0)
+        if system.bus.layout.optimal
+            longTerm = parse(Float64, data[7]) * basePowerInv
+            branch.flow.minFromBus[k] = branch.flow.minToBus[k] = -longTerm
+            branch.flow.maxFromBus[k] = branch.flow.maxToBus[k] = longTerm
+
+            branch.voltage.minDiffAngle[k] = topu(missing, def.minDiffAngle, pfx.voltageAngle, 1.0)
+            branch.voltage.maxDiffAngle[k] = topu(missing, def.maxDiffAngle, pfx.voltageAngle, 1.0)
+        end
 
         if branch.layout.status[k] == 1
             branch.layout.inservice += 1
@@ -980,9 +1002,11 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
                     turnsRatio = τ1 / τ2
                 )
 
-                longTerm = parse(Float64, data[28]) * basePowerInv
-                branch.flow.minFromBus[end] = branch.flow.minToBus[end] = -longTerm
-                branch.flow.maxFromBus[end] = branch.flow.maxToBus[end] = longTerm
+                if system.bus.layout.optimal
+                    longTerm = parse(Float64, data[28]) * basePowerInv
+                    branch.flow.minFromBus[end] = branch.flow.minToBus[end] = -longTerm
+                    branch.flow.maxFromBus[end] = branch.flow.maxToBus[end] = longTerm
+                end
 
                 branch.parameter.resistance[end] = parse(Float64, data[22])
                 branch.parameter.reactance[end] = parse(Float64, data[23])
@@ -1077,17 +1101,19 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
                 branch.parameter.shiftAngle[end - 1] = parse(Float64, data[52]) * deg2rad
                 branch.parameter.shiftAngle[end] = parse(Float64, data[69]) * deg2rad
 
-                longTerm = parse(Float64, data[36]) * basePowerInv
-                branch.flow.minFromBus[end - 2] = branch.flow.minToBus[end - 2] = -longTerm
-                branch.flow.maxFromBus[end - 2] = branch.flow.maxToBus[end - 2] = longTerm
+                if system.bus.layout.optimal
+                    longTerm = parse(Float64, data[36]) * basePowerInv
+                    branch.flow.minFromBus[end - 2] = branch.flow.minToBus[end - 2] = -longTerm
+                    branch.flow.maxFromBus[end - 2] = branch.flow.maxToBus[end - 2] = longTerm
 
-                longTerm = parse(Float64, data[53]) * basePowerInv
-                branch.flow.minFromBus[end - 1] = branch.flow.minToBus[end - 1] = -longTerm
-                branch.flow.maxFromBus[end - 1] = branch.flow.maxToBus[end - 1] = longTerm
+                    longTerm = parse(Float64, data[53]) * basePowerInv
+                    branch.flow.minFromBus[end - 1] = branch.flow.minToBus[end - 1] = -longTerm
+                    branch.flow.maxFromBus[end - 1] = branch.flow.maxToBus[end - 1] = longTerm
 
-                longTerm = parse(Float64, data[70]) * basePowerInv
-                branch.flow.minFromBus[end] = branch.flow.minToBus[end] = -longTerm
-                branch.flow.maxFromBus[end] = branch.flow.maxToBus[end] = longTerm
+                    longTerm = parse(Float64, data[70]) * basePowerInv
+                    branch.flow.minFromBus[end] = branch.flow.minToBus[end] = -longTerm
+                    branch.flow.maxFromBus[end] = branch.flow.maxToBus[end] = longTerm
+                end
 
                 cw = parse(Float64, data[5])
                 cz = parse(Float64, data[6])
@@ -1204,26 +1230,24 @@ function psseGenerator(system::PowerSystem, lines::Vector{Vector{String}}, maste
     gen.output.active = fill(0.0, gen.number)
     gen.output.reactive = similar(gen.output.active)
 
-    gen.capability.minActive = similar(gen.output.active)
-    gen.capability.maxActive = similar(gen.output.active)
     gen.capability.minReactive = similar(gen.output.active)
     gen.capability.maxReactive = similar(gen.output.active)
-    gen.capability.lowActive = fill(0.0, gen.number)
-    gen.capability.minLowReactive = fill(0.0, gen.number)
-    gen.capability.maxLowReactive = fill(0.0, gen.number)
-    gen.capability.upActive = fill(0.0, gen.number)
-    gen.capability.minUpReactive = fill(0.0, gen.number)
-    gen.capability.maxUpReactive = fill(0.0, gen.number)
 
-    gen.ramping.loadFollowing = fill(0.0, gen.number)
-    gen.ramping.reserve10min = fill(0.0, gen.number)
-    gen.ramping.reserve30min = fill(0.0, gen.number)
-    gen.ramping.reactiveRamp = fill(0.0, gen.number)
+    if system.bus.layout.optimal
+        gen.capability.minActive = similar(gen.output.active)
+        gen.capability.maxActive = similar(gen.output.active)
+
+        gen.capability.lowActive = fill(0.0, gen.number)
+        gen.capability.minLowReactive = fill(0.0, gen.number)
+        gen.capability.maxLowReactive = fill(0.0, gen.number)
+        gen.capability.upActive = fill(0.0, gen.number)
+        gen.capability.minUpReactive = fill(0.0, gen.number)
+        gen.capability.maxUpReactive = fill(0.0, gen.number)
+    end
 
     gen.voltage.magnitude = similar(gen.output.active)
 
     gen.layout.bus = fill(0, gen.number)
-    gen.layout.area = fill(0.0, gen.number)
     gen.layout.status = Array{Int8}(undef, gen.number)
 
     gen.cost.active.model = fill(Int8(0), gen.number)
@@ -1243,8 +1267,10 @@ function psseGenerator(system::PowerSystem, lines::Vector{Vector{String}}, maste
         gen.capability.maxReactive[k] = parse(Float64, data[5]) * basePowerInv
         gen.capability.minReactive[k] = parse(Float64, data[6]) * basePowerInv
 
-        gen.capability.maxActive[k] = parse(Float64, data[17]) * basePowerInv
-        gen.capability.minActive[k] = parse(Float64, data[18]) * basePowerInv
+        if system.bus.layout.optimal
+            gen.capability.maxActive[k] = parse(Float64, data[17]) * basePowerInv
+            gen.capability.minActive[k] = parse(Float64, data[18]) * basePowerInv
+        end
 
         gen.voltage.magnitude[k] = parse(Float64, data[7])
 

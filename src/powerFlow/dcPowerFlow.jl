@@ -30,12 +30,12 @@ dcModel!(system)
 analysis = dcPowerFlow(system)
 ```
 
-Set up the DC power flow utilizing QR factorization:
+Set up the DC power flow utilizing KLU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
 
-analysis = dcPowerFlow(system, QR)
+analysis = dcPowerFlow(system, KLU)
 ```
 """
 function dcPowerFlow(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LDLt, LU, KLU}}

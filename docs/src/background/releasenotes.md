@@ -1,5 +1,18 @@
 # [Release Notes](@id ReleaseNotes)
 
+
+---
+
+## Version 0.5.1
+
+Release Date: July 12, 2025
+
+#### Added
+  * Introduced the `optimal` keyword in the function [`powerSystem`](@ref powerSystem) to skip importing data related to optimal power flow analyses, see [Partial Load for Faster Import](@ref PartialLoadFasterImportManual).
+
+#### Other
+  * Removed unused parameters from the `PowerSystem` type.
+
 ---
 
 ## Version 0.5.0

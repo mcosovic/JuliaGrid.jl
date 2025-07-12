@@ -57,6 +57,7 @@ function dcOptimalPowerFlow(
     gen = system.generator
     cbt = gen.capability
 
+    errorOptimal(system)
     checkSlackBus(system)
     model!(system, system.model.dc)
 
@@ -365,7 +366,7 @@ dcModel!(system)
 analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 powerFlow!(analysis)
 
-updateBus!(analysis; label = 14, active = 0.1, angle = -0.17)
+updateBus!(analysis; label = "Bus 14 LV", active = 0.1, angle = -0.17)
 
 setInitialPoint!(analysis)
 powerFlow!(analysis)

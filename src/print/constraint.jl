@@ -49,9 +49,9 @@ powerFlow!(analysis)
 delimiter = " "
 width = Dict("Voltage Magnitude" => 8, "Active Power Balance Solution" => 12)
 
-printBusConstraint(analysis; label = 2, delimiter, width, header = true)
-printBusConstraint(analysis; label = 10, delimiter, width)
-printBusConstraint(analysis; label = 14, delimiter, width, footer = true)
+printBusConstraint(analysis; label = "Bus 2 HV", delimiter, width, header = true)
+printBusConstraint(analysis; label = "Bus 10 LV", delimiter, width)
+printBusConstraint(analysis; label = "Bus 14 LV", delimiter, width, footer = true)
 ```
 """
 function printBusConstraint(

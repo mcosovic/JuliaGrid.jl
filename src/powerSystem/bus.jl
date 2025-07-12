@@ -1,12 +1,12 @@
 """
     addBus!(system::PowerSystem;
         label, type, active, reactive, conductance, susceptance,
-        magnitude, angle, minMagnitude, maxMagnitude, base, area, lossZone)
+        magnitude, angle, base, area, lossZone, minMagnitude, maxMagnitude)
 
 The function adds a new bus to the `PowerSystem` type.
 
 # Keywords
-The bus is defined with the following keywords:
+The main keywords used to define a bus are:
 * `label`: Unique label for the bus.
 * `type`: Bus type:
   * `type = 1`: demand bus (PQ),
@@ -18,11 +18,13 @@ The bus is defined with the following keywords:
 * `susceptance` (pu or VAr): Reactive power injected/demanded of the shunt element.
 * `magnitude` (pu or V): Initial value of the bus voltage magnitude.
 * `angle` (rad or deg): Initial value of the bus voltage angle.
-* `minMagnitude` (pu or V): Minimum bus voltage magnitude value.
-* `maxMagnitude` (pu or V): Maximum bus voltage magnitude value.
 * `base` (V): Line-to-line voltage base value.
 * `area`: Area number.
 * `lossZone`: Loss zone.
+
+The following keywords are used only in optimal power flow analyses:
+* `minMagnitude` (pu or V): Minimum bus voltage magnitude value.
+* `maxMagnitude` (pu or V): Maximum bus voltage magnitude value.
 
 Note that all voltage values, except for base voltages, are referenced to line-to-neutral voltages,
 while powers, when given in SI units, correspond to three-phase power.
@@ -90,8 +92,10 @@ function addBus!(system::PowerSystem; kwargs...)
 
     baseInv = sqrt(3) / baseVoltage
     add!(bus.voltage.magnitude, key.magnitude, def.magnitude, pfx.voltageMagnitude, baseInv)
-    add!(bus.voltage.minMagnitude, key.minMagnitude, def.minMagnitude, pfx.voltageMagnitude, baseInv)
-    add!(bus.voltage.maxMagnitude, key.maxMagnitude, def.maxMagnitude, pfx.voltageMagnitude, baseInv)
+    if system.bus.layout.optimal
+        add!(bus.voltage.minMagnitude, key.minMagnitude, def.minMagnitude, pfx.voltageMagnitude, baseInv)
+        add!(bus.voltage.maxMagnitude, key.maxMagnitude, def.maxMagnitude, pfx.voltageMagnitude, baseInv)
+    end
     add!(bus.voltage.angle, key.angle, def.angle, pfx.voltageAngle, 1.0)
 
     add!(bus.layout.area, key.area, def.area)
@@ -209,8 +213,10 @@ function updateBusMain!(system::PowerSystem, label::IntStr, key::BusKey)
     baseInv = sqrt(3) / (system.base.voltage.value[idx] * system.base.voltage.prefix)
     update!(bus.voltage.magnitude, key.magnitude, pfx.voltageMagnitude, baseInv, idx)
     update!(bus.voltage.angle, key.angle, pfx.voltageAngle, 1.0, idx)
-    update!(bus.voltage.minMagnitude, key.minMagnitude, pfx.voltageMagnitude, baseInv, idx)
-    update!(bus.voltage.maxMagnitude, key.maxMagnitude, pfx.voltageMagnitude, baseInv, idx)
+    if system.bus.layout.optimal
+        update!(bus.voltage.minMagnitude, key.minMagnitude, pfx.voltageMagnitude, baseInv, idx)
+        update!(bus.voltage.maxMagnitude, key.maxMagnitude, pfx.voltageMagnitude, baseInv, idx)
+    end
 
     update!(bus.layout.area, key.area, idx)
     update!(bus.layout.lossZone, key.lossZone, idx)
@@ -232,7 +238,7 @@ throughout the update process.
 system = powerSystem("case14.h5")
 analysis = newtonRaphson(system)
 
-updateBus!(analysis; label = 2, active = 0.15, susceptance = 0.15)
+updateBus!(analysis; label = "Bus 2 HV", active = 0.15, susceptance = 0.15)
 ```
 """
 function updateBus!(analysis::PowerFlow; label::IntStr, kwargs...)

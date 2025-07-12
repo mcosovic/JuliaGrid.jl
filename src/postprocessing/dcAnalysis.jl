@@ -114,7 +114,7 @@ dcModel!(system)
 analysis = dcPowerFlow(system)
 solve!(analysis)
 
-injection = injectionPower(analysis; label = 2)
+injection = injectionPower(analysis; label = "Bus 2 HV")
 ```
 """
 function injectionPower(analysis::DcPowerFlow; label::IntStr)
@@ -151,7 +151,7 @@ dcModel!(system)
 analysis = dcPowerFlow(system)
 solve!(analysis)
 
-supply = supplyPower(analysis; label = 2)
+supply = supplyPower(analysis; label = "Bus 2 HV")
 ```
 """
 function supplyPower(analysis::DcPowerFlow; label::IntStr)

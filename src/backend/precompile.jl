@@ -58,5 +58,8 @@ PrecompileTools.@setup_workload begin
         ########## Observability Analysis ###########
         islands = islandTopologicalFlow(mt)
         restorationGram!(mt, mt, islands)
+
+        ########## Default ###########
+        @default(template)
     end
 end

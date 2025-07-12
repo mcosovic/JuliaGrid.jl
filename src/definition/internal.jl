@@ -165,12 +165,7 @@ Base.@kwdef mutable struct GeneratorTemplate
     upActive::ContainerTemplate = ContainerTemplate()
     minUpReactive::ContainerTemplate = ContainerTemplate()
     maxUpReactive::ContainerTemplate = ContainerTemplate()
-    loadFollowing::ContainerTemplate = ContainerTemplate()
-    reactiveRamp::ContainerTemplate = ContainerTemplate()
-    reserve10min::ContainerTemplate = ContainerTemplate()
-    reserve30min::ContainerTemplate = ContainerTemplate()
     status::Int8 = Int8(1)
-    area::Int64 = 0
     label::String = "?"
     key::DataType = String
 end
@@ -369,7 +364,6 @@ end
 
 Base.@kwdef struct GeneratorKey
     label::IntStrMiss = missing
-    area::IntMiss = missing
     status::IntMiss = missing
     active::FltIntMiss = missing
     reactive::FltIntMiss = missing
@@ -384,10 +378,6 @@ Base.@kwdef struct GeneratorKey
     upActive::FltIntMiss = missing
     minUpReactive::FltIntMiss = missing
     maxUpReactive::FltIntMiss = missing
-    loadFollowing::FltIntMiss = missing
-    reserve10min::FltIntMiss = missing
-    reserve30min::FltIntMiss = missing
-    reactiveRamp::FltIntMiss = missing
 end
 
 Base.@kwdef struct CostKey

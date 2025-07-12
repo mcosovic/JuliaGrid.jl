@@ -2,14 +2,13 @@
     addGenerator!(system::PowerSystem;
         label, bus, status, active, reactive, magnitude,
         minActive, maxActive, minReactive, maxReactive,
-        lowActive, minLowReactive, maxLowReactive, upActive, minUpReactive, maxUpReactive,
-        loadFollowing, reactiveRamp, reserve10min, reserve30min, area)
+        lowActive, minLowReactive, maxLowReactive, upActive, minUpReactive, maxUpReactive)
 
 The function adds a new generator to the `PowerSystem` type. The generator can be added to an already
 defined bus.
 
 # Keywords
-The generator is defined with the following keywords:
+The main keywords used to define a generator are:
 * `label`: Unique label for the generator.
 * `bus`: Label of the bus to which the generator is connected.
 * `status`: Operating status of the generator:
@@ -18,21 +17,18 @@ The generator is defined with the following keywords:
 * `active` (pu or W): Output active power.
 * `reactive` (pu or VAr): Output reactive power.
 * `magnitude` (pu or V): Voltage magnitude setpoint.
-* `minActive` (pu or W): Minimum allowed active power output value.
-* `maxActive` (pu or W): Maximum allowed active power output value.
 * `minReactive` (pu or VAr): Minimum allowed reactive power output value.
 * `maxReactive` (pu or VAr): Maximum allowed reactive power output value.
+
+The following keywords are used only in optimal power flow analyses:
+* `minActive` (pu or W): Minimum allowed active power output value.
+* `maxActive` (pu or W): Maximum allowed active power output value.
 * `lowActive` (pu or W): Lower allowed active power output value of PQ capability curve.
 * `minLowReactive` (pu or VAr): Minimum allowed reactive power output value at `lowActive` value.
 * `maxLowReactive` (pu or VAr): Maximum allowed reactive power output value at `lowActive` value.
 * `upActive` (pu or W): Upper allowed active power output value of PQ capability curve.
 * `minUpReactive` (pu or VAr): Minimum allowed reactive power output value at `upActive` value.
 * `maxUpReactive` (pu or VAr): Maximum allowed reactive power output value at `upActive` value.
-* `loadFollowing` (pu/min or W/min): Ramp rate for load following/AG.
-* `reserve10min` (pu or W): Ramp rate for 10-minute reserves.
-* `reserve30min` (pu or W): Ramp rate for 30-minute reserves.
-* `reactiveRamp` (pu/min or VAr/min): Ramp rate for reactive power, two seconds timescale.
-* `area`: Area participation factor.
 
 Note that voltage magnitude values are referenced to line-to-neutral voltages, while powers, when
 given in SI units, correspond to three-phase power.
@@ -94,22 +90,20 @@ function addGeneratorMain!(system::PowerSystem, bus::IntStr, key::GeneratorKey)
     add!(gen.output.active, key.active, def.active, pfx.activePower, baseInv)
     add!(gen.output.reactive, key.reactive, def.reactive, pfx.reactivePower, baseInv)
 
-    add!(cbt.minActive, key.minActive, def.minActive, pfx.activePower, baseInv, 0.0)
-    add!(cbt.maxActive, key.maxActive, def.maxActive, pfx.activePower, baseInv, gen.output.active[end])
     add!(cbt.minReactive, key.minReactive, def.minReactive, pfx.reactivePower, baseInv, -gen.output.reactive[end])
     add!(cbt.maxReactive, key.maxReactive, def.maxReactive, pfx.reactivePower, baseInv, gen.output.reactive[end])
 
-    add!(cbt.lowActive, key.lowActive, def.lowActive, pfx.activePower, baseInv)
-    add!(cbt.minLowReactive, key.minLowReactive, def.minLowReactive, pfx.reactivePower, baseInv)
-    add!(cbt.maxLowReactive, key.maxLowReactive, def.maxLowReactive, pfx.reactivePower, baseInv)
-    add!(cbt.upActive, key.upActive, def.upActive, pfx.activePower, baseInv)
-    add!(cbt.minUpReactive, key.minUpReactive, def.minUpReactive, pfx.reactivePower, baseInv)
-    add!(cbt.maxUpReactive, key.maxUpReactive, def.maxUpReactive, pfx.reactivePower, baseInv)
+    if system.bus.layout.optimal
+        add!(cbt.minActive, key.minActive, def.minActive, pfx.activePower, baseInv, 0.0)
+        add!(cbt.maxActive, key.maxActive, def.maxActive, pfx.activePower, baseInv, gen.output.active[end])
 
-    add!(gen.ramping.loadFollowing, key.loadFollowing, def.loadFollowing, pfx.activePower, baseInv)
-    add!(gen.ramping.reserve10min, key.reserve10min, def.reserve10min, pfx.activePower, baseInv)
-    add!(gen.ramping.reserve30min, key.reserve30min, def.reserve30min, pfx.activePower, baseInv)
-    add!(gen.ramping.reactiveRamp, key.reactiveRamp, def.reactiveRamp, pfx.reactivePower, baseInv)
+        add!(cbt.lowActive, key.lowActive, def.lowActive, pfx.activePower, baseInv)
+        add!(cbt.minLowReactive, key.minLowReactive, def.minLowReactive, pfx.reactivePower, baseInv)
+        add!(cbt.maxLowReactive, key.maxLowReactive, def.maxLowReactive, pfx.reactivePower, baseInv)
+        add!(cbt.upActive, key.upActive, def.upActive, pfx.activePower, baseInv)
+        add!(cbt.minUpReactive, key.minUpReactive, def.minUpReactive, pfx.reactivePower, baseInv)
+        add!(cbt.maxUpReactive, key.maxUpReactive, def.maxUpReactive, pfx.reactivePower, baseInv)
+    end
 
     if gen.layout.status[end] == 1
         addGenInBus!(system, busIdx, gen.number)
@@ -123,7 +117,6 @@ function addGeneratorMain!(system::PowerSystem, bus::IntStr, key::GeneratorKey)
     add!(gen.voltage.magnitude, key.magnitude, def.magnitude, pfx.voltageMagnitude, baseInv)
 
     push!(gen.layout.bus, busIdx)
-    add!(gen.layout.area, key.area, def.area)
 
     push!(gen.cost.active.model, 0)
     push!(gen.cost.reactive.model, 0)
@@ -307,26 +300,22 @@ function updateGeneratorMain!(system::PowerSystem, label::IntStr, key::Generator
     end
     gen.layout.status[idx] = statusNew
 
-    update!(gen.capability.minActive, key.minActive, pfx.activePower, baseInv, idx)
-    update!(gen.capability.maxActive, key.maxActive, pfx.activePower, baseInv, idx)
     update!(gen.capability.minReactive, key.minReactive, pfx.reactivePower, baseInv, idx)
     update!(gen.capability.maxReactive, key.maxReactive, pfx.reactivePower, baseInv, idx)
-    update!(gen.capability.lowActive, key.lowActive, pfx.activePower, baseInv, idx)
-    update!(gen.capability.minLowReactive, key.minLowReactive, pfx.reactivePower, baseInv, idx)
-    update!(gen.capability.maxLowReactive, key.maxLowReactive, pfx.reactivePower, baseInv, idx)
-    update!(gen.capability.upActive, key.upActive, pfx.activePower, baseInv, idx)
-    update!(gen.capability.minUpReactive, key.minUpReactive, pfx.reactivePower, baseInv, idx)
-    update!(gen.capability.maxUpReactive, key.maxUpReactive, pfx.reactivePower, baseInv, idx)
 
-    update!(gen.ramping.loadFollowing, key.loadFollowing, pfx.activePower, baseInv, idx)
-    update!(gen.ramping.reserve10min, key.reserve10min, pfx.activePower, baseInv, idx)
-    update!(gen.ramping.reserve30min, key.reserve30min, pfx.activePower, baseInv, idx)
-    update!(gen.ramping.reactiveRamp, key.reactiveRamp, pfx.reactivePower, baseInv, idx)
+    if system.bus.layout.optimal
+        update!(gen.capability.minActive, key.minActive, pfx.activePower, baseInv, idx)
+        update!(gen.capability.maxActive, key.maxActive, pfx.activePower, baseInv, idx)
+        update!(gen.capability.lowActive, key.lowActive, pfx.activePower, baseInv, idx)
+        update!(gen.capability.minLowReactive, key.minLowReactive, pfx.reactivePower, baseInv, idx)
+        update!(gen.capability.maxLowReactive, key.maxLowReactive, pfx.reactivePower, baseInv, idx)
+        update!(gen.capability.upActive, key.upActive, pfx.activePower, baseInv, idx)
+        update!(gen.capability.minUpReactive, key.minUpReactive, pfx.reactivePower, baseInv, idx)
+        update!(gen.capability.maxUpReactive, key.maxUpReactive, pfx.reactivePower, baseInv, idx)
+    end
 
     baseInv = sqrt(3) / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
     update!(gen.voltage.magnitude, key.magnitude, pfx.voltageMagnitude, baseInv, idx)
-
-    update!(gen.layout.area, key.area, idx)
 end
 
 """
@@ -346,7 +335,7 @@ throughout the update process.
 system = powerSystem("case14.h5")
 analysis = newtonRaphson(system)
 
-updateGenerator!(analysis; label = 2, active = 0.35)
+addGenerator!(analysis; bus = "Bus 1 HV", active = 0.5, reactive = 0.2)
 ```
 """
 function updateGenerator!(analysis::PowerFlow; label::IntStr, kwargs...)
@@ -566,17 +555,14 @@ macro generator(kwargs...)
             parameter::Symbol = kwarg.args[1]
 
             if hasfield(GeneratorTemplate, parameter)
-                if parameter ∉ (:area, :status, :label)
+                if parameter ∉ (:status, :label)
                     container::ContainerTemplate = getfield(template.generator, parameter)
 
-                    if parameter in (
-                        :active, :minActive, :maxActive, :lowActive, :upActive,
-                        :loadFollowing, :reserve10min, :reserve30min
-                        )
+                    if parameter in (:active, :minActive, :maxActive, :lowActive, :upActive)
                         pfxLive = pfx.activePower
                     elseif parameter in (
                         :reactive, :minReactive, :maxReactive, :minLowReactive,
-                        :maxLowReactive, :minUpReactive, :maxUpReactive, :reactiveRamp
+                        :maxLowReactive, :minUpReactive, :maxUpReactive
                         )
                         pfxLive = pfx.reactivePower
                     elseif parameter == :magnitude
@@ -592,8 +578,6 @@ macro generator(kwargs...)
                 else
                     if parameter == :status
                         setfield!(template.generator, parameter, Int8(eval(kwarg.args[2])))
-                    elseif parameter == :area
-                        setfield!(template.generator, parameter, Int64(eval(kwarg.args[2])))
                     elseif parameter == :label
                         macroLabel(template.generator, kwarg.args[2], "[?]")
                     end
@@ -660,7 +644,9 @@ cost!(system; generator = "Generator 1", active = 2, polynomial = [0.11; 5.0; 15
 ```
 """
 function cost!(system::PowerSystem; generator::IntStr, kwargs...)
-    costMain!(system, generator, CostKey(; kwargs...))
+    if system.bus.layout.optimal
+        costMain!(system, generator, CostKey(; kwargs...))
+    end
 end
 
 function costMain!(system::PowerSystem, generator::IntStr, key::CostKey)

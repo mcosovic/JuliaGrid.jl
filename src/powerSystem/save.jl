@@ -194,7 +194,6 @@ end
 function saveGenerator(system::PowerSystem, file::File)
     output = system.generator.output
     capability = system.generator.capability
-    ramping = system.generator.ramping
     cost = system.generator.cost
     voltage = system.generator.voltage
     layout = system.generator.layout
@@ -213,16 +212,6 @@ function saveGenerator(system::PowerSystem, file::File)
     attrs(file["generator/output/reactive"])["SI unit"] = "VAr"
     attrs(file["generator/output/reactive"])["format"] = format
 
-    format = compresseArray(file, capability.minActive, "generator/capability/minActive")
-    attrs(file["generator/capability/minActive"])["unit"] = "pu"
-    attrs(file["generator/capability/minActive"])["SI unit"] = "W"
-    attrs(file["generator/capability/minActive"])["format"] = format
-
-    format = compresseArray(file, capability.maxActive, "generator/capability/maxActive")
-    attrs(file["generator/capability/maxActive"])["unit"] = "pu"
-    attrs(file["generator/capability/maxActive"])["SI unit"] = "W"
-    attrs(file["generator/capability/maxActive"])["format"] = format
-
     format = compresseArray(file, capability.minReactive, "generator/capability/minReactive")
     attrs(file["generator/capability/minReactive"])["unit"] = "pu"
     attrs(file["generator/capability/minReactive"])["SI unit"] = "VAr"
@@ -232,6 +221,16 @@ function saveGenerator(system::PowerSystem, file::File)
     attrs(file["generator/capability/maxReactive"])["unit"] = "pu"
     attrs(file["generator/capability/maxReactive"])["SI unit"] = "VAr"
     attrs(file["generator/capability/maxReactive"])["format"] = format
+
+    format = compresseArray(file, capability.minActive, "generator/capability/minActive")
+    attrs(file["generator/capability/minActive"])["unit"] = "pu"
+    attrs(file["generator/capability/minActive"])["SI unit"] = "W"
+    attrs(file["generator/capability/minActive"])["format"] = format
+
+    format = compresseArray(file, capability.maxActive, "generator/capability/maxActive")
+    attrs(file["generator/capability/maxActive"])["unit"] = "pu"
+    attrs(file["generator/capability/maxActive"])["SI unit"] = "W"
+    attrs(file["generator/capability/maxActive"])["format"] = format
 
     format = compresseArray(file, capability.lowActive, "generator/capability/lowActive")
     attrs(file["generator/capability/lowActive"])["unit"] = "pu"
@@ -262,26 +261,6 @@ function saveGenerator(system::PowerSystem, file::File)
     attrs(file["generator/capability/maxUpReactive"])["unit"] = "pu"
     attrs(file["generator/capability/maxUpReactive"])["SI unit"] = "VAr"
     attrs(file["generator/capability/maxUpReactive"])["format"] = format
-
-    format = compresseArray(file, ramping.loadFollowing, "generator/ramping/loadFollowing")
-    attrs(file["generator/ramping/loadFollowing"])["unit"] = "pu/min"
-    attrs(file["generator/ramping/loadFollowing"])["SI unit"] = "W/min"
-    attrs(file["generator/ramping/loadFollowing"])["format"] = format
-
-    format = compresseArray(file, ramping.reserve10min, "generator/ramping/reserve10min")
-    attrs(file["generator/ramping/reserve10min"])["unit"] = "pu"
-    attrs(file["generator/ramping/reserve10min"])["SI unit"] = "W"
-    attrs(file["generator/ramping/reserve10min"])["format"] = format
-
-    format = compresseArray(file, ramping.reserve30min, "generator/ramping/reserve30min")
-    attrs(file["generator/ramping/reserve30min"])["unit"] = "pu"
-    attrs(file["generator/ramping/reserve30min"])["SI unit"] = "W"
-    attrs(file["generator/ramping/reserve30min"])["format"] = format
-
-    format = compresseArray(file, ramping.reactiveRamp, "generator/ramping/reactiveRamp")
-    attrs(file["generator/ramping/reactiveRamp"])["unit"] = "pu/min"
-    attrs(file["generator/ramping/reactiveRamp"])["SI unit"] = "VAr/min"
-    attrs(file["generator/ramping/reactiveRamp"])["format"] = format
 
     format = compresseArray(file, cost.active.model, "generator/cost/active/model")
     attrs(file["generator/cost/active/model"])["piecewise linear"] = 1
@@ -321,9 +300,6 @@ function saveGenerator(system::PowerSystem, file::File)
     write(file, "generator/layout/bus", layout.bus)
     attrs(file["generator/layout/bus"])["format"] = "expand"
 
-    format = compresseArray(file, layout.area, "generator/layout/area")
-    attrs(file["generator/layout/area"])["format"] = format
-
     format = compresseArray(file, layout.status, "generator/layout/status")
     attrs(file["generator/layout/status"])["in-service"] = 1
     attrs(file["generator/layout/status"])["out-of-service"] = 0
@@ -337,6 +313,7 @@ function saveAttribute(system::PowerSystem, file::File, reference::String, note:
     attrs(file)["number of in-service branches"] = system.branch.layout.inservice
     attrs(file)["number of generators"] = system.generator.number
     attrs(file)["number of in-service generators"] = system.generator.layout.inservice
+    attrs(file)["optimal"] = system.bus.layout.optimal
 
     if !isempty(reference)
         attrs(file)["reference"] = reference

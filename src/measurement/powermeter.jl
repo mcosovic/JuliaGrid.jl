@@ -261,7 +261,7 @@ However, users can choose to use watts as the units by applying the [`@power`](@
 system, monitoring = ems("case14.h5")
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
 addWattmeter!(monitoring, analysis; varianceBus = 1e-3, statusFrom = 0)
 ```
@@ -333,7 +333,7 @@ However, users can choose to use volt-amperes reactive as the units by applying 
 system, monitoring = ems("case14.h5")
 
 analysis = newtonRaphson(system)
-powerFlow!(system, analysis; power = true)
+powerFlow!(analysis; power = true)
 
 addVarmeter!(monitoring, analysis; varianceFrom = 1e-3, statusBus = 0)
 ```

@@ -8,7 +8,7 @@ The function adds a new branch to the `PowerSystem` type. A branch can be added 
 defined buses.
 
 # Keywords
-The branch is defined with the following keywords:
+The main keywords used to define a branch are:
 * `label`: Unique label for the branch.
 * `from`: From-bus label, corresponds to the bus label.
 * `to`: To-bus label, corresponds to the bus label.
@@ -21,6 +21,8 @@ The branch is defined with the following keywords:
 * `susceptance` (pu or S): Total shunt susceptance.
 * `turnsRatio`: Transformer off-nominal turns ratio, equal to one for a line.
 * `shiftAngle` (rad or deg): Transformer phase shift angle, where positive value defines delay.
+
+The following keywords are used only in optimal power flow analyses:
 * `minDiffAngle` (rad or deg): Minimum voltage angle difference value between from-bus and to-bus ends.
 * `maxDiffAngle` (rad or deg): Maximum voltage angle difference value between from-bus and to-bus ends.
 * `minFromBus` (pu, VA, W, or A): Minimum branch flow limit at the from-bus end.
@@ -117,16 +119,18 @@ function addBranchMain!(system::PowerSystem, from::IntStr, to::IntStr, key::Bran
     add!(param.susceptance, key.susceptance, def.susceptance, pfx.admittance, baseAdmInv)
     add!(param.shiftAngle, key.shiftAngle, def.shiftAngle, pfx.voltageAngle, 1.0)
 
-    add!(branch.voltage.minDiffAngle, key.minDiffAngle, def.minDiffAngle, pfx.voltageAngle, 1.0)
-    add!(branch.voltage.maxDiffAngle, key.maxDiffAngle, def.maxDiffAngle, pfx.voltageAngle, 1.0)
+    if system.bus.layout.optimal
+        add!(branch.voltage.minDiffAngle, key.minDiffAngle, def.minDiffAngle, pfx.voltageAngle, 1.0)
+        add!(branch.voltage.maxDiffAngle, key.maxDiffAngle, def.maxDiffAngle, pfx.voltageAngle, 1.0)
 
-    add!(branch.flow.type, key.type, def.type)
+        add!(branch.flow.type, key.type, def.type)
 
-    pfxLive, baseInvFrom, baseInvTo = flowType(system, pfx, basePowerInv, branch.number)
-    add!(branch.flow.minFromBus, key.minFromBus, def.minFromBus, pfxLive, baseInvFrom)
-    add!(branch.flow.maxFromBus, key.maxFromBus, def.maxFromBus, pfxLive, baseInvFrom)
-    add!(branch.flow.minToBus, key.minToBus, def.minToBus, pfxLive, baseInvTo)
-    add!(branch.flow.maxToBus, key.maxToBus, def.maxToBus, pfxLive, baseInvTo)
+        pfxLive, baseInvFrom, baseInvTo = flowType(system, pfx, basePowerInv, branch.number)
+        add!(branch.flow.minFromBus, key.minFromBus, def.minFromBus, pfxLive, baseInvFrom)
+        add!(branch.flow.maxFromBus, key.maxFromBus, def.maxFromBus, pfxLive, baseInvFrom)
+        add!(branch.flow.minToBus, key.minToBus, def.minToBus, pfxLive, baseInvTo)
+        add!(branch.flow.maxToBus, key.maxToBus, def.maxToBus, pfxLive, baseInvTo)
+    end
 
     if !isempty(system.model.ac.nodalMatrix)
         acPushZeros!(system.model.ac)
@@ -346,16 +350,18 @@ function updateBranchMain!(system::PowerSystem, label::IntStr, key::BranchKey)
 
     branch.layout.status[idx] = statusNew
 
-    update!(branch.voltage.minDiffAngle, key.minDiffAngle, pfx.voltageAngle, 1.0, idx)
-    update!(branch.voltage.maxDiffAngle, key.maxDiffAngle, pfx.voltageAngle, 1.0, idx)
-    update!(branch.flow.type, key.type, idx)
+    if system.bus.layout.optimal
+        update!(branch.voltage.minDiffAngle, key.minDiffAngle, pfx.voltageAngle, 1.0, idx)
+        update!(branch.voltage.maxDiffAngle, key.maxDiffAngle, pfx.voltageAngle, 1.0, idx)
+        update!(branch.flow.type, key.type, idx)
 
-    pfxLive, baseInvFrom, baseInvTo = flowType(system, pfx, baseInv, idx)
+        pfxLive, baseInvFrom, baseInvTo = flowType(system, pfx, baseInv, idx)
 
-    update!(branch.flow.minFromBus, key.minFromBus, pfxLive, baseInvFrom, idx)
-    update!(branch.flow.maxFromBus, key.maxFromBus, pfxLive, baseInvFrom, idx)
-    update!(branch.flow.minToBus, key.minToBus, pfxLive, baseInvTo, idx)
-    update!(branch.flow.maxToBus, key.maxToBus, pfxLive, baseInvTo, idx)
+        update!(branch.flow.minFromBus, key.minFromBus, pfxLive, baseInvFrom, idx)
+        update!(branch.flow.maxFromBus, key.maxFromBus, pfxLive, baseInvFrom, idx)
+        update!(branch.flow.minToBus, key.minToBus, pfxLive, baseInvTo, idx)
+        update!(branch.flow.maxToBus, key.maxToBus, pfxLive, baseInvTo, idx)
+    end
 end
 
 """
@@ -375,7 +381,7 @@ throughout the update process.
 system = powerSystem("case14.h5")
 analysis = newtonRaphson(system)
 
-updateBranch!(analysis; label = 2, reactance = 0.32, susceptance = 0.07)
+addBranch!(analysis; from = "Bus 13 LV", to = "Bus 14 LV", reactance = 0.21)
 ```
 """
 function updateBranch!(analysis::PowerFlow; label::IntStr, kwargs...)

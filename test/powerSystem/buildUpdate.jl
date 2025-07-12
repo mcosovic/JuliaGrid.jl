@@ -94,7 +94,6 @@
         updateGenerator!(build; label = 1, minReactive = -0.1, maxReactive = 0.9)
         updateGenerator!(build; label = 1, lowActive = 1, minLowReactive = 2, maxLowReactive = 3)
         updateGenerator!(build; label = 1, upActive = 5, minUpReactive = 3, maxUpReactive = 4)
-        updateGenerator!(build; label = 1, loadFollowing = 5, reserve10min = 3, reactiveRamp = 4)
 
         cost!(build; generator = 4, active = 2, polynomial = [0.3 * 100^2; 15 * 100; 5])
 
@@ -236,7 +235,6 @@ end
     @testset "Update Generators" begin
         updateGenerator!(build; label = "G1", lowActive = 100e3, minLowReactive = 200, maxLowReactive = 300)
         updateGenerator!(build; label = "G1", upActive = 500e3, minUpReactive = 300, maxUpReactive = 400)
-        updateGenerator!(build; label = "G1", loadFollowing = 500e3, reserve10min = 300e3, reactiveRamp = 400)
         updateGenerator!(build; label = "G2", status = 1, magnitude = 1.2 * 120 / fn)
         updateGenerator!(build; label = "G4", status = 1, active = 10e3, reactive = 20, maxActive = 0.0)
         updateGenerator!(build; label = "G1", status = 0, minActive = 10e3, maxActive = 100e3)
@@ -353,11 +351,10 @@ end
 
     ########## Generator Macro ##########
     @generator(
-        label = "Generator ?", area = 2, status = 0, active = 1.1, reactive = 1.2,
+        label = "Generator ?", status = 0, active = 1.1, reactive = 1.2,
         magnitude = 0.5, minActive = 0.1, maxActive = 0.2, minReactive = 0.3,
         maxReactive = 0.4, lowActive = 0.5, minLowReactive = 0.6,
-        maxLowReactive = 0.7, upActive = 0.8, minUpReactive = 0.9, maxUpReactive = 1.0,
-        loadFollowing = 1.1, reserve10min = 1.2, reserve30min = 1.3, reactiveRamp = 1.4
+        maxLowReactive = 0.7, upActive = 0.8, minUpReactive = 0.9, maxUpReactive = 1.0
     )
 
     @testset "Generator Data Using Macro" begin
@@ -377,19 +374,14 @@ end
         @test system.generator.capability.upActive[1] == 0.8
         @test system.generator.capability.minUpReactive[1] == 0.9
         @test system.generator.capability.maxUpReactive[1] == 1.0
-        @test system.generator.ramping.loadFollowing[1] == 1.1
-        @test system.generator.ramping.reserve10min[1] == 1.2
-        @test system.generator.ramping.reserve30min[1] == 1.3
-        @test system.generator.ramping.reactiveRamp[1] == 1.4
     end
 
     @testset "Generator Data Using Function" begin
         addGenerator!(
-            system; label = "Generator 2", bus = "Bus 1", area = 1, status = 1,
+            system; label = "Generator 2", bus = "Bus 1", status = 1,
             active = 2.1, reactive = 2.2, magnitude = 1.5, minActive = 1.1, maxActive = 1.2,
             minReactive = 1.3, maxReactive = 1.4, lowActive = 1.5, minLowReactive = 1.6,
-            maxLowReactive = 1.7, upActive = 1.8, minUpReactive = 1.9, maxUpReactive = 2.0,
-            loadFollowing = 2.1, reserve10min = 2.2, reserve30min = 2.3, reactiveRamp = 2.4
+            maxLowReactive = 1.7, upActive = 1.8, minUpReactive = 1.9, maxUpReactive = 2.0
         )
         @test system.generator.label["Generator 2"] == 2
         @test system.generator.layout.status[2] == 1
@@ -406,10 +398,6 @@ end
         @test system.generator.capability.upActive[2] == 1.8
         @test system.generator.capability.minUpReactive[2] == 1.9
         @test system.generator.capability.maxUpReactive[2] == 2.0
-        @test system.generator.ramping.loadFollowing[2] == 2.1
-        @test system.generator.ramping.reserve10min[2] == 2.2
-        @test system.generator.ramping.reserve30min[2] == 2.3
-        @test system.generator.ramping.reactiveRamp[2] == 2.4
     end
 end
 
@@ -482,12 +470,11 @@ end
 
     ########## Generator Macro ##########
     @generator(
-        label = "Generator ?", area = 2, status = 0, active = 1.1e5,
+        label = "Generator ?", status = 0, active = 1.1e5,
         reactive = 1.2e2, magnitude = 50 / sqrt(3), minActive = 0.1e5, maxActive = 0.2e5,
         minReactive = 0.3e2, maxReactive = 0.4e2, lowActive = 0.5e5,
         minLowReactive = 0.6e2, maxLowReactive = 0.7e2, upActive = 0.8e5,
-        minUpReactive = 0.9e2, maxUpReactive = 1.0e2, loadFollowing = 1.1e5,
-        reserve10min = 1.2e5, reserve30min = 1.3e5, reactiveRamp = 1.4e2
+        minUpReactive = 0.9e2, maxUpReactive = 1.0e2
     )
 
     @testset "Generator Data Using Macro" begin
@@ -507,10 +494,6 @@ end
         @test system.generator.capability.upActive[1] == 0.8
         @test system.generator.capability.minUpReactive[1] == 0.9
         @test system.generator.capability.maxUpReactive[1] == 1.0
-        @test system.generator.ramping.loadFollowing[1] == 1.1
-        @test system.generator.ramping.reserve10min[1] == 1.2
-        @test system.generator.ramping.reserve30min[1] == 1.3
-        @test system.generator.ramping.reactiveRamp[1] ≈ 1.4
     end
 end
 
