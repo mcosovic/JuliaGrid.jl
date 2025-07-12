@@ -12,26 +12,26 @@ current!(analysis)                # Compute currents
 
 printBusData(analysis)            # Print bus data</code></pre><hr/><h4 id="DC-Power-Flow"><a class="docs-heading-anchor" href="#DC-Power-Flow">DC Power Flow</a><a id="DC-Power-Flow-1"></a><a class="docs-heading-anchor-permalink" href="#DC-Power-Flow" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid
 
-@power(MW, MVAr)                   # Specify the power units
-system = powerSystem(&quot;case14.h5&quot;)  # Build the power system model
+@power(MW, MVAr)                          # Specify the power units
+system = powerSystem(&quot;case14.h5&quot;)         # Build the power system model
 
-analysis = dcPowerFlow(system)     # Build the power flow model
-powerFlow!(analysis; power = true) # Compute powers and voltage angles
+analysis = dcPowerFlow(system)            # Build the power flow model
+powerFlow!(analysis; power = true)        # Compute powers and voltage angles
 
-@generator(active = 20.0)          # Define the template
-addGenerator!(analysis; bus = 1)   # Add the new generator
+@generator(active = 20.0)                 # Define the template
+addGenerator!(analysis; bus = &quot;Bus 1 HV&quot;) # Add the new generator
 
-powerFlow!(analysis; power = true) # Recompute powers and voltage angles
+powerFlow!(analysis; power = true)        # Recompute powers and voltage angles
 
-printBusSummary(analysis)          # Print bus summary data</code></pre><hr/><h4 id="AC-Optimal-Power-Flow"><a class="docs-heading-anchor" href="#AC-Optimal-Power-Flow">AC Optimal Power Flow</a><a id="AC-Optimal-Power-Flow-1"></a><a class="docs-heading-anchor-permalink" href="#AC-Optimal-Power-Flow" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid, Ipopt
+printBusSummary(analysis)                 # Print bus summary data</code></pre><hr/><h4 id="AC-Optimal-Power-Flow"><a class="docs-heading-anchor" href="#AC-Optimal-Power-Flow">AC Optimal Power Flow</a><a id="AC-Optimal-Power-Flow-1"></a><a class="docs-heading-anchor-permalink" href="#AC-Optimal-Power-Flow" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid, Ipopt
 
 system = powerSystem(&quot;case14.h5&quot;)                      # Build the power system model
 
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer) # Build the optimal power flow model
 powerFlow!(analysis; current = true, verbose = 3)      # Compute voltages and currents
 
-@branch(resistance = 0.01, reactance = 0.2)            # Define the template
-addBranch!(analysis; from = 1, to = 5)                 # Add the new branch
+updateBranch!(analysis, label = 2, reactance = 0.5)    # Update branch parameters
+updateGenerator!(analysis, label = 3, maxActive = 0.3) # Update generator parameters
 
 powerFlow!(analysis; current = true, verbose = 3)      # Recompute voltages and currents</code></pre><hr/><h4 id="DC-Optimal-Power-Flow"><a class="docs-heading-anchor" href="#DC-Optimal-Power-Flow">DC Optimal Power Flow</a><a id="DC-Optimal-Power-Flow-1"></a><a class="docs-heading-anchor-permalink" href="#DC-Optimal-Power-Flow" title="Permalink"></a></h4><pre><code class="language-julia hljs">using JuliaGrid, HiGHS
 
@@ -70,4 +70,4 @@ printBusData(analysis)                                 # Print bus data</code></
            A. Mesanovic, D. Miskovic, D. Vukobratovic, A. Monti},
    journal={arXiv preprint arXiv:2502.18229},
    year={2025}
-}</code></pre><hr/><h3 id="Contributors"><a class="docs-heading-anchor" href="#Contributors">Contributors</a><a id="Contributors-1"></a><a class="docs-heading-anchor-permalink" href="#Contributors" title="Permalink"></a></h3><ul><li><a href="https://www.linkedin.com/in/ognjen-kundacina-machine-learning-guy/">Ognjen Kundacina</a> - The Institute for Artificial Intelligence Research and Development of Serbia</li><li><a href="https://www.linkedin.com/in/muhameddelalic/">Muhamed Delalic</a> - University of Sarajevo, Bosnia and Herzegovina</li><li><a href="https://www.linkedin.com/in/armin-teskered%C5%BEi%C4%87-69a099231/">Armin Teskeredzic</a> - RWTH Aachen University, Germany</li><li><a href="https://www.linkedin.com/in/mirsad-cosovic-5a4972a9/">Mirsad Cosovic</a> - University of Sarajevo, Bosnia and Herzegovina</li></ul></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="manual/powerSystemModel/">Power System Model »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.2 on <span class="colophon-date" title="Saturday 12 July 2025 09:20">Saturday 12 July 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+}</code></pre><hr/><h3 id="Contributors"><a class="docs-heading-anchor" href="#Contributors">Contributors</a><a id="Contributors-1"></a><a class="docs-heading-anchor-permalink" href="#Contributors" title="Permalink"></a></h3><ul><li><a href="https://www.linkedin.com/in/ognjen-kundacina-machine-learning-guy/">Ognjen Kundacina</a> - The Institute for Artificial Intelligence Research and Development of Serbia</li><li><a href="https://www.linkedin.com/in/muhameddelalic/">Muhamed Delalic</a> - University of Sarajevo, Bosnia and Herzegovina</li><li><a href="https://www.linkedin.com/in/armin-teskered%C5%BEi%C4%87-69a099231/">Armin Teskeredzic</a> - RWTH Aachen University, Germany</li><li><a href="https://www.linkedin.com/in/mirsad-cosovic-5a4972a9/">Mirsad Cosovic</a> - University of Sarajevo, Bosnia and Herzegovina</li></ul></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="manual/powerSystemModel/">Power System Model »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.2 on <span class="colophon-date" title="Saturday 12 July 2025 09:54">Saturday 12 July 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
