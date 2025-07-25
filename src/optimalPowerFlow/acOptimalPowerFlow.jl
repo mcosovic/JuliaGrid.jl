@@ -533,14 +533,6 @@ function addBalance(
     end
 
     if haskey(supply, i)
-        # con.balance.active[i][:equality] = @constraint(
-        #     jump,
-        #     sum(P[k] for k in supply[i]) + NonlinearExpr(:*, V[i], exprP) == bus.demand.active[i]
-        # )
-        # con.balance.reactive[i][:equality] = @constraint(
-        #     jump,
-        #     sum(Q[k] for k in supply[i]) + NonlinearExpr(:*, V[i], exprQ) == bus.demand.reactive[i]
-        # )
         expr = sum(P[k] for k in supply[i]) + NonlinearExpr(:*, V[i], exprP)
         con.balance.active[i][:equality] = add_constraint(
             jump, ScalarConstraint(expr, MOI.EqualTo(bus.demand.active[i]))
@@ -552,18 +544,12 @@ function addBalance(
             ScalarConstraint(expr, MOI.EqualTo(bus.demand.reactive[i]))
         )
     else
-        con.balance.active[i][:equality] = @constraint(
-            jump, NonlinearExpr(:*, V[i], exprP) == bus.demand.active[i]
+        con.balance.active[i][:equality] = add_constraint(
+            jump, ScalarConstraint(NonlinearExpr(:*, V[i], exprP), MOI.EqualTo(bus.demand.active[i]))
         )
-        con.balance.reactive[i][:equality] = @constraint(
-            jump, NonlinearExpr(:*, V[i], exprQ) == bus.demand.reactive[i]
+        con.balance.reactive[i][:equality] = add_constraint(
+            jump, ScalarConstraint(NonlinearExpr(:*, V[i], exprQ), MOI.EqualTo(bus.demand.reactive[i]))
         )
-        # con.balance.active[i][:equality] = add_constraint(
-        #     jump, ScalarConstraint(NonlinearExpr(:*, V[i], exprP), MOI.EqualTo(bus.demand.active[i]))
-        # )
-        # con.balance.reactive[i][:equality] = add_constraint(
-        #     jump, ScalarConstraint(NonlinearExpr(:*, V[i], exprQ), MOI.EqualTo(bus.demand.reactive[i]))
-        # )
     end
 end
 

@@ -41,15 +41,15 @@ Below, we have provided a list of exhaustive examples in order to ease users in 
 ```julia
 using JuliaGrid
 
-system = powerSystem("case14.h5") # Build the power system model
+system = powerSystem("case14.h5")     # Build the power system model
 
-analysis = newtonRaphson(system)  # Build the power flow model
-powerFlow!(analysis; verbose = 3) # Compute voltages
+analysis = newtonRaphson(system, KLU) # Build the model with KLU factorization
+powerFlow!(analysis; verbose = 3)     # Compute voltages
 
-power!(analysis)                  # Compute powers
-current!(analysis)                # Compute currents
+power!(analysis)                      # Compute powers
+current!(analysis)                    # Compute currents
 
-printBusData(analysis)            # Print bus data
+printBusData(analysis)                # Print bus data
 ```
 
 ---

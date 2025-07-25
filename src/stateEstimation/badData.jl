@@ -59,10 +59,10 @@ function residualTest!(
     gain = transpose(se.coefficient) * se.precision * se.coefficient
     gain[bus.layout.slack, bus.layout.slack] = 1.0
 
-    if !isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64})
-        F = lu(gain)
-    else
+    if isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64}) && se.factorization.m == se.factorization.n
         F = se.factorization
+    else
+        F = lu(gain)
     end
 
     gainInverse = sparseInverse(F, gain, bus.number)
@@ -137,10 +137,11 @@ function residualTest!(
     bad = ResidualTest(false, 0.0, "", 0)
 
     gain = transpose(se.coefficient) * se.precision * se.coefficient
-    if !isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64})
-        F = lu(gain)
-    else
+
+    if isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64}) && se.factorization.m == se.factorization.n
         F = se.factorization
+    else
+        F = lu(gain)
     end
 
     gainInverse = sparseInverse(F, gain, 2 * bus.number)
@@ -225,13 +226,14 @@ function residualTest!(
     gain = (transpose(se.jacobian) * se.precision * se.jacobian)
     gain[bus.layout.slack, bus.layout.slack] = 1.0
 
-    if !isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64})
-        F = lu(gain)
-    else
+    if isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64}) && se.factorization.m == se.factorization.n
         F = se.factorization
+    else
+        F = lu(gain)
     end
 
     gainInverse = sparseInverse(F, gain, 2 * bus.number)
+
 
     JGi = se.jacobian * gainInverse
     idx = findall(!iszero, se.jacobian)

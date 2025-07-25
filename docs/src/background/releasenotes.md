@@ -3,6 +3,15 @@
 
 ---
 
+## Version 0.5.2
+
+Release Date: July 25, 2025
+
+#### Fixed
+  * Fixed an error that occurred when bad data was processed after the Peter-Wilkinson method
+
+---
+
 ## Version 0.5.1
 
 Release Date: July 12, 2025
