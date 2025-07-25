@@ -59,7 +59,7 @@ function residualTest!(
     gain = transpose(se.coefficient) * se.precision * se.coefficient
     gain[bus.layout.slack, bus.layout.slack] = 1.0
 
-    if isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64}) && se.factorization.m == se.factorization.n
+    if isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64}) && T <: Normal
         F = se.factorization
     else
         F = lu(gain)
@@ -138,7 +138,7 @@ function residualTest!(
 
     gain = transpose(se.coefficient) * se.precision * se.coefficient
 
-    if isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64}) && se.factorization.m == se.factorization.n
+    if isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64}) && T <: Normal
         F = se.factorization
     else
         F = lu(gain)
@@ -226,7 +226,7 @@ function residualTest!(
     gain = (transpose(se.jacobian) * se.precision * se.jacobian)
     gain[bus.layout.slack, bus.layout.slack] = 1.0
 
-    if isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64}) && se.factorization.m == se.factorization.n
+    if isa(se.factorization, UMFPACK.UmfpackLU{Float64, Int64}) && T <: Normal
         F = se.factorization
     else
         F = lu(gain)
