@@ -497,6 +497,41 @@ end
     end
 end
 
+@testset "Physical Island" begin
+    system = powerSystem()
+
+    addBus!(system; label = 1)
+    addBus!(system; label = 2)
+    addBus!(system; label = 3)
+    addBus!(system; label = 4)
+    addBus!(system; label = 5)
+    addBus!(system; label = 6)
+
+    addBranch!(system; from = 1, to = 2, reactance = 0.05)
+    addBranch!(system; from = 1, to = 3, reactance = 0.05)
+    addBranch!(system; from = 2, to = 3, reactance = 0.05)
+    addBranch!(system; from = 4, to = 5, reactance = 0.05)
+    addBranch!(system; from = 4, to = 6, reactance = 0.05, status = 0)
+    addBranch!(system; from = 3, to = 4, reactance = 0.05, status = 0)
+
+    island = physicalIsland(system)
+
+    @test island[1] == [1; 2; 3]
+    @test island[2] == [4; 5]
+    @test island[3] == [6]
+
+    updateBranch!(system, label = 5, status = 1)
+    island = physicalIsland(system)
+
+    @test island[1] == [1; 2; 3]
+    @test island[2] == [4; 5; 6]
+
+    updateBranch!(system, label = 6, status = 1)
+    island = physicalIsland(system)
+
+    @test island[1] == [1; 2; 3; 4; 5; 6]
+end
+
 @testset "Errors and Messages" begin
     @default(unit)
     @default(template)

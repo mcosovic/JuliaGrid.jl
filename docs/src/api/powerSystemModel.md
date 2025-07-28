@@ -13,6 +13,7 @@ using JuliaGrid
 * [`savePowerSystem`](@ref savePowerSystem)
 * [`acModel!`](@ref acModel!)
 * [`dcModel!`](@ref dcModel!)
+* [`physicalIsland`](@ref physicalIsland)
 
 ###### Bus
 * [`addBus!`](@ref addBus!)
@@ -38,6 +39,7 @@ powerSystem
 savePowerSystem
 acModel!
 dcModel!
+physicalIsland
 ```
 
 ---

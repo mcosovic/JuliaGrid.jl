@@ -268,3 +268,73 @@ function dropZeros!(ac::AcModel)
         ac.pattern += 1
     end
 end
+
+"""
+    physicalIsland(system::PowerSystem)
+
+Identifies physical islands within the power system. Each island represents a connected component
+of the network, where connectivity is determined by in-service transmission lines and transformers.
+
+# Returns
+A list of physical islands, where each island is defined by the indices (not labels) of buses that
+are electrically connected.
+
+# Example
+```jldoctest
+system = powerSystem("case14.h5")
+
+island = physicalIsland(system)
+```
+"""
+function physicalIsland(system::PowerSystem)
+    bus = system.bus
+    branch = system.branch
+
+    maxnnz = branch.number * 4
+    row = Vector{Int64}(undef, maxnnz)
+    col = Vector{Int64}(undef, maxnnz)
+    idx = 0
+    @inbounds for i = 1:branch.number
+        if branch.layout.status[i] == 1
+            row[idx + 1] = row[idx + 2] = branch.layout.from[i]
+            row[idx + 3] = row[idx + 4] = branch.layout.to[i]
+
+            col[idx + 1] = col[idx + 4] = branch.layout.to[i]
+            col[idx + 2] = col[idx + 3] = branch.layout.from[i]
+
+            idx += 4
+        end
+    end
+
+    resize!(row, idx)
+    resize!(col, idx)
+    gainFlow = sparse(row, col, fill(1, idx), bus.number, bus.number)
+
+    observe = fill(0, bus.number)
+    queue = Vector{Int64}()
+    comp = 0
+    for i = 1:bus.number
+        if observe[i] == 0
+            comp += 1
+            push!(queue, i)
+            while !isempty(queue)
+                v = pop!(queue)
+                observe[v] = comp
+                for index in nzrange(gainFlow, v)
+                    n = gainFlow.rowval[index]
+                    if observe[n] == 0
+                        observe[n] = comp
+                        push!(queue, n)
+                    end
+                end
+            end
+        end
+    end
+
+    island = [Vector{Int64}() for i = 1:comp]
+    @inbounds for (k, i) in enumerate(observe)
+        push!(island[i], k)
+    end
+
+    return island
+end
