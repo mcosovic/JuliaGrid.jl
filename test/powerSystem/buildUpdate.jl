@@ -498,6 +498,7 @@ end
 end
 
 @testset "Physical Island" begin
+    @default(template)
     system = powerSystem()
 
     addBus!(system; label = 1)
