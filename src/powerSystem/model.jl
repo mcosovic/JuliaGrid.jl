@@ -270,14 +270,18 @@ function dropZeros!(ac::AcModel)
 end
 
 """
-    physicalIsland(system::PowerSystem)
+    physicalIsland(system::PowerSystem; label = false)
 
 Identifies physical islands within the power system. Each island represents a connected component
 of the network, where connectivity is determined by in-service transmission lines and transformers.
 
+# Keyword
+If `label` is set to `false`, the function returns a list of islands with bus indices; if set to
+`true`, it returns a list of islands with bus labels.
+
 # Returns
-A list of physical islands, where each island is defined by the indices (not labels) of buses that
-are electrically connected.
+A list of physical islands, where each island is represented by a list of electrically connected
+buses.
 
 # Example
 ```jldoctest
@@ -286,7 +290,7 @@ system = powerSystem("case14.h5")
 island = physicalIsland(system)
 ```
 """
-function physicalIsland(system::PowerSystem)
+function physicalIsland(system::PowerSystem; label::Bool = false)
     bus = system.bus
     branch = system.branch
 
@@ -331,9 +335,16 @@ function physicalIsland(system::PowerSystem)
         end
     end
 
-    island = [Vector{Int64}() for i = 1:comp]
-    @inbounds for (k, i) in enumerate(observe)
-        push!(island[i], k)
+    if label
+        island = [Vector{keytype(typeof(system.bus.label))}() for i = 1:comp]
+        @inbounds for (k, i) in enumerate(observe)
+            push!(island[i], getLabel(system.bus.label, k))
+        end
+    else
+        island = [Vector{Int64}() for i = 1:comp]
+        @inbounds for (k, i) in enumerate(observe)
+            push!(island[i], k)
+        end
     end
 
     return island
