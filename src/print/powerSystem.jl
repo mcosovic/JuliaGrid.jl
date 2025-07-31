@@ -823,7 +823,7 @@ function printBranchData(
         printf(io, prt.pfmt, prt, label, :lbB)
 
         printf(io, prt, system.branch.layout.from[i], buses, :lbF)
-        printf(io, prt, system.branch.layout.from[i], buses, :lbT)
+        printf(io, prt, system.branch.layout.to[i], buses, :lbT)
 
         printf(io, prt, i, scale[:P], analysis.power.from.active, :Pij)
         printf(io, prt, i, scale[:P], analysis.power.to.active, :Pji)
