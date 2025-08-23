@@ -602,15 +602,18 @@ function _updateWattmeter!(analysis::DcStateEstimation{WLS{T}}, idxWatt::Int64) 
     wls = analysis.method
 
     idxBusBrch = watt.layout.index[idxWatt]
-
-    oldCoeff = wls.coefficient[idxWatt, :]
     oldPrec = wls.precision.nzval[idxWatt]
     status = watt.active.status[idxWatt]
 
+    changed = false
     if watt.layout.bus[idxWatt]
         for ptr in nodal.colptr[idxBusBrch]:(nodal.colptr[idxBusBrch + 1] - 1)
             j = nodal.rowval[ptr]
-            wls.coefficient[idxWatt, j] = status * nodal.nzval[ptr]
+            coeff = status * nodal.nzval[ptr]
+            if wls.coefficient[idxWatt, j] != coeff
+                wls.coefficient[idxWatt, j] = coeff
+                changed = true
+            end
         end
 
         wls.mean[idxWatt] =
@@ -624,8 +627,14 @@ function _updateWattmeter!(analysis::DcStateEstimation{WLS{T}}, idxWatt::Int64) 
         end
 
         i, j = fromto(system, idxBusBrch)
-        wls.coefficient[idxWatt, i] = addmitance
-        wls.coefficient[idxWatt, j] = -addmitance
+        if wls.coefficient[idxWatt, i] != addmitance
+            wls.coefficient[idxWatt, i] = addmitance
+            changed = true
+        end
+        if wls.coefficient[idxWatt, j] != -addmitance
+            wls.coefficient[idxWatt, j] = -addmitance
+            changed = true
+        end
 
         wls.mean[idxWatt] =
             status * (watt.active.mean[idxWatt] +
@@ -634,7 +643,7 @@ function _updateWattmeter!(analysis::DcStateEstimation{WLS{T}}, idxWatt::Int64) 
 
     wls.precision.nzval[idxWatt] = 1 / watt.active.variance[idxWatt]
 
-    if oldCoeff != wls.coefficient[idxWatt, :] || oldPrec != wls.precision.nzval[idxWatt]
+    if changed || oldPrec != wls.precision.nzval[idxWatt]
         wls.signature[:run] = true
     end
 end
