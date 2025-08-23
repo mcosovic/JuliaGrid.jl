@@ -1,5 +1,13 @@
 # [Release Notes](@id ReleaseNotes)
 
+---
+
+## Version 0.5.3
+
+Release Date: August 26, 2025
+
+#### Other
+  * Improved efficiency update of wattmeters with DCSE.
 
 ---
 
@@ -8,7 +16,7 @@
 Release Date: July 25, 2025
 
 #### Fixed
-  * Fixed an error that occurred when bad data was processed after the Peter-Wilkinson method
+  * Fixed an error that occurred when bad data was processed after the Peter-Wilkinson method.
 
 ---
 
