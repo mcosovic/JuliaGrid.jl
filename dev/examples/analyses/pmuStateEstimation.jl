@@ -1,7 +1,7 @@
 using JuliaGrid, HiGHS
 
 ##### Power System Model #####
-system = powerSystem()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2")
@@ -26,11 +26,9 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1")
 show = Dict("Shunt Power" => false, "Status" => false, "Series Power" => false)
 
 ##### Optimal PMU Placement #####
-placement = pmuPlacement(system, HiGHS.Optimizer; verbose = 1)
+placement = pmuPlacement(monitoring, HiGHS.Optimizer; verbose = 1)
 
 ##### Measurement Model #####
-monitoring = measurement(system)
-
 updateBus!(system; label = "Bus 2", type = 1, active = 0.217, reactive = 0.127)
 updateBus!(system; label = "Bus 3", type = 1, active = 0.478, reactive = -0.039)
 updateBus!(system; label = "Bus 4", type = 2, active = 0.076, reactive = 0.016)
