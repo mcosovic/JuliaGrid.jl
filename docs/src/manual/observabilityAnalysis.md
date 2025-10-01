@@ -148,7 +148,7 @@ using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
 
-system = powerSystem()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2")
@@ -164,11 +164,11 @@ nothing # hide
 ---
 
 ##### Optimal Solution
-Upon defining the `PowerSystem` type, JuliaGrid provides the possibility to determine the minimal number of PMUs required for system observability using the [`pmuPlacement`](@ref pmuPlacement) function:
+Upon defining the `Measurment` type, JuliaGrid provides the possibility to determine the minimal number of PMUs required for system observability using the [`pmuPlacement`](@ref pmuPlacement) function:
 ```@example PMUOptimalPlacement
 using GLPK
 
-placement = pmuPlacement(system, GLPK.Optimizer; verbose = 1)
+placement = pmuPlacement(monitoring, GLPK.Optimizer; verbose = 1)
 nothing # hide
 ```
 
@@ -191,8 +191,6 @@ keys(placement.to)
 ##### Phasor Measurements
 Using the obtained data, phasor measurements can be created to provide a unique state estimator for both AC and PMU state estimation:
 ```@example PMUOptimalPlacement
-monitoring = measurement(system)
-
 addPmu!(monitoring; bus = "Bus 2", magnitude = 1.02, angle = 0.01)
 addPmu!(monitoring; from = "Branch 3", magnitude = 0.49, angle = 0.07)
 addPmu!(monitoring; to = "Branch 1", magnitude = 0.47, angle = -0.54)

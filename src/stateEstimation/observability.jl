@@ -603,12 +603,12 @@ function pushIndirect!(jcb::SparseModel, fromIsland::Int64, toIsland::Int64)
 end
 
 """
-    pmuPlacement(system::PowerSystem, optimizer; bridge, name, verbose)
+    pmuPlacement(monitoring::Measurement, optimizer; scada, bridge, name, placement, verbose)
 
 The function determines the optimal placement of PMUs through integer linear programming. It
 identifies the minimum set of PMUs required to ensure observability and a unique state estimator.
 
-The function accepts a `PowerSystem` type as input to establish the framework for finding the optimal
+The function accepts a `Measurement` type as input to establish the framework for finding the optimal
 PMU placement. If the `ac` field within the `PowerSystem` type is not yet created, the function
 automatically initiates an update process.
 
@@ -618,9 +618,14 @@ information, please refer to the [JuMP documenatation](https://jump.dev/JuMP.jl/
 
 # Keywords
 The function accepts the following keywords:
+* `scada`: Takes into account power measurements from SCADA (default: `false`).
 * `bridge`: Controls the bridging mechanism (default: `false`).
 * `name`: Handles the creation of string names (default: `false`).
 * `verbose`: Controls the output display, ranging from silent mode (`0`) to detailed output (`3`).
+
+Additionally, users can modify the variable names used for printing and writing by setting the
+keyword for the placement variables. For example, users may set `placement = "x"` to display the
+optimization problem in a more readable format.
 
 # Returns
 The function returns an instance of the [`PmuPlacement`](@ref PmuPlacement) type.
@@ -639,7 +644,7 @@ system, monitoring = ems("case14.h5")
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
 powerFlow!(analysis; current = true)
 
-placement = pmuPlacement(system, HiGHS.Optimizer)
+placement = pmuPlacement(monitoring, HiGHS.Optimizer)
 
 @pmu(label = "PMU ?: !")
 for (bus, i) in placement.bus
@@ -657,12 +662,15 @@ end
 ```
 """
 function pmuPlacement(
-    system::PowerSystem,
+    monitoring::Measurement,
     (@nospecialize optimizerFactory);
+    scada::Bool = false,
     bridge::Bool = false,
     name::Bool = false,
+    placement::String = "placement",
     verbose::Int64 = template.config.verbose,
 )
+    system = monitoring.system
     bus = system.bus
     branch = system.branch
     ac = system.model.ac
@@ -681,24 +689,68 @@ function pmuPlacement(
     silentJump(jump, verbose)
     set_string_names_on_creation(jump, name)
 
-    placement = @variable(jump, 0 <= placement[i = 1:bus.number] <= 1, Int)
+    var = @variable(jump, placement[i = 1:bus.number], Bin, base_name = placement)
 
     expr = AffExpr()
-    @inbounds for i = 1:bus.number
-        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            k = ac.nodalMatrix.rowval[j]
-            add_to_expression!(expr, placement[k])
+    if scada
+        incidentBus = fill(false, bus.number)
+        @inbounds for (i, k) in enumerate(monitoring.wattmeter.layout.index)
+            if monitoring.wattmeter.active.status[i] == 1
+                rhs = -1
+                if monitoring.wattmeter.layout.bus[i]
+                    for j in ac.nodalMatrix.colptr[k]:(ac.nodalMatrix.colptr[k + 1] - 1)
+                        row = ac.nodalMatrix.rowval[j]
+                        incidentBus[row] = true
+                        rhs += 1
+                        for q in ac.nodalMatrix.colptr[row]:(ac.nodalMatrix.colptr[row + 1] - 1)
+                            h = ac.nodalMatrix.rowval[q]
+                            add_to_expression!(expr, placement[h])
+                        end
+                    end
+                else
+                    for j in (branch.layout.from[i], branch.layout.to[i])
+                        incidentBus[j] = true
+                        rhs += 1
+                        for k in ac.nodalMatrix.colptr[j]:(ac.nodalMatrix.colptr[j + 1] - 1)
+                            row = ac.nodalMatrix.rowval[k]
+                            add_to_expression!(expr, placement[row])
+                        end
+                    end
+                end
+
+                add_constraint(jump, ScalarConstraint(expr, MOI.GreaterThan(rhs)))
+                empty!(expr.terms)
+            end
         end
 
-        add_constraint(jump, ScalarConstraint(expr, MOI.GreaterThan(1)))
-        empty!(expr.terms)
+        @inbounds for (i, incident) in enumerate(incidentBus)
+            if !incident
+                for k in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+                    row = ac.nodalMatrix.rowval[k]
+                    add_to_expression!(expr, placement[row])
+                end
+
+                add_constraint(jump, ScalarConstraint(expr, MOI.GreaterThan(1)))
+                empty!(expr.terms)
+            end
+        end
+    else
+        @inbounds for i = 1:bus.number
+            for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+                k = ac.nodalMatrix.rowval[j]
+                add_to_expression!(expr, var[k])
+            end
+
+            add_constraint(jump, ScalarConstraint(expr, MOI.GreaterThan(1)))
+            empty!(expr.terms)
+        end
     end
 
-    @objective(jump, Min, sum(placement))
+    @objective(jump, Min, sum(var))
     optimize!(jump)
 
     @inbounds for i = 1:bus.number
-        if value(placement[i]) == 1
+        if value(var[i]) == 1
             placementPmu.bus[getLabel(bus.label, i)] = i
             for j = 1:branch.number
                 if branch.layout.status[j] == 1
@@ -724,7 +776,7 @@ end
         varianceMagnitudeFrom, varianceAngleFrom,
         varianceMagnitudeTo, varianceAngleTo,
         noise, correlated, polar,
-        bridge, name, verbose)
+        scada, bridge, name, placement, verbose)
 
 The function finds the optimal PMU placement by executing [`pmuPlacement`](@ref pmuPlacement)
 function. Then, based on the results from the `AC` type, it generates phasor measurements and
@@ -755,7 +807,10 @@ Settings for handling phasor measurements include:
 Settings for the optimization solver include:
 * `bridge`: Controls the bridging mechanism (default: `false`).
 * `name`: Handles the creation of string names (default: `false`).
+* `placement`: Variable names used for printing and writing.
 * `verbose`: Controls the output display, ranging from silent mode (`0`) to detailed output (`3`).
+Setting for the optimal PMU placement formulation:
+* `scada`: Takes into account power measurements from SCADA (default: `false`).
 
 # Updates
 The function updates the `pmu` field of the `Measurement` type.
@@ -779,8 +834,10 @@ function pmuPlacement!(
     monitoring::Measurement,
     analysis::AC,
     (@nospecialize optimizerFactory);
+    scada::Bool = false,
     bridge::Bool = false,
     name::Bool = false,
+    placement::String = "placement",
     verbose::Int64 = template.config.verbose,
     varianceMagnitudeBus::FltIntMiss = missing,
     varianceAngleBus::FltIntMiss = missing,
@@ -792,8 +849,7 @@ function pmuPlacement!(
     correlated::Bool = template.pmu.correlated,
     polar::Bool = template.pmu.polar
 )
-    system = monitoring.system
-    placement = pmuPlacement(system, optimizerFactory; bridge, name, verbose)
+    placement = pmuPlacement(monitoring, optimizerFactory; scada, bridge, name, placement, verbose)
     errorVoltage(analysis.voltage.magnitude)
 
     for (bus, idx) in placement.bus

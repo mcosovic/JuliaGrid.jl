@@ -19,7 +19,7 @@ using JuliaGrid, HiGHS # hide
 @default(template) # hide
 @default(unit) # hide
 
-system = powerSystem()
+system, monitoring = ems()
 
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2")
@@ -56,7 +56,7 @@ nothing # hide
 ## Optimal PMU Placement
 Next, PMUs need to be assigned to the power system shown in Figure 1. The placement is determined using an optimal PMU placement strategy that ensures observability with the minimal number of PMUs:
 ```@example pmuStateEstimation
-placement = pmuPlacement(system, HiGHS.Optimizer; verbose = 1)
+placement = pmuPlacement(monitoring, HiGHS.Optimizer; verbose = 1)
 nothing # hide
 ```
 
@@ -85,15 +85,6 @@ Hence, Figure 2 illustrates the phasor measurement configuration, which includes
 ```
 
 Finally, phasor measurements need to be defined. The question is how to obtain measurement values. In this example, AC power flow results will be used to generate synthetic measurements.
-
----
-
-## Measurement Model
-To begin, let us initialize the measurement variable:
-```@example pmuStateEstimation
-monitoring = measurement(system)
-nothing # hide
-```
 
 ---
 

@@ -178,10 +178,12 @@ Figure 5 illustrates the measurement configuration that makes our 6-bus power sy
 ## Optimal PMU Placement
 The goal of the PMU placement algorithm is to determine the minimal number of PMUs required to make the system observable. In this case, we analyze a 6-bus power system without power meters and identify the smallest set of PMUs needed for full observability, ensuring a unique state estimator:
 ```julia 6bus
-placement = pmuPlacement(system, HiGHS.Optimizer)
+pmu = measurement(system)
+placement = pmuPlacement(pmu, HiGHS.Optimizer)
 ```
 ```@setup 6bus
-placement = pmuPlacement(system, HiGHS.Optimizer)
+pmu = measurement(system)
+placement = pmuPlacement(pmu, HiGHS.Optimizer)
 nothing # hide
 ```
 
@@ -215,8 +217,6 @@ These variables provide users with a convenient way to define phasor measurement
 
 However, users have the option to manually specify phasor measurement values:
 ```@example 6bus
-pmu = measurement(system)
-
 addPmu!(pmu; label = "PMU 1-1", bus = "Bus 2", magnitude = 1.1, angle = -0.2)
 addPmu!(pmu; label = "PMU 1-2", to = "Branch 1", magnitude = 1.2, angle = -2.7)
 addPmu!(pmu; label = "PMU 1-3", from = "Branch 2", magnitude = 0.6, angle = 0.3)

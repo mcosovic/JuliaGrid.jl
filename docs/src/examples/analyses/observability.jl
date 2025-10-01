@@ -56,9 +56,9 @@ islands = islandTopological(monitoring)
 addVoltmeter!(monitoring; label = "Pseudo 3", bus = "Bus 1", magnitude = 1.0)
 
 ##### Optimal PMU Placement #####
-placement = pmuPlacement(system, HiGHS.Optimizer)
-
 pmu = measurement(system)
+
+placement = pmuPlacement(pmu, HiGHS.Optimizer)
 
 addPmu!(pmu; label = "PMU 1: 1", bus = "Bus 2", magnitude = 1.1, angle = -0.2)
 addPmu!(pmu; label = "PMU 1: 2", to = "Branch 1", magnitude = 1.2, angle = -2.7)

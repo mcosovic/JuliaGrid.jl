@@ -193,7 +193,7 @@ Now, we will determine the optimal PMU placement for our power system:
 using HiGHS
 @default(unit) # hide
 
-placement = pmuPlacement(system, HiGHS.Optimizer)
+placement = pmuPlacement(monitoring, HiGHS.Optimizer)
 nothing # hide
 ```
 
