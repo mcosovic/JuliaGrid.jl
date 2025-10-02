@@ -233,12 +233,12 @@ The binary coefficient ``c_{ij} \in \mathbb{F} = \{0,1\}`` represents the incide
 More precisely, three cases are distinguished:
 * If a power flow measurement is located at the ``i`` end of a branch ``(i,j)``:
 ```math
-   c_{ii} = c_{ij} = 1, \quad b_i = 1
+   c_{ii} = c_{ij} = 1, \quad b_i = 1.
 ```
 
 * If a power injection measurement is located at bus ``i``, which is incident to buses ``\mathcal{N}_i \subseteq \mathcal{N}``:
 ```math
-   c_{ik} = 1, \; k \in \mathcal{N}_i, \quad b_i = |\mathcal{N}_i| - 1.
+   c_{ii} = c_{ik} = 1, \; k \in \mathcal{N}_i, \quad b_i = |\mathcal{N}_i|.
 ```
 
 * If bus ``i`` has no associated power flow or injection measurement:
@@ -246,7 +246,7 @@ More precisely, three cases are distinguished:
    c_{ii} = 1, \quad b_i = 1.
 ```
 
-All other binary coefficients ``c_{il}`` not explicitly specified are equal to zero.
+All other binary coefficients not explicitly specified are equal to zero.
 
 As in the case of optimal placement without legacy measurements, we obtain the binary vector ``\mathbf{d}``, where ``d_i = 1, i \in \mathcal{N}`` indicates that a PMU should be installed at bus ``i``.
 

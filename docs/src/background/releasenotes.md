@@ -1,5 +1,18 @@
 # [Release Notes](@id ReleaseNotes)
 
+
+---
+
+## Version 0.5.4
+
+Release Date: October 2, 2025
+
+#### Added
+  * Support for optimal PMU placement that includes legacy measurements.
+
+#### Fixed
+  * Placement variables are now defined as binary rather than integer.
+
 ---
 
 ## Version 0.5.3
