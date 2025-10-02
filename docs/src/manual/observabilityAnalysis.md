@@ -142,7 +142,16 @@ It is also important to note that restoration may face challenges if an inapprop
 ---
 
 ## Optimal PMU Placement
-First, we define the power system:
+JuliGrid supports two modes for determining optimal PMU placement to make the system observable:
+* without legacy measurements,
+* with legacy measurements.
+
+Here, legacy measurements refer only to power flow and injection data. When users choose to include legacy measurements for optimal PMU placement, we assume active and reactive power measurements always appear as pairs. The optimal PMU placement is then determined using only the active power measurements.
+
+!!! note "Info"
+    We suggest that readers refer to the tutorial on [Optimal PMU Placement](@ref optimalpmu) for insights into the implementation.
+
+First, create the power system together with the associated monitoring object that will contain the measurements:
 ```@example PMUOptimalPlacement
 using JuliaGrid # hide
 @default(unit) # hide
@@ -153,18 +162,23 @@ system, monitoring = ems()
 addBus!(system; label = "Bus 1", type = 3)
 addBus!(system; label = "Bus 2")
 addBus!(system; label = "Bus 3")
+addBus!(system; label = "Bus 4")
 
 @branch(resistance = 0.02, conductance = 1e-4, susceptance = 0.04)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
 addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 0.01)
 addBranch!(system; label = "Branch 3", from = "Bus 2", to = "Bus 3", reactance = 0.04)
+addBranch!(system; label = "Branch 4", from = "Bus 3", to = "Bus 4", reactance = 0.04)
+
+addWattmeter!(monitoring; bus = "Bus 3", active = 0.2)
+addVarmeter!(monitoring; bus = "Bus 3", reactive = 0.1)
 nothing # hide
 ```
 
 ---
 
-##### Optimal Solution
-Upon defining the `Measurment` type, JuliaGrid provides the possibility to determine the minimal number of PMUs required for system observability using the [`pmuPlacement`](@ref pmuPlacement) function:
+##### Optimal Solution Without Legacy Measurements
+After defining the `PowerSystem` and `Measurement` types, JuliaGrid allows the determination of the minimal number of PMUs required for system observability using the [`pmuPlacement`](@ref pmuPlacement) function:
 ```@example PMUOptimalPlacement
 using GLPK
 
@@ -172,21 +186,32 @@ placement = pmuPlacement(monitoring, GLPK.Optimizer; verbose = 1)
 nothing # hide
 ```
 
-The `placement` variable contains data regarding the optimal placement of measurements. In this instance, installing a PMU at `Bus 2` renders the system observable:
+In this case, legacy measurements are omitted. The placement variable contains the data for the optimal PMU configuration. Installing PMUs at `Bus 2` and `Bus 3` makes the system observable using only these two devices:
 ```@repl PMUOptimalPlacement
 keys(placement.bus)
 ```
 
-This PMU installed at `Bus 2` will measure the bus voltage phasor at the corresponding bus and all current phasors at the branches incident to `Bus 2` located at the from-bus or to-bus ends:
+The PMUs installed at `Bus 2` and `Bus 3` measure the bus voltage phasor at their respective buses, along with the current phasors of all branches incident to these buses, both at the from-bus and to-bus ends:
 ```@repl PMUOptimalPlacement
 keys(placement.from)
 keys(placement.to)
 ```
 
-!!! note "Info"
-    We suggest that readers refer to the tutorial on [Optimal PMU Placement](@ref optimalpmu) for insights into the implementation.
+---
 
-----
+##### Optimal Solution with Legacy Measurements
+Next, we determine the PMU placement that ensures observability while also including legacy measurements:
+```@example PMUOptimalPlacement
+placement = pmuPlacement(monitoring, GLPK.Optimizer; legacy = true, verbose = 1)
+nothing # hide
+```
+
+In this case, installing a PMU at `Bus 2` is sufficient to render the system observable:
+```@repl PMUOptimalPlacement
+keys(placement.bus)
+```
+
+---
 
 ##### Phasor Measurements
 Using the obtained data, phasor measurements can be created to provide a unique state estimator for both AC and PMU state estimation:

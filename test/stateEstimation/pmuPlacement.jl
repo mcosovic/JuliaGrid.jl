@@ -96,7 +96,7 @@
     end
 end
 
-@testset "Optimal PMU Placement with SCADA Measurements" begin
+@testset "Optimal PMU Placement with Legacy Measurements" begin
     system, monitoring = ems()
 
     addBus!(system; label = 1, type = 3, susceptance = 0.5)
@@ -123,7 +123,7 @@ end
     addWattmeter!(monitoring; from = 2, active = 0.0699428)
 
     @testset "Phasor Measurement Placement" begin
-        placement = pmuPlacement(monitoring, HiGHS.Optimizer; scada = true)
+        placement = pmuPlacement(monitoring, HiGHS.Optimizer; legacy = true)
 
         @test collect(keys(placement.bus)) == [3; 4]
         @test collect(keys(placement.from)) == [5; 6; 7; 8]

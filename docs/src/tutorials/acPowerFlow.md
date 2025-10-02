@@ -108,7 +108,7 @@ To provide a more comprehensive understanding, it is important to note that each
 ```
 where ``P_{\mathrm{g}k}`` and ``Q_{\mathrm{g}k}`` represent the active and reactive power outputs of the ``k``-th generator within the set ``\mathcal{S}_i``.
 
-As a way to summarize, the power injection vectors, represented as ``\mathbf P = [P_i] `` and ``\mathbf Q = [Q_i]`` can be computed based on the following variables and expressions:
+As a way to summarize, the power injection vectors, represented as ``\mathbf P = [P_i]`` and ``\mathbf Q = [Q_i]`` can be computed based on the following variables and expressions:
 ```@repl PowerFlowSolution
 𝐏 = system.bus.supply.active - system.bus.demand.active
 𝐐 = system.bus.supply.reactive - system.bus.demand.reactive

@@ -603,7 +603,7 @@ function pushIndirect!(jcb::SparseModel, fromIsland::Int64, toIsland::Int64)
 end
 
 """
-    pmuPlacement(monitoring::Measurement, optimizer; scada, bridge, name, placement, verbose)
+    pmuPlacement(monitoring::Measurement, optimizer; legacy, bridge, name, placement, verbose)
 
 The function determines the optimal placement of PMUs through integer linear programming. It
 identifies the minimum set of PMUs required to ensure observability and a unique state estimator.
@@ -618,7 +618,7 @@ information, please refer to the [JuMP documenatation](https://jump.dev/JuMP.jl/
 
 # Keywords
 The function accepts the following keywords:
-* `scada`: Takes into account power measurements from SCADA (default: `false`).
+* `legacy`: Takes into account power measurements (default: `false`).
 * `bridge`: Controls the bridging mechanism (default: `false`).
 * `name`: Handles the creation of string names (default: `false`).
 * `verbose`: Controls the output display, ranging from silent mode (`0`) to detailed output (`3`).
@@ -664,7 +664,7 @@ end
 function pmuPlacement(
     monitoring::Measurement,
     (@nospecialize optimizerFactory);
-    scada::Bool = false,
+    legacy::Bool = false,
     bridge::Bool = false,
     name::Bool = false,
     placement::String = "placement",
@@ -692,7 +692,7 @@ function pmuPlacement(
     var = @variable(jump, placement[i = 1:bus.number], Bin, base_name = placement)
 
     expr = AffExpr()
-    if scada
+    if legacy
         incidentBus = fill(false, bus.number)
         @inbounds for (i, k) in enumerate(monitoring.wattmeter.layout.index)
             if monitoring.wattmeter.active.status[i] == 1
@@ -776,7 +776,7 @@ end
         varianceMagnitudeFrom, varianceAngleFrom,
         varianceMagnitudeTo, varianceAngleTo,
         noise, correlated, polar,
-        scada, bridge, name, placement, verbose)
+        legacy, bridge, name, placement, verbose)
 
 The function finds the optimal PMU placement by executing [`pmuPlacement`](@ref pmuPlacement)
 function. Then, based on the results from the `AC` type, it generates phasor measurements and
@@ -810,7 +810,7 @@ Settings for the optimization solver include:
 * `placement`: Variable names used for printing and writing.
 * `verbose`: Controls the output display, ranging from silent mode (`0`) to detailed output (`3`).
 Setting for the optimal PMU placement formulation:
-* `scada`: Takes into account power measurements from SCADA (default: `false`).
+* `legacy`: Takes into account power measurements (default: `false`).
 
 # Updates
 The function updates the `pmu` field of the `Measurement` type.
@@ -834,7 +834,7 @@ function pmuPlacement!(
     monitoring::Measurement,
     analysis::AC,
     (@nospecialize optimizerFactory);
-    scada::Bool = false,
+    legacy::Bool = false,
     bridge::Bool = false,
     name::Bool = false,
     placement::String = "placement",
@@ -849,7 +849,7 @@ function pmuPlacement!(
     correlated::Bool = template.pmu.correlated,
     polar::Bool = template.pmu.polar
 )
-    placement = pmuPlacement(monitoring, optimizerFactory; scada, bridge, name, placement, verbose)
+    placement = pmuPlacement(monitoring, optimizerFactory; legacy, bridge, name, placement, verbose)
     errorVoltage(analysis.voltage.magnitude)
 
     for (bus, idx) in placement.bus

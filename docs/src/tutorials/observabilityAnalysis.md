@@ -177,11 +177,20 @@ islands.island
 ---
 
 ## [Optimal PMU Placement](@id optimalpmu)
-JuliaGrid utilizes the optimal PMU placement algorithm proposed in [gou2008optimal](@cite). The optimal positioning of PMUs is framed as an integer linear programming problem, expressed as:
+JuliaGrid implements the optimal PMU placement algorithms proposed in [gou2008optimal, gou2008generalized](@cite). Users can determine the optimal placement in two cases:
+* without legacy measurements,
+* with legacy measurements.
+
+Here, legacy measurements refer only to power flow and injection data. When legacy measurements are included in the formulation, it is assumed that active and reactive power measurements always appear as pairs. The optimal PMU placement is then determined using only the active power measurements.
+
+---
+
+##### Optimal Solution Without Legacy Measurements
+The optimal placement of PMUs without legacy measurements is formulated as an integer linear programming problem:
 ```math
   \begin{aligned}
     \text{minimize}& \;\;\; \sum_{i=1}^n d_i\\
-    \text{subject\;to}& \;\;\; \sum_{j=1}^n a_{ij}d_j, \;\; i = 1, \dots, n,
+    \text{subject\;to}& \;\;\; \sum_{j=1}^n a_{ij}d_j \geq 1, \;\; i = 1, \dots, n,
   \end{aligned}
 ```
 where ``d_i \in \mathbb{F} = \{0,1\}`` is the PMU placement decision variable associated with bus ``i \in \mathcal{N}``. The binary parameter ``a_{ij} \in \mathbb{F}`` indicates the connectivity of the power system network, where ``a_{ij}`` can be directly derived from the nodal admittance matrix by converting its entries into binary form [xu2004observability](@cite). This linear programming problem is implemented using JuMP package allowing compatibility with different type of optimization solvers.
@@ -208,3 +217,52 @@ keys(placement.from)
 keys(placement.to)
 ```
 Consequently, the PMUs will measure the current phasors at the from-bus ends of branches `2`, `3`, and `5`, as well as the current phasors at the to-bus ends of branches `1`, `3`, and `4`.
+
+---
+
+##### Optimal Solution With Legacy Measurements
+The optimal placement of PMUs with legacy measurements is formulated as an integer linear programming problem:
+```math
+  \begin{aligned}
+    \text{minimize}& \;\;\; \sum_{i=1}^n d_i\\
+    \text{subject\;to}& \;\;\; \sum_{j=1}^n c_{ij} \left ( \sum_{k=1}^n a_{ik}d_k \right) \geq b_i, \;\; i = 1, \dots, n.
+  \end{aligned}
+```
+The binary coefficient ``c_{ij} \in \mathbb{F} = \{0,1\}`` represents the incidence of buses ``\{i,j\} \subset \mathcal{N}`` through power flow measurements, injection measurements, or the absence of measurements. The right-hand side coefficient ``b_i`` depends on the number of nonzero terms ``c_{ij}``.
+
+More precisely, three cases are distinguished:
+* If a power flow measurement is located at the ``i`` end of a branch ``(i,j)``:
+```math
+   c_{ii} = c_{ij} = 1, \quad b_i = 1
+```
+
+* If a power injection measurement is located at bus ``i``, which is incident to buses ``\mathcal{N}_i \subseteq \mathcal{N}``:
+```math
+   c_{ik} = 1, \; k \in \mathcal{N}_i, \quad b_i = |\mathcal{N}_i| - 1.
+```
+
+* If bus ``i`` has no associated power flow or injection measurement:
+```math
+   c_{ii} = 1, \quad b_i = 1.
+```
+
+All other binary coefficients ``c_{il}`` not explicitly specified are equal to zero.
+
+As in the case of optimal placement without legacy measurements, we obtain the binary vector ``\mathbf{d}``, where ``d_i = 1, i \in \mathcal{N}`` indicates that a PMU should be installed at bus ``i``.
+
+Now, we can determine the optimal PMU placement while taking legacy measurements into account:
+```@example ACObservability
+using HiGHS
+@default(unit) # hide
+
+placement = pmuPlacement(monitoring, HiGHS.Optimizer; legacy = true)
+nothing # hide
+```
+
+Thus, we obtain:
+```@repl ACObservability
+keys(placement.bus)
+keys(placement.from)
+keys(placement.to)
+```
+As we can see, when determining the PMU placement to make the system observable while also taking legacy measurements into account, it is sufficient to install a PMU at bus `4`. This PMU will measure the voltage magnitude and angle at bus `4` as well as the current magnitudes and angles at the corresponding branches.
