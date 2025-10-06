@@ -190,7 +190,7 @@ The optimal placement of PMUs without legacy measurements is formulated as an in
 ```math
   \begin{aligned}
     \text{minimize}& \;\;\; \sum_{i=1}^n d_i\\
-    \text{subject\;to}& \;\;\; \sum_{j=1}^n a_{ij}d_j \geq 1, \;\; i = 1, \dots, n,
+    \text{subject\;to}& \;\;\; \sum_{j=1}^n a_{ij}d_j \geq 1, \;\; \forall i \in \mathcal{N},
   \end{aligned}
 ```
 where ``d_i \in \mathbb{F} = \{0,1\}`` is the PMU placement decision variable associated with bus ``i \in \mathcal{N}``. The binary parameter ``a_{ij} \in \mathbb{F}`` indicates the connectivity of the power system network, where ``a_{ij}`` can be directly derived from the nodal admittance matrix by converting its entries into binary form [xu2004observability](@cite). This linear programming problem is implemented using JuMP package allowing compatibility with different type of optimization solvers.
@@ -221,32 +221,16 @@ Consequently, the PMUs will measure the current phasors at the from-bus ends of 
 ---
 
 ##### Optimal Solution With Legacy Measurements
-The optimal placement of PMUs with legacy measurements is formulated as an integer linear programming problem:
+Beyond this scenario, JuliaGrid also includes an algorithm for identifying the minimal set of PMUs while considering legacy measurements, where legacy measurements refer to power flow and injection data only. In this case, the optimal PMU placement can be obtained by solving:
 ```math
   \begin{aligned}
     \text{minimize}& \;\;\; \sum_{i=1}^n d_i\\
-    \text{subject\;to}& \;\;\; \sum_{j=1}^n c_{ij} \left ( \sum_{k=1}^n a_{ik}d_k \right) \geq b_i, \;\; i = 1, \dots, n.
+    \text{subject\;to}& \;\;\; \sum_{j=1}^n c_{ij} \left ( \sum_{k=1}^n a_{ik}d_k \right) \geq b_i, \;\; \forall i \in \mathcal{H}.
   \end{aligned}
 ```
-The binary coefficient ``c_{ij} \in \mathbb{F} = \{0,1\}`` represents the incidence of buses ``\{i,j\} \subset \mathcal{N}`` through power flow measurements, injection measurements, or the absence of measurements. The right-hand side coefficient ``b_i`` depends on the number of nonzero terms ``c_{ij}``.
+The binary coefficient ``c_{ij} \in \mathbb{F} = \{0,1\}`` indicates the incidence of buses ``\{i,j\} \subset \mathcal{N}`` according to the presence or absence of measurements at the bus, and the right-hand side coefficient ``b_i`` depends on the number of nonzero terms ``c_{ij}``. Each inequality corresponds to a bus ``i \in \mathcal{H}``, where ``\mathcal{H}`` is the set of buses associated with a power flow measurement, an injection measurement, or no measurement.
 
-More precisely, three cases are distinguished:
-* If a power flow measurement is located at the ``i`` end of a branch ``(i,j)``:
-```math
-   c_{ii} = c_{ij} = 1, \quad b_i = 1.
-```
-
-* If a power injection measurement is located at bus ``i``, which is incident to buses ``\mathcal{N}_i \subseteq \mathcal{N}``:
-```math
-   c_{ii} = c_{ik} = 1, \; k \in \mathcal{N}_i, \quad b_i = |\mathcal{N}_i|.
-```
-
-* If bus ``i`` has no associated power flow or injection measurement:
-```math
-   c_{ii} = 1, \quad b_i = 1.
-```
-
-All other binary coefficients not explicitly specified are equal to zero.
+More precisely, three cases are distinguished. If a power flow measurement is installed at the ``i`` end of branch ``(i,j)``, then ``c_{ii} = c_{ij} = 1`` and ``b_i = 1``. The second case occurs when a power injection measurement is located at bus ``i``, which is incident to buses ``\mathcal{N}_i``. In this case, ``c_{ii} = c_{ik} = 1`` for ``k \in \mathcal{N}_i`` and ``b_i = |\mathcal{N}_i|``. Finally, if bus ``i`` is not incident to any measurement, then ``c_{ii} = 1`` and ``b_i = 1``. All other binary coefficients not explicitly specified are equal to zero.
 
 As in the case of optimal placement without legacy measurements, we obtain the binary vector ``\mathbf{d}``, where ``d_i = 1, i \in \mathcal{N}`` indicates that a PMU should be installed at bus ``i``.
 

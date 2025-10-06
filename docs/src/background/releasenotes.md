@@ -3,6 +3,15 @@
 
 ---
 
+## Version 0.5.5
+
+Release Date: October 6, 2025
+
+#### Fixed
+  * Updated documentation for [optimal PMU placement](@ref optimalpmu).
+
+---
+
 ## Version 0.5.4
 
 Release Date: October 2, 2025
