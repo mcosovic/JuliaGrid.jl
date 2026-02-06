@@ -1388,42 +1388,42 @@ function busSummary(
 
     @inbounds for i = 1:bus.number
         scaleVolg = scaleVoltage(pfx, system, i)
-        eval(smr, i, scaleVolg, voltage.magnitude[i], "Voltage Magnitude")
-        eval(smr, i, scale[:θ], voltage.angle[i], "Voltage Angle")
+        evaldata(smr, i, scaleVolg, voltage.magnitude[i], "Voltage Magnitude")
+        evaldata(smr, i, scale[:θ], voltage.angle[i], "Voltage Angle")
 
         if haskey(bus.supply.generator, i)
             if haskey(smr.type, "Power Generation")
                 smr.inuse["Power Generation"] += 1
-                eval(smr, i, scale[:P], power.supply.active[i], "Power Generation Active")
-                eval(smr, i, scale[:Q], power.supply.reactive[i], "Power Generation Reactive")
+                evaldata(smr, i, scale[:P], power.supply.active[i], "Power Generation Active")
+                evaldata(smr, i, scale[:Q], power.supply.reactive[i], "Power Generation Reactive")
             end
         end
 
         if bus.demand.active[i] != 0.0 || bus.demand.reactive[i] != 0.0
             if haskey(smr.type, "Power Demand")
                 smr.inuse["Power Demand"] += 1
-                eval(smr, i, scale[:P], bus.demand.active[i], "Power Demand Active")
-                eval(smr, i, scale[:Q], bus.demand.reactive[i], "Power Demand Reactive")
+                evaldata(smr, i, scale[:P], bus.demand.active[i], "Power Demand Active")
+                evaldata(smr, i, scale[:Q], bus.demand.reactive[i], "Power Demand Reactive")
             end
         end
 
         if haskey(smr.type, "Power Injection")
-            eval(smr, i, scale[:P], power.injection.active[i], "Power Injection Active")
-            eval(smr, i, scale[:Q], power.injection.reactive[i], "Power Injection Reactive")
+            evaldata(smr, i, scale[:P], power.injection.active[i], "Power Injection Active")
+            evaldata(smr, i, scale[:Q], power.injection.reactive[i], "Power Injection Reactive")
         end
 
         if bus.shunt.conductance[i] != 0.0 || bus.shunt.susceptance[i] != 0.0
             if haskey(smr.type, "Shunt Power")
                 smr.inuse["Shunt Power"] += 1
-                eval(smr, i, scale[:P], power.shunt.active[i], "Shunt Power Active")
-                eval(smr, i, scale[:Q], power.shunt.reactive[i], "Shunt Power Reactive")
+                evaldata(smr, i, scale[:P], power.shunt.active[i], "Shunt Power Active")
+                evaldata(smr, i, scale[:Q], power.shunt.reactive[i], "Shunt Power Reactive")
             end
         end
 
         if haskey(smr.type, "Current Injection")
             scaleCurt = scaleCurrent(pfx, system, i)
-            eval(smr, i, scaleCurt, currinj.magnitude[i], "Current Injection Magnitude")
-            eval(smr, i, scale[:ψ], currinj.angle[i], "Current Injection Angle")
+            evaldata(smr, i, scaleCurt, currinj.magnitude[i], "Current Injection Magnitude")
+            evaldata(smr, i, scale[:ψ], currinj.angle[i], "Current Injection Angle")
         end
     end
     notexist!(smr)
@@ -1476,24 +1476,24 @@ function busSummary(
     evaluate!(smr)
 
     @inbounds for i = 1:bus.number
-        eval(smr, i, scale[:θ], voltage.angle[i], "Voltage Angle")
+        evaldata(smr, i, scale[:θ], voltage.angle[i], "Voltage Angle")
 
         if haskey(bus.supply.generator, i)
             if haskey(smr.type, "Power Generation")
                 smr.inuse["Power Generation"] += 1
-                eval(smr, i, scale[:P], power.supply.active[i], "Power Generation Active")
+                evaldata(smr, i, scale[:P], power.supply.active[i], "Power Generation Active")
             end
         end
 
         if bus.demand.active[i] != 0.0
             if haskey(smr.type, "Power Demand")
                 smr.inuse["Power Demand"] += 1
-                eval(smr, i, scale[:P], bus.demand.active[i], "Power Demand Active")
+                evaldata(smr, i, scale[:P], bus.demand.active[i], "Power Demand Active")
             end
         end
 
         if haskey(smr.type, "Power Injection")
-            eval(smr, i, scale[:P], power.injection.active[i], "Power Injection Active")
+            evaldata(smr, i, scale[:P], power.injection.active[i], "Power Injection Active")
         end
     end
     notexist!(smr)
@@ -1667,56 +1667,56 @@ function branchSummary(
         if haskey(smr.type, head[:Sijl])
             if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
                 smr.inuse[head[:Sijl]] += 1
-                eval(smr, i, scale[:P], abs(power.from.active[i]), head[:Pijl])
-                eval(smr, i, scale[:Q], abs(power.from.reactive[i]), head[:Qijl])
+                evaldata(smr, i, scale[:P], abs(power.from.active[i]), head[:Pijl])
+                evaldata(smr, i, scale[:Q], abs(power.from.reactive[i]), head[:Qijl])
             else
                 smr.inuse[head[:Sijt]] += 1
-                eval(smr, i, scale[:P], abs(power.from.active[i]), head[:Pijt])
-                eval(smr, i, scale[:Q], abs(power.from.reactive[i]), head[:Qijt])
+                evaldata(smr, i, scale[:P], abs(power.from.active[i]), head[:Pijt])
+                evaldata(smr, i, scale[:Q], abs(power.from.reactive[i]), head[:Qijt])
             end
         end
 
         if haskey(smr.type, head[:Sjil])
             if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
                 smr.inuse[head[:Sjil]] += 1
-                eval(smr, i, scale[:P], abs(power.to.active[i]), head[:Pjil])
-                eval(smr, i, scale[:Q], abs(power.to.reactive[i]), head[:Qjil])
+                evaldata(smr, i, scale[:P], abs(power.to.active[i]), head[:Pjil])
+                evaldata(smr, i, scale[:Q], abs(power.to.reactive[i]), head[:Qjil])
             else
                 smr.inuse[head[:Sjit]] += 1
-                eval(smr, i, scale[:P], abs(power.to.active[i]), head[:Pjit])
-                eval(smr, i, scale[:Q], abs(power.to.reactive[i]), head[:Qjit])
+                evaldata(smr, i, scale[:P], abs(power.to.active[i]), head[:Pjit])
+                evaldata(smr, i, scale[:Q], abs(power.to.reactive[i]), head[:Qjit])
             end
         end
 
         if haskey(smr.type, head[:Sshu])
             if branch.parameter.conductance[i] != 0.0 || branch.parameter.susceptance[i] != 0.0
                 smr.inuse[head[:Sshu]] += 1
-                eval(smr, i, scale[:P], power.charging.active[i], head[:Pshu])
-                eval(smr, i, scale[:Q], power.charging.reactive[i], head[:Qshu])
+                evaldata(smr, i, scale[:P], power.charging.active[i], head[:Pshu])
+                evaldata(smr, i, scale[:Q], power.charging.reactive[i], head[:Qshu])
             end
         end
 
         if haskey(smr.type, head[:Sser])
-            eval(smr, i, scale[:P], power.series.active[i], head[:Pser])
-            eval(smr, i, scale[:Q], power.series.reactive[i], head[:Qser])
+            evaldata(smr, i, scale[:P], power.series.active[i], head[:Pser])
+            evaldata(smr, i, scale[:Q], power.series.reactive[i], head[:Qser])
         end
 
         if haskey(smr.type, "From-Bus Current")
             scaleCurrf = scaleCurrent(pfx, system, branch.layout.from[i])
-            eval(smr, i, scaleCurrf, current.from.magnitude[i], "From-Bus Current Magnitude")
-            eval(smr, i, scale[:ψ], current.from.angle[i], "From-Bus Current Angle")
+            evaldata(smr, i, scaleCurrf, current.from.magnitude[i], "From-Bus Current Magnitude")
+            evaldata(smr, i, scale[:ψ], current.from.angle[i], "From-Bus Current Angle")
         end
 
         if haskey(smr.type, "To-Bus Current")
             scaleCurrt = scaleCurrent(pfx, system, branch.layout.to[i])
-            eval(smr, i, scaleCurrt, current.to.magnitude[i], "To-Bus Current Magnitude")
-            eval(smr, i, scale[:ψ], current.to.angle[i], "To-Bus Current Angle")
+            evaldata(smr, i, scaleCurrt, current.to.magnitude[i], "To-Bus Current Magnitude")
+            evaldata(smr, i, scale[:ψ], current.to.angle[i], "To-Bus Current Angle")
         end
 
         if haskey(smr.type, "Series Current")
             scaleCurrt = scaleCurrent(pfx, system, branch.layout.to[i])
-            eval(smr, i, scaleCurrt, current.series.magnitude[i], "Series Current Magnitude")
-            eval(smr, i, scale[:ψ], current.series.angle[i], "Series Current Angle")
+            evaldata(smr, i, scaleCurrt, current.series.magnitude[i], "Series Current Magnitude")
+            evaldata(smr, i, scale[:ψ], current.series.angle[i], "Series Current Angle")
         end
     end
     notexist!(smr)
@@ -1767,10 +1767,10 @@ function branchSummary(
         if haskey(smr.type, head[:Sijl])
             if branch.parameter.turnsRatio[i] == 1 && branch.parameter.shiftAngle[i] == 0
                 smr.inuse[head[:Sijl]] += 1
-                eval(smr, i, scale[:P], abs(power.from.active[i]), head[:Pijl])
+                evaldata(smr, i, scale[:P], abs(power.from.active[i]), head[:Pijl])
             else
                 smr.inuse[head[:Sijt]] += 1
-                eval(smr, i, scale[:P], abs(power.from.active[i]), head[:Pijt])
+                evaldata(smr, i, scale[:P], abs(power.from.active[i]), head[:Pijt])
             end
         end
 
@@ -1859,8 +1859,8 @@ function generatorSummary(
 
     @inbounds for i = 1:generator.number
         if generator.layout.status[i] == 1 && haskey(smr.type, "Power Output")
-            eval(smr, i, scale[:P], power.generator.active[i], "Power Output Active")
-            eval(smr, i, scale[:Q], power.generator.reactive[i], "Power Output Reactive")
+            evaldata(smr, i, scale[:P], power.generator.active[i], "Power Output Active")
+            evaldata(smr, i, scale[:Q], power.generator.reactive[i], "Power Output Reactive")
         end
     end
     notexist!(smr)
@@ -1893,7 +1893,7 @@ function generatorSummary(
 
     @inbounds for i = 1:generator.number
         if generator.layout.status[i] == 1 && haskey(smr.type, "Power Output")
-            eval(smr, i, scale[:P], power.generator.active[i], "Power Output Active")
+            evaldata(smr, i, scale[:P], power.generator.active[i], "Power Output Active")
         end
     end
     notexist!(smr)
@@ -2078,7 +2078,7 @@ function evaluate!(smr::Summary)
     end
 end
 
-function eval(smr::Summary, i::Int64, scale::Float64, value::Float64, key::String)
+function evaldata(smr::Summary, i::Int64, scale::Float64, value::Float64, key::String)
     value *= scale
 
     if value < smr.minval[key]
