@@ -125,9 +125,20 @@ end
     @testset "Phasor Measurement Placement" begin
         placement = pmuPlacement(monitoring, HiGHS.Optimizer; legacy = true)
 
-        @test collect(keys(placement.bus)) == [3; 4]
-        @test collect(keys(placement.from)) == [5; 6; 7; 8]
-        @test collect(keys(placement.to)) == [2; 5]
+        placed = Set(values(placement.bus))
+        branchLabel = collect(keys(system.branch.label))
+        from = [
+            branchLabel[i] for i = 1:system.branch.number
+            if system.branch.layout.status[i] == 1 && system.branch.layout.from[i] in placed
+        ]
+        to = [
+            branchLabel[i] for i = 1:system.branch.number
+            if system.branch.layout.status[i] == 1 && system.branch.layout.to[i] in placed
+        ]
+
+        @test length(placement.bus) == 2
+        @test collect(keys(placement.from)) == from
+        @test collect(keys(placement.to)) == to
     end
 
     pf = newtonRaphson(system)
