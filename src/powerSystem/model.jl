@@ -64,7 +64,6 @@ function acNodalUpdate!(system::PowerSystem, idx::Int64)
     ac = system.model.ac
 
     filledElements = nnz(ac.nodalMatrix)
-    ac.model += 1
 
     i, j = fromto(system, idx)
 
@@ -79,7 +78,9 @@ function acNodalUpdate!(system::PowerSystem, idx::Int64)
     ac.nodalMatrixTranspose[i, j] += ac.nodalToFrom[idx]
 
     if filledElements != nnz(ac.nodalMatrix)
-        ac.pattern += 1
+        acPatternChanged!(system)
+    else
+        acModelChanged!(system)
     end
 end
 
@@ -162,7 +163,6 @@ function dcNodalUpdate!(system::PowerSystem, idx::Int64)
     dc = system.model.dc
 
     filledElements = nnz(dc.nodalMatrix)
-    dc.model += 1
 
     i, j = fromto(system, idx)
 
@@ -174,7 +174,9 @@ function dcNodalUpdate!(system::PowerSystem, idx::Int64)
     dc.nodalMatrix[j, i] -= admittance
 
     if filledElements != nnz(dc.nodalMatrix)
-        dc.pattern += 1
+        dcPatternChanged!(system)
+    else
+        dcModelChanged!(system)
     end
 end
 
@@ -185,6 +187,7 @@ function dcShiftUpdate!(system::PowerSystem, idx::Int64)
     shift = system.branch.parameter.shiftAngle[idx] * dc.admittance[idx]
     dc.shiftPower[system.branch.layout.from[idx]] -= shift
     dc.shiftPower[system.branch.layout.to[idx]] += shift
+    dcModelChanged!(system)
 end
 
 ##### Update DC Admittance #####
@@ -227,9 +230,9 @@ function acSetZeros!(ac::AcModel, idx::Int64)
     ac.admittance[idx] = 0.0 + 0.0im
 end
 
-function acModelEmpty!(ac::AcModel)
-    ac.model += 1
-    ac.pattern += 1
+function acModelEmpty!(system::PowerSystem)
+    ac = system.model.ac
+    acPatternChanged!(system)
 
     ac.nodalMatrix = spzeros(0, 0)
     ac.nodalMatrixTranspose = spzeros(0, 0)
@@ -240,9 +243,9 @@ function acModelEmpty!(ac::AcModel)
     ac.admittance = ComplexF64[]
 end
 
-function dcModelEmpty!(dc::DcModel)
-    dc.model += 1
-    dc.pattern += 1
+function dcModelEmpty!(system::PowerSystem)
+    dc = system.model.dc
+    dcPatternChanged!(system)
 
     dc.nodalMatrix = spzeros(0, 0)
     dc.admittance = Float64[]
@@ -250,22 +253,22 @@ function dcModelEmpty!(dc::DcModel)
 end
 
 ##### Drop Zeros #####
-function dropZeros!(dc::DcModel)
+function dropZeros!(system::PowerSystem, dc::DcModel)
     filledElements = nnz(dc.nodalMatrix)
     dropzeros!(dc.nodalMatrix)
 
     if filledElements != nnz(dc.nodalMatrix)
-        dc.pattern += 1
+        dcPatternChanged!(system)
     end
 end
 
-function dropZeros!(ac::AcModel)
+function dropZeros!(system::PowerSystem, ac::AcModel)
     filledElements = nnz(ac.nodalMatrix)
     dropzeros!(ac.nodalMatrix)
     dropzeros!(ac.nodalMatrixTranspose)
 
     if filledElements != nnz(ac.nodalMatrix)
-        ac.pattern += 1
+        acPatternChanged!(system)
     end
 end
 

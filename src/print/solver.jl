@@ -341,9 +341,9 @@ end
 
 function printSolver(
     system::PowerSystem,
-    analysis::AcPowerFlow{T},
+    analysis::AcPowerFlow{<:Union{NewtonRaphson, FastNewtonRaphson}},
     verbose::Int64,
-) where T <: Union{NewtonRaphson, FastNewtonRaphson}
+)
 
     if verbose == 2 || verbose == 3
         mag, ang = minmaxIncrement(system, analysis)

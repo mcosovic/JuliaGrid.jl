@@ -135,7 +135,11 @@ function newtonRaphson(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR
             selectFactorization(T),
             pq,
             pvpq,
-            Dict(:pattern => -1, :type => 0),
+            NewtonRaphsonSignature(
+                copy(system.model.revision.topology),
+                -1,
+                copy(system.model.revision.type)
+            ),
             0
         ),
         system
@@ -324,11 +328,13 @@ function fastNewtonRaphsonModel(system::PowerSystem, T::Type{<:Union{QR, LU, KLU
             ),
             pq,
             pvpq,
-            Dict(
-                :acmodel => -1,
-                :pattern => -1,
-                :type => 0,
-                :susceptance => Dict{Int64, Float64}()
+            FastNewtonRaphsonSignature(
+                copy(system.model.revision.topology),
+                copy(system.model.revision.acModel),
+                -1,
+                -1,
+                copy(system.model.revision.type),
+                Dict{Int64, Float64}()
             ),
             bx,
             0
@@ -346,7 +352,7 @@ function fastNewtonRaphsonModel(system::PowerSystem, T::Type{<:Union{QR, LU, KLU
         if bus.layout.type[i] == 1 && bus.shunt.susceptance[i] != 0
             j = analysis.method.pq[i]
             analysis.method.reactive.jacobian[j, j] += bus.shunt.susceptance[i]
-            analysis.method.signature[:susceptance][i] = bus.shunt.susceptance[i]
+            analysis.method.signature.susceptance[i] = bus.shunt.susceptance[i]
         end
     end
 
@@ -506,7 +512,10 @@ function gaussSeidel(system::PowerSystem)
             voltg,
             pq,
             pv,
-            Dict(:type => 0),
+            GaussSeidelSignature(
+                copy(system.model.revision.topology),
+                copy(system.model.revision.type)
+            ),
             0
         ),
         system
@@ -686,6 +695,7 @@ end
 function solve!(analysis::AcPowerFlow{NewtonRaphson})
     system = analysis.system
     ac = system.model.ac
+    revision = system.model.revision
     bus = system.bus
 
     pf = analysis.method
@@ -748,10 +758,14 @@ function solve!(analysis::AcPowerFlow{NewtonRaphson})
         end
     end
 
-    if ac.pattern == pf.signature[:pattern]
+    if revision.topology != pf.signature.topology || revision.type != pf.signature.type
+        errorTypeConversion()
+    end
+
+    if revision.acPattern == pf.signature.acPattern
         pf.factorization = factorization!(jcb, pf.factorization)
     else
-        pf.signature[:pattern] = copy(system.model.ac.pattern)
+        pf.signature.acPattern = copy(revision.acPattern)
         pf.factorization = factorization(jcb, pf.factorization)
     end
 
@@ -772,6 +786,7 @@ end
 function solve!(analysis::AcPowerFlow{FastNewtonRaphson})
     system = analysis.system
     ac = system.model.ac
+    revision = system.model.revision
     bus = system.bus
 
     pf = analysis.method
@@ -781,14 +796,25 @@ function solve!(analysis::AcPowerFlow{FastNewtonRaphson})
     pq = pf.pq
     pvpq = pf.pvpq
 
-    if ac.model != pf.signature[:acmodel]
-        pf.signature[:acmodel] = copy(ac.model)
+    if revision.topology != pf.signature.topology || revision.type != pf.signature.type
+        errorTypeConversion()
+    end
 
-        if ac.pattern == pf.signature[:pattern]
+    if revision.acModel != pf.signature.acModel
+        if revision.acModel != pf.signature.jacobian
+            throw(ErrorException(
+                "The fast Newton-Raphson model cannot be reused because the power system " *
+                "changed without updating the analysis model."
+            ))
+        end
+
+        pf.signature.acModel = copy(revision.acModel)
+
+        if revision.acPattern == pf.signature.acPattern
             active.factorization = factorization!(active.jacobian, active.factorization)
             reactive.factorization = factorization!(reactive.jacobian, reactive.factorization)
         else
-            pf.signature[:pattern] = copy(ac.pattern)
+            pf.signature.acPattern = copy(revision.acPattern)
 
             active.factorization = factorization(active.jacobian, active.factorization)
             reactive.factorization = factorization(reactive.jacobian, reactive.factorization)
@@ -831,7 +857,13 @@ function solve!(analysis::AcPowerFlow{GaussSeidel})
     system = analysis.system
     bus = system.bus
     ac = system.model.ac
+    revision = system.model.revision
+    gs = analysis.method
     volt = analysis.method.voltage
+
+    if revision.topology != gs.signature.topology || revision.type != gs.signature.type
+        errorTypeConversion()
+    end
 
     @inbounds for i in analysis.method.pq
         supply = bus.supply.active[i] - im * bus.supply.reactive[i]
@@ -947,6 +979,7 @@ function reactiveLimit!(analysis::AcPowerFlow)
                     newReactivePower = generator.capability.maxReactive[i]
                 end
                 bus.layout.type[j] = 1
+                typeChanged!(system)
 
                 bus.supply.reactive[j] -= outputReactive[i]
                 generator.output.reactive[i] = newReactivePower
@@ -961,7 +994,9 @@ function reactiveLimit!(analysis::AcPowerFlow)
                                 "new slack bus."
                             )
                             bus.layout.slack = k
+                            slackChanged!(system)
                             bus.layout.type[k] = 3
+                            typeChanged!(system)
                             break
                         end
                     end
@@ -1132,6 +1167,7 @@ function initializeACPowerFlow(system::PowerSystem)
     @inbounds for i = 1:bus.number
         if !haskey(bus.supply.generator, i) && bus.layout.type[i] == 2
             bus.layout.type[i] = 1
+            typeChanged!(system)
         end
         if haskey(bus.supply.generator, i) && bus.layout.type[i] != 1
             magnitude[i] = system.generator.voltage.magnitude[bus.supply.generator[i][1]]
@@ -1147,10 +1183,13 @@ end
 function changeSlackBus!(system::PowerSystem)
     if !haskey(system.bus.supply.generator, system.bus.layout.slack)
         system.bus.layout.type[system.bus.layout.slack] = 1
+        typeChanged!(system)
         @inbounds for i = 1:system.bus.number
             if system.bus.layout.type[i] == 2 && haskey(system.bus.supply.generator, i)
                 system.bus.layout.type[i] = 3
+                typeChanged!(system)
                 system.bus.layout.slack = i
+                slackChanged!(system)
 
                 @info(
                     "No in-service generator found at the slack bus. " *

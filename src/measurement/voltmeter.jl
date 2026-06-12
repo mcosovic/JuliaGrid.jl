@@ -224,7 +224,7 @@ function updateVoltmeter!(analysis::AcStateEstimation; label::IntStr, kwargs...)
     _updateVoltmeter!(analysis, getIndex(analysis.monitoring.voltmeter, label, "voltmeter"))
 end
 
-function _updateVoltmeter!(analysis::AcStateEstimation{GaussNewton{T}}, idx::Int64) where T <: WlsMethod
+function _updateVoltmeter!(analysis::AcStateEstimation{<:GaussNewton}, idx::Int64)
     volt = analysis.monitoring.voltmeter
     wls = analysis.method
 
@@ -254,10 +254,29 @@ function _updateVoltmeter!(analysis::AcStateEstimation{LAV}, idx::Int64)
     end
 end
 
+function setVoltmeterTemplate!(parameter::Symbol, value)
+    if hasfield(VoltmeterTemplate, parameter)
+        if parameter == :variance
+            container::ContainerTemplate = getfield(template.voltmeter, parameter)
+            setContainerTemplate!(container, value, pfx.voltageMagnitude)
+        elseif parameter == :status
+            setfield!(template.voltmeter, parameter, Int8(value))
+        elseif parameter == :noise
+            setfield!(template.voltmeter, parameter, Bool(value))
+        elseif parameter == :label
+            macroLabel(template.voltmeter, value, "[?!]")
+        end
+    else
+        errorTemplateKeyword(parameter)
+    end
+end
+
 """
     @voltmeter(label, variance, noise, status)
 
 The macro generates a template for a voltmeter.
+
+The macro modifies global JuliaGrid settings that remain active until changed again.
 
 # Keywords
 To establish the voltmeter template, users can specify default values for the `variance`, `noise`,
@@ -292,31 +311,16 @@ addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 145.2)
 ```
 """
 macro voltmeter(kwargs...)
-    quote
-        for kwarg in $(esc(kwargs))
-            parameter::Symbol = kwarg.args[1]
-
-            if hasfield(VoltmeterTemplate, parameter)
-                if parameter == :variance
-                    container::ContainerTemplate = getfield(template.voltmeter, parameter)
-                    val = Float64(eval(kwarg.args[2]))
-                    if pfx.voltageMagnitude != 0.0
-                        setfield!(container, :value, pfx.voltageMagnitude * val)
-                        setfield!(container, :pu, false)
-                    else
-                        setfield!(container, :value, val)
-                        setfield!(container, :pu, true)
-                    end
-                elseif parameter == :status
-                    setfield!(template.voltmeter, parameter, Int8(eval(kwarg.args[2])))
-                elseif parameter == :noise
-                    setfield!(template.voltmeter, parameter, Bool(eval(kwarg.args[2])))
-                elseif parameter == :label
-                    macroLabel(template.voltmeter, kwarg.args[2], "[?!]")
-                end
-            else
-                errorTemplateKeyword(parameter)
-            end
+    exprs = map(kwargs) do kwarg
+        if !(kwarg isa Expr) || kwarg.head != :(=)
+            return :(errorTemplateKeyword($(QuoteNode(kwarg))))
         end
+
+        parameter = kwarg.args[1]
+        value = kwarg.args[2]
+
+        :(setVoltmeterTemplate!($(QuoteNode(parameter)), $(esc(value))))
     end
+
+    return Expr(:block, exprs...)
 end

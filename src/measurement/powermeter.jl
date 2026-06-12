@@ -530,12 +530,16 @@ stateEstimation!(analysis)
 updateWattmeter!(analysis; label = 4, active = 0.5, variance = 1e-4)
 ```
 """
-function updateWattmeter!(analysis::StateEstimation; label::IntStr, kwargs...)
+function updateWattmeter!(
+    analysis::Union{AcStateEstimation, DcStateEstimation};
+    label::IntStr,
+    kwargs...
+)
     updateWattmeterMain!(analysis.monitoring, label, WattmeterKey(; kwargs...))
     _updateWattmeter!(analysis, getIndex(analysis.monitoring.wattmeter, label, "wattmeter"))
 end
 
-function _updateWattmeter!(analysis::AcStateEstimation{GaussNewton{T}}, idxWatt::Int64) where T <: WlsMethod
+function _updateWattmeter!(analysis::AcStateEstimation{<:GaussNewton}, idxWatt::Int64)
     bus = analysis.system.bus
     nodal = analysis.system.model.ac.nodalMatrix
     watt = analysis.monitoring.wattmeter
@@ -594,7 +598,7 @@ function _updateWattmeter!(analysis::AcStateEstimation{LAV}, idxWatt::Int64)
     end
 end
 
-function _updateWattmeter!(analysis::DcStateEstimation{WLS{T}}, idxWatt::Int64) where T <: WlsMethod
+function _updateWattmeter!(analysis::DcStateEstimation{<:WLS}, idxWatt::Int64)
     system = analysis.system
     dc = system.model.dc
     nodal = dc.nodalMatrix
@@ -755,7 +759,7 @@ function updateVarmeter!(analysis::AcStateEstimation; label::IntStr, kwargs...)
     _updateVarmeter!(analysis, getIndex(analysis.monitoring.varmeter, label, "varmeter"))
 end
 
-function _updateVarmeter!(analysis::AcStateEstimation{GaussNewton{T}}, idxVar::Int64) where T <: WlsMethod
+function _updateVarmeter!(analysis::AcStateEstimation{<:GaussNewton}, idxVar::Int64)
     bus = analysis.system.bus
     nodal = analysis.system.model.ac.nodalMatrix
     var = analysis.monitoring.varmeter
@@ -813,11 +817,30 @@ function _updateVarmeter!(analysis::AcStateEstimation{LAV}, idxVar::Int64)
     end
 end
 
+function setWattmeterTemplate!(parameter::Symbol, value)
+    if hasfield(WattmeterTemplate, parameter)
+        if parameter in (:varianceBus, :varianceFrom, :varianceTo)
+            container::ContainerTemplate = getfield(template.wattmeter, parameter)
+            setContainerTemplate!(container, value, pfx.activePower)
+        elseif parameter in (:statusBus, :statusFrom, :statusTo)
+            setfield!(template.wattmeter, parameter, Int8(value))
+        elseif parameter == :noise
+            setfield!(template.wattmeter, parameter, Bool(value))
+        elseif parameter == :label
+            macroLabel(template.wattmeter, value, "[?!]")
+        end
+    else
+        errorTemplateKeyword(parameter)
+    end
+end
+
 """
     @wattmeter(label, varianceBus, statusBus, varianceFrom, statusFrom,
         varianceTo, statusTo, noise)
 
 The macro generates a template for a wattmeter.
+
+The macro modifies global JuliaGrid settings that remain active until changed again.
 
 # Keywords
 To establish the wattmeter template, users can set default variance and status values for wattmeters
@@ -858,32 +881,34 @@ addWattmeter!(monitoring; from = "Branch 1", active = 10.0)
 ```
 """
 macro wattmeter(kwargs...)
-    quote
-        for kwarg in $(esc(kwargs))
-            parameter::Symbol = kwarg.args[1]
-
-            if hasfield(WattmeterTemplate, parameter)
-                if parameter in (:varianceBus, :varianceFrom, :varianceTo)
-                    container::ContainerTemplate = getfield(template.wattmeter, parameter)
-                    val = Float64(eval(kwarg.args[2]))
-                    if pfx.activePower != 0.0
-                        setfield!(container, :value, pfx.activePower * val)
-                        setfield!(container, :pu, false)
-                    else
-                        setfield!(container, :value, val)
-                        setfield!(container, :pu, true)
-                    end
-                elseif parameter in (:statusBus, :statusFrom, :statusTo)
-                    setfield!(template.wattmeter, parameter, Int8(eval(kwarg.args[2])))
-                elseif parameter == :noise
-                    setfield!(template.wattmeter, parameter, Bool(eval(kwarg.args[2])))
-                elseif parameter == :label
-                    macroLabel(template.wattmeter, kwarg.args[2], "[?!]")
-                end
-            else
-                errorTemplateKeyword(parameter)
-            end
+    exprs = map(kwargs) do kwarg
+        if !(kwarg isa Expr) || kwarg.head != :(=)
+            return :(errorTemplateKeyword($(QuoteNode(kwarg))))
         end
+
+        parameter = kwarg.args[1]
+        value = kwarg.args[2]
+
+        :(setWattmeterTemplate!($(QuoteNode(parameter)), $(esc(value))))
+    end
+
+    return Expr(:block, exprs...)
+end
+
+function setVarmeterTemplate!(parameter::Symbol, value)
+    if hasfield(VarmeterTemplate, parameter)
+        if parameter in (:varianceBus, :varianceFrom, :varianceTo)
+            container::ContainerTemplate = getfield(template.varmeter, parameter)
+            setContainerTemplate!(container, value, pfx.reactivePower)
+        elseif parameter in (:statusBus, :statusFrom, :statusTo)
+            setfield!(template.varmeter, parameter, Int8(value))
+        elseif parameter == :noise
+            setfield!(template.varmeter, parameter, Bool(value))
+        elseif parameter == :label
+            macroLabel(template.varmeter, value, "[?!]")
+        end
+    else
+        errorTemplateKeyword(parameter)
     end
 end
 
@@ -892,6 +917,8 @@ end
         varianceTo, statusTo, noise)
 
 The macro generates a template for a varmeter.
+
+The macro modifies global JuliaGrid settings that remain active until changed again.
 
 # Keywords
 To establish the varmeter template, users can set default variance and status values for varmeters
@@ -933,32 +960,16 @@ addVarmeter!(monitoring; from = "Branch 1", reactive = 10.0)
 ```
 """
 macro varmeter(kwargs...)
-    quote
-        for kwarg in $(esc(kwargs))
-            parameter::Symbol = kwarg.args[1]
-
-            if hasfield(VarmeterTemplate, parameter)
-                if parameter in (:varianceBus, :varianceFrom, :varianceTo)
-                    container::ContainerTemplate = getfield(template.varmeter, parameter)
-                    val = Float64(eval(kwarg.args[2]))
-                    if pfx.reactivePower != 0.0
-                        setfield!(container, :value, pfx.reactivePower * val)
-                        setfield!(container, :pu, false)
-                    else
-                        setfield!(container, :value, val)
-                        setfield!(container, :pu, true)
-                    end
-                elseif parameter in (:statusBus, :statusFrom, :statusTo)
-                    setfield!(template.varmeter, parameter, Int8(eval(kwarg.args[2])))
-                elseif parameter == :noise
-                    setfield!(template.varmeter, parameter, Bool(eval(kwarg.args[2])))
-                elseif parameter == :label
-                    macroLabel(template.varmeter, kwarg.args[2], "[?!]")
-
-                end
-            else
-                errorTemplateKeyword(parameter)
-            end
+    exprs = map(kwargs) do kwarg
+        if !(kwarg isa Expr) || kwarg.head != :(=)
+            return :(errorTemplateKeyword($(QuoteNode(kwarg))))
         end
+
+        parameter = kwarg.args[1]
+        value = kwarg.args[2]
+
+        :(setVarmeterTemplate!($(QuoteNode(parameter)), $(esc(value))))
     end
+
+    return Expr(:block, exprs...)
 end

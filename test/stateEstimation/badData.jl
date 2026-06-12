@@ -29,7 +29,7 @@
 
         chi = chiTest(se)
         @test chi.detect
-        @test chi.treshold ≈ 109.7 atol = 1e-1
+        @test chi.threshold ≈ 109.7 atol = 1e-1
         @test chi.objective ≈ 3227.3 atol = 1e-1
 
         outlier = residualTest!(se; threshold = 3.0)

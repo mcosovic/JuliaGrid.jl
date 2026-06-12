@@ -584,13 +584,13 @@ stateEstimation!(analysis; iteration = 30, tolerance = 1e-6, verbose = 3)
 ```
 """
 function stateEstimation!(
-    analysis::PmuStateEstimation{WLS{T}};
+    analysis::PmuStateEstimation{<:WLS};
     iteration::Int64 = 40,
     tolerance::Float64 = 1e-8,
     power::Bool = false,
     current::Bool = false,
     verbose::Int64 = template.config.verbose
-) where T <: WlsMethod
+)
 
     system = analysis.system
     printMiddle(system, analysis, verbose)

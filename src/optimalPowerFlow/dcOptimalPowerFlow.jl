@@ -174,9 +174,13 @@ function dcOptimalPowerFlow(
                 )
             ),
             obj,
-            Dict(
-                :slack => copy(system.bus.layout.slack),
-                :free => free
+            DcOptimalPowerFlowSignature(
+                copy(system.model.revision.topology),
+                copy(system.model.revision.slack),
+                copy(system.model.revision.dcModel),
+                copy(system.model.revision.dcOptimization),
+                copy(system.bus.layout.slack),
+                free
             )
         ),
         Extended(
@@ -291,6 +295,19 @@ solve!(analysis)
 ```
 """
 function solve!(analysis::DcOptimalPowerFlow)
+    revision = analysis.system.model.revision
+    signature = analysis.method.signature
+
+    if revision.topology != signature.topology ||
+        revision.slack != signature.slack ||
+        revision.dcModel != signature.dcModel ||
+        revision.dcOptimization != signature.dcOptimization
+        throw(ErrorException(
+            "The DC optimal power flow model cannot be reused because the power system changed " *
+            "without updating the analysis model."
+        ))
+    end
+
     jump = analysis.method.jump
     moi = backend(jump)
     var = analysis.method.variable

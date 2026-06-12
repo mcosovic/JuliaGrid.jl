@@ -319,4 +319,35 @@ end
         updateGenerator!(opf; label = 13)
         testReusing(opf)
     end
+
+    @testset "System-Only Changes" begin
+        staleSystem = powerSystem(path * "case14optimal.m")
+        cost!(staleSystem; generator = 3, active = 2, polynomial = [854.0, 116.0, 53.0])
+        staleOpf = dcOptimalPowerFlow(staleSystem, Ipopt.Optimizer)
+
+        updateBus!(staleSystem; label = 3, conductance = 0.2)
+        @test_throws ErrorException powerFlow!(staleOpf)
+
+        staleSystem = powerSystem(path * "case14optimal.m")
+        cost!(staleSystem; generator = 3, active = 2, polynomial = [854.0, 116.0, 53.0])
+        staleOpf = dcOptimalPowerFlow(staleSystem, Ipopt.Optimizer)
+
+        updateBranch!(staleSystem; label = 1, shiftAngle = 0.01)
+        @test_throws ErrorException powerFlow!(staleOpf)
+
+        staleSystem = powerSystem(path * "case14optimal.m")
+        cost!(staleSystem; generator = 3, active = 2, polynomial = [854.0, 116.0, 53.0])
+        staleOpf = dcOptimalPowerFlow(staleSystem, Ipopt.Optimizer)
+
+        cost!(staleSystem; generator = 4, active = 2, polynomial = [452.2; 31; 18])
+        @test_throws ErrorException powerFlow!(staleOpf)
+
+        staleSystem = powerSystem(path * "case14optimal.m")
+        cost!(staleSystem; generator = 3, active = 2, polynomial = [854.0, 116.0, 53.0])
+        staleOpf = dcOptimalPowerFlow(staleSystem, Ipopt.Optimizer)
+
+        cost!(staleSystem; generator = 4, reactive = 2, polynomial = [452.2; 31; 18])
+        powerFlow!(staleOpf)
+        @test is_solved_and_feasible(staleOpf.method.jump)
+    end
 end

@@ -226,10 +226,14 @@ function acOptimalPowerFlow(
                 )
             ),
             obj,
-            Dict(
-                :slack => copy(system.bus.layout.slack),
-                :freeP => freeP,
-                :freeQ => freeQ
+            AcOptimalPowerFlowSignature(
+                copy(system.model.revision.topology),
+                copy(system.model.revision.slack),
+                copy(system.model.revision.acModel),
+                copy(system.model.revision.acOptimization),
+                copy(system.bus.layout.slack),
+                freeP,
+                freeQ
             )
         ),
         Extended(
@@ -265,6 +269,19 @@ solve!(analysis)
 ```
 """
 function solve!(analysis::AcOptimalPowerFlow)
+    revision = analysis.system.model.revision
+    signature = analysis.method.signature
+
+    if revision.topology != signature.topology ||
+        revision.slack != signature.slack ||
+        revision.acModel != signature.acModel ||
+        revision.acOptimization != signature.acOptimization
+        throw(ErrorException(
+            "The AC optimal power flow model cannot be reused because the power system changed " *
+            "without updating the analysis model."
+        ))
+    end
+
     jump = analysis.method.jump
     moi = backend(jump)
     con = analysis.method.constraint

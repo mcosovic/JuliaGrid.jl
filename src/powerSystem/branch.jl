@@ -149,6 +149,8 @@ function addBranchMain!(system::PowerSystem, from::IntStr, to::IntStr, key::Bran
             dcNodalUpdate!(system, branch.number)
         end
     end
+
+    topologyChanged!(system)
 end
 
 """
@@ -169,22 +171,24 @@ addBranch!(analysis; from = 13, to = 14, reactance = 0.21, susceptance = 0.06)
 function addBranch!(analysis::PowerFlow; from::IntStr, to::IntStr, kwargs...)
     addBranchMain!(analysis.system, from, to, BranchKey(; kwargs...))
     _addBranch!(analysis)
+    syncTopology!(analysis)
 end
 
-function _addBranch!(analysis::AcPowerFlow{T}) where T <: Union{NewtonRaphson, GaussSeidel}
-    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
+function _addBranch!(analysis::AcPowerFlow{<:Union{NewtonRaphson, GaussSeidel}})
+    errorTypeConversion(analysis.system.model.revision.type, analysis.method.signature.type)
 end
 
 function _addBranch!(analysis::AcPowerFlow{FastNewtonRaphson})
-    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
+    errorTypeConversion(analysis.system.model.revision.type, analysis.method.signature.type)
 
     if analysis.system.branch.layout.status[analysis.system.branch.number] == 1
         jacobian(analysis.system, analysis, analysis.system.branch.number)
     end
+    analysis.method.signature.jacobian = copy(analysis.system.model.revision.acModel)
 end
 
 function _addBranch!(analysis::DcPowerFlow)
-    errorTypeConversion(analysis.system.bus.layout.slack, analysis.method.signature[:slack])
+    errorTypeConversion(analysis.system.model.revision.slack, analysis.method.signature.slack)
 end
 
 function _addBranch!(analysis::AcOptimalPowerFlow)
@@ -210,6 +214,12 @@ function _addBranch!(analysis::AcOptimalPowerFlow)
         addFlow(system, jump, var.voltage, con, expr, system.branch.number)
         addAngle(system, jump, var.voltage.angle, con.voltage.angle, expr.aff, system.branch.number)
     end
+
+    revision = system.model.revision
+    signature = analysis.method.signature
+    signature.topology = copy(revision.topology)
+    signature.acModel = copy(revision.acModel)
+    signature.acOptimization = copy(revision.acOptimization)
 end
 
 function _addBranch!(analysis::DcOptimalPowerFlow)
@@ -233,6 +243,12 @@ function _addBranch!(analysis::DcOptimalPowerFlow)
         addFlow(system, jump, var.voltage.angle, con.flow.active, expr, system.branch.number)
         addAngle(system, jump, var.voltage.angle, con.voltage.angle, expr, system.branch.number)
     end
+
+    revision = system.model.revision
+    signature = analysis.method.signature
+    signature.topology = copy(revision.topology)
+    signature.dcModel = copy(revision.dcModel)
+    signature.dcOptimization = copy(revision.dcOptimization)
 end
 
 """
@@ -349,8 +365,24 @@ function updateBranchMain!(system::PowerSystem, label::IntStr, key::BranchKey)
     end
 
     branch.layout.status[idx] = statusNew
+    if statusNew != statusOld
+        topologyChanged!(system)
+    end
 
     if system.bus.layout.optimal
+        if any(isset, (
+            key.minDiffAngle, key.maxDiffAngle, key.minFromBus, key.maxFromBus,
+            key.minToBus, key.maxToBus, key.type
+        ))
+            acOptimizationChanged!(system)
+        end
+        if any(isset, (
+            key.minDiffAngle, key.maxDiffAngle, key.minFromBus, key.maxFromBus,
+            key.type
+        ))
+            dcOptimizationChanged!(system)
+        end
+
         update!(branch.voltage.minDiffAngle, key.minDiffAngle, pfx.voltageAngle, 1.0, idx)
         update!(branch.voltage.maxDiffAngle, key.maxDiffAngle, pfx.voltageAngle, 1.0, idx)
         update!(branch.flow.type, key.type, idx)
@@ -387,10 +419,23 @@ addBranch!(analysis; from = "Bus 13 LV", to = "Bus 14 LV", reactance = 0.21)
 function updateBranch!(analysis::PowerFlow; label::IntStr, kwargs...)
     updateBranchMain!(analysis.system, label, BranchKey(; kwargs...))
     _updateBranch!(analysis, getIndex(analysis.system.branch, label, "branch"))
+    syncTopology!(analysis)
 end
 
-function _updateBranch!(analysis::AcPowerFlow{T}, ::Int64) where T <: Union{NewtonRaphson, GaussSeidel}
-    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
+function syncTopology!(analysis::Union{AcPowerFlow, DcPowerFlow})
+    analysis.method.signature.topology = copy(analysis.system.model.revision.topology)
+end
+
+function syncTopology!(analysis::DcOptimalPowerFlow)
+    analysis.method.signature.topology = copy(analysis.system.model.revision.topology)
+end
+
+function syncTopology!(analysis::AcOptimalPowerFlow)
+    analysis.method.signature.topology = copy(analysis.system.model.revision.topology)
+end
+
+function _updateBranch!(analysis::AcPowerFlow{<:Union{NewtonRaphson, GaussSeidel}}, ::Int64)
+    errorTypeConversion(analysis.system.model.revision.type, analysis.method.signature.type)
 end
 
 function _updateBranch!(analysis::AcPowerFlow{FastNewtonRaphson}, idx::Int64)
@@ -398,7 +443,7 @@ function _updateBranch!(analysis::AcPowerFlow{FastNewtonRaphson}, idx::Int64)
     jcbP = analysis.method.active.jacobian
     jcbQ = analysis.method.reactive.jacobian
 
-    errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
+    errorTypeConversion(system.model.revision.type, analysis.method.signature.type)
 
     from, to = fromto(system, idx)
 
@@ -454,10 +499,11 @@ function _updateBranch!(analysis::AcPowerFlow{FastNewtonRaphson}, idx::Int64)
             jcbQ[analysis.method.pq[i], analysis.method.pq[i]] += system.bus.shunt.susceptance[i]
         end
     end
+    analysis.method.signature.jacobian = copy(system.model.revision.acModel)
 end
 
 function _updateBranch!(analysis::DcPowerFlow, ::Int64)
-    errorTypeConversion(analysis.system.bus.layout.slack, analysis.method.signature[:slack])
+    errorTypeConversion(analysis.system.model.revision.slack, analysis.method.signature.slack)
 end
 
 function _updateBranch!(analysis::AcOptimalPowerFlow, idx::Int64)
@@ -487,6 +533,12 @@ function _updateBranch!(analysis::AcOptimalPowerFlow, idx::Int64)
         addFlow(system, jump, var.voltage, con, expr, idx)
         addAngle(system, jump, var.voltage.angle, con.voltage.angle, expr.aff, idx)
     end
+
+    revision = system.model.revision
+    signature = analysis.method.signature
+    signature.topology = copy(revision.topology)
+    signature.acModel = copy(revision.acModel)
+    signature.acOptimization = copy(revision.acOptimization)
 end
 
 function _updateBranch!(analysis::DcOptimalPowerFlow, idx::Int64)
@@ -513,12 +565,57 @@ function _updateBranch!(analysis::DcOptimalPowerFlow, idx::Int64)
         addFlow(system, jump, var.voltage.angle, con.flow.active, expr, idx)
         addAngle(system, jump, var.voltage.angle, con.voltage.angle, expr, idx)
     end
+
+    revision = system.model.revision
+    signature = analysis.method.signature
+    signature.topology = copy(revision.topology)
+    signature.dcModel = copy(revision.dcModel)
+    signature.dcOptimization = copy(revision.dcOptimization)
+end
+
+function branchTemplatePrefix(parameter::Symbol)
+    if parameter in (:resistance, :reactance)
+        return pfx.impedance
+    elseif parameter in (:conductance, :susceptance)
+        return pfx.admittance
+    elseif parameter in (:shiftAngle, :minDiffAngle, :maxDiffAngle)
+        return pfx.voltageAngle
+    elseif parameter in (:minFromBus, :maxFromBus, :minToBus, :maxToBus)
+        if template.branch.type == 1
+            return pfx.activePower
+        elseif template.branch.type in (2, 3)
+            return pfx.apparentPower
+        elseif template.branch.type in (4, 5)
+            return pfx.currentMagnitude
+        end
+    end
+end
+
+function setBranchTemplate!(parameter::Symbol, value)
+    if hasfield(BranchTemplate, parameter)
+        if parameter ∉ (:status, :type, :label, :turnsRatio)
+            container::ContainerTemplate = getfield(template.branch, parameter)
+            setContainerTemplate!(container, value, branchTemplatePrefix(parameter))
+        elseif parameter == :type
+            setfield!(template.branch, parameter, Int8(value))
+        elseif parameter == :status
+            setfield!(template.branch, parameter, Int8(value))
+        elseif parameter == :turnsRatio
+            setfield!(template.branch, parameter, Float64(value))
+        elseif parameter == :label
+            macroLabel(template.branch, value, "[?]")
+        end
+    else
+        errorTemplateKeyword(parameter)
+    end
 end
 
 """
     @branch(kwargs...)
 
 The macro generates a template for a branch.
+
+The macro modifies global JuliaGrid settings that remain active until changed again.
 
 # Keywords
 To define the branch template, the `kwargs` input arguments must be provided in accordance with the
@@ -557,58 +654,27 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 ```
 """
 macro branch(kwargs...)
-    kwargs_escaped = esc(kwargs)
+    typeExprs = Expr[]
+    exprs = Expr[]
 
-    quote
-        for kwarg in $kwargs_escaped
-            parameter::Symbol = kwarg.args[1]
-            if parameter == :type
-                setfield!(template.branch, parameter, Int8(eval(kwarg.args[2])))
-            end
+    for kwarg in kwargs
+        if !(kwarg isa Expr) || kwarg.head != :(=)
+            push!(exprs, :(errorTemplateKeyword($(QuoteNode(kwarg)))))
+            continue
         end
 
-        for kwarg in $kwargs_escaped
-            parameter::Symbol = kwarg.args[1]
+        parameter = kwarg.args[1]
+        value = kwarg.args[2]
+        call = :(setBranchTemplate!($(QuoteNode(parameter)), $(esc(value))))
 
-            if hasfield(BranchTemplate, parameter)
-                if parameter ∉ (:status, :type, :label, :turnsRatio)
-                    container::ContainerTemplate = getfield(template.branch, parameter)
-                    if parameter in (:resistance, :reactance)
-                        pfxLive = pfx.impedance
-                    elseif parameter in (:conductance, :susceptance)
-                        pfxLive = pfx.admittance
-                    elseif parameter in (:shiftAngle, :minDiffAngle, :maxDiffAngle)
-                        pfxLive = pfx.voltageAngle
-                    elseif parameter in (:minFromBus, :maxFromBus, :minToBus, :maxToBus)
-                        if template.branch.type == 1
-                            pfxLive = pfx.activePower
-                        elseif template.branch.type in (2, 3)
-                            pfxLive = pfx.apparentPower
-                        elseif template.branch.type in (4, 5)
-                            pfxLive = pfx.currentMagnitude
-                        end
-                    end
-                    if pfxLive != 0.0
-                        setfield!(container, :value, pfxLive * Float64(eval(kwarg.args[2])))
-                        setfield!(container, :pu, false)
-                    else
-                        setfield!(container, :value, Float64(eval(kwarg.args[2])))
-                        setfield!(container, :pu, true)
-                    end
-                else
-                    if parameter == :status
-                        setfield!(template.branch, parameter, Int8(eval(kwarg.args[2])))
-                    elseif parameter == :turnsRatio
-                        setfield!(template.branch, parameter, Float64(eval(kwarg.args[2])))
-                    elseif parameter == :label
-                        macroLabel(template.branch, kwarg.args[2], "[?]")
-                    end
-                end
-            else
-                errorTemplateKeyword(parameter)
-            end
+        if parameter == :type
+            push!(typeExprs, call)
+        else
+            push!(exprs, call)
         end
     end
+
+    return Expr(:block, typeExprs..., exprs...)
 end
 
 ##### Branch Flow Rating Type #####

@@ -1001,7 +1001,7 @@ analysis = acLavStateEstimation(monitoring, Ipopt.Optimizer; verbose = 1)
 solve!(analysis)
 ```
 """
-function solve!(analysis::AcStateEstimation{GaussNewton{T}}) where T <: WlsMethod
+function solve!(analysis::AcStateEstimation{<:GaussNewton})
     system = analysis.system
     bus = system.bus
     volt = analysis.voltage
@@ -1269,13 +1269,13 @@ stateEstimation!(analysis; iteration = 30, power = true, verbose = 1)
 ```
 """
 function stateEstimation!(
-    analysis::AcStateEstimation{GaussNewton{T}};
+    analysis::AcStateEstimation{<:GaussNewton};
     iteration::Int64 = 40,
     tolerance::Float64 = 1e-8,
     power::Bool = false,
     current::Bool = false,
     verbose::Int64 = template.config.verbose
-) where T <: WlsMethod
+)
 
     system = analysis.system
     converged = false

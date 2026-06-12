@@ -41,11 +41,13 @@ end
 end
 
 ##### Check File Format #####
-function macroLabel(container::Templates, label::Union{Symbol, String}, sym::String)
-    if label == :Int64 || label == :Integer
+function macroLabel(container::Templates, label::Union{Symbol, String, Type}, sym::String)
+    if label in (:Int64, :Integer, Int64, Integer)
         setfield!(container, :key, Int64)
-    elseif label == :String
+    elseif label in (:String, String)
         setfield!(container, :key, String)
+    elseif label isa Type
+        errorTemplateSymbol(sym)
     else
         label = string(label)
         if contains(label, Regex(sym))
@@ -57,9 +59,76 @@ function macroLabel(container::Templates, label::Union{Symbol, String}, sym::Str
     end
 end
 
+function setContainerTemplate!(
+    container::ContainerTemplate,
+    value,
+    pfxLive::Float64
+)
+    val = Float64(value)
+
+    if pfxLive != 0.0
+        setfield!(container, :value, pfxLive * val)
+        setfield!(container, :pu, false)
+    else
+        setfield!(container, :value, val)
+        setfield!(container, :pu, true)
+    end
+end
+
+function bump!(revision::SystemRevision, field::Symbol)
+    setfield!(revision, field, getfield(revision, field) + 1)
+end
+
+function bump!(revision::MeasurementRevision, field::Symbol = :measurement)
+    setfield!(revision, field, getfield(revision, field) + 1)
+end
+
+function topologyChanged!(system::PowerSystem)
+    bump!(system.model.revision, :topology)
+end
+
+function typeChanged!(system::PowerSystem)
+    bump!(system.model.revision, :type)
+end
+
+function slackChanged!(system::PowerSystem)
+    bump!(system.model.revision, :slack)
+end
+
+function acModelChanged!(system::PowerSystem)
+    bump!(system.model.revision, :acModel)
+end
+
+function acPatternChanged!(system::PowerSystem)
+    acModelChanged!(system)
+    bump!(system.model.revision, :acPattern)
+end
+
+function dcModelChanged!(system::PowerSystem)
+    bump!(system.model.revision, :dcModel)
+end
+
+function dcPatternChanged!(system::PowerSystem)
+    dcModelChanged!(system)
+    bump!(system.model.revision, :dcPattern)
+end
+
+function acOptimizationChanged!(system::PowerSystem)
+    bump!(system.model.revision, :acOptimization)
+end
+
+function dcOptimizationChanged!(system::PowerSystem)
+    bump!(system.model.revision, :dcOptimization)
+end
+
+function optimizationChanged!(system::PowerSystem)
+    acOptimizationChanged!(system)
+    dcOptimizationChanged!(system)
+end
+
 ##### Set String Label #####
 function setLabel(
-    component::Union{P, M},
+    component::Union{Component, Meter},
     label::String,
     ::String,
     ::String;
@@ -87,7 +156,7 @@ end
 
 ##### Set Integer Label #####
 function setLabel(
-    component::Union{P, M},
+    component::Union{Component, Meter},
     label::Int64,
     ::String,
     ::IntStr;
@@ -112,7 +181,7 @@ end
 
 ##### Set Missing Label #####
 function setLabel(
-    component::Union{P, M},
+    component::Union{Component, Meter},
     ::Missing,
     default::String,
     key::IntStr;
@@ -163,7 +232,7 @@ function typeLabel(::OrderedDict{Int64, Int64}, ::String, idx::Int64, ::String, 
 end
 
 ##### Get Label #####
-function getLabel(container::Union{P, M}, label::String, name::String)
+function getLabel(container::Union{Component, Meter}, label::String, name::String)
     if haskey(container.label, label)
         return label
     else
@@ -171,7 +240,7 @@ function getLabel(container::Union{P, M}, label::String, name::String)
     end
 end
 
-function getLabel(container::Union{P, M}, label::Int64, name::String)
+function getLabel(container::Union{Component, Meter}, label::Int64, name::String)
     label = typeLabel(container.label, label)
     if haskey(container.label, label)
         return label
@@ -185,11 +254,11 @@ function getLabel(container::LabelDict, idx::Int64)
 end
 
 ##### Get Index #####
-@inline function getIndex(container::Union{P, M}, label::String, name::String)
+@inline function getIndex(container::Union{Component, Meter}, label::String, name::String)
     container.label[getLabel(container, label, name)]
 end
 
-@inline function getIndex(container::Union{P, M}, label::Int64, name::String)
+@inline function getIndex(container::Union{Component, Meter}, label::Int64, name::String)
     container.label[getLabel(container, label, name)]
 end
 

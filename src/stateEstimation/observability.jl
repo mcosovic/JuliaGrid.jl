@@ -573,11 +573,11 @@ function connectionObservability(system::PowerSystem)
     end
 
     if !isempty(model.dc.nodalMatrix)
-        dropZeros!(model.dc)
+        dropZeros!(system, model.dc)
         rowval = model.dc.nodalMatrix.rowval
         colptr = model.dc.nodalMatrix.colptr
     else
-        dropZeros!(model.ac)
+        dropZeros!(system, model.ac)
         rowval = model.ac.nodalMatrix.rowval
         colptr = model.ac.nodalMatrix.colptr
     end
@@ -682,7 +682,7 @@ function pmuPlacement(
     )
 
     model!(system, ac)
-    dropZeros!(ac)
+    dropZeros!(system, ac)
 
     jump = JuMP.Model(optimizerFactory; add_bridges = bridge)
 

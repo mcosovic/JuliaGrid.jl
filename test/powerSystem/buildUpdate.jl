@@ -62,7 +62,6 @@
 
     ########## Update Power System ##########
     load = powerSystem(path * "update.m")
-    load.bus.layout.pattern = 1
 
     @testset "Update Buses" begin
         updateBus!(build; label = 1, conductance = 0.1, susceptance = -0.2, active = 0.3)
@@ -202,7 +201,6 @@ end
 
     ########## Update Power System ##########
     load = powerSystem(path * "update.m")
-    load.bus.layout.pattern = 1
     @base(load, MVA, kV)
 
     @testset "Update Buses" begin
@@ -559,14 +557,14 @@ end
         @test isempty(system.model.ac.nodalToFrom) == true
         @test isempty(system.model.ac.nodalToTo) == true
         @test isempty(system.model.ac.admittance) == true
-        @test system.model.ac.model == 1
-        @test system.model.ac.pattern == 1
+        @test system.model.revision.acModel == 1
+        @test system.model.revision.acPattern == 1
 
         @test isempty(system.model.dc.nodalMatrix) == true
         @test isempty(system.model.dc.admittance) == true
         @test isempty(system.model.dc.shiftPower) == true
-        @test system.model.dc.model == 1
-        @test system.model.dc.pattern == 1
+        @test system.model.revision.dcModel == 1
+        @test system.model.revision.dcPattern == 1
     end
 
     @testset "Printing Data" begin

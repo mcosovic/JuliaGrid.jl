@@ -1,8 +1,8 @@
 export LU, QR, LDLt, KLU
 export Analysis, AC, DC, WlsMethod, Normal, Orthogonal, PetersWilkinson
-export AcPowerFlow, NewtonRaphson, FastNewtonRaphson, GaussSeidel, DcPowerFlow
-export AcOptimalPowerFlow, DcOptimalPowerFlow
-export AcStateEstimation, GaussNewton, LAV
+export PowerFlow, AcPowerFlow, NewtonRaphson, FastNewtonRaphson, GaussSeidel, DcPowerFlow
+export OptimalPowerFlow, AcOptimalPowerFlow, DcOptimalPowerFlow
+export StateEstimation, AcStateEstimation, GaussNewton, LAV
 export DcStateEstimation, WLS
 export PmuStateEstimation
 export Island, PmuPlacement, ResidualTest, ChiTest
@@ -48,51 +48,51 @@ abstract type Normal <: WlsMethod end
 """
     Orthogonal <: WlsMethod
 
-An abstract type representing weighted least-squares state estimation, where the normal equation is
-solved using an orthogonal method. It is used as a type parameter in [`GaussNewton`](@ref GaussNewton)
-and [`WLS`](@ref WLS) models.
+A tag type used for selecting weighted least-squares state estimation solved with an orthogonal
+method. It is used as a type parameter in [`GaussNewton`](@ref GaussNewton) and [`WLS`](@ref WLS)
+models.
 """
-abstract type Orthogonal <: WlsMethod  end
+struct Orthogonal <: WlsMethod end
 
 """
     PetersWilkinson <: WlsMethod
 
-An abstract type representing weighted least-squares state estimation, where the normal equation is
-solved using an Peters and Wilkinson method. It is used as a type parameter in
-[`GaussNewton`](@ref GaussNewton) and [`WLS`](@ref WLS) models.
+A tag type used for selecting weighted least-squares state estimation solved with the Peters and
+Wilkinson method. It is used as a type parameter in [`GaussNewton`](@ref GaussNewton) and
+[`WLS`](@ref WLS) models.
 """
-abstract type PetersWilkinson <: WlsMethod end
+struct PetersWilkinson <: WlsMethod end
 
 """
     QR
 
-An abstract type used for representing QR factorization in JuliaGrid.
+A tag type used for selecting QR factorization in JuliaGrid.
 """
-abstract type QR <: Normal end
+struct QR <: Normal end
 
 """
     LU
 
-An abstract type used for representing LU factorization in JuliaGrid.
+A tag type used for selecting LU factorization in JuliaGrid.
 """
-abstract type LU <: Normal end
+struct LU <: Normal end
 
 """
     KLU
 
-An abstract type used for representing KLU factorization in JuliaGrid.
+A tag type used for selecting KLU factorization in JuliaGrid.
 """
-abstract type KLU <: Normal end
+struct KLU <: Normal end
 
 """
     LDLt
 
-An abstract type used for representing LDLt factorization in JuliaGrid.
+A tag type used for selecting LDLt factorization in JuliaGrid.
 """
-abstract type LDLt <: Normal end
+struct LDLt <: Normal end
 
 ##### Powers in the AC Framework #####
-mutable struct AcPower
+struct AcPower
     injection::Cartesian
     supply::Cartesian
     shunt::Cartesian
@@ -104,7 +104,7 @@ mutable struct AcPower
 end
 
 ##### Currents in the AC Framework #####
-mutable struct AcCurrent
+struct AcCurrent
     injection::Polar
     from::Polar
     to::Polar
@@ -112,12 +112,19 @@ mutable struct AcCurrent
 end
 
 ##### Powers in the DC Framework #####
-mutable struct DcPower
+struct DcPower
     injection::Real
     supply::Real
     from::Real
     to::Real
     generator::Real
+end
+
+##### Newton-Raphson #####
+mutable struct NewtonRaphsonSignature
+    topology::Int64
+    acPattern::Int64
+    type::Int64
 end
 
 """
@@ -133,7 +140,7 @@ flow model, which will be solved using the Newton-Raphson method.
 - `factorization::Factorization`: Factorization of the Jacobian matrix.
 - `pq::Vector{Int64}`: Indices related to demand buses.
 - `pvpq::Vector{Int64}`: Indices related to demand and generator buses.
-- `signature::Signature`: Tracks modifications in key variables.
+- `signature::NewtonRaphsonSignature`: Tracks topology, AC matrix pattern, and bus type revisions.
 - `iteration::Int64`: The iteration counter.
 """
 mutable struct NewtonRaphson
@@ -143,7 +150,7 @@ mutable struct NewtonRaphson
     factorization::FactorSparse
     pq::Vector{Int64}
     pvpq::Vector{Int64}
-    signature::Dict{Symbol, Int64}
+    signature::NewtonRaphsonSignature
     iteration::Int64
 end
 
@@ -153,6 +160,15 @@ mutable struct FastNewtonRaphsonModel
     mismatch::Vector{Float64}
     increment::Vector{Float64}
     factorization::FactorSparse
+end
+
+mutable struct FastNewtonRaphsonSignature
+    topology::Int64
+    jacobian::Int64
+    acModel::Int64
+    acPattern::Int64
+    type::Int64
+    susceptance::Dict{Int64, Float64}
 end
 
 """
@@ -167,7 +183,8 @@ will be solved using the fast Newton-Raphson method.
 - `reactive:FastNewtonRaphsonModel`: Jacobian, mismatches, and incrementes for active power equations.
 - `pq::Vector{Int64}`: Indices related to demand buses.
 - `pvpq::Vector{Int64}`: Indices related to demand and generator buses.
-- `signature::Signature`: Tracks modifications in key variables.
+- `signature::FastNewtonRaphsonSignature`: Tracks topology, the Fast Newton-Raphson Jacobian,
+  AC model, AC matrix pattern, bus type revisions, and demand-bus shunt susceptance corrections.
 - `bx::Bool`: Version of the method, either BX or XB.
 - `iteration::Int64`: The iteration counter.
 """
@@ -176,9 +193,15 @@ mutable struct FastNewtonRaphson
     reactive::FastNewtonRaphsonModel
     pq::Vector{Int64}
     pvpq::Vector{Int64}
-    signature::Signature
+    signature::FastNewtonRaphsonSignature
     const bx::Bool
     iteration::Int64
+end
+
+##### Gauss-Seidel #####
+mutable struct GaussSeidelSignature
+    topology::Int64
+    type::Int64
 end
 
 """
@@ -191,14 +214,14 @@ flow model, which will be solved using the Gauss-Seidel method.
 - `voltage::Vector{ComplexF64}`: Vector of complex voltage values.
 - `pq::Vector{Int64}`: Indices related to demand buses.
 - `pv::Vector{Int64}`: Indices related to generator buses.
-- `signature::Signature`: Tracks modifications in key variables.
+- `signature::GaussSeidelSignature`: Tracks topology and bus type revisions.
 - `iteration::Int64`: The iteration counter.
 """
 mutable struct GaussSeidel
     voltage::Vector{ComplexF64}
     pq::Vector{Int64}
     pv::Vector{Int64}
-    signature::Dict{Symbol, Int64}
+    signature::GaussSeidelSignature
     iteration::Int64
 end
 
@@ -226,9 +249,16 @@ struct AcPowerFlow{T <: Union{NewtonRaphson, FastNewtonRaphson, GaussSeidel}} <:
 end
 
 ##### DC Power Flow #####
+mutable struct DcPowerFlowSignature
+    topology::Int64
+    dcModel::Int64
+    dcPattern::Int64
+    slack::Int64
+end
+
 mutable struct DcPowerFlowMethod
     factorization::FactorSparse
-    signature::Dict{Symbol, Int64}
+    signature::DcPowerFlowSignature
 end
 
 """
@@ -256,7 +286,7 @@ struct AcVariableRef
     power::CartesianVariableRef
 end
 
-mutable struct AcFlowConstraintRef
+struct AcFlowConstraintRef
     from::ConDict
     to::ConDict
 end
@@ -282,19 +312,19 @@ struct AcConstraintRef
     piecewise::AcPiecewiseConstraintRef
 end
 
-mutable struct AcFlowDual
+struct AcFlowDual
     from::DualDict
     to::DualDict
 end
 
-mutable struct AcCapabilityDual
+struct AcCapabilityDual
     active::DualDict
     reactive::DualDict
     lower::DualDict
     upper::DualDict
 end
 
-mutable struct AcPiecewiseDual
+struct AcPiecewiseDual
     active::DualDictVec
     reactive::DualDictVec
 end
@@ -313,26 +343,36 @@ struct AcNonlinearExpr
     reactive::Dict{Int64, NonlinearExpr}
 end
 
-mutable struct AcObjective
+struct AcObjective
     quadratic::QuadExpr
     nonlinear::AcNonlinearExpr
 end
 
-mutable struct AcOptimalPowerFlowMethod
+mutable struct AcOptimalPowerFlowSignature
+    topology::Int64
+    slack::Int64
+    acModel::Int64
+    acOptimization::Int64
+    slackBus::Int64
+    freeP::Dict{Int64, Float64}
+    freeQ::Dict{Int64, Float64}
+end
+
+struct AcOptimalPowerFlowMethod
     jump::JuMP.Model
     variable::AcVariableRef
     constraint::AcConstraintRef
     dual::AcDual
     objective::AcObjective
-    signature::Signature
+    signature::AcOptimalPowerFlowSignature
 end
 
-mutable struct ExtendedDual
+struct ExtendedDual
     variable::OrderedDict{Int64, Dict{Symbol, Float64}}
     constraint::OrderedDict{Int64, Float64}
 end
 
-mutable struct Extended
+struct Extended
     solution::Vector{Float64}
     variable::OrderedDict{Int64, VariableRef}
     constraint:: OrderedDict{Int64, ConstraintRef}
@@ -353,7 +393,7 @@ the AC optimal power flow model.
 - `extended::Extended`: User-defined variables and constraints.
 - `system::PowerSystem`: The reference to the power system.
 """
-mutable struct AcOptimalPowerFlow <: AC
+struct AcOptimalPowerFlow <: AC
     voltage::Polar
     power::AcPower
     current::AcCurrent
@@ -381,7 +421,7 @@ struct DcConstraintRef
     piecewise::DcPiecewiseConstraintRef
 end
 
-mutable struct DcPiecewiseDual
+struct DcPiecewiseDual
     active::DualDictVec
 end
 
@@ -394,13 +434,22 @@ struct DcDual
     piecewise::DcPiecewiseDual
 end
 
-mutable struct DcOptimalPowerFlowMethod
+mutable struct DcOptimalPowerFlowSignature
+    topology::Int64
+    slack::Int64
+    dcModel::Int64
+    dcOptimization::Int64
+    slackBus::Int64
+    free::Dict{Int64, Float64}
+end
+
+struct DcOptimalPowerFlowMethod
     jump::JuMP.Model
     variable::DcVariableRef
     constraint::DcConstraintRef
     dual::DcDual
     objective::QuadExpr
-    signature::Signature
+    signature::DcOptimalPowerFlowSignature
 end
 
 """
@@ -416,7 +465,7 @@ the DC optimal power flow model.
 - `extended::Extended`: User-defined variables and constraints.
 - `system::PowerSystem`: The reference to the power system.
 """
-mutable struct DcOptimalPowerFlow <: DC
+struct DcOptimalPowerFlow <: DC
     voltage::Angle
     power::DcPower
     method::DcOptimalPowerFlowMethod
@@ -447,7 +496,7 @@ mutable struct WLS{T <: WlsMethod}
     index::OrderedDict{Int64, Int64}
     number::Int64
     inservice::Int64
-    signature::Dict{Symbol, Union{Int64, Bool}}
+    signature::Signature
 end
 
 """
@@ -480,7 +529,7 @@ mutable struct GaussNewton{T <: WlsMethod}
     type::Vector{Int8}
     index::Vector{Int64}
     range::Vector{Int64}
-    signature::Dict{Symbol, Int64}
+    signature::Signature
     objective::Float64
     iteration::Int64
 end
@@ -508,7 +557,7 @@ A composite type representing a least absolute value state estimation model.
 - `range::Vector{Int64}`: Range of measurement devices.
 - `number::Int64`: Total number of measurement devices.
 """
-mutable struct LAV
+struct LAV
     jump::JuMP.Model
     variable::LavVariableRef
     residual::Dict{Int64, ConstraintRef}
@@ -624,7 +673,7 @@ optimal PMU placement.
 - `from::LabelDict`: Phasor measurement placement at from-buses.
 - `to::LabelDict`: Phasor measurement placement at to-buses.
 """
-mutable struct PmuPlacement
+struct PmuPlacement
     bus::LabelDict
     from::LabelDict
     to::LabelDict
@@ -660,13 +709,35 @@ the Chi-squared bad data detection test.
 - `threshold::Float64`: Chi-squared critical value.
 - `objective::Float64`: Objective function value from WLS state estimation.
 """
-mutable struct ChiTest
+struct ChiTest
     detect::Bool
-    treshold::Float64
+    threshold::Float64
     objective::Float64
 end
 
 ##### Types #####
+"""
+    PowerFlow
+
+A type alias for power-flow analyses, including AC and DC formulations as well as their
+optimization-based variants. It groups [`AcPowerFlow`](@ref AcPowerFlow),
+[`DcPowerFlow`](@ref DcPowerFlow), [`AcOptimalPowerFlow`](@ref AcOptimalPowerFlow), and
+[`DcOptimalPowerFlow`](@ref DcOptimalPowerFlow).
+"""
 const PowerFlow = Union{AcPowerFlow, DcPowerFlow, AcOptimalPowerFlow, DcOptimalPowerFlow}
-const StateEstimation = Union{AcStateEstimation, DcStateEstimation}
+
+"""
+    StateEstimation
+
+A type alias for state-estimation analyses. It groups [`AcStateEstimation`](@ref AcStateEstimation),
+[`PmuStateEstimation`](@ref PmuStateEstimation), and [`DcStateEstimation`](@ref DcStateEstimation).
+"""
+const StateEstimation = Union{AcStateEstimation, DcStateEstimation, PmuStateEstimation}
+
+"""
+    OptimalPowerFlow
+
+A type alias for optimal power-flow analyses. It groups [`AcOptimalPowerFlow`](@ref AcOptimalPowerFlow)
+and [`DcOptimalPowerFlow`](@ref DcOptimalPowerFlow).
+"""
 const OptimalPowerFlow = Union{AcOptimalPowerFlow, DcOptimalPowerFlow}

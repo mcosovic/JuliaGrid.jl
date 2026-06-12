@@ -120,6 +120,8 @@ function addGeneratorMain!(system::PowerSystem, bus::IntStr, key::GeneratorKey)
 
     push!(gen.cost.active.model, 0)
     push!(gen.cost.reactive.model, 0)
+
+    topologyChanged!(system)
 end
 
 """
@@ -140,14 +142,15 @@ addGenerator!(analysis; bus = 1, active = 0.5, reactive = 0.2)
 function addGenerator!(analysis::PowerFlow; bus::IntStr, kwargs...)
     addGeneratorMain!(analysis.system, bus, GeneratorKey(; kwargs...))
     _addGenerator!(analysis)
+    syncTopology!(analysis)
 end
 
 function _addGenerator!(analysis::AcPowerFlow)
-    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
+    errorTypeConversion(analysis.system.model.revision.type, analysis.method.signature.type)
 end
 
 function _addGenerator!(analysis::DcPowerFlow)
-    errorTypeConversion(analysis.system.bus.layout.slack, analysis.method.signature[:slack])
+    errorTypeConversion(analysis.system.model.revision.slack, analysis.method.signature.slack)
 end
 
 function _addGenerator!(analysis::AcOptimalPowerFlow)
@@ -182,6 +185,11 @@ function _addGenerator!(analysis::AcOptimalPowerFlow)
     remove!(jump, moi, con.balance.active, dual.balance.active, idxBus)
     remove!(jump, moi, con.balance.reactive, dual.balance.reactive, idxBus)
     addBalance(system, jump, var, con, idxBus)
+
+    revision = system.model.revision
+    signature = analysis.method.signature
+    signature.topology = copy(revision.topology)
+    signature.acOptimization = copy(revision.acOptimization)
 end
 
 function _addGenerator!(analysis::DcOptimalPowerFlow)
@@ -206,6 +214,11 @@ function _addGenerator!(analysis::DcOptimalPowerFlow)
 
     remove!(jump, moi, con.balance.active, analysis.method.dual.balance.active, idxBus)
     addBalance(system, jump, var, con, AffExpr(), idxBus)
+
+    revision = system.model.revision
+    signature = analysis.method.signature
+    signature.topology = copy(revision.topology)
+    signature.dcOptimization = copy(revision.dcOptimization)
 end
 
 """
@@ -255,6 +268,16 @@ function updateGeneratorMain!(system::PowerSystem, label::IntStr, key::Generator
         statusNew = copy(statusOld)
     end
     checkStatus(statusNew)
+
+    if statusNew != statusOld || any(isset, (key.active, key.minActive, key.maxActive))
+        optimizationChanged!(system)
+    end
+    if any(isset, (
+        key.reactive, key.minReactive, key.maxReactive, key.lowActive, key.upActive,
+        key.minLowReactive, key.maxLowReactive, key.minUpReactive, key.maxUpReactive
+    ))
+        acOptimizationChanged!(system)
+    end
 
     baseInv = 1 / (system.base.power.value * system.base.power.prefix)
     output = isset(key.active) || isset(key.reactive)
@@ -341,13 +364,14 @@ addGenerator!(analysis; bus = "Bus 1 HV", active = 0.5, reactive = 0.2)
 function updateGenerator!(analysis::PowerFlow; label::IntStr, kwargs...)
     updateGeneratorMain!(analysis.system, label, GeneratorKey(; kwargs...))
     _updateGenerator!(analysis, getIndex(analysis.system.generator, label, "generator"))
+    syncTopology!(analysis)
 end
 
-function _updateGenerator!(analysis::AcPowerFlow{T}, idx::Int64) where T <: Union{NewtonRaphson, FastNewtonRaphson}
+function _updateGenerator!(analysis::AcPowerFlow{<:Union{NewtonRaphson, FastNewtonRaphson}}, idx::Int64)
     system = analysis.system
     gen = system.generator
 
-    errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
+    errorTypeConversion(system.model.revision.type, analysis.method.signature.type)
 
     idxBus = gen.layout.bus[idx]
 
@@ -368,7 +392,7 @@ function _updateGenerator!(analysis::AcPowerFlow{GaussSeidel}, idx::Int64)
     bus = system.bus
     gen = system.generator
 
-    errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
+    errorTypeConversion(system.model.revision.type, analysis.method.signature.type)
 
     idxBus = gen.layout.bus[idx]
 
@@ -390,7 +414,7 @@ function _updateGenerator!(analysis::DcPowerFlow, idx::Int64)
     system = analysis.system
     gen = system.generator
 
-    errorTypeConversion(system.bus.layout.slack, analysis.method.signature[:slack])
+    errorTypeConversion(system.model.revision.slack, analysis.method.signature.slack)
 
     idxBus = gen.layout.bus[idx]
 
@@ -418,8 +442,8 @@ function _updateGenerator!(analysis::AcOptimalPowerFlow, idx::Int64)
     H = var.power.actwise
     G = var.power.reactwise
 
-    freeP = analysis.method.signature[:freeP]
-    freeQ = analysis.method.signature[:freeQ]
+    freeP = analysis.method.signature.freeP
+    freeQ = analysis.method.signature.freeQ
 
     idxBus = system.generator.layout.bus[idx]
 
@@ -464,6 +488,11 @@ function _updateGenerator!(analysis::AcOptimalPowerFlow, idx::Int64)
     remove!(jump, moi, con.balance.active, dual.balance.active, idxBus)
     remove!(jump, moi, con.balance.reactive, dual.balance.reactive, idxBus)
     addBalance(system, jump, var, con, idxBus)
+
+    revision = system.model.revision
+    signature = analysis.method.signature
+    signature.topology = copy(revision.topology)
+    signature.acOptimization = copy(revision.acOptimization)
 end
 
 function _updateGenerator!(analysis::DcOptimalPowerFlow, idx::Int64)
@@ -479,7 +508,7 @@ function _updateGenerator!(analysis::DcOptimalPowerFlow, idx::Int64)
     dual = analysis.method.dual
     obj = analysis.method.objective
 
-    free = analysis.method.signature[:free]
+    free = analysis.method.signature.free
     actwise = jump.ext[:actwise]
 
     idxBus = system.generator.layout.bus[idx]
@@ -507,12 +536,47 @@ function _updateGenerator!(analysis::DcOptimalPowerFlow, idx::Int64)
 
     remove!(jump, moi, con.balance.active, analysis.method.dual.balance.active, idxBus)
     addBalance(system, jump, analysis.method.variable, con, AffExpr(), idxBus)
+
+    revision = system.model.revision
+    signature = analysis.method.signature
+    signature.topology = copy(revision.topology)
+    signature.dcOptimization = copy(revision.dcOptimization)
+end
+
+function generatorTemplatePrefix(parameter::Symbol)
+    if parameter in (:active, :minActive, :maxActive, :lowActive, :upActive)
+        return pfx.activePower
+    elseif parameter in (
+        :reactive, :minReactive, :maxReactive, :minLowReactive,
+        :maxLowReactive, :minUpReactive, :maxUpReactive
+        )
+        return pfx.reactivePower
+    elseif parameter == :magnitude
+        return pfx.voltageMagnitude
+    end
+end
+
+function setGeneratorTemplate!(parameter::Symbol, value)
+    if hasfield(GeneratorTemplate, parameter)
+        if parameter ∉ (:status, :label)
+            container::ContainerTemplate = getfield(template.generator, parameter)
+            setContainerTemplate!(container, value, generatorTemplatePrefix(parameter))
+        elseif parameter == :status
+            setfield!(template.generator, parameter, Int8(value))
+        elseif parameter == :label
+            macroLabel(template.generator, value, "[?]")
+        end
+    else
+        errorTemplateKeyword(parameter)
+    end
 end
 
 """
     @generator(kwargs...)
 
 The macro generates a template for a generator.
+
+The macro modifies global JuliaGrid settings that remain active until changed again.
 
 # Keywords
 To define the generator template, the `kwargs` input arguments must be provided in accordance with
@@ -550,43 +614,18 @@ addGenerator!(system; label = "Generator 1", bus = "Bus 1", active = 50, reactiv
 ```
 """
 macro generator(kwargs...)
-    quote
-        for kwarg in $(esc(kwargs))
-            parameter::Symbol = kwarg.args[1]
-
-            if hasfield(GeneratorTemplate, parameter)
-                if parameter ∉ (:status, :label)
-                    container::ContainerTemplate = getfield(template.generator, parameter)
-
-                    if parameter in (:active, :minActive, :maxActive, :lowActive, :upActive)
-                        pfxLive = pfx.activePower
-                    elseif parameter in (
-                        :reactive, :minReactive, :maxReactive, :minLowReactive,
-                        :maxLowReactive, :minUpReactive, :maxUpReactive
-                        )
-                        pfxLive = pfx.reactivePower
-                    elseif parameter == :magnitude
-                        pfxLive = pfx.voltageMagnitude
-                    end
-                    if pfxLive != 0.0
-                        setfield!(container, :value, pfxLive * Float64(eval(kwarg.args[2])))
-                        setfield!(container, :pu, false)
-                    else
-                        setfield!(container, :value, Float64(eval(kwarg.args[2])))
-                        setfield!(container, :pu, true)
-                    end
-                else
-                    if parameter == :status
-                        setfield!(template.generator, parameter, Int8(eval(kwarg.args[2])))
-                    elseif parameter == :label
-                        macroLabel(template.generator, kwarg.args[2], "[?]")
-                    end
-                end
-            else
-                errorTemplateKeyword(parameter)
-            end
+    exprs = map(kwargs) do kwarg
+        if !(kwarg isa Expr) || kwarg.head != :(=)
+            return :(errorTemplateKeyword($(QuoteNode(kwarg))))
         end
+
+        parameter = kwarg.args[1]
+        value = kwarg.args[2]
+
+        :(setGeneratorTemplate!($(QuoteNode(parameter)), $(esc(value))))
     end
+
+    return Expr(:block, exprs...)
 end
 
 """
@@ -663,6 +702,12 @@ function costMain!(system::PowerSystem, generator::IntStr, key::CostKey)
     end
 
     idx = getIndex(system.generator, generator, "generator")
+
+    if isset(key.active)
+        optimizationChanged!(system)
+    elseif isset(key.reactive)
+        acOptimizationChanged!(system)
+    end
 
     if isset(key.active)
         container = system.generator.cost.active
@@ -744,8 +789,8 @@ function _cost!(analysis::AcOptimalPowerFlow, idx::Int64)
     H = var.power.actwise
     G = var.power.reactwise
 
-    freeP = analysis.method.signature[:freeP]
-    freeQ = analysis.method.signature[:freeQ]
+    freeP = analysis.method.signature.freeP
+    freeQ = analysis.method.signature.freeQ
 
     if system.generator.layout.status[idx] == 1
         @objective(jump, Min, 0.0)
@@ -758,6 +803,8 @@ function _cost!(analysis::AcOptimalPowerFlow, idx::Int64)
     end
 
     setObjective(jump, obj)
+
+    analysis.method.signature.acOptimization = copy(system.model.revision.acOptimization)
 end
 
 function _cost!(analysis::DcOptimalPowerFlow, idx::Int64)
@@ -772,7 +819,7 @@ function _cost!(analysis::DcOptimalPowerFlow, idx::Int64)
     dual = analysis.method.dual.piecewise
     obj = analysis.method.objective
 
-    free = analysis.method.signature[:free]
+    free = analysis.method.signature.free
     actwise = jump.ext[:actwise]
 
     if system.generator.layout.status[idx] == 1
@@ -781,4 +828,6 @@ function _cost!(analysis::DcOptimalPowerFlow, idx::Int64)
         addObjective(system, cost, jump, power, helper, con, obj, free, idx)
         set_objective_function(jump, obj)
     end
+
+    analysis.method.signature.dcOptimization = copy(system.model.revision.dcOptimization)
 end

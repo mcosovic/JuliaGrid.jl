@@ -529,12 +529,12 @@ stateEstimation!(analysis; iteration = 30, tolerance = 1e-6, verbose = 1)
 ```
 """
 function stateEstimation!(
-    analysis::DcStateEstimation{WLS{T}};
+    analysis::DcStateEstimation{<:WLS};
     iteration::IntMiss = missing,
     tolerance::FltIntMiss = missing,
     power::Bool = false,
     verbose::Int64 = template.config.verbose
-) where T <: WlsMethod
+)
 
     system = analysis.system
     printMiddle(system, analysis, verbose)

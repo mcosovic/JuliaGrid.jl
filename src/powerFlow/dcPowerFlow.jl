@@ -56,10 +56,11 @@ function dcPowerFlow(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, 
         ),
         DcPowerFlowMethod(
             selectFactorization(T),
-            Dict(
-                :dcmodel => -1,
-                :pattern => -1,
-                :slack => copy(system.bus.layout.slack)
+            DcPowerFlowSignature(
+                copy(system.model.revision.topology),
+                -1,
+                -1,
+                copy(system.model.revision.slack)
             )
         ),
         system
@@ -87,6 +88,7 @@ function solve!(analysis::DcPowerFlow)
     system = analysis.system
     bus = system.bus
     dc = system.model.dc
+    revision = system.model.revision
     pf = analysis.method
 
     b = copy(bus.supply.active)
@@ -94,16 +96,22 @@ function solve!(analysis::DcPowerFlow)
         b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + dc.shiftPower[i]
     end
 
-    if dc.model != pf.signature[:dcmodel]
-        pf.signature[:dcmodel] = copy(dc.model)
+    if revision.topology != pf.signature.topology
+        errorTypeConversion()
+    end
+
+    slackChanged = revision.slack != pf.signature.slack
+    if revision.dcModel != pf.signature.dcModel || slackChanged
+        pf.signature.dcModel = copy(revision.dcModel)
+        pf.signature.slack = copy(revision.slack)
 
         removeIdx, removeVal = removeRowColumn(dc.nodalMatrix, bus.layout.slack)
         dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
 
-        if dc.pattern == pf.signature[:pattern]
+        if revision.dcPattern == pf.signature.dcPattern && !slackChanged
             pf.factorization = factorization!(dc.nodalMatrix, pf.factorization)
         else
-            pf.signature[:pattern] = copy(dc.pattern)
+            pf.signature.dcPattern = copy(revision.dcPattern)
             pf.factorization = factorization(dc.nodalMatrix, pf.factorization)
         end
 

@@ -124,7 +124,7 @@ end
 
 
 ##### Save Label #####
-function saveLabel(monitoring::M, file::File; fid::String = "")
+function saveLabel(monitoring::Meter, file::File; fid::String = "")
     fidLabel = fid * "/label"
 
     write(file, fidLabel, collect(keys(monitoring.label)))

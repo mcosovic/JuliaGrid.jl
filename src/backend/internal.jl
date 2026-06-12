@@ -4,6 +4,8 @@
 By default, the units for base power and base voltages are set to volt-ampere (VA) and volt (V), but
 users can modify the prefixes using the macro.
 
+The macro modifies global JuliaGrid settings that remain active until changed again.
+
 Prefixes must be specified according to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
 and should be included with the unit of `power` (VA) or unit of `voltage` (V). Keep in mind that the
 macro must be used after creating the type `PowerSystem`.
@@ -44,6 +46,8 @@ end
 JuliaGrid stores all data related with powers in per-units, and these cannot be altered. However, the
 power units of the built-in functions used to add or modified power system elements can be modified
 using the macro.
+
+The macro modifies global JuliaGrid settings that remain active until changed again.
 
 Prefixes must be specified according to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
 and should be included with the unit of `active` power (W), `reactive` power (VAr), or `apparent` power
@@ -105,6 +109,8 @@ JuliaGrid stores all data related with voltages in per-units and radians, and th
 However, the voltage magnitude and angle units of the built-in functions used to add or modified power
 system elements can be modified using the macro.
 
+The macro modifies global JuliaGrid settings that remain active until changed again.
+
 The prefixes must adhere to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and
 should be specified along with the unit of voltage, either `magnitude` (V) or `base` (V).
 Alternatively, the unit of voltage `magnitude` can be expressed in per-unit (pu). The unit of voltage
@@ -159,6 +165,8 @@ JuliaGrid stores all data related with currents in per-units and radians, and th
 However, the current magnitude and angle units of the built-in functions used to add or modified
 measurement devices can be modified using the macro.
 
+The macro modifies global JuliaGrid settings that remain active until changed again.
+
 The prefixes must adhere to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes) and
 should be specified along with the unit of current `magnitude` (V). Alternatively, the unit of current
 `magnitude` can be expressed in per-unit (pu). The unit of current angle should be in radians (rad)
@@ -203,6 +211,8 @@ JuliaGrid stores all data related with impedances and admittancies in per-units,
 altered. However, units of impedance and admittance of the built-in functions used to add or modified
 power system elements can be modified using the macro.
 
+The macro modifies global JuliaGrid settings that remain active until changed again.
+
 Prefixes must be specified according to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
 and should be included with the unit of `impedance` (Ω) or unit of `admittance` (S). The second option
 is to define the units in per-unit (pu).
@@ -235,10 +245,33 @@ macro parameter(impedance::Symbol = :pu, admittance::Symbol = :pu)
     end
 end
 
+function setConfigTemplate!(parameter::Symbol, value)
+    if parameter == :label
+        if value == Integer || value == Int64 || value == :Integer || value == :Int64
+            datatype = Int64
+        else
+            datatype = String
+        end
+
+        setfield!(template.bus, :key, datatype)
+        setfield!(template.branch, :key, datatype)
+        setfield!(template.generator, :key, datatype)
+        setfield!(template.voltmeter, :key, datatype)
+        setfield!(template.ammeter, :key, datatype)
+        setfield!(template.wattmeter, :key, datatype)
+        setfield!(template.varmeter, :key, datatype)
+        setfield!(template.pmu, :key, datatype)
+    elseif parameter == :verbose
+        setfield!(template.config, :verbose, Int64(value))
+    end
+end
+
 """
     @config(label, verbose)
 
 The macro defines general configuration settings for JuliaGrid.
+
+The macro modifies global JuliaGrid settings that remain active until changed again.
 
 By default, JuliaGrid stores all labels as strings in ordered dictionaries. However, users can choose
 to store labels as integers, which can be a more efficient option for large-scale systems.
@@ -262,33 +295,18 @@ Set labels as strings and enable detailed data printing:
 ```
 """
 macro config(kwargs...)
-    quote
-        for kwarg in $(esc(kwargs))
-            parameter::Symbol = kwarg.args[1]
-
-            if parameter == :label || parameter == :verbose
-                if parameter == :label
-                    type = kwarg.args[2]
-                    if type == :Integer || type == :Int64
-                        datatype = Int64
-                    else
-                        datatype = String
-                    end
-                    setfield!(template.bus, :key, datatype)
-                    setfield!(template.branch, :key, datatype)
-                    setfield!(template.generator, :key, datatype)
-                    setfield!(template.voltmeter, :key, datatype)
-                    setfield!(template.ammeter, :key, datatype)
-                    setfield!(template.wattmeter, :key, datatype)
-                    setfield!(template.varmeter, :key, datatype)
-                    setfield!(template.pmu, :key, datatype)
-                end
-                if parameter == :verbose
-                    setfield!(template.config, :verbose, Int64(eval(kwarg.args[2])))
-                end
-            end
+    exprs = map(kwargs) do kwarg
+        if !(kwarg isa Expr) || kwarg.head != :(=)
+            return :(nothing)
         end
+
+        parameter = kwarg.args[1]
+        value = kwarg.args[2]
+
+        :(setConfigTemplate!($(QuoteNode(parameter)), $(esc(value))))
     end
+
+    return Expr(:block, exprs...)
 end
 
 ##### Parse Suffix (Unit) #####
@@ -327,10 +345,98 @@ function parsePrefix(input::String, suffix::String)
     return scale
 end
 
+function resetPowerUnit!()
+    pfx.activePower = 0.0
+    pfx.reactivePower = 0.0
+    pfx.apparentPower = 0.0
+    unitList.activePowerLive = "pu"
+    unitList.reactivePowerLive = "pu"
+    unitList.apparentPowerLive = "pu"
+end
+
+function resetVoltageUnit!()
+    pfx.voltageMagnitude = 0.0
+    pfx.voltageAngle = 0.0
+    pfx.baseVoltage = 1.0
+    unitList.voltageMagnitudeLive = "pu"
+    unitList.voltageAngleLive = "rad"
+    unitList.voltageBaseLive = "V"
+end
+
+function resetCurrentUnit!()
+    pfx.currentMagnitude = 0.0
+    pfx.currentAngle = 0.0
+    unitList.currentMagnitudeLive = "pu"
+    unitList.currentAngleLive = "rad"
+end
+
+function resetParameterUnit!()
+    pfx.impedance = 0.0
+    pfx.admittance = 0.0
+    unitList.impedanceLive = "pu"
+    unitList.admittanceLive = "pu"
+end
+
+function copyTemplate!(dst::ContainerTemplate, src::ContainerTemplate)
+    dst.value = src.value
+    dst.pu = src.pu
+end
+
+function copyTemplate!(dst, src)
+    for field in fieldnames(typeof(src))
+        srcValue = getfield(src, field)
+        dstValue = getfield(dst, field)
+
+        if srcValue isa ContainerTemplate && dstValue isa ContainerTemplate
+            copyTemplate!(dstValue, srcValue)
+        else
+            setfield!(dst, field, srcValue)
+        end
+    end
+end
+
+function resetBusTemplate!()
+    copyTemplate!(template.bus, BusTemplate(; area = 1, lossZone = 1))
+end
+
+function resetBranchTemplate!()
+    copyTemplate!(template.branch, BranchTemplate())
+end
+
+function resetGeneratorTemplate!()
+    copyTemplate!(template.generator, GeneratorTemplate())
+end
+
+function resetVoltmeterTemplate!()
+    copyTemplate!(template.voltmeter, VoltmeterTemplate())
+end
+
+function resetAmmeterTemplate!()
+    copyTemplate!(template.ammeter, AmmeterTemplate())
+end
+
+function resetWattmeterTemplate!()
+    copyTemplate!(template.wattmeter, WattmeterTemplate())
+end
+
+function resetVarmeterTemplate!()
+    copyTemplate!(template.varmeter, VarmeterTemplate())
+end
+
+function resetPmuTemplate!()
+    copyTemplate!(template.pmu, PmuTemplate())
+end
+
+function resetConfigTemplate!()
+    copyTemplate!(template.config, ConfigTemplate())
+end
+
 """
     @default(mode)
 
 The macro is designed to reset various settings to their default values.
+
+The macro modifies global JuliaGrid settings that remain active until changed again.
 
 The `mode` argument can take on the following values:
 * `unit`: Restores all units to their default settings.
@@ -357,225 +463,55 @@ macro default(mode::Symbol)
         local mode = $(QuoteNode(mode))
 
         if mode == :unit || mode == :power
-            pfx.activePower = 0.0
-            pfx.reactivePower = 0.0
-            pfx.apparentPower = 0.0
-            unitList.activePowerLive = "pu"
-            unitList.reactivePowerLive = "pu"
-            unitList.activePowerLive = "pu"
+            resetPowerUnit!()
         end
 
         if mode == :unit || mode == :voltage
-            pfx.voltageMagnitude = 0.0
-            pfx.voltageAngle = 0.0
-            pfx.baseVoltage = 1.0
-            unitList.voltageMagnitudeLive = "pu"
-            unitList.voltageAngleLive = "rad"
-            unitList.voltageBaseLive = "V"
+            resetVoltageUnit!()
         end
 
         if mode == :unit || mode == :current
-            pfx.currentMagnitude = 0.0
-            pfx.currentAngle = 0.0
-            unitList.currentMagnitudeLive = "pu"
-            unitList.currentAngleLive = "rad"
+            resetCurrentUnit!()
         end
 
         if mode == :unit || mode == :parameter
-            pfx.impedance = 0.0
-            pfx.admittance = 0.0
-            unitList.impedanceLive = "pu"
-            unitList.admittanceLive = "pu"
+            resetParameterUnit!()
         end
 
         if mode == :template || mode == :bus
-            template.bus.active.value = 0.0
-            template.bus.active.pu = true
-            template.bus.reactive.value = 0.0
-            template.bus.reactive.pu = true
-
-            template.bus.conductance.value = 0.0
-            template.bus.conductance.pu = true
-            template.bus.susceptance.value = 0.0
-            template.bus.susceptance.pu = true
-
-            template.bus.magnitude.value = 1.0
-            template.bus.magnitude.pu = true
-            template.bus.minMagnitude.value = 0.9
-            template.bus.minMagnitude.pu = true
-            template.bus.maxMagnitude.value = 1.1
-            template.bus.maxMagnitude.pu = true
-
-            template.bus.angle.value = 0.0
-            template.bus.angle.pu = true
-
-            template.bus.base = 138e3
-            template.bus.type = Int8(1)
-            template.bus.area = 1
-            template.bus.lossZone = 1
-            template.bus.label = "?"
-            template.bus.key = String
+            resetBusTemplate!()
         end
 
         if mode == :template || mode == :branch
-            template.branch.resistance.value = 0.0
-            template.branch.resistance.pu = true
-            template.branch.reactance.value = 0.0
-            template.branch.reactance.pu = true
-            template.branch.conductance.value = 0.0
-            template.branch.conductance.pu = true
-            template.branch.susceptance.value = 0.0
-            template.branch.susceptance.pu = true
-            template.branch.shiftAngle.value = 0.0
-            template.branch.shiftAngle.pu = true
-
-            template.branch.minDiffAngle.value = -2*pi
-            template.branch.minDiffAngle.pu = true
-            template.branch.maxDiffAngle.value = 2*pi
-            template.branch.maxDiffAngle.pu = true
-
-            template.branch.minFromBus.value = 0.0
-            template.branch.minFromBus.pu = true
-            template.branch.maxFromBus.value = 0.0
-            template.branch.maxFromBus.pu = true
-            template.branch.minToBus.value = 0.0
-            template.branch.minToBus.pu = true
-            template.branch.maxToBus.value = 0.0
-            template.branch.maxToBus.pu = true
-
-            template.branch.turnsRatio = 1.0
-            template.branch.status = Int8(1)
-            template.branch.type = Int8(3)
-            template.branch.label = "?"
-            template.branch.key = String
+            resetBranchTemplate!()
         end
 
         if mode == :template || mode == :generator
-            template.generator.active.value = 0.0
-            template.generator.active.pu = true
-            template.generator.reactive.value = 0.0
-            template.generator.reactive.pu = true
-
-            template.generator.magnitude.value = 1.0
-            template.generator.magnitude.pu = true
-
-            template.generator.minActive.value = 0.0
-            template.generator.minActive.pu = true
-            template.generator.maxActive.value = NaN
-            template.generator.maxActive.pu = true
-            template.generator.minReactive.value = NaN
-            template.generator.minReactive.pu = true
-            template.generator.maxReactive.value = NaN
-            template.generator.maxReactive.pu = true
-
-            template.generator.lowActive.value = 0.0
-            template.generator.lowActive.pu = true
-            template.generator.minLowReactive.value = 0.0
-            template.generator.minLowReactive.pu = true
-            template.generator.maxLowReactive.value = 0.0
-            template.generator.maxLowReactive.pu = true
-
-            template.generator.upActive.value = 0.0
-            template.generator.upActive.pu = true
-            template.generator.minUpReactive.value = 0.0
-            template.generator.minUpReactive.pu = true
-            template.generator.maxUpReactive.value = 0.0
-            template.generator.maxUpReactive.pu = true
-
-            template.generator.status = Int8(1)
-            template.generator.label = "?"
-            template.generator.key = String
+            resetGeneratorTemplate!()
         end
 
         if mode == :template || mode == :voltmeter
-            template.voltmeter.variance.value = 1e-4
-            template.voltmeter.variance.pu = true
-
-            template.voltmeter.status = Int8(1)
-            template.voltmeter.noise = false
-            template.voltmeter.label = "?"
-            template.voltmeter.key = String
+            resetVoltmeterTemplate!()
         end
 
         if mode == :template || mode == :ammeter
-            template.ammeter.varianceFrom.value = 1e-4
-            template.ammeter.varianceFrom.pu = true
-            template.ammeter.varianceTo.value = 1e-4
-            template.ammeter.varianceTo.pu = true
-
-            template.ammeter.statusFrom = Int8(1)
-            template.ammeter.statusTo = Int8(1)
-
-            template.ammeter.square = false
-            template.ammeter.noise = false
-            template.ammeter.label = "?"
-            template.ammeter.key = String
+            resetAmmeterTemplate!()
         end
 
         if mode == :template || mode == :wattmeter
-            template.wattmeter.varianceBus.value = 1e-4
-            template.wattmeter.varianceBus.pu = true
-            template.wattmeter.varianceFrom.value = 1e-4
-            template.wattmeter.varianceFrom.pu = true
-            template.wattmeter.varianceTo.value = 1e-4
-            template.wattmeter.varianceTo.pu = true
-
-            template.wattmeter.statusBus = Int8(1)
-            template.wattmeter.statusFrom = Int8(1)
-            template.wattmeter.statusTo = Int8(1)
-
-            template.wattmeter.noise = false
-            template.wattmeter.label = "?"
-            template.wattmeter.key = String
+            resetWattmeterTemplate!()
         end
 
         if mode == :template || mode == :varmeter
-            template.varmeter.varianceBus.value = 1e-4
-            template.varmeter.varianceBus.pu = true
-            template.varmeter.varianceFrom.value = 1e-4
-            template.varmeter.varianceFrom.pu = true
-            template.varmeter.varianceTo.value = 1e-4
-            template.varmeter.varianceTo.pu = true
-
-            template.varmeter.statusBus = Int8(1)
-            template.varmeter.statusFrom = Int8(1)
-            template.varmeter.statusTo = Int8(1)
-
-            template.varmeter.noise = false
-            template.varmeter.label = "?"
-            template.varmeter.key = String
+            resetVarmeterTemplate!()
         end
 
         if mode == :template || mode == :pmu
-            template.pmu.varianceMagnitudeBus.value = 1e-8
-            template.pmu.varianceMagnitudeBus.pu = true
-            template.pmu.varianceAngleBus.value = 1e-8
-            template.pmu.varianceAngleBus.pu = true
-
-            template.pmu.varianceMagnitudeFrom.value = 1e-8
-            template.pmu.varianceMagnitudeFrom.pu = true
-            template.pmu.varianceAngleFrom.value = 1e-8
-            template.pmu.varianceAngleFrom.pu = true
-
-            template.pmu.varianceMagnitudeTo.value = 1e-8
-            template.pmu.varianceMagnitudeTo.pu = true
-            template.pmu.varianceAngleTo.value = 1e-8
-            template.pmu.varianceAngleTo.pu = true
-
-            template.pmu.statusBus = Int8(1)
-            template.pmu.statusFrom = Int8(1)
-            template.pmu.statusTo = Int8(1)
-
-            template.pmu.noise = false
-            template.pmu.correlated = false
-            template.pmu.polar = false
-            template.pmu.square = false
-            template.pmu.label = "?"
-            template.pmu.key = String
+            resetPmuTemplate!()
         end
 
         if mode == :template
-            template.config.verbose = 0
+            resetConfigTemplate!()
         end
     end
 end

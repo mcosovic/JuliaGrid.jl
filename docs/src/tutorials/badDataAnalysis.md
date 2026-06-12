@@ -71,7 +71,7 @@ chi.objective
 
 Next, retrieve the value from the Chi-squared distribution corresponding to the detection `confidence` and ``(k - s)`` degrees of freedom, where ``k`` is the number of measurement functions and ``s`` is the number of state variables. This provides the value of ``\chi^2_{p}(k - s)``:
 ```@repl BadData
-chi.treshold
+chi.threshold
 ```
 
 Then, the bad data test can be defined as:

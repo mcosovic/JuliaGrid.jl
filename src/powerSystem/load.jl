@@ -90,7 +90,7 @@ function powerSystem(; optimal::Bool = true)
             BusSupply(Float64[], Float64[], Dict{Int64, Vector{Int64}}()),
             BusShunt(Float64[], Float64[]),
             BusVoltage(Float64[], Float64[], Float64[], Float64[]),
-            BusLayout(Int8[], Int64[], Int64[], 0, 0, 0, optimal),
+            BusLayout(Int8[], Int64[], Int64[], 0, 0, optimal),
             0
         ),
         Branch(
@@ -132,9 +132,10 @@ function powerSystem(; optimal::Bool = true)
         Model(
             AcModel(
                 spzeros(0, 0), spzeros(0, 0), ComplexF64[], ComplexF64[],
-                ComplexF64[], ComplexF64[], ComplexF64[], 0, 0
+                ComplexF64[], ComplexF64[], ComplexF64[]
             ),
-            DcModel(spzeros(0, 0), Float64[], Float64[], 0, 0)
+            DcModel(spzeros(0, 0), Float64[], Float64[]),
+            SystemRevision()
         )
     )
 end
@@ -1367,10 +1368,10 @@ end
 
 ##### Split Line #####
 function splitLine!(
-    line::Base.SplitIterator{String, T},
+    line::Base.SplitIterator{String, <:Union{typeof(isspace), String}},
     data::Array{SubString{String}},
     idx::Int64
-) where T <: Union{typeof(isspace), String}
+)
 
     @inbounds for (i, s) in enumerate(Iterators.take(line, idx))
         data[i] = SubString(s)

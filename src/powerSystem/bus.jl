@@ -64,6 +64,7 @@ addBus!(system; label = "Bus 1", active = 25.0, angle = 10.026, base = 132.0)
 """
 function addBus!(system::PowerSystem; kwargs...)
     bus = system.bus
+    slackOld = bus.layout.slack
     def = template.bus
     key = BusKey(; kwargs...)
 
@@ -105,14 +106,20 @@ function addBus!(system::PowerSystem; kwargs...)
     push!(bus.supply.reactive, 0.0)
 
     if !isempty(system.model.ac.nodalMatrix)
-        acModelEmpty!(system.model.ac)
+        acModelEmpty!(system)
         @info("The AC model has been completely erased.")
     end
 
     if !isempty(system.model.dc.nodalMatrix)
-        dcModelEmpty!(system.model.dc)
+        dcModelEmpty!(system)
         @info("The DC model has been completely erased.")
     end
+
+    if bus.layout.slack != slackOld
+        slackChanged!(system)
+    end
+
+    topologyChanged!(system)
 end
 
 function addBus!(
@@ -160,9 +167,12 @@ function updateBusMain!(system::PowerSystem, label::IntStr, key::BusKey)
     idx = getIndex(bus, label, "bus")
 
     if isset(key.type)
-        if bus.layout.type[idx] != key.type
-            bus.layout.pattern += 1
+        if key.type ∉ (1, 2, 3)
+            throw(ErrorException("The value $(key.type) of the bus type is illegal."))
         end
+
+        typeOld = bus.layout.type[idx]
+        slackOld = bus.layout.slack
 
         if key.type ∈ (1, 2)
             if bus.layout.slack == idx
@@ -181,15 +191,29 @@ function updateBusMain!(system::PowerSystem, label::IntStr, key::BusKey)
             bus.layout.type[idx] = 3
             bus.layout.slack = idx
         end
+
+        if bus.layout.type[idx] != typeOld
+            typeChanged!(system)
+        end
+        if bus.layout.slack != slackOld
+            slackChanged!(system)
+        end
     end
 
     baseInv = 1 / (system.base.power.value * system.base.power.prefix)
+    if any(isset, (key.active, key.conductance, key.angle))
+        optimizationChanged!(system)
+    end
+    if any(isset, (key.reactive, key.susceptance, key.minMagnitude, key.maxMagnitude))
+        acOptimizationChanged!(system)
+    end
+
     update!(bus.demand.active, key.active, pfx.activePower, baseInv, idx)
     update!(bus.demand.reactive, key.reactive, pfx.reactivePower, baseInv, idx)
 
     if isset(key.conductance) || isset(key.susceptance)
         if !isempty(ac.nodalMatrix)
-            ac.model += 1
+            acModelChanged!(system)
 
             admittance = complex(bus.shunt.conductance[idx], bus.shunt.susceptance[idx])
             ac.nodalMatrix[idx, idx] -= admittance
@@ -247,7 +271,7 @@ function updateBus!(analysis::PowerFlow; label::IntStr, kwargs...)
 end
 
 function _updateBus!(analysis::AcPowerFlow{NewtonRaphson}, idx::Int64)
-    errorTypeConversion(analysis.system.bus.layout.pattern, analysis.method.signature[:type])
+    errorTypeConversion(analysis.system.model.revision.type, analysis.method.signature.type)
 
     if analysis.system.bus.layout.type[idx] == 1
         analysis.voltage.magnitude[idx] = analysis.system.bus.voltage.magnitude[idx]
@@ -257,13 +281,13 @@ end
 
 function _updateBus!(analysis::AcPowerFlow{FastNewtonRaphson}, idx::Int64)
     system = analysis.system
-    errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
+    errorTypeConversion(system.model.revision.type, analysis.method.signature.type)
 
     if system.bus.layout.type[idx] == 1
         analysis.voltage.magnitude[idx] = system.bus.voltage.magnitude[idx]
 
-        if haskey(analysis.method.signature[:susceptance], idx)
-            oldSusceptance = analysis.method.signature[:susceptance][idx]
+        if haskey(analysis.method.signature.susceptance, idx)
+            oldSusceptance = analysis.method.signature.susceptance[idx]
         else
             oldSusceptance = 0.0
         end
@@ -274,16 +298,17 @@ function _updateBus!(analysis::AcPowerFlow{FastNewtonRaphson}, idx::Int64)
             analysis.method.reactive.jacobian[i, i] -= oldSusceptance
             analysis.method.reactive.jacobian[i, i] += system.bus.shunt.susceptance[idx]
 
-            analysis.method.signature[:susceptance][idx] = system.bus.shunt.susceptance[idx]
+            analysis.method.signature.susceptance[idx] = system.bus.shunt.susceptance[idx]
         end
     end
+    analysis.method.signature.jacobian = copy(system.model.revision.acModel)
 
     analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
 end
 
 function _updateBus!(analysis::AcPowerFlow{GaussSeidel}, idx::Int64)
     system = analysis.system
-    errorTypeConversion(system.bus.layout.pattern, analysis.method.signature[:type])
+    errorTypeConversion(system.model.revision.type, analysis.method.signature.type)
 
     if system.bus.layout.type[idx] == 1
         analysis.voltage.magnitude[idx] = system.bus.voltage.magnitude[idx]
@@ -294,7 +319,7 @@ function _updateBus!(analysis::AcPowerFlow{GaussSeidel}, idx::Int64)
 end
 
 function _updateBus!(analysis::DcPowerFlow, ::Int64)
-    errorTypeConversion(analysis.system.bus.layout.slack, analysis.method.signature[:slack])
+    errorTypeConversion(analysis.system.model.revision.slack, analysis.method.signature.slack)
 end
 
 function _updateBus!(analysis::AcOptimalPowerFlow, idx::Int64)
@@ -315,17 +340,24 @@ function _updateBus!(analysis::AcOptimalPowerFlow, idx::Int64)
     setBound!(v.magnitude,vtg.minMagnitude, vtg.maxMagnitude, idx)
     setConstraint!(v.magnitude, con.voltage.magnitude, vtg.minMagnitude, vtg.maxMagnitude, idx)
 
-    if analysis.method.signature[:slack] == idx && bus.layout.type[idx] != 3
+    if analysis.method.signature.slackBus == idx && bus.layout.type[idx] != 3
         unfix!(jump, moi, v.angle[idx], con.slack.angle, idx)
-        analysis.method.signature[:slack] = 0
+        analysis.method.signature.slackBus = 0
     end
 
     if bus.layout.type[idx] == 3
         if isvalid(jump, moi, v.angle[idx])
             fix!(v.angle[idx], bus.voltage.angle[idx], con.slack.angle, idx)
-            analysis.method.signature[:slack] = idx
+            analysis.method.signature.slackBus = idx
         end
     end
+
+    revision = system.model.revision
+    signature = analysis.method.signature
+    signature.slack = copy(revision.slack)
+    signature.acModel = copy(revision.acModel)
+    signature.acOptimization = copy(revision.acOptimization)
+    signature.slackBus = copy(system.bus.layout.slack)
 end
 
 function _updateBus!(analysis::DcOptimalPowerFlow, idx::Int64)
@@ -341,16 +373,53 @@ function _updateBus!(analysis::DcOptimalPowerFlow, idx::Int64)
 
     analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
 
-    if analysis.method.signature[:slack] == idx && system.bus.layout.type[idx] != 3
+    if analysis.method.signature.slackBus == idx && system.bus.layout.type[idx] != 3
         unfix!(jump, moi, var.voltage.angle[idx], con.slack.angle, idx)
-        analysis.method.signature[:slack] = 0
+        analysis.method.signature.slackBus = 0
     end
 
     if system.bus.layout.type[idx] == 3
         if isvalid(jump, moi, var.voltage.angle[idx])
             fix!(var.voltage.angle[idx], system.bus.voltage.angle[idx], con.slack.angle, idx)
-            analysis.method.signature[:slack] = idx
+            analysis.method.signature.slackBus = idx
         end
+    end
+
+    revision = system.model.revision
+    signature = analysis.method.signature
+    signature.slack = copy(revision.slack)
+    signature.slackBus = copy(system.bus.layout.slack)
+    signature.dcOptimization = copy(revision.dcOptimization)
+end
+
+function busTemplatePrefix(parameter::Symbol)
+    if parameter in (:active, :conductance)
+        return pfx.activePower
+    elseif parameter in (:reactive, :susceptance)
+        return pfx.reactivePower
+    elseif parameter in (:magnitude, :minMagnitude, :maxMagnitude)
+        return pfx.voltageMagnitude
+    elseif parameter == :angle
+        return pfx.voltageAngle
+    end
+end
+
+function setBusTemplate!(parameter::Symbol, value)
+    if hasfield(BusTemplate, parameter)
+        if parameter ∉ (:base, :type, :area, :lossZone, :label)
+            container::ContainerTemplate = getfield(template.bus, parameter)
+            setContainerTemplate!(container, value, busTemplatePrefix(parameter))
+        elseif parameter == :base
+            setfield!(template.bus, parameter, Float64(value) * pfx.baseVoltage)
+        elseif parameter == :type
+            setfield!(template.bus, parameter, Int8(value))
+        elseif parameter in (:area, :lossZone)
+            setfield!(template.bus, parameter, Int64(value))
+        elseif parameter == :label
+            macroLabel(template.bus, value, "[?]")
+        end
+    else
+        errorTemplateKeyword(parameter)
     end
 end
 
@@ -358,6 +427,8 @@ end
     @bus(kwargs...)
 
 The macro generates a template for a bus.
+
+The macro modifies global JuliaGrid settings that remain active until changed again.
 
 # Keywords
 To define the bus template, the `kwargs` input arguments must be provided in accordance with the
@@ -392,43 +463,16 @@ addBus!(system; label = "Bus 1", reactive = -4.0)
 ```
 """
 macro bus(kwargs...)
-    quote
-        for kwarg in $(esc(kwargs))
-            parameter::Symbol = kwarg.args[1]
-
-            if hasfield(BusTemplate, parameter)
-                if parameter ∉ (:base, :type, :area, :lossZone, :label)
-                    container::ContainerTemplate = getfield(template.bus, parameter)
-                    if parameter in (:active, :conductance)
-                        pfxLive = pfx.activePower
-                    elseif parameter in (:reactive, :susceptance)
-                        pfxLive = pfx.reactivePower
-                    elseif parameter in (:magnitude, :minMagnitude, :maxMagnitude)
-                        pfxLive = pfx.voltageMagnitude
-                    elseif parameter == :angle
-                        pfxLive = pfx.voltageAngle
-                    end
-                    if pfxLive != 0.0
-                        setfield!(container, :value, pfxLive * Float64(eval(kwarg.args[2])))
-                        setfield!(container, :pu, false)
-                    else
-                        setfield!(container, :value, Float64(eval(kwarg.args[2])))
-                        setfield!(container, :pu, true)
-                    end
-                else
-                    if parameter == :base
-                        setfield!(template.bus, parameter, Float64(eval(kwarg.args[2])) * pfx.baseVoltage)
-                    elseif parameter == :type
-                        setfield!(template.bus, parameter, Int8(eval(kwarg.args[2])))
-                    elseif parameter in (:area, :lossZone)
-                        setfield!(template.bus, parameter, Int64(eval(kwarg.args[2])))
-                    elseif parameter == :label
-                        macroLabel(template.bus, kwarg.args[2], "[?]")
-                    end
-                end
-            else
-                errorTemplateKeyword(parameter)
-            end
+    exprs = map(kwargs) do kwarg
+        if !(kwarg isa Expr) || kwarg.head != :(=)
+            return :(errorTemplateKeyword($(QuoteNode(kwarg))))
         end
+
+        parameter = kwarg.args[1]
+        value = kwarg.args[2]
+
+        :(setBusTemplate!($(QuoteNode(parameter)), $(esc(value))))
     end
+
+    return Expr(:block, exprs...)
 end

@@ -798,7 +798,7 @@ end
 
 ##### Utility Functions #####
 function pickLabel(
-    container::Union{P,M},
+    container::Union{Component, Meter},
     labels::LabelDict,
     label::IntStrMiss,
     component::String
@@ -882,7 +882,7 @@ function summarykwargs(;
         title = title, header = header, footer = footer)
 end
 
-function checkprint(obj::S, idx::Int64) where S
+function checkprint(obj, idx::Int64)
     for name in fieldnames(typeof(obj))
         field1 = getfield(obj, name)
 

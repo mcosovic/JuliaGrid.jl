@@ -1,5 +1,5 @@
-export PowerSystem, Bus, Branch, Generator, BasePower, BaseData, Model
-export Measurement, Voltmeter, Ammeter, Wattmeter, Varmeter, PMU
+export PowerSystem, Component, Bus, Branch, Generator, BasePower, BaseData, Model
+export Measurement, Meter, Voltmeter, Ammeter, Wattmeter, Varmeter, PMU
 
 ##### Bus #####
 mutable struct BusDemand
@@ -25,7 +25,6 @@ mutable struct BusLayout
     lossZone::Vector{Int64}
     slack::Int64
     label::Int64
-    pattern::Int64
     const optimal::Bool
 end
 
@@ -198,7 +197,7 @@ A composite type used in [`PowerSystem`](@ref PowerSystem) to store base data.
 - `power::BasePower`: Base power.
 - `voltage::BaseVoltage`: Base voltages.
 """
-mutable struct BaseData
+struct BaseData
     power::BasePower
     voltage::BaseVoltage
 end
@@ -208,8 +207,6 @@ mutable struct DcModel
     nodalMatrix::SparseMatrixCSC{Float64, Int64}
     admittance::Vector{Float64}
     shiftPower::Vector{Float64}
-    model::Int64
-    pattern::Int64
 end
 
 ##### AC Model #####
@@ -221,8 +218,18 @@ mutable struct AcModel
     nodalToTo::Vector{ComplexF64}
     nodalToFrom::Vector{ComplexF64}
     admittance::Vector{ComplexF64}
-    model::Int64
-    pattern::Int64
+end
+
+Base.@kwdef mutable struct SystemRevision
+    topology::Int64 = 0
+    type::Int64 = 0
+    slack::Int64 = 0
+    acModel::Int64 = 0
+    acPattern::Int64 = 0
+    dcModel::Int64 = 0
+    dcPattern::Int64 = 0
+    acOptimization::Int64 = 0
+    dcOptimization::Int64 = 0
 end
 
 """
@@ -234,10 +241,12 @@ the power system's topology and parameters.
 # Fields
 - `ac::AcModel`: AC model, including the nodal admittance matrix and Y-parameters of two-port branches.
 - `dc::DcModel`: DC model, including the nodal admittance matrix and branch admittances.
+- `revision::SystemRevision`: Revision counters used to track power system changes.
 """
-mutable struct Model
+struct Model
     ac::AcModel
     dc::DcModel
+    revision::SystemRevision
 end
 
 """
@@ -253,7 +262,7 @@ system data.
 - `base::BaseData`: Base power and base voltages.
 - `model::Model`: Data related to AC and DC analyses.
 """
-mutable struct PowerSystem
+struct PowerSystem
     bus::Bus
     branch::Branch
     generator::Generator
@@ -392,6 +401,10 @@ mutable struct PMU
     number::Int64
 end
 
+Base.@kwdef mutable struct MeasurementRevision
+    measurement::Int64 = 0
+end
+
 """
     Measurement
 
@@ -404,19 +417,35 @@ A composite type built using the [`measurement`](@ref measurement) function to s
 - `varmeter::Varmeter`: Data related to reactive power injection and reactive power flow measurements.
 - `pmu::PMU`: Data related to bus voltage and branch current phasor measurements.
 - `system::PowerSystem`: The reference to the power system.
+- `revision::MeasurementRevision`: Revision counters used to track measurement changes.
 """
-mutable struct Measurement
+struct Measurement
     voltmeter::Voltmeter
     ammeter::Ammeter
     wattmeter::Wattmeter
     varmeter::Varmeter
     pmu::PMU
     system::PowerSystem
+    revision::MeasurementRevision
 end
 
 ##### Types #####
-const P = Union{Bus, Branch, Generator}
-const M = Union{Voltmeter, Ammeter, Wattmeter, Varmeter, PMU}
+"""
+    Component
+
+A type alias for power-system component containers. It groups [`Bus`](@ref Bus),
+[`Branch`](@ref Branch), and [`Generator`](@ref Generator).
+"""
+const Component = Union{Bus, Branch, Generator}
+
+"""
+    Meter
+
+A type alias for measurement-device containers. It groups [`Voltmeter`](@ref Voltmeter),
+[`Ammeter`](@ref Ammeter), [`Wattmeter`](@ref Wattmeter), [`Varmeter`](@ref Varmeter), and
+[`PMU`](@ref PMU).
+"""
+const Meter = Union{Voltmeter, Ammeter, Wattmeter, Varmeter, PMU}
 const Templates = Union{
     BusTemplate, BranchTemplate, GeneratorTemplate,
     VoltmeterTemplate, AmmeterTemplate, WattmeterTemplate, VarmeterTemplate, PmuTemplate

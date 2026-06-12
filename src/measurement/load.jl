@@ -97,7 +97,8 @@ function measurement(system::PowerSystem)
             PmuLayout(Int64[], Bool[], Bool[], Bool[], Bool[], Bool[], Bool[], 0),
             0
         ),
-        system
+        system,
+        MeasurementRevision()
     )
 end
 
@@ -181,7 +182,7 @@ function setTypeLabelMeasurement(hdf5::File, template::Template)
 end
 
 ##### Load Label #####
-function loadLabel(monitoring::M, hdf5::File; meter::String = "")
+function loadLabel(monitoring::Meter, hdf5::File; meter::String = "")
     label = read(hdf5[string(meter, "/label")])
     monitoring.number = length(label)
 

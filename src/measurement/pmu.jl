@@ -466,12 +466,12 @@ stateEstimation!(analysis)
 updatePmu!(analysis; label = 4, magnitude = 0.95, angle = -0.1)
 ```
 """
-function updatePmu!(analysis::T; label::IntStr, kwargs...) where T <: Union{AcStateEstimation, PmuStateEstimation, DcStateEstimation}
+function updatePmu!(analysis::StateEstimation; label::IntStr, kwargs...)
     updatePmuMain!(analysis.monitoring, label, PmuKey(; kwargs...))
     _updatePmu!(analysis, getIndex(analysis.monitoring.pmu, label, "PMU"))
 end
 
-function _updatePmu!(analysis::AcStateEstimation{GaussNewton{T}}, idxPmu::Int64) where T <: WlsMethod
+function _updatePmu!(analysis::AcStateEstimation{<:GaussNewton}, idxPmu::Int64)
     bus = analysis.system.bus
     pmu = analysis.monitoring.pmu
     wls = analysis.method
@@ -659,7 +659,7 @@ function _updatePmu!(analysis::AcStateEstimation{LAV}, idxPmu::Int64)
     end
 end
 
-function _updatePmu!(analysis::PmuStateEstimation{WLS{T}}, idx::Int64) where T <: WlsMethod
+function _updatePmu!(analysis::PmuStateEstimation{<:WLS}, idx::Int64)
     pmu = analysis.monitoring.pmu
     wls = analysis.method
 
@@ -760,7 +760,7 @@ function _updatePmu!(analysis::PmuStateEstimation{LAV}, idx::Int64)
     end
 end
 
-function _updatePmu!(analysis::DcStateEstimation{WLS{T}}, idxPmu::Int64) where T <: WlsMethod
+function _updatePmu!(analysis::DcStateEstimation{<:WLS}, idxPmu::Int64)
     slack = analysis.system.bus.layout.slack
     pmu = analysis.monitoring.pmu
     wls = analysis.method
@@ -799,6 +799,38 @@ function _updatePmu!(analysis::DcStateEstimation{LAV}, idxPmu::Int64)
     end
 end
 
+function pmuTemplatePrefix(parameter::Symbol)
+    if parameter == :varianceMagnitudeBus
+        return pfx.voltageMagnitude
+    elseif parameter in (:varianceMagnitudeFrom, :varianceMagnitudeTo)
+        return pfx.currentMagnitude
+    elseif parameter == :varianceAngleBus
+        return pfx.voltageAngle
+    else
+        return pfx.currentAngle
+    end
+end
+
+function setPmuTemplate!(parameter::Symbol, value)
+    if hasfield(PmuTemplate, parameter)
+        if parameter in (
+                :varianceMagnitudeBus, :varianceAngleBus, :varianceMagnitudeFrom,
+                :varianceAngleFrom, :varianceMagnitudeTo, :varianceAngleTo
+                )
+            container::ContainerTemplate = getfield(template.pmu, parameter)
+            setContainerTemplate!(container, value, pmuTemplatePrefix(parameter))
+        elseif parameter in (:statusBus, :statusFrom, :statusTo)
+            setfield!(template.pmu, parameter, Int8(value))
+        elseif parameter in (:noise, :correlated, :polar, :square)
+            setfield!(template.pmu, parameter, Bool(value))
+        elseif parameter == :label
+            macroLabel(template.pmu, value, "[?!]")
+        end
+    else
+        errorTemplateKeyword(parameter)
+    end
+end
+
 """
     @pmu(label, noise, correlated, polar, square,
         varianceMagnitudeBus, varianceAngleBus, statusBus,
@@ -806,6 +838,8 @@ end
         varianceMagnitudeTo, varianceAngleTo, statusTo)
 
 The macro generates a template for a PMU.
+
+The macro modifies global JuliaGrid settings that remain active until changed again.
 
 # Keywords
 To establish the PMU template, users can configure the pattern for labels using the `label` keyword,
@@ -860,45 +894,16 @@ addPmu!(monitoring; from = "Branch 1", magnitude = 481.125, angle = -11.46)
 ```
 """
 macro pmu(kwargs...)
-    quote
-        for kwarg in $(esc(kwargs))
-            parameter::Symbol = kwarg.args[1]
-
-            if hasfield(PmuTemplate, parameter)
-                if parameter in (
-                        :varianceMagnitudeBus, :varianceAngleBus, :varianceMagnitudeFrom,
-                        :varianceAngleFrom, :varianceMagnitudeTo, :varianceAngleTo
-                        )
-                    container::ContainerTemplate = getfield(template.pmu, parameter)
-                    if parameter == :varianceMagnitudeBus
-                        prefixLive = pfx.voltageMagnitude
-                    elseif parameter in (:varianceMagnitudeFrom, :varianceMagnitudeTo)
-                        prefixLive = pfx.currentMagnitude
-                    elseif parameter == :varianceAngleBus
-                        prefixLive = pfx.voltageAngle
-                    else
-                        prefixLive = pfx.currentAngle
-                    end
-                    val = Float64(eval(kwarg.args[2]))
-                    if prefixLive != 0.0
-                        setfield!(container, :value, prefixLive * val)
-                        setfield!(container, :pu, false)
-                    else
-                        setfield!(container, :value, val)
-                        setfield!(container, :pu, true)
-                    end
-                else
-                    if parameter in (:statusBus, :statusFrom, :statusTo)
-                        setfield!(template.pmu, parameter, Int8(eval(kwarg.args[2])))
-                    elseif parameter in (:noise, :correlated, :polar, :square)
-                        setfield!(template.pmu, parameter, Bool(eval(kwarg.args[2])))
-                    elseif parameter == :label
-                        macroLabel(template.pmu, kwarg.args[2], "[?!]")
-                    end
-                end
-            else
-                errorTemplateKeyword(parameter)
-            end
+    exprs = map(kwargs) do kwarg
+        if !(kwarg isa Expr) || kwarg.head != :(=)
+            return :(errorTemplateKeyword($(QuoteNode(kwarg))))
         end
+
+        parameter = kwarg.args[1]
+        value = kwarg.args[2]
+
+        :(setPmuTemplate!($(QuoteNode(parameter)), $(esc(value))))
     end
+
+    return Expr(:block, exprs...)
 end

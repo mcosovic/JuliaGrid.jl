@@ -118,6 +118,23 @@
     end
 end
 
+@testset "Power Flow System-Only Invalidation" begin
+    system = powerSystem(path * "case14test.m")
+
+    nr = newtonRaphson(system)
+    gs = gaussSeidel(system)
+    dc = dcPowerFlow(system)
+
+    updateBus!(system; label = 14, type = 2)
+
+    @test_throws ErrorException powerFlow!(nr)
+    @test_throws ErrorException powerFlow!(gs)
+
+    addBranch!(system; from = 13, to = 14, reactance = 0.12)
+
+    @test_throws ErrorException powerFlow!(dc)
+end
+
 @testset "Reusing Fast Newton-Raphson Method" begin
     @default(unit)
     @default(template)
@@ -148,6 +165,17 @@ end
         updateBus!(system; label = 10, magnitude = 0.29, angle = -0.2, susceptance = 0.2)
         updateBus!(fnr; label = 10, conductance = 0.1, active = 0.2, reactive = 0.1)
         testReusing(fnr)
+    end
+
+    @testset "System-Only Update" begin
+        let system = powerSystem(path * "case14test.m")
+            analysis = fastNewtonRaphsonBX(system)
+            powerFlow!(analysis)
+
+            updateBus!(system; label = 14, susceptance = 0.2)
+
+            @test_throws ErrorException powerFlow!(analysis)
+        end
     end
 
     @testset "Branches" begin

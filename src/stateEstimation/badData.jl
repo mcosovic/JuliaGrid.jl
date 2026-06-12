@@ -6,7 +6,7 @@ test, subsequently removing measurement outliers from the measurement set. It ca
 obtaining WLS estimator.
 
 # Arguments
-The abstract type `StateEstimation` can have the following subtypes:
+The `StateEstimation` type alias can represent the following analysis types:
 - `AcStateEstimation`: Conducts bad data analysis within AC state estimation.
 - `PmuStateEstimation`: Conducts bad data analysis within PMU state estimation.
 - `DcStateEstimation`: Conducts bad data analysis within DC state estimation.
@@ -554,7 +554,7 @@ The function performs a Chi-squared bad data detection test. This test can be ap
 WLS estimator.
 
 # Arguments
-The abstract type `StateEstimation` can have the following subtypes:
+The `StateEstimation` type alias can represent the following analysis types:
 - `AcStateEstimation`: Conducts bad data analysis within AC state estimation.
 - `PmuStateEstimation`: Conducts bad data analysis within PMU state estimation.
 - `DcStateEstimation`: Conducts bad data analysis within DC state estimation.
@@ -576,9 +576,9 @@ bad = chiTest(analysis; confidence = 0.96)
 ```
 """
 function chiTest(
-    analysis::AcStateEstimation{GaussNewton{T}};
+    analysis::AcStateEstimation{<:GaussNewton};
     confidence::Float64 = 0.95
-) where T <: WlsMethod
+)
 
     system = analysis.system
     se = analysis.method
@@ -590,9 +590,9 @@ function chiTest(
 end
 
 function chiTest(
-    analysis::DcStateEstimation{WLS{T}};
+    analysis::DcStateEstimation{<:WLS};
     confidence::Float64 = 0.95
-) where T <: WlsMethod
+)
 
     system = analysis.system
     se = analysis.method
@@ -607,9 +607,9 @@ function chiTest(
 end
 
 function chiTest(
-    analysis::PmuStateEstimation{WLS{T}};
+    analysis::PmuStateEstimation{<:WLS};
     confidence::Float64 = 0.95
-) where T <: WlsMethod
+)
 
     system = analysis.system
     se = analysis.method

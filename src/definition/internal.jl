@@ -6,7 +6,7 @@ const IntMiss = Union{Int64, Missing}
 const IntStr = Union{Int64, String}
 const IntStrMiss = Union{Int64, String, Missing}
 const LabelDict = Union{OrderedDict{String, Int64}, OrderedDict{Int64, Int64}}
-const Signature = Dict{Symbol, Union{Int64, Dict{Int64, Float64}}}
+const Signature = Dict{Symbol, Union{Bool, Int64, Dict{Int64, Float64}}}
 const ConDict = OrderedDict{Int64, Dict{Symbol, ConstraintRef}}
 const DualDict = OrderedDict{Int64, Dict{Symbol, Float64}}
 const DualDictVec = OrderedDict{Int64, Dict{Symbol, Vector{Float64}}}
@@ -24,17 +24,17 @@ mutable struct Polar
     angle::Vector{Float64}
 end
 
-mutable struct PolarVariableRef
+struct PolarVariableRef
     magnitude::Vector{VariableRef}
     angle::Vector{VariableRef}
 end
 
-mutable struct PolarConstraintRef
+struct PolarConstraintRef
     magnitude::ConDict
     angle::ConDict
 end
 
-mutable struct PolarDual
+struct PolarDual
     magnitude::DualDict
     angle::DualDict
 end
@@ -43,15 +43,15 @@ mutable struct Angle
     angle::Vector{Float64}
 end
 
-mutable struct AngleVariableRef
+struct AngleVariableRef
     angle::Vector{VariableRef}
 end
 
-mutable struct AngleConstraintRef
+struct AngleConstraintRef
     angle::ConDict
 end
 
-mutable struct AngleDual
+struct AngleDual
     angle::DualDict
 end
 
@@ -61,19 +61,19 @@ mutable struct Cartesian
     reactive::Vector{Float64}
 end
 
-mutable struct CartesianVariableRef
+struct CartesianVariableRef
     active::Vector{VariableRef}
     reactive::Vector{VariableRef}
     actwise::Dict{Int64, VariableRef}
     reactwise::Dict{Int64, VariableRef}
 end
 
-mutable struct CartesianConstraintRef
+struct CartesianConstraintRef
     active::ConDict
     reactive::ConDict
 end
 
-mutable struct CartesianDual
+struct CartesianDual
     active::DualDict
     reactive::DualDict
 end
@@ -82,20 +82,20 @@ mutable struct Real
     active::Vector{Float64}
 end
 
-mutable struct RealVariableRef
+struct RealVariableRef
     active::Vector{VariableRef}
     actwise::Dict{Int64, VariableRef}
 end
 
-mutable struct RealConstraintRef
+struct RealConstraintRef
     active::ConDict
 end
 
-mutable struct RealDual
+struct RealDual
     active::DualDict
 end
 
-mutable struct RectangularVariableRef
+struct RectangularVariableRef
     real::Vector{VariableRef}
     imag::Vector{VariableRef}
 end

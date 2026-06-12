@@ -3,6 +3,28 @@
 
 ---
 
+## Version 0.5.6
+
+Release Date: TBD
+
+#### Breaking
+  * Renamed the `ChiTest.treshold` field to `ChiTest.threshold`.
+
+#### Added
+  * Exported and documented the grouped analysis type aliases [`PowerFlow`](@ref PowerFlow), [`OptimalPowerFlow`](@ref OptimalPowerFlow), and [`StateEstimation`](@ref StateEstimation).
+  * Exported and documented the grouped system and measurement type aliases [`Component`](@ref Component) and [`Meter`](@ref Meter).
+  * Documented that unit, template, configuration, and default macros modify global JuliaGrid settings.
+
+#### Fixed
+  * Fixed `@default(power)` to reset the apparent power live unit to per-unit.
+  * Updated global settings macros to evaluate keyword values at the call site, including local variables.
+
+#### Other
+  * Refactored template macro helpers and `@default` reset logic to reduce duplicated internal state updates.
+  * Sanity checked the type cleanup with targeted power flow, optimal power flow, state estimation, bad data, measurement, and power system tests.
+
+---
+
 ## Version 0.5.5
 
 Release Date: October 6, 2025

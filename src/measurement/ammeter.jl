@@ -318,7 +318,7 @@ function updateAmmeter!(analysis::AcStateEstimation; label::IntStr, kwargs...)
     _updateAmmeter!(analysis, getIndex(analysis.monitoring.ammeter, label, "ammeter"))
 end
 
-function _updateAmmeter!(analysis::AcStateEstimation{GaussNewton{T}}, idxAmp::Int64) where T <: WlsMethod
+function _updateAmmeter!(analysis::AcStateEstimation{<:GaussNewton}, idxAmp::Int64)
     amp = analysis.monitoring.ammeter
     wls = analysis.method
 
@@ -368,10 +368,29 @@ function _updateAmmeter!(analysis::AcStateEstimation{LAV}, idxAmp::Int64)
     end
 end
 
+function setAmmeterTemplate!(parameter::Symbol, value)
+    if hasfield(AmmeterTemplate, parameter)
+        if parameter in (:varianceFrom, :varianceTo)
+            container::ContainerTemplate = getfield(template.ammeter, parameter)
+            setContainerTemplate!(container, value, pfx.currentMagnitude)
+        elseif parameter in (:statusFrom, :statusTo)
+            setfield!(template.ammeter, parameter, Int8(value))
+        elseif parameter in (:noise, :square)
+            setfield!(template.ammeter, parameter, Bool(value))
+        elseif parameter == :label
+            macroLabel(template.ammeter, value, "[?!]")
+        end
+    else
+        errorTemplateKeyword(parameter)
+    end
+end
+
 """
     @ammeter(label, varianceFrom, statusFrom, varianceTo, statusTo, noise, square)
 
 The macro generates a template for an ammeter.
+
+The macro modifies global JuliaGrid settings that remain active until changed again.
 
 # Keywords
 To establish the ammeter template, users can set default variance and status values for ammeters at
@@ -413,31 +432,16 @@ addAmmeter!(monitoring; label = "Ammeter 1", to = "Branch 1", magnitude = 481.12
 ```
 """
 macro ammeter(kwargs...)
-    quote
-        for kwarg in $(esc(kwargs))
-            parameter::Symbol = kwarg.args[1]
-
-            if hasfield(AmmeterTemplate, parameter)
-                if parameter in (:varianceFrom, :varianceTo)
-                    container::ContainerTemplate = getfield(template.ammeter, parameter)
-                    val = Float64(eval(kwarg.args[2]))
-                    if pfx.currentMagnitude != 0.0
-                        setfield!(container, :value, pfx.currentMagnitude * val)
-                        setfield!(container, :pu, false)
-                    else
-                        setfield!(container, :value, val)
-                        setfield!(container, :pu, true)
-                    end
-                elseif parameter in (:statusFrom, :statusTo)
-                    setfield!(template.ammeter, parameter, Int8(eval(kwarg.args[2])))
-                elseif parameter in (:noise, :square)
-                    setfield!(template.ammeter, parameter, Bool(eval(kwarg.args[2])))
-                elseif parameter == :label
-                    macroLabel(template.ammeter, kwarg.args[2], "[?!]")
-                end
-            else
-                errorTemplateKeyword(parameter)
-            end
+    exprs = map(kwargs) do kwarg
+        if !(kwarg isa Expr) || kwarg.head != :(=)
+            return :(errorTemplateKeyword($(QuoteNode(kwarg))))
         end
+
+        parameter = kwarg.args[1]
+        value = kwarg.args[2]
+
+        :(setAmmeterTemplate!($(QuoteNode(parameter)), $(esc(value))))
     end
+
+    return Expr(:block, exprs...)
 end

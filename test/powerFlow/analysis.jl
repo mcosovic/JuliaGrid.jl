@@ -99,7 +99,7 @@ end
 
     @testset "IEEE 30: Change of the Jacobian Pattern" begin
         updateBranch!(analysis; label = 5, status = 0)
-        dropZeros!(system30.model.ac)
+        dropZeros!(system30, system30.model.ac)
         updateBranch!(analysis; label = 5, status = 1)
 
         setInitialPoint!(analysis)

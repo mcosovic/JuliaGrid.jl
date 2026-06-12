@@ -391,7 +391,7 @@ function printWattmeterData(
 end
 
 function printWattmeterData(
-    se::Union{PmuStateEstimation, AcStateEstimation, DcStateEstimation},
+    se::StateEstimation,
     io::IO = stdout;
     label::IntStrMiss = missing,
     repeat::Int64 = se.monitoring.wattmeter.number + 1,
@@ -1167,7 +1167,7 @@ function printDevice(
     printf(io, prt, idxDevice, meter.status, :stat)
 end
 
-function estimate(monitoring::M,
+function estimate(monitoring::Meter,
     bus::Vector{Float64},
     from::Vector{Float64},
     to::Vector{Float64},
@@ -1182,7 +1182,7 @@ function estimate(monitoring::M,
     end
 end
 
-function estimate(monitoring::M, from::Vector{Float64}, to::Vector{Float64}, i::Int64)
+function estimate(monitoring::Meter, from::Vector{Float64}, to::Vector{Float64}, i::Int64)
     if monitoring.layout.from[i]
         return from
     else

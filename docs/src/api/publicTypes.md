@@ -10,6 +10,7 @@ using JuliaGrid
 
 ###### Power System Model
 * [`PowerSystem`](@ref PowerSystem)
+* [`Component`](@ref Component)
 * [`Bus`](@ref Bus)
 * [`Branch`](@ref Branch)
 * [`Generator`](@ref Generator)
@@ -18,6 +19,7 @@ using JuliaGrid
 
 ###### Measurement Model
 * [`Measurement`](@ref Measurement)
+* [`Meter`](@ref Meter)
 * [`Voltmeter`](@ref Voltmeter)
 * [`Ammeter`](@ref Ammeter)
 * [`Wattmeter`](@ref Wattmeter)
@@ -28,6 +30,7 @@ using JuliaGrid
 * [`Analysis`](@ref Analysis)
 * [`AC`](@ref AC)
 * [`DC`](@ref DC)
+* [`PowerFlow`](@ref PowerFlow)
 * [`LDLt`](@ref JuliaGrid.LDLt)
 * [`LU`](@ref JuliaGrid.LU)
 * [`KLU`](@ref JuliaGrid.KLU)
@@ -41,6 +44,7 @@ using JuliaGrid
 * [`DcPowerFlow`](@ref DcPowerFlow)
 
 ###### Optimal Power Flow
+* [`OptimalPowerFlow`](@ref OptimalPowerFlow)
 * [`AcOptimalPowerFlow`](@ref AcOptimalPowerFlow)
 * [`DcOptimalPowerFlow`](@ref DcOptimalPowerFlow)
 
@@ -49,6 +53,7 @@ using JuliaGrid
 * [`PmuPlacement`](@ref PmuPlacement)
 
 ###### State Estimation
+* [`StateEstimation`](@ref StateEstimation)
 * [`AcStateEstimation`](@ref AcStateEstimation)
 * [`PmuStateEstimation`](@ref PmuStateEstimation)
 * [`DcStateEstimation`](@ref DcStateEstimation)
@@ -69,6 +74,7 @@ using JuliaGrid
 ## Power System Model
 ```@docs
 PowerSystem
+Component
 Bus
 Branch
 Generator
@@ -81,6 +87,7 @@ JuliaGrid.Model
 ## Measurement Model
 ```@docs
 Measurement
+Meter
 Voltmeter
 Ammeter
 Wattmeter
@@ -95,6 +102,7 @@ PMU
 Analysis
 AC
 DC
+PowerFlow
 JuliaGrid.LDLt
 JuliaGrid.LU
 JuliaGrid.KLU
@@ -116,6 +124,7 @@ DcPowerFlow
 
 ## Optimal Power Flow
 ```@docs
+OptimalPowerFlow
 AcOptimalPowerFlow
 DcOptimalPowerFlow
 ```
@@ -132,6 +141,7 @@ PmuPlacement
 
 ## State Estimation
 ```@docs
+StateEstimation
 AcStateEstimation
 PmuStateEstimation
 DcStateEstimation
