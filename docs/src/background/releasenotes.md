@@ -16,12 +16,17 @@ Release Date: TBD
   * Documented that unit, template, configuration, and default macros modify global JuliaGrid settings.
 
 #### Fixed
+  * Improved package root detection for both installed and development checkouts.
   * Fixed `@default(power)` to reset the apparent power live unit to per-unit.
   * Updated global settings macros to evaluate keyword values at the call site, including local variables.
+  * Updated power system tests to match the current cost-function error messages.
 
 #### Other
+  * Reviewed and lightly optimized backend equation.
+  * Expanded the precompile workload to cover additional commonly used analysis solve paths.
+  * Refined internal template, label, and per-unit conversion utilities for clearer dispatch and less unnecessary work.
   * Refactored template macro helpers and `@default` reset logic to reduce duplicated internal state updates.
-  * Sanity checked the type cleanup with targeted power flow, optimal power flow, state estimation, bad data, measurement, and power system tests.
+  * Sanity checked the internal cleanup with targeted power flow and state estimation.
 
 ---
 

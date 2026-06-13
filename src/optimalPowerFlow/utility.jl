@@ -305,11 +305,11 @@ function remove!(
 end
 
 ##### Variable and Constraint Validation #####
-function isvalid(jump::JuMP.Model, moi::MOI.ModelLike, con::ConstraintRef)
+@inline function isvalid(jump::JuMP.Model, moi::MOI.ModelLike, con::ConstraintRef)
     return jump === con.model && MOI.is_valid(moi, con.index)
 end
 
-function isvalid(jump::JuMP.Model, moi::MOI.ModelLike, var::VariableRef)
+@inline function isvalid(jump::JuMP.Model, moi::MOI.ModelLike, var::VariableRef)
     return jump === owner_model(var) && MOI.is_valid(moi, var.index)
 end
 
@@ -353,7 +353,7 @@ function add!(
 end
 
 ##### Add Constraint #####
-@inline function addConstraint(
+function addConstraint(
     jump::JuMP.Model,
     con::Dict{Symbol, ConstraintRef},
     expr::Union{AffExpr, NonlinearExpr},

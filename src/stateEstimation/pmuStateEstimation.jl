@@ -533,7 +533,7 @@ function setInitialPoint!(target::PmuStateEstimation{LAV}, source::DC)
 end
 
 ##### Indices of the Coefficient Matrix #####
-function pmuIndices(cff::SparseModel, co1::Int64, col2::Int64)
+@inline function pmuIndices(cff::SparseModel, co1::Int64, col2::Int64)
     cff.row[cff.cnt] = cff.idx
     cff.col[cff.cnt] = co1
 

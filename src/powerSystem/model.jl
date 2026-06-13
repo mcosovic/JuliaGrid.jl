@@ -191,7 +191,7 @@ function dcShiftUpdate!(system::PowerSystem, idx::Int64)
 end
 
 ##### Update DC Admittance #####
-function dcAdmittanceUpdate!(system::PowerSystem, status::Union{Int8, Int64}, idx::Int64)
+@inline function dcAdmittanceUpdate!(system::PowerSystem, status::Union{Int8, Int64}, idx::Int64)
     dc = system.model.dc
     param = system.branch.parameter
 
@@ -214,7 +214,7 @@ function acPushZeros!(ac::AcModel)
     push!(ac.nodalToFrom, 0.0 + 0.0im)
 end
 
-function acSubtractAdmittances!(ac::AcModel, idx::Int64)
+@inline function acSubtractAdmittances!(ac::AcModel, idx::Int64)
     ac.nodalFromFrom[idx] = -ac.nodalFromFrom[idx]
     ac.nodalFromTo[idx] = -ac.nodalFromTo[idx]
     ac.nodalToTo[idx] = -ac.nodalToTo[idx]
@@ -222,7 +222,7 @@ function acSubtractAdmittances!(ac::AcModel, idx::Int64)
     ac.admittance[idx] = -ac.admittance[idx]
 end
 
-function acSetZeros!(ac::AcModel, idx::Int64)
+@inline function acSetZeros!(ac::AcModel, idx::Int64)
     ac.nodalFromFrom[idx] = 0.0 + 0.0im
     ac.nodalFromTo[idx] = 0.0 + 0.0im
     ac.nodalToTo[idx] = 0.0 + 0.0im

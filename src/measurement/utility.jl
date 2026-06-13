@@ -136,7 +136,7 @@ function remove!(jump::JuMP.Model, moi::MOI.ModelLike, con::Dict{Int64, Constrai
 end
 
 ##### Squared Current Magnitude #####
-function if2exp(square::Bool)
+@inline function if2exp(square::Bool)
     if square
         return 2
     else
@@ -144,7 +144,7 @@ function if2exp(square::Bool)
     end
 end
 
-function if2type(square::Bool)
+@inline function if2type(square::Bool)
     if square
         return 2
     else

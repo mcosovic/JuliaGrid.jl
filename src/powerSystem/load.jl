@@ -34,7 +34,7 @@ system = powerSystem("case14.h5")
 ```
 """
 function powerSystem(inputFile::String; optimal::Bool = true)
-    packagePath = checkPackagePath()
+    packagePath = packageRoot()
     fullpath, extension = checkFileFormat(inputFile, packagePath)
 
     if extension == ".h5"

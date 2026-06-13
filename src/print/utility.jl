@@ -32,11 +32,11 @@ mutable struct Summary
 end
 
 ##### Scale Quantities #####
-function scaleVoltage(system::PowerSystem, pfx::PrefixLive, i::Int64)
+@inline function scaleVoltage(system::PowerSystem, pfx::PrefixLive, i::Int64)
     (system.base.voltage.value[i] * system.base.voltage.prefix) / (sqrt(3) * pfx.voltageMagnitude)
 end
 
-function scaleVoltage(pfx::PrefixLive, system::PowerSystem, i::Int64)
+@inline function scaleVoltage(pfx::PrefixLive, system::PowerSystem, i::Int64)
     if pfx.voltageMagnitude == 0.0
         return 1.0
     else
@@ -44,7 +44,7 @@ function scaleVoltage(pfx::PrefixLive, system::PowerSystem, i::Int64)
     end
 end
 
-function scaleCurrent(system::PowerSystem, pfx::PrefixLive, i::Int64)
+@inline function scaleCurrent(system::PowerSystem, pfx::PrefixLive, i::Int64)
     basePower = system.base.power
     baseVoltg = system.base.voltage
 
@@ -52,7 +52,7 @@ function scaleCurrent(system::PowerSystem, pfx::PrefixLive, i::Int64)
         (sqrt(3) * baseVoltg.value[i] * baseVoltg.prefix * pfx.currentMagnitude)
 end
 
-function scaleCurrent(pfx::PrefixLive, system::PowerSystem, i::Int64)
+@inline function scaleCurrent(pfx::PrefixLive, system::PowerSystem, i::Int64)
     if pfx.currentMagnitude == 0.0
         return 1.0
     else
@@ -60,7 +60,7 @@ function scaleCurrent(pfx::PrefixLive, system::PowerSystem, i::Int64)
     end
 end
 
-function scaleIij(system::PowerSystem, scale::Float64, pfx::PrefixLive, from::Bool, idx::Int64)
+@inline function scaleIij(system::PowerSystem, scale::Float64, pfx::PrefixLive, from::Bool, idx::Int64)
     if pfx.currentMagnitude != 0.0
         if from
             scale = scaleCurrent(system, pfx, system.branch.layout.from[idx])

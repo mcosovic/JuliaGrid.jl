@@ -1,26 +1,17 @@
-##### Check Package Path #####
-@inline function checkPackagePath()
-    pathtoJuliaGrid = pathof(JuliaGrid)
-    if pathtoJuliaGrid === nothing
-        throw(ErrorException("JuliaGrid not found in install packages."))
+##### Package Root #####
+function packageRoot()
+    packagePath = pkgdir(JuliaGrid)
+    if isnothing(packagePath)
+        packagePath = abspath(joinpath(@__DIR__, "..", ".."))
     end
 
-    return abspath(joinpath(dirname(pathtoJuliaGrid), ".."))
+    return packagePath
 end
 
 ##### Check File Format #####
-@inline function checkFileFormat(inputFile::String, packagePath::String)
-    extension = ""; path = ""; dataname = ""; fullpath = ""
-    try
-        extension = string(match(r"\.[A-Za-z0-9]+$", inputFile).match)
-    catch
-        extension = ""
-    end
-    if extension ∈ (".h5", ".m", ".raw")
-        fullpath = inputFile
-        path = dirname(inputFile)
-        dataname = basename(inputFile)
-    end
+function checkFileFormat(inputFile::String, packagePath::String)
+    _, extension = splitext(inputFile)
+    dataname = basename(inputFile)
 
     if isempty(extension)
         throw(ErrorException("The extension is missing."))
@@ -28,53 +19,57 @@ end
         throw(DomainError(extension, "The extension "  * extension * " is not supported."))
     end
 
-    if path == ""
-        path = joinpath(packagePath, "src/data/")
-        fullpath = joinpath(packagePath, "src/data/", dataname)
+    path = dirname(inputFile)
+    if isempty(path)
+        fullpath = joinpath(packagePath, "src", "data", dataname)
+    else
+        fullpath = inputFile
     end
 
-    if dataname ∉ cd(readdir, path)
+    if !isfile(fullpath)
         throw(DomainError(dataname, "The input data " * dataname * " is not found."))
     end
 
     return fullpath, extension
 end
 
-##### Check File Format #####
-function macroLabel(container::Templates, label::Union{Symbol, String, Type}, sym::String)
+##### Macro Label #####
+function macroLabel(container::Templates, label::Union{Symbol, String, Type}, pattern::String)
     if label in (:Int64, :Integer, Int64, Integer)
-        setfield!(container, :key, Int64)
-    elseif label in (:String, String)
-        setfield!(container, :key, String)
-    elseif label isa Type
-        errorTemplateSymbol(sym)
-    else
-        label = string(label)
-        if contains(label, Regex(sym))
-            setfield!(container, :label, label)
-            setfield!(container, :key, String)
-        else
-            errorTemplateSymbol(sym)
-        end
+        container.key = Int64
+        return
     end
+    if label in (:String, String)
+        container.key = String
+        return
+    end
+    if label isa Type
+        errorTemplateSymbol(pattern)
+    end
+
+    label = string(label)
+    if !contains(label, Regex(pattern))
+        errorTemplateSymbol(pattern)
+    end
+
+    container.label = label
+    container.key = String
 end
 
-function setContainerTemplate!(
-    container::ContainerTemplate,
-    value,
-    pfxLive::Float64
-)
+##### Set Container Template #####
+function setContainerTemplate!(container::ContainerTemplate, value::Base.Real, pfxLive::Float64)
     val = Float64(value)
 
-    if pfxLive != 0.0
-        setfield!(container, :value, pfxLive * val)
-        setfield!(container, :pu, false)
+    if !iszero(pfxLive)
+        container.value = pfxLive * val
+        container.pu = false
     else
-        setfield!(container, :value, val)
-        setfield!(container, :pu, true)
+        container.value = val
+        container.pu = true
     end
 end
 
+##### Revision Counters #####
 function bump!(revision::SystemRevision, field::Symbol)
     setfield!(revision, field, getfield(revision, field) + 1)
 end
@@ -199,7 +194,7 @@ function setLabel(
 end
 
 function typeLabel(::OrderedDict{String, Int64}, default::String, idx::Int64)
-    replace(default, r"\?" => string(idx))
+    replace(default, '?' => string(idx))
 end
 
 function typeLabel(::OrderedDict{Int64, Int64}, default::String, idx::Int64)
@@ -213,7 +208,7 @@ function typeLabel(
     prefix::String,
     key::IntStr
 )
-    label = replace(default, r"\?" => string(idx), r"\!" => string(prefix, key))
+    label = replace(default, '?' => string(idx), '!' => string(prefix, key))
 
     if haskey(componentLabel, label)
         count = 1
@@ -254,11 +249,11 @@ function getLabel(container::LabelDict, idx::Int64)
 end
 
 ##### Get Index #####
-@inline function getIndex(container::Union{Component, Meter}, label::String, name::String)
+function getIndex(container::Union{Component, Meter}, label::String, name::String)
     container.label[getLabel(container, label, name)]
 end
 
-@inline function getIndex(container::Union{Component, Meter}, label::Int64, name::String)
+function getIndex(container::Union{Component, Meter}, label::Int64, name::String)
     container.label[getLabel(container, label, name)]
 end
 
@@ -280,18 +275,18 @@ end
 
 ##### Get Label and Index #####
 function getLabelIdx(container::LabelDict, idx::Int64)
-    (label, idx),_ = iterate(container, idx)
+    (label, idx), _ = iterate(container, idx)
 
     return label, idx
 end
 
 ##### From-To Indices #####
-function fromto(system::PowerSystem, idx::Int64)
+@inline function fromto(system::PowerSystem, idx::Int64)
     system.branch.layout.from[idx], system.branch.layout.to[idx]
 end
 
 ##### Find Angle and Magnitude #####
-function absang(z::ComplexF64)
+@inline function absang(z::ComplexF64)
     abs(z), angle(z)
 end
 
@@ -304,7 +299,7 @@ function topu(value::FltIntMiss, def::ContainerTemplate, pfxLive::Float64, baseI
             value = def.value * baseInv
         end
     else
-        if pfxLive != 0.0
+        if !iszero(pfxLive)
             value = (value * pfxLive) * baseInv
         end
     end
@@ -313,21 +308,12 @@ function topu(value::FltIntMiss, def::ContainerTemplate, pfxLive::Float64, baseI
 end
 
 function topu(value::FltIntMiss, pfxLive::Float64, baseInv::Float64)
-    if pfxLive != 0.0
-       value = (value * pfxLive) * baseInv
+    if !iszero(pfxLive)
+        value = (value * pfxLive) * baseInv
     end
 
     return value
 end
-
-# function givenOrDefault(value::Union{FltIntMiss, Int8, Bool}, default::Union{FltIntMiss, Int8, Bool})
-#     coalesce(value, default)
-#     if ismissing(value)
-#         value = default
-#     end
-
-#     return value
-# end
 
 ##### Add Values #####
 function add!(
@@ -346,7 +332,7 @@ function add!(
     default::ContainerTemplate,
     pfxLive::Float64,
     baseInv::Float64,
-    shadow::Float64,
+    shadow::Float64
 )
     if ismissing(value) && isnan(default.value)
         value = 5 * shadow
@@ -364,11 +350,7 @@ function add!(
 end
 
 function addGenInBus!(system::PowerSystem, busIdx::Int64, genIdx::Int64)
-    if haskey(system.bus.supply.generator, busIdx)
-        push!(system.bus.supply.generator[busIdx], genIdx)
-    else
-        system.bus.supply.generator[busIdx] = [genIdx]
-    end
+    push!(get!(system.bus.supply.generator, busIdx, Int64[]), genIdx)
 end
 
 ##### Update Values #####
@@ -399,7 +381,13 @@ function isstored(A::SparseMatrixCSC{Float64, Int64}, i::Int64, j::Int64)
     startIdx = A.colptr[j]
     endIdx = A.colptr[j + 1] - 1
 
-    startIdx <= endIdx && i in A.rowval[startIdx:endIdx]
+    @inbounds for k = startIdx:endIdx
+        if A.rowval[k] == i
+            return true
+        end
+    end
+
+    return false
 end
 
 ##### Check if Values are Provided #####
@@ -427,7 +415,7 @@ end
 
 ##### Impedance Base Value #####
 function baseImpedance(baseVoltage::Float64, basePowerInv::Float64, turnsRatio::Float64)
-    if pfx.impedance != 0.0 || pfx.admittance != 0.0
+    if !iszero(pfx.impedance) || !iszero(pfx.admittance)
         return (baseVoltage * turnsRatio)^2 * basePowerInv
     else
         return 1.0
@@ -436,7 +424,7 @@ end
 
 ##### Current Magnitude Base Value #####
 function baseCurrentInv(basePowerInv::Float64, baseVoltage::Float64)
-    if pfx.currentMagnitude != 0.0
+    if !iszero(pfx.currentMagnitude)
         return sqrt(3) * baseVoltage * basePowerInv
     else
         return 1.0
@@ -493,19 +481,24 @@ selectType(::Type{Orthogonal}) = Orthogonal
 selectType(::Type{PetersWilkinson}) = PetersWilkinson
 
 ##### Solution #####
-function solution!(x::Vector{Float64}, F::FactorSparse, b::Vector{Float64})
-    if isa(F, UMFPACK.UmfpackLU{Float64, Int64}) || isa(F, KLUFactorization{Float64, Int64})
-        ldiv!(x, F, b)
-    else
-        x .= F \ b
-    end
+function solution!(x::Vector{Float64}, F::UMFPACK.UmfpackLU{Float64, Int64}, b::Vector{Float64})
+    ldiv!(x, F, b)
 end
 
+function solution!(x::Vector{Float64}, F::KLUFactorization{Float64, Int64}, b::Vector{Float64})
+    ldiv!(x, F, b)
+end
+
+function solution!(x::Vector{Float64}, F::FactorSparse, b::Vector{Float64})
+    x .= F \ b
+end
+
+##### Drop Stored Zeros #####
 function dropZeros!(A::SparseMatrixCSC{Float64, Int64}, pattern::Int64)
-    oldHash = hash((A.rowval, A.colptr))
+    oldNnz = nnz(A)
     dropzeros!(A)
 
-    if pattern == 0 && oldHash != hash((A.rowval, A.colptr))
+    if pattern == 0 && oldNnz != nnz(A)
         return -1
     else
         return pattern
@@ -534,7 +527,7 @@ function removeRowColumn(A::SparseMatrixCSC{Float64, Int64}, idx::Int64)
     return removeIdx, removeVal
 end
 
-##### Restor Values in the Row and Column #####
+##### Restore Values in the Row and Column #####
 function restoreColumn!(
     A::SparseMatrixCSC{Float64, Int64},
     removeIdx::UnitRange{Int64},
@@ -558,7 +551,6 @@ function restoreRowColumn!(
     end
 end
 
-
 ##### Check Slack Bus #####
 function checkSlackBus(system::PowerSystem)
     if system.bus.layout.slack == 0
@@ -567,18 +559,28 @@ function checkSlackBus(system::PowerSystem)
 end
 
 function checkSlackBus(jump::JuMP.Model, con::ConDict, slack::Int64)
-    if !(haskey(con, slack) && haskey(con[slack], :equality) && is_valid(jump, con[slack][:equality]))
-        throw(ErrorException("The slack bus constraint is missing."))
+    if haskey(con, slack)
+        slackCon = con[slack]
+        if haskey(slackCon, :equality)
+            constraint = slackCon[:equality]
+            if is_valid(jump, constraint)
+                return
+            end
+        end
     end
-end
 
+    throw(ErrorException("The slack bus constraint is missing."))
+end
 
 ##### Add Angle of the Slack Bus #####
 function addSlackAngle!(system::PowerSystem, analysis::DC)
-    analysis.voltage.angle[system.bus.layout.slack] = 0.0
-    if system.bus.voltage.angle[system.bus.layout.slack] != 0.0
+    slack = system.bus.layout.slack
+    slackAngle = system.bus.voltage.angle[slack]
+
+    analysis.voltage.angle[slack] = 0.0
+    if !iszero(slackAngle)
         @inbounds for i = 1:system.bus.number
-            analysis.voltage.angle[i] += system.bus.voltage.angle[system.bus.layout.slack]
+            analysis.voltage.angle[i] += slackAngle
         end
     end
 end
@@ -592,41 +594,50 @@ function print(
     data::Vararg{Union{Vector{Float64}, Vector{Int64}, Vector{Int8}}}
 )
     for (key, idx) in label
-        println(io::IO, key, ": ", join([d[idx] for d in data], ", "))
+        print(io, key, ": ")
+        for i in eachindex(data)
+            i > 1 && print(io, ", ")
+            print(io, data[i][idx])
+        end
+        println(io)
     end
 end
 
 function print(io::IO, label::LabelDict, data::Dict{Int64, Float64})
     for (key, idx) in label
-        if haskey(data, idx)
-            println(io::IO, key, ": ", data[idx])
+        value = get(data, idx, nothing)
+        if !isnothing(value)
+            println(io, key, ": ", value)
         end
     end
 end
 
 function print(io::IO, label::LabelDict, con::ConDict)
+    mime = MIME("text/plain")
     for (key, idx) in label
-        if haskey(con, idx)
+        constraintGroup = get(con, idx, nothing)
+        if !isnothing(constraintGroup)
             exprs = String[]
-            for type in keys(con[idx])
-                if is_valid(owner_model(con[idx][type]), con[idx][type])
-                    expr = constraint_string(MIME("text/plain"), con[idx][type])
+            for constraint in values(constraintGroup)
+                if is_valid(owner_model(constraint), constraint)
+                    expr = constraint_string(mime, constraint)
                     push!(exprs, simplifyExpression(expr))
                 end
             end
             if !isempty(exprs)
-                println(io::IO, key, ": ", join(exprs, ", "))
+                println(io, key, ": ", join(exprs, ", "))
             end
         end
     end
 end
 
 function print(io::IO, con::ConDict)
-    for idx in keys(con)
-        for type in keys(con[idx])
-            if is_valid(owner_model(con[idx][type]), con[idx][type])
-                expr = constraint_string(MIME("text/plain"), con[idx][type])
-                println(io::IO, simplifyExpression(expr))
+    mime = MIME("text/plain")
+    for constraintGroup in values(con)
+        for constraint in values(constraintGroup)
+            if is_valid(owner_model(constraint), constraint)
+                expr = constraint_string(mime, constraint)
+                println(io, simplifyExpression(expr))
             end
         end
     end
@@ -634,11 +645,12 @@ end
 
 function print(io::IO, label::LabelDict, con::ConDictVec)
     for (key, idx) in label
-        if haskey(con, idx)
-            for type in keys(con[idx])
-                for i = 1:lastindex(con[idx][type])
-                    if is_valid(owner_model(con[idx][type][i]), con[idx][type][i])
-                        println(io::IO, key, ": ", con[idx][type][i])
+        constraintGroup = get(con, idx, nothing)
+        if !isnothing(constraintGroup)
+            for constraints in values(constraintGroup)
+                for constraint in constraints
+                    if is_valid(owner_model(constraint), constraint)
+                        println(io, key, ": ", constraint)
                     end
                 end
             end
@@ -647,11 +659,11 @@ function print(io::IO, label::LabelDict, con::ConDictVec)
 end
 
 function print(io::IO, con::ConDictVec)
-    for idx in keys(con)
-        for type in keys(con[idx])
-            for i = 1:lastindex(con[idx][type])
-                if is_valid(owner_model(con[idx][type][i]), con[idx][type][i])
-                    println(io::IO, con[idx][type][i])
+    for constraintGroup in values(con)
+        for constraints in values(constraintGroup)
+            for constraint in constraints
+                if is_valid(owner_model(constraint), constraint)
+                    println(io, constraint)
                 end
             end
         end
@@ -660,15 +672,16 @@ end
 
 function print(io::IO, label::LabelDict, dual::DualDict)
     for (key, idx) in label
-        if haskey(dual, idx)
-            for type in keys(dual[idx])
-                println(io::IO, key, ": ", dual[idx][type])
+        dualGroup = get(dual, idx, nothing)
+        if !isnothing(dualGroup)
+            for value in values(dualGroup)
+                println(io, key, ": ", value)
             end
         end
     end
 end
 
-
+##### Simplify Expression #####
 function simplifyExpression(expr::String)
     expr = replace(expr, r"[-]?0\.0\s*\*\s*(cos|sin)\(\s*[^()]*\s*\)" => "0")
     expr = replace(expr, r"\(\s*[-]?0[.0]?\s*\)" => "")
@@ -701,8 +714,8 @@ function setAttribute(jump::JuMP.Model, iter::IntMiss, tol::FltIntMiss, verbose:
 end
 
 function setJumpVerbose(jump::JuMP.Model, template::Template, verbose::IntMiss)
-    if ismissing(verbose) && haskey(jump.ext, :verbose)
-        verbose = jump.ext[:verbose]
+    if ismissing(verbose)
+        verbose = get(jump.ext, :verbose, missing)
     end
     if ismissing(verbose)
         verbose = template.config.verbose
@@ -714,19 +727,19 @@ end
 ##### Error Messages #####
 function errorVoltage(voltage::Vector{Float64})
     if isempty(voltage)
-        throw(ErrorException(("The voltage values are missing.")))
+        throw(ErrorException("The voltage values are missing."))
     end
 end
 
 function errorCurrent(current::Vector{Float64})
     if isempty(current)
-        throw(ErrorException(("The current values are missing.")))
+        throw(ErrorException("The current values are missing."))
     end
 end
 
 function errorPower(power::Vector{Float64})
     if isempty(power)
-        throw(ErrorException(("The power values are missing.")))
+        throw(ErrorException("The power values are missing."))
     end
 end
 
@@ -747,7 +760,7 @@ end
 
 function errorAssignCost(cost::String)
     throw(ErrorException(
-        "An attempt to assign a " * cost * " function, but the function does not exist.")
+        "Cannot assign a " * cost * " cost function because it does not exist.")
     )
 end
 
@@ -760,9 +773,8 @@ end
 function errorTypeConversion()
     throw(ErrorException(
         "The power flow model cannot be reused because the bus type configuration has changed.")
-        )
+    )
 end
-
 
 function errorStatusDevice()
     throw(ErrorException(
@@ -785,7 +797,7 @@ end
 
 function errorSlope(label::IntStr, slope::Float64)
     throw(ErrorException(
-        "The piecewise linear cost function's slope of the generator labeled $label has $slope value.")
+        "The piecewise linear cost function of the generator labeled $label has an invalid slope value of $slope.")
     )
 end
 
@@ -843,7 +855,7 @@ end
 ##### Info Messages #####
 function infoObjective(label::IntStr)
     @info(
-        "The generator labeled $label has an undefined polynomial " *
-        "cost function, which is not included in the objective."
+        "The generator labeled $label has no defined polynomial " *
+        "cost function, so it is not included in the objective."
     )
 end

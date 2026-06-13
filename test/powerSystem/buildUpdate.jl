@@ -657,12 +657,12 @@ end
         @test_throws err cost!(system; generator = "Generator 1", active = 3, polynomial = [1.0])
 
         err = ErrorException(
-            "An attempt to assign a polynomial function, but the function does not exist."
+            "Cannot assign a polynomial cost function because it does not exist."
         )
         @test_throws err cost!(system; generator = "Generator 1", active = 2)
 
         err = ErrorException(
-            "An attempt to assign a piecewise function, but the function does not exist."
+            "Cannot assign a piecewise cost function because it does not exist."
         )
         @test_throws err cost!(system; generator = "Generator 1", active = 1)
 

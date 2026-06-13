@@ -26,17 +26,17 @@ macro base(system::Symbol, power::Symbol, voltage::Symbol)
     prefixVoltage = parsePrefix(voltageString, suffixVoltage)
 
     return quote
-        system = $(esc(system))
+        local sys = $(esc(system))
 
-        prefixOld = system.base.power.prefix
-        system.base.power.value = system.base.power.value * prefixOld / $prefixPower
-        system.base.power.prefix = $prefixPower
-        system.base.power.unit = $powerString
+        prefixOld = sys.base.power.prefix
+        sys.base.power.value = sys.base.power.value * prefixOld / $prefixPower
+        sys.base.power.prefix = $prefixPower
+        sys.base.power.unit = $powerString
 
-        prefixOld = system.base.voltage.prefix
-        system.base.voltage.value = system.base.voltage.value * prefixOld / $prefixVoltage
-        system.base.voltage.prefix = $prefixVoltage
-        system.base.voltage.unit = $voltageString
+        prefixOld = sys.base.voltage.prefix
+        sys.base.voltage.value = sys.base.voltage.value * prefixOld / $prefixVoltage
+        sys.base.voltage.prefix = $prefixVoltage
+        sys.base.voltage.unit = $voltageString
     end
 end
 
@@ -144,11 +144,11 @@ Changing the unit prefix of voltage `base` is reflected in the following quantit
 """
 macro voltage(magnitude::Symbol = :pu, angle::Symbol = :rad, base::Symbol = :V)
     quote
-        unitList.voltageMagnitudeLive = string($(esc(QuoteNode(magnitude))))
+        unitList.voltageMagnitudeLive = string($(QuoteNode(magnitude)))
         local suffix = parseSuffix(unitList.voltageMagnitudeLive, unitList.voltageMagnitude, "voltage magnitude")
         pfx.voltageMagnitude = parsePrefix(unitList.voltageMagnitudeLive, suffix)
 
-        unitList.voltageAngleLive = string($(esc(QuoteNode(angle))))
+        unitList.voltageAngleLive = string($(QuoteNode(angle)))
         local suffix = parseSuffix(unitList.voltageAngleLive, unitList.voltageAngle, "voltage angle")
         pfx.voltageAngle = parsePrefix(unitList.voltageAngleLive, suffix)
 
@@ -194,11 +194,11 @@ Changing the unit of current `angle` is reflected in the following quantities:
 """
 macro current(magnitude::Symbol = :pu, angle::Symbol = :rad)
     quote
-        unitList.currentMagnitudeLive = string($(esc(QuoteNode(magnitude))))
+        unitList.currentMagnitudeLive = string($(QuoteNode(magnitude)))
         local suffix = parseSuffix(unitList.currentMagnitudeLive, unitList.currentMagnitude, "current magnitude")
         pfx.currentMagnitude = parsePrefix(unitList.currentMagnitudeLive, suffix)
 
-        unitList.currentAngleLive = string($(esc(QuoteNode(angle))))
+        unitList.currentAngleLive = string($(QuoteNode(angle)))
         suffix = parseSuffix(unitList.currentAngleLive, unitList.currentAngle, "current angle")
         pfx.currentAngle = parsePrefix(unitList.currentAngleLive, suffix)
     end
@@ -235,11 +235,11 @@ Changing the units of `admittance` is reflected in the following quantities:
 """
 macro parameter(impedance::Symbol = :pu, admittance::Symbol = :pu)
     quote
-        unitList.impedanceLive = string($(esc(QuoteNode(impedance))))
+        unitList.impedanceLive = string($(QuoteNode(impedance)))
         local suffix = parseSuffix(unitList.impedanceLive, unitList.impedance, "impedance")
         pfx.impedance = parsePrefix(unitList.impedanceLive, suffix)
 
-        unitList.admittanceLive = string($(esc(QuoteNode(admittance))))
+        unitList.admittanceLive = string($(QuoteNode(admittance)))
         local suffix = parseSuffix(unitList.admittanceLive, unitList.admittance, "admittance")
         pfx.admittance = parsePrefix(unitList.admittanceLive, suffix)
     end
@@ -247,20 +247,20 @@ end
 
 function setConfigTemplate!(parameter::Symbol, value)
     if parameter == :label
-        if value == Integer || value == Int64 || value == :Integer || value == :Int64
-            datatype = Int64
-        else
-            datatype = String
-        end
+        datatype = value in (Integer, Int64, :Integer, :Int64) ? Int64 : String
 
-        setfield!(template.bus, :key, datatype)
-        setfield!(template.branch, :key, datatype)
-        setfield!(template.generator, :key, datatype)
-        setfield!(template.voltmeter, :key, datatype)
-        setfield!(template.ammeter, :key, datatype)
-        setfield!(template.wattmeter, :key, datatype)
-        setfield!(template.varmeter, :key, datatype)
-        setfield!(template.pmu, :key, datatype)
+        for container in (
+            template.bus,
+            template.branch,
+            template.generator,
+            template.voltmeter,
+            template.ammeter,
+            template.wattmeter,
+            template.varmeter,
+            template.pmu
+        )
+            setfield!(container, :key, datatype)
+        end
     elseif parameter == :verbose
         setfield!(template.config, :verbose, Int64(value))
     end
@@ -313,7 +313,7 @@ end
 function parseSuffix(input::String, unitList, type::String)
     suffix = ""
     @inbounds for i in unitList
-        if endswith(input, i)
+        if endswith(input, i) && length(i) > length(suffix)
             suffix = i
         end
     end
@@ -333,7 +333,7 @@ function parsePrefix(input::String, suffix::String)
     else
         scale = 1.0
         if suffix != input
-            prefix = split(input, suffix)[1]
+            prefix = input[1:(end - length(suffix))]
             if prefix ∉ keys(prefixList)
                 throw(ErrorException("The unit prefix " * prefix * " is illegal."))
             else
@@ -442,6 +442,7 @@ The `mode` argument can take on the following values:
 * `unit`: Restores all units to their default settings.
 * `power`: Converts active, reactive, and apparent power to per-unit values.
 * `voltage`: Expresses voltage magnitude in per-unit and voltage angle in radians.
+* `current`: Expresses current magnitude in per-unit and current angle in radians.
 * `parameter`: Converts impedance and admittance to per-unit values.
 * `bus`: Resets the bus template to its default configuration.
 * `branch`: Resets the branch template to its default configuration.

@@ -753,13 +753,13 @@ function seriesCurrent(analysis::AC; label::IntStr)
 end
 
 ######### AC Analysis Functions ##########
-function ViVj(system::PowerSystem, V::Polar, idx::Int64)
+@inline function ViVj(system::PowerSystem, V::Polar, idx::Int64)
     i, j = fromto(system, idx)
 
     V.magnitude[i] * cis(V.angle[i]), V.magnitude[j] * cis(V.angle[j])
 end
 
-function ViVjVij(system::PowerSystem, V::Polar, idx::Int64)
+@inline function ViVjVij(system::PowerSystem, V::Polar, idx::Int64)
     prmtr = system.branch.parameter
 
     tij = (1 / prmtr.turnsRatio[idx]) * cis(-prmtr.shiftAngle[idx])
@@ -778,27 +778,27 @@ function Ii(ac::AcModel, V::Polar, i::Int64)
     I
 end
 
-function PsQs(bus::Bus, V::Polar, i::Int64)
+@inline function PsQs(bus::Bus, V::Polar, i::Int64)
     reim(V.magnitude[i]^2 * conj(complex(bus.shunt.conductance[i], bus.shunt.susceptance[i])))
 end
 
-function PiQi(ac::AcModel, V::Polar, idx::Int64)
+@inline function PiQi(ac::AcModel, V::Polar, idx::Int64)
     reim(conj(Ii(ac, V, idx)) * (V.magnitude[idx] * cis(V.angle[idx])))
 end
 
-function PijQij(ac::AcModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
+@inline function PijQij(ac::AcModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
     reim(Vi * conj(Vi * ac.nodalFromFrom[i] + Vj * ac.nodalFromTo[i]))
 end
 
-function PjiQji(ac::AcModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
+@inline function PjiQji(ac::AcModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
     reim(Vj * conj(Vi * ac.nodalToFrom[i] + Vj * ac.nodalToTo[i]))
 end
 
-function PlQl(ac::AcModel, Vij::ComplexF64, i::Int64)
+@inline function PlQl(ac::AcModel, Vij::ComplexF64, i::Int64)
     reim(Vij * conj(ac.admittance[i] * Vij))
 end
 
-function PcQc(branch::Branch, V::Polar, i::Int64)
+@inline function PcQc(branch::Branch, V::Polar, i::Int64)
     prmtr = branch.parameter
     τinv = 1 / prmtr.turnsRatio[i]
     Vi = V.magnitude[branch.layout.from[i]]
@@ -807,15 +807,15 @@ function PcQc(branch::Branch, V::Polar, i::Int64)
     reim(0.5 * conj(prmtr.conductance[i] + im * prmtr.susceptance[i]) * ((τinv * Vi)^2 + Vj^2))
 end
 
-function IijΨij(ac::AcModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
+@inline function IijΨij(ac::AcModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
     absang(Vi * ac.nodalFromFrom[i] + Vj * ac.nodalFromTo[i])
 end
 
-function IjiΨji(ac::AcModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
+@inline function IjiΨji(ac::AcModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
     absang(Vi * ac.nodalToFrom[i] + Vj * ac.nodalToTo[i])
 end
 
-function IsΨs(ac::AcModel, Vij::ComplexF64, i::Int64)
+@inline function IsΨs(ac::AcModel, Vij::ComplexF64, i::Int64)
     absang(ac.admittance[i] * Vij)
 end
 

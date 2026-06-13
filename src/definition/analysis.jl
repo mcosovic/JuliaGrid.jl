@@ -179,8 +179,8 @@ A composite type built using the [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonB
 will be solved using the fast Newton-Raphson method.
 
 # Fields
-- `active:FastNewtonRaphsonModel`: Jacobian, mismatches, and incrementes for active power equations.
-- `reactive:FastNewtonRaphsonModel`: Jacobian, mismatches, and incrementes for active power equations.
+- `active:FastNewtonRaphsonModel`: Jacobian, mismatches, and increments for active power equations.
+- `reactive:FastNewtonRaphsonModel`: Jacobian, mismatches, and increments for reactive power equations.
 - `pq::Vector{Int64}`: Indices related to demand buses.
 - `pvpq::Vector{Int64}`: Indices related to demand and generator buses.
 - `signature::FastNewtonRaphsonSignature`: Tracks topology, the Fast Newton-Raphson Jacobian,

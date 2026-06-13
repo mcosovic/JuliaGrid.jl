@@ -2,7 +2,7 @@ import PrecompileTools
 
 PrecompileTools.@setup_workload begin
     @config(label = Integer)
-    ps = powerSystem()
+    psInt = powerSystem()
 
     @config(label = String)
     ps = powerSystem()
@@ -18,6 +18,10 @@ PrecompileTools.@setup_workload begin
 
     PrecompileTools.@compile_workload begin
         ########## Power System ###########
+        addBus!(psInt; label = 1, type = 3, active = 0.1)
+        addBus!(psInt; label = 2, type = 1, reactive = 0.05)
+        addBranch!(psInt; label = 1, from = 1, to = 2, reactance = 0.05)
+
         powersys = powerSystem("case14.h5")
         powersys = powerSystem("case14.raw")
 
@@ -29,6 +33,16 @@ PrecompileTools.@setup_workload begin
         powerFlow!(analysis)
 
         analysis = fastNewtonRaphsonBX(ps)
+        powerFlow!(analysis)
+
+        analysis = fastNewtonRaphsonXB(ps)
+        powerFlow!(analysis)
+
+        analysis = gaussSeidel(ps)
+        powerFlow!(analysis)
+
+        analysis = dcPowerFlow(ps)
+        powerFlow!(analysis)
 
         analysis = dcPowerFlow(ps, LDLt)
         powerFlow!(analysis)
@@ -48,8 +62,16 @@ PrecompileTools.@setup_workload begin
         ########## State Estimation ###########
         analysis = gaussNewton(mt)
         stateEstimation!(analysis)
+        chiTest(analysis)
+        acStateEstimation = analysis
 
         analysis = gaussNewton(mt, Orthogonal)
+        stateEstimation!(analysis)
+
+        analysis = gaussNewton(mt, PetersWilkinson)
+        stateEstimation!(analysis)
+
+        analysis = dcStateEstimation(mt)
         stateEstimation!(analysis)
 
         analysis = pmuStateEstimation(mt)
@@ -58,6 +80,7 @@ PrecompileTools.@setup_workload begin
         ########## Observability Analysis ###########
         islands = islandTopologicalFlow(mt)
         restorationGram!(mt, mt, islands)
+        residualTest!(acStateEstimation; threshold = 4.0)
 
         ########## Default ###########
         @default(template)

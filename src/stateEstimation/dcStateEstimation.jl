@@ -465,7 +465,7 @@ function setInitialPoint!(target::DcStateEstimation{LAV}, source::Analysis)
 end
 
 ##### Indices of the Coefficient Matrix #####
-function dcIndices(cff::SparseModel, row::Int64, col::Int64)
+@inline function dcIndices(cff::SparseModel, row::Int64, col::Int64)
     cff.row[cff.cnt] = row
     cff.col[cff.cnt] = col
 

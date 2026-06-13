@@ -584,13 +584,13 @@ function capabilityCurve(
 
     if cbt.lowActive[i] != 0.0 || cbt.upActive[i] != 0.0
         if cbt.lowActive[i] >= cbt.upActive[i]
-            throw(ErrorException("Capability curve is is not correctly defined."))
+            throw(ErrorException("Capability curve is not correctly defined."))
         end
         if cbt.maxLowReactive[i] <= cbt.minLowReactive[i]
-            throw(ErrorException("Capability curve is is not correctly defined."))
+            throw(ErrorException("Capability curve is not correctly defined."))
         end
         if cbt.maxUpReactive[i] <= cbt.minUpReactive[i]
-            throw(ErrorException("Capability curve is is not correctly defined."))
+            throw(ErrorException("Capability curve is not correctly defined."))
         end
 
         if cbt.lowActive[i] != cbt.upActive[i]

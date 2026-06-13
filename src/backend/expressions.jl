@@ -28,7 +28,7 @@ function Pi(system::PowerSystem, voltage::AngleVariableRef, expr::AffExpr, i::In
 
     @inbounds for ptr in nodal.colptr[i]:(nodal.colptr[i + 1] - 1)
         j = nodal.rowval[ptr]
-        add_to_expression!(expr, nodal.nzval[ptr] * voltage.angle[j])
+        add_to_expression!(expr, nodal.nzval[ptr], voltage.angle[j])
     end
 end
 
@@ -117,8 +117,8 @@ function Qij(system::PowerSystem, v::PolarVariableRef, expr::AffQuadExpr, idx::I
     add_to_expression!(expr.quad1, -p.A, v.magnitude[i], v.magnitude[i])
     add_to_expression!(expr.quad2, v.magnitude[i], v.magnitude[j])
 
-    cosθij = NonlinearExpr(:*, k1, NonlinearExpr(:cos, expr.aff))
-    sinθij = NonlinearExpr(:*, k2, NonlinearExpr(:sin, expr.aff))
+    cosθij = NonlinearExpr(:*, k1, cos(expr.aff))
+    sinθij = NonlinearExpr(:*, k2, sin(expr.aff))
 
     NonlinearExpr(:+, expr.quad1, NonlinearExpr(:*, expr.quad2, NonlinearExpr(:-, cosθij, sinθij)))
 end
@@ -136,8 +136,8 @@ function Qji(system::PowerSystem, v::PolarVariableRef, expr::AffQuadExpr, idx::I
     add_to_expression!(expr.quad1, -p.A, v.magnitude[j], v.magnitude[j])
     add_to_expression!(expr.quad2, v.magnitude[i], v.magnitude[j])
 
-    cosθij = NonlinearExpr(:*, k1, NonlinearExpr(:cos, expr.aff))
-    sinθij = NonlinearExpr(:*, k2, NonlinearExpr(:sin, expr.aff))
+    cosθij = NonlinearExpr(:*, k1, cos(expr.aff))
+    sinθij = NonlinearExpr(:*, k2, sin(expr.aff))
 
     NonlinearExpr(:+, expr.quad1, NonlinearExpr(:*, expr.quad2, NonlinearExpr(:+, cosθij, sinθij)))
 end
@@ -249,12 +249,12 @@ function Sji(system::PowerSystem, v::PolarVariableRef, square::Bool, expr::AffQu
 
     Vi2Vj2 = NonlinearExpr(:*, expr.quad1, expr.quad2)
     Vj4 = NonlinearExpr(:*, p.B, v.magnitude[j]^4)
-    Vi3Vj = NonlinearExpr(:*, -2, v.magnitude[i], v.magnitude[j]^3)
+    ViVj3 = NonlinearExpr(:*, -2, v.magnitude[i], v.magnitude[j]^3)
 
     cosθij = NonlinearExpr(:*, p.C, cos(expr.aff))
     sinθij = NonlinearExpr(:*, p.D, sin(expr.aff))
 
-    Sji = NonlinearExpr(:+, Vi2Vj2, Vj4, NonlinearExpr(:*, Vi3Vj, NonlinearExpr(:+, cosθij, sinθij)))
+    Sji = NonlinearExpr(:+, Vi2Vj2, Vj4, NonlinearExpr(:*, ViVj3, NonlinearExpr(:+, cosθij, sinθij)))
 
     if square
         return Sji
@@ -264,7 +264,7 @@ function Sji(system::PowerSystem, v::PolarVariableRef, square::Bool, expr::AffQu
 end
 
 ##### Bus Voltage Real and Imaginary Components #####
-function ReImVi(voltage::PolarVariableRef, i::Int64)
+@inline function ReImVi(voltage::PolarVariableRef, i::Int64)
     voltage.magnitude[i] * cos(voltage.angle[i]), voltage.magnitude[i] * sin(voltage.angle[i])
 end
 
@@ -288,7 +288,7 @@ function ReImIij(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
     IijRe, IijIm
 end
 
-function ReImIijCoefficient(branch::Branch, ac::AcModel, idx::Int64)
+@inline function ReImIijCoefficient(branch::Branch, ac::AcModel, idx::Int64)
     gij, bij = reim(ac.admittance[idx])
     τinv = 1 / branch.parameter.turnsRatio[idx]
     Φ = branch.parameter.shiftAngle[idx]
@@ -335,7 +335,7 @@ function ReImIji(system::PowerSystem, voltage::PolarVariableRef, idx::Int64)
     return IjiRe, IjiIm
 end
 
-function ReImIjiCoefficient(branch::Branch, ac::AcModel, idx::Int64)
+@inline function ReImIjiCoefficient(branch::Branch, ac::AcModel, idx::Int64)
     gij, bij = reim(ac.admittance[idx])
     τinv = 1 / branch.parameter.turnsRatio[idx]
     Φ = branch.parameter.shiftAngle[idx]
@@ -356,21 +356,25 @@ function θij(system::PowerSystem, θ::Vector{VariableRef}, expr::AffExpr, idx::
     add_to_expression!(expr, -1.0, θ[j])
 end
 
-##### Read Data for Injection Measurements #####
-function GijBijθij(ac::AcModel, angle::Vector{VariableRef}, i::Int64, j::Int64, ptr::Int64)
+##### Admittance and Angle Helpers #####
+@inline function GijBijθij(ac::AcModel, angle::Vector{VariableRef}, i::Int64, j::Int64, ptr::Int64)
     θij = angle[i] - angle[j]
     Gij, Bij = reim(ac.nodalMatrixTranspose.nzval[ptr])
 
     return Gij, Bij, sin(θij), cos(θij)
 end
 
-##### Eliminate Phase-Shift Angle from Sine and Cosine #####
-function minusΦ(A::Float64, B::Float64, Φ::Float64)
-    A * cos(Φ) + B * sin(Φ), -A * sin(Φ) + B * cos(Φ)
+##### Phase-Shift Angle Helpers #####
+@inline function minusΦ(A::Float64, B::Float64, Φ::Float64)
+    sinΦ, cosΦ = sincos(Φ)
+
+    A * cosΦ + B * sinΦ, -A * sinΦ + B * cosΦ
 end
 
-function plusΦ(A::Float64, B::Float64, Φ::Float64)
-    A * cos(Φ) - B * sin(Φ), A * sin(Φ) + B * cos(Φ)
+@inline function plusΦ(A::Float64, B::Float64, Φ::Float64)
+    sinΦ, cosΦ = sincos(Φ)
+
+    A * cosΦ - B * sinΦ, A * sinΦ + B * cosΦ
 end
 
 ##### Add Constraints #####
@@ -386,7 +390,7 @@ function addConstrLav!(lav::LAV, expr::NonlinearExpr, z::Float64, aff::AffExpr, 
     add_to_expression!(aff, -1.0, lav.variable.deviation.negative[idx])
 
     lav.residual[idx] = @constraint(lav.jump, expr + aff == z)
-    empty!(aff.terms)
+    emptyExpr!(aff)
 end
 
 function addConstrLav!(lav::LAV, var::VariableRef, z::Float64, idx::Int64)
@@ -400,7 +404,7 @@ function addObjectLav!(lav::LAV, objective::AffExpr, idx::Int64)
     add_to_expression!(objective, lav.variable.deviation.negative[idx])
 end
 
-#### Fix Values #####
+##### Fix Values #####
 function fix!(deviation::DeviationVariableRef, idx::Int64)
     fix(deviation.positive[idx], 0.0; force = true)
     fix(deviation.negative[idx], 0.0; force = true)

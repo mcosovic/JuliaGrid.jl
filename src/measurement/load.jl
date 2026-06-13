@@ -29,7 +29,7 @@ monitoring = measurement(system, "monitoring.h5")
 ```
 """
 function measurement(system::PowerSystem, inputFile::String)
-    packagePath = checkPackagePath()
+    packagePath = packageRoot()
     fullpath, extension = checkFileFormat(inputFile, packagePath)
 
     if extension == ".h5"

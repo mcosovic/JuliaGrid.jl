@@ -398,7 +398,7 @@ function jacobianCoefficient(system::PowerSystem, method::FastNewtonRaphson, idx
     )
 end
 
-function Pijθij(system::PowerSystem, mth::FastNewtonRaphson, p::PiModel, i::Int64, j::Int64)
+@inline function Pijθij(system::PowerSystem, mth::FastNewtonRaphson, p::PiModel, i::Int64, j::Int64)
     m = mth.pvpq[i]
     n = mth.pvpq[j]
 
@@ -408,19 +408,19 @@ function Pijθij(system::PowerSystem, mth::FastNewtonRaphson, p::PiModel, i::Int
     end
 end
 
-function Pijθi(system::PowerSystem, mth::FastNewtonRaphson, p::PiModel, i::Int64)
+@inline function Pijθi(system::PowerSystem, mth::FastNewtonRaphson, p::PiModel, i::Int64)
     if i != system.bus.layout.slack
         mth.active.jacobian[mth.pvpq[i], mth.pvpq[i]] += p.B / (p.D^2 + p.C^2)
     end
 end
 
-function Pijθj(system::PowerSystem, mth::FastNewtonRaphson, p::PiModel, j::Int64)
+@inline function Pijθj(system::PowerSystem, mth::FastNewtonRaphson, p::PiModel, j::Int64)
     if j != system.bus.layout.slack
         mth.active.jacobian[mth.pvpq[j], mth.pvpq[j]] += p.B
     end
 end
 
-function QijVij(mth::FastNewtonRaphson, q::PiModel, i::Int64, j::Int64)
+@inline function QijVij(mth::FastNewtonRaphson, q::PiModel, i::Int64, j::Int64)
     m = mth.pq[i]
     n = mth.pq[j]
 
@@ -430,13 +430,13 @@ function QijVij(mth::FastNewtonRaphson, q::PiModel, i::Int64, j::Int64)
     end
 end
 
-function QijVi(system::PowerSystem, mth::FastNewtonRaphson, q::PiModel, i::Int64)
+@inline function QijVi(system::PowerSystem, mth::FastNewtonRaphson, q::PiModel, i::Int64)
     if system.bus.layout.type[i] == 1
         mth.reactive.jacobian[mth.pq[i], mth.pq[i]] += q.B
     end
 end
 
-function QijVj(system::PowerSystem, mth::FastNewtonRaphson, q::PiModel, j::Int64)
+@inline function QijVj(system::PowerSystem, mth::FastNewtonRaphson, q::PiModel, j::Int64)
     if system.bus.layout.type[j] == 1
         mth.reactive.jacobian[mth.pq[j], mth.pq[j]] += q.C
     end
