@@ -75,18 +75,16 @@ end
 end
 
 ##### Power Injection Helpers #####
-function PiQiSum(
+@inline function PiQiSum(
     V::Polar,
     Gij::Float64,
     tgc1::Float64,
     Bij::Float64,
     tgc2::Float64,
-    I::Vector{Float64},
     j::Int64,
-    op::Function,
-    idx::Int64
+    op::Function
 )
-    I[idx] += V.magnitude[j] * (Gij * tgc1 + op(Bij * tgc2))
+    V.magnitude[j] * (Gij * tgc1 + op(Bij * tgc2))
 end
 
 ##### Active Power Injection #####

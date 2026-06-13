@@ -258,6 +258,7 @@ end
 
 mutable struct DcPowerFlowMethod
     factorization::FactorSparse
+    rhs::Vector{Float64}
     signature::DcPowerFlowSignature
 end
 

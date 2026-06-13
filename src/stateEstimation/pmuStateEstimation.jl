@@ -294,11 +294,11 @@ function pmuLavStateEstimation(
 
                 addConstrLav!(lav, reExpr, reMean, cnt)
                 addObjectLav!(lav, objective, cnt)
-                empty!(reExpr.terms)
+                emptyExpr!(reExpr)
 
                 addConstrLav!(lav, imExpr, imMean, cnt + 1)
                 addObjectLav!(lav, objective, cnt + 1)
-                empty!(imExpr.terms)
+                emptyExpr!(imExpr)
             end
         else
             fix!(deviation, cnt)
@@ -419,9 +419,7 @@ function solve!(analysis::PmuStateEstimation{WLS{Orthogonal}})
         analysis.voltage.angle[i] = angle(voltage)
     end
 
-    @inbounds for i = 1:se.number
-        se.precision.nzval[i] ^= 2
-    end
+    squarePrecision!(se.precision, se.number)
 end
 
 function solve!(analysis::PmuStateEstimation{WLS{PetersWilkinson}})

@@ -56,6 +56,7 @@ function dcPowerFlow(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, 
         ),
         DcPowerFlowMethod(
             selectFactorization(T),
+            Float64[],
             DcPowerFlowSignature(
                 copy(system.model.revision.topology),
                 -1,
@@ -91,9 +92,10 @@ function solve!(analysis::DcPowerFlow)
     revision = system.model.revision
     pf = analysis.method
 
-    b = copy(bus.supply.active)
+    resize!(pf.rhs, bus.number)
     @inbounds for i = 1:bus.number
-        b[i] -= bus.demand.active[i] + bus.shunt.conductance[i] + dc.shiftPower[i]
+        pf.rhs[i] = bus.supply.active[i] -
+            bus.demand.active[i] - bus.shunt.conductance[i] - dc.shiftPower[i]
     end
 
     if revision.topology != pf.signature.topology
@@ -119,7 +121,7 @@ function solve!(analysis::DcPowerFlow)
     end
 
     fillState!(analysis.voltage, bus.number)
-    solution!(analysis.voltage.angle, pf.factorization, b)
+    solution!(analysis.voltage.angle, pf.factorization, pf.rhs)
 
     addSlackAngle!(system, analysis)
 end

@@ -22,7 +22,8 @@ Release Date: TBD
   * Updated power system tests to match the current cost-function error messages.
 
 #### Other
-  * Reviewed and lightly optimized backend equation.
+  * Reviewed and lightly optimized backend equation helpers.
+  * Reduced temporary allocations in selected power flow and state estimation hot paths.
   * Expanded the precompile workload to cover additional commonly used analysis solve paths.
   * Refined internal template, label, and per-unit conversion utilities for clearer dispatch and less unnecessary work.
   * Refactored template macro helpers and `@default` reset logic to reduce duplicated internal state updates.

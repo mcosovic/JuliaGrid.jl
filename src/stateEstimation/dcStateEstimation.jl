@@ -84,7 +84,7 @@ function dcStateEstimationWls(system::PowerSystem, monitoring::Measurement)
     end
 
     pmuIdx = OrderedDict{Int64, Int64}()
-    numDevice = copy(wattmeter.number)
+    numDevice = wattmeter.number
     @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
             nnzCff += 1
@@ -223,7 +223,7 @@ function dcLavStateEstimation(
     set_string_names_on_creation(jump, name)
     setAttribute(jump, iteration, tolerance, verbose)
 
-    total = copy(wattmeter.number)
+    total = wattmeter.number
     pmuIdx = OrderedDict{Int64, Int64}()
     @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
@@ -273,7 +273,7 @@ function dcLavStateEstimation(
             end
             addConstrLav!(lav, expr, mean, i)
             addObjectLav!(lav, objective, i)
-            empty!(expr.terms)
+            emptyExpr!(expr)
         else
             fix!(deviation, i)
         end
@@ -391,14 +391,13 @@ function solve!(analysis::DcStateEstimation{WLS{PetersWilkinson}})
     se = analysis.method
     bus = analysis.system.bus
 
-    control = UMFPACK.get_umfpack_control(Float64, Int64)
-    control[UMFPACK.JL_UMFPACK_SCALE] = 0
-
     removeIdx, removeVal = removeColumn(se.coefficient, bus.layout.slack)
     sqrtPrecision!(se.precision, se.number)
 
     if se.signature[:run]
         se.signature[:run] = false
+        control = UMFPACK.get_umfpack_control(Float64, Int64)
+        control[UMFPACK.JL_UMFPACK_SCALE] = 0
 
         H = vcat(se.precision * se.coefficient, sparse([1], [bus.layout.slack], [1.0], 1, bus.number))
         se.signature[:pattern] = dropZeros!(H, se.signature[:pattern])
@@ -481,7 +480,7 @@ end
 
 function squarePrecision!(P::SparseMatrixCSC{Float64, Int64}, n::Int64)
     @inbounds for i = 1:n
-        P.nzval[i] ^= 2
+        P.nzval[i] *= P.nzval[i]
     end
 end
 

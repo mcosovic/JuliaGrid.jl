@@ -375,6 +375,7 @@ end
 function jacobianCoefficient(system::PowerSystem, method::FastNewtonRaphson, idx::Int64)
     bsi = 0.5 * system.branch.parameter.susceptance[idx]
     τinv = 1 / system.branch.parameter.turnsRatio[idx]
+    sinθ, cosθ = sincos(system.branch.parameter.shiftAngle[idx])
 
     if method.bx
         bmk = - 1 / system.branch.parameter.reactance[idx]
@@ -388,8 +389,8 @@ function jacobianCoefficient(system::PowerSystem, method::FastNewtonRaphson, idx
     PiModel(
         A = A,
         B = B,
-        C = sin(system.branch.parameter.shiftAngle[idx]),
-        D = cos(system.branch.parameter.shiftAngle[idx])
+        C = sinθ,
+        D = cosθ
     ),
     PiModel(
         A = - bmk * τinv,
@@ -476,6 +477,8 @@ function gaussSeidel(system::PowerSystem)
     voltg = zeros(ComplexF64, bus.number)
     pq = Int64[]
     pv = Int64[]
+    sizehint!(pq, bus.number)
+    sizehint!(pv, bus.number)
     @inbounds for i = 1:bus.number
         voltg[i] = voltgMagnitude[i] * cis(voltgAngle[i])
 
@@ -557,7 +560,6 @@ function mismatch!(analysis::AcPowerFlow{NewtonRaphson})
 
     stopP = 0.0
     stopQ = 0.0
-    I = [0.0; 0.0]
     @inbounds for i = 1:bus.number
         if i == bus.layout.slack
             continue
@@ -565,21 +567,23 @@ function mismatch!(analysis::AcPowerFlow{NewtonRaphson})
 
         k = pvpq[i]
         q = pq[i]
-        fill!(I, 0.0)
+        currentP = 0.0
+        currentQ = 0.0
+        isPQ = bus.layout.type[i] == 1
         for ptr in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
             row = ac.nodalMatrix.rowval[ptr]
             Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltg, i, row, ptr)
 
-            PiQiSum(voltg, Gij, cosθij, Bij, sinθij, I, row, +, 1)
-            if bus.layout.type[i] == 1
-                PiQiSum(voltg, Gij, sinθij, Bij, cosθij, I, row, -, 2)
+            currentP += PiQiSum(voltg, Gij, cosθij, Bij, sinθij, row, +)
+            if isPQ
+                currentQ += PiQiSum(voltg, Gij, sinθij, Bij, cosθij, row, -)
             end
         end
 
-        mism[k] = Pi(voltg, I[1], i) - bus.supply.active[i] + bus.demand.active[i]
+        mism[k] = Pi(voltg, currentP, i) - bus.supply.active[i] + bus.demand.active[i]
         stopP = max(stopP, abs(mism[k]))
-        if bus.layout.type[i] == 1
-            mism[q] = Qi(voltg, I[2], i) - bus.supply.reactive[i] + bus.demand.reactive[i]
+        if isPQ
+            mism[q] = Qi(voltg, currentQ, i) - bus.supply.reactive[i] + bus.demand.reactive[i]
             stopQ = max(stopQ, abs(mism[q]))
         end
     end
@@ -600,7 +604,6 @@ function mismatch!(analysis::AcPowerFlow{FastNewtonRaphson})
 
     stopP = 0.0
     stopQ = 0.0
-    I = [0.0; 0.0]
     @inbounds for i = 1:bus.number
         if i == bus.layout.slack
             continue
@@ -608,22 +611,24 @@ function mismatch!(analysis::AcPowerFlow{FastNewtonRaphson})
 
         k = pvpq[i]
         q = pq[i]
-        fill!(I, 0.0)
+        currentP = 0.0
+        currentQ = 0.0
+        isPQ = bus.layout.type[i] == 1
         for ptr in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
             row = ac.nodalMatrix.rowval[ptr]
             Gij, Bij, sinθij, cosθij = GijBijθij(ac, volt, i, row, ptr)
 
-            PiQiSum(volt, Gij, cosθij, Bij, sinθij, I, row, +, 1)
-            if bus.layout.type[i] == 1
-                PiQiSum(volt, Gij, sinθij, Bij, cosθij, I, row, -, 2)
+            currentP += PiQiSum(volt, Gij, cosθij, Bij, sinθij, row, +)
+            if isPQ
+                currentQ += PiQiSum(volt, Gij, sinθij, Bij, cosθij, row, -)
             end
         end
 
         Vinv = 1 / volt.magnitude[i]
-        mismP[k] = I[1] - (bus.supply.active[i] - bus.demand.active[i]) * Vinv
+        mismP[k] = currentP - (bus.supply.active[i] - bus.demand.active[i]) * Vinv
         stopP = max(stopP, abs(mismP[k]))
-        if bus.layout.type[i] == 1
-            mismQ[q] = I[2] - (bus.supply.reactive[i] - bus.demand.reactive[i]) * Vinv
+        if isPQ
+            mismQ[q] = currentQ - (bus.supply.reactive[i] - bus.demand.reactive[i]) * Vinv
             stopQ = max(stopQ, abs(mismQ[q]))
         end
     end
@@ -704,7 +709,6 @@ function solve!(analysis::AcPowerFlow{NewtonRaphson})
     pq = pf.pq
     pvpq = pf.pvpq
 
-    I = [0.0; 0.0]
     @inbounds for i = 1:bus.number
         if i == bus.layout.slack
             continue
@@ -718,7 +722,6 @@ function solve!(analysis::AcPowerFlow{NewtonRaphson})
                 continue
             end
 
-            fill!(I, 0.0)
             Gij, Bij = reim(ac.nodalMatrix.nzval[j])
             if row != i
                 sinθij, cosθij = sincos(volt.angle[row] - volt.angle[i])
@@ -734,25 +737,27 @@ function solve!(analysis::AcPowerFlow{NewtonRaphson})
                     jcb[pq[row], pq[i]] = QiVj(volt, Gij, Bij, sinθij, cosθij, row)
                 end
             else
+                currentθ = 0.0
+                currentV = 0.0
                 for ptr in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
                     q = ac.nodalMatrix.rowval[ptr]
                     Gik, Bik, sinθik, cosθik = GijBijθij(ac, volt, row, q, ptr)
 
-                    PiQiSum(volt, Gik, sinθik, Bik, cosθik, I, q, -, 1)
+                    currentθ += PiQiSum(volt, Gik, sinθik, Bik, cosθik, q, -)
                     if bus.layout.type[i] == 1 || type == 1
-                        PiQiSum(volt, Gik, cosθik, Bik, sinθik, I, q, +, 2)
+                        currentV += PiQiSum(volt, Gik, cosθik, Bik, sinθik, q, +)
                     end
                 end
 
-                jcb[pvpq[row], pvpq[i]] = Piθi(volt, Bij, -I[1], row)
+                jcb[pvpq[row], pvpq[i]] = Piθi(volt, Bij, -currentθ, row)
                 if type == 1
-                    jcb[pq[row], pvpq[i]] = Qiθi(volt, Gij, I[2], row)
+                    jcb[pq[row], pvpq[i]] = Qiθi(volt, Gij, currentV, row)
                 end
                 if bus.layout.type[i] == 1
-                    jcb[pvpq[row], pq[i]] = PiVi(volt, Gij, I[2], row)
+                    jcb[pvpq[row], pq[i]] = PiVi(volt, Gij, currentV, row)
                 end
                 if bus.layout.type[i] == 1 && type == 1
-                    jcb[pq[row], pq[i]] = QiVi(volt, Bij, I[1], row)
+                    jcb[pq[row], pq[i]] = QiVi(volt, Bij, currentθ, row)
                 end
             end
         end
@@ -837,7 +842,7 @@ function solve!(analysis::AcPowerFlow{FastNewtonRaphson})
                 row = ac.nodalMatrix.rowval[ptr]
                 Gij, Bij, sinθij, cosθij = GijBijθij(ac, volt, i, row, ptr)
 
-                reactive.mismatch[pq[i]] += volt.magnitude[row] * (Gij * sinθij - Bij * cosθij)
+                reactive.mismatch[pq[i]] += PiQiSum(volt, Gij, sinθij, Bij, cosθij, row, -)
             end
         end
     end

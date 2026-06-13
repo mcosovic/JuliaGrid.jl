@@ -89,7 +89,7 @@ function acWLS(system::PowerSystem, monitoring::Measurement)
     total = volt.number + amp.number + watt.number + var.number + 2 * pmu.number
 
     nnzJcb = volt.number + 4 * amp.number
-    nnzPcs = copy(total)
+    nnzPcs = total
 
     @inbounds for (i, idx) in enumerate(watt.layout.index)
         if watt.layout.bus[i]
@@ -215,7 +215,7 @@ function acWLS(system::PowerSystem, monitoring::Measurement)
 
             varRe, varIm = variancePmu(pmu, cosθ, sinθ, i)
             if pmu.layout.correlated[i]
-                precision!(pcs,pmu, cosθ, sinθ, varRe, varIm, i)
+                precision!(pcs, pmu, cosθ, sinθ, varRe, varIm, i)
             else
                 precision!(pcs, varRe)
                 precision!(pcs, varIm)
@@ -264,7 +264,6 @@ function normalEquation!(system::PowerSystem, analysis::AcStateEstimation)
     jcb = se.jacobian
 
     se.objective = 0.0
-    I = [0.0; 0.0]
     @inbounds for col = 1:bus.number
         cok = col + bus.number
 
@@ -277,20 +276,21 @@ function normalEquation!(system::PowerSystem, analysis::AcStateEstimation)
 
             if se.type[row] == 6 # Pi
                 if col == se.index[row]
-                    fill!(I, 0.0)
+                    currentθ = 0.0
+                    currentV = 0.0
                     for q in ac.nodalMatrix.colptr[col]:(ac.nodalMatrix.colptr[col + 1] - 1)
                         j = ac.nodalMatrix.rowval[q]
 
                         Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltage, col, j, q)
-                        PiQiSum(voltage, Gij, sinθij, Bij, cosθij, I, j, -, 1)
-                        PiQiSum(voltage, Gij, cosθij, Bij, sinθij, I, j, +, 2)
+                        currentθ += PiQiSum(voltage, Gij, sinθij, Bij, cosθij, j, -)
+                        currentV += PiQiSum(voltage, Gij, cosθij, Bij, sinθij, j, +)
                     end
-                    se.residual[row] = se.mean[row] - Pi(voltage, I[2], col)
+                    se.residual[row] = se.mean[row] - Pi(voltage, currentV, col)
                     seobjective(analysis, row)
 
                     Gii, Bii = reim(ac.nodalMatrix[col, col])
-                    jcb[row, col] = Piθi(voltage, Bii, -I[1], col)
-                    jcb[row, cok] = PiVi(voltage, Gii, I[2], col)
+                    jcb[row, col] = Piθi(voltage, Bii, -currentθ, col)
+                    jcb[row, cok] = PiVi(voltage, Gii, currentV, col)
                 else
                     Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltage, idx, col)
 
@@ -330,20 +330,21 @@ function normalEquation!(system::PowerSystem, analysis::AcStateEstimation)
 
             elseif se.type[row] == 9 # Qi
                 if col == se.index[row]
-                    fill!(I, 0.0)
+                    currentθ = 0.0
+                    currentV = 0.0
                     for q in ac.nodalMatrix.colptr[col]:(ac.nodalMatrix.colptr[col + 1] - 1)
                         j = ac.nodalMatrix.rowval[q]
 
                         Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltage, col, j, q)
-                        PiQiSum(voltage, Gij, cosθij, Bij, sinθij, I, j, +, 1)
-                        PiQiSum(voltage, Gij, sinθij, Bij, cosθij, I, j, -, 2)
+                        currentθ += PiQiSum(voltage, Gij, cosθij, Bij, sinθij, j, +)
+                        currentV += PiQiSum(voltage, Gij, sinθij, Bij, cosθij, j, -)
                     end
-                    se.residual[row] = se.mean[row] - Pi(voltage, I[2], col)
+                    se.residual[row] = se.mean[row] - Pi(voltage, currentV, col)
                     seobjective(analysis, row)
 
                     Gii, Bii = reim(ac.nodalMatrix[col, col])
-                    jcb[row, col] = Qiθi(voltage, Gii, I[1], col)
-                    jcb[row, cok] = QiVi(voltage, Bii, I[2], col)
+                    jcb[row, col] = Qiθi(voltage, Gii, currentθ, col)
+                    jcb[row, cok] = QiVi(voltage, Bii, currentV, col)
                 else
                     Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltage, idx, col)
 
@@ -801,8 +802,9 @@ function acLavStateEstimation(
                 else
                     ReExpr, ImExpr = ReImIji(system, voltage, idx)
                 end
-                ReMean = pmu.magnitude.mean[k] * cos(pmu.angle.mean[k])
-                ImMean = pmu.magnitude.mean[k] * sin(pmu.angle.mean[k])
+                sinθ, cosθ = sincos(pmu.angle.mean[k])
+                ReMean = pmu.magnitude.mean[k] * cosθ
+                ImMean = pmu.magnitude.mean[k] * sinθ
 
                 addConstrLav!(lav, ReExpr, ReMean, aff, cnt)
                 addObjectLav!(lav, objective, cnt)
