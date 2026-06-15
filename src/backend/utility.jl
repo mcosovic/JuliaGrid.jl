@@ -265,7 +265,15 @@ function getIndex(lbl::OrderedDict{Int64, Int64}, label::SubString{String})
     lbl[parse(Int64, label)]
 end
 
+function getIndex(lbl::AbstractDict{Int64, Int64}, label::SubString{String})
+    lbl[parse(Int64, label)]
+end
+
 function getIndex(lbl::OrderedDict{Int64, Int64}, label::Int64)
+    lbl[label]
+end
+
+function getIndex(lbl::AbstractDict{Int64, Int64}, label::Int64)
     lbl[label]
 end
 

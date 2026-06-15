@@ -38,7 +38,7 @@ function powerSystem(inputFile::String; optimal::Bool = true)
     fullpath, extension = checkFileFormat(inputFile, packagePath)
 
     if extension == ".h5"
-        hdf5 = h5open(fullpath, "r")
+        h5open(fullpath, "r") do hdf5
             setTypeLabel(hdf5, template)
 
             system = powerSystem(; optimal = attributes(hdf5)["optimal"][])
@@ -46,19 +46,15 @@ function powerSystem(inputFile::String; optimal::Bool = true)
             hdf5Branch(system, hdf5)
             hdf5Generator(system, hdf5)
             hdf5Base(system, hdf5)
-        close(hdf5)
-    end
-
-    if extension == ".m"
+        end
+    elseif extension == ".m"
         system = powerSystem(; optimal)
 
         lines = matpowerRead(system, fullpath)
         master = matpowerBus(system, lines)
         matpowerBranch(system, lines, master)
         matpowerGenerator(system, lines, master)
-    end
-
-    if extension == ".raw"
+    elseif extension == ".raw"
         system = powerSystem(; optimal)
 
         lines = psseRead(system, fullpath)
@@ -121,7 +117,8 @@ function powerSystem(; optimal::Bool = true)
                     Int8[],
                     OrderedDict{Int64, Vector{Float64}}(),
                     OrderedDict{Int64, Matrix{Float64}}()
-                ),            ),
+                ),
+            ),
             GeneratorLayout(Int64[], Int8[], 0, 0),
             0
         ),
@@ -154,7 +151,7 @@ function hdf5Bus(system::PowerSystem, hdf5::File)
     bus.layout.area = readHDF5(layouth5, "area", bus.number)
     bus.layout.lossZone = readHDF5(layouth5, "lossZone", bus.number)
 
-    bus.label = OrderedDict(zip(read(hdf5["bus/label"]), collect(1:bus.number)))
+    bus.label = OrderedDict(zip(read(hdf5["bus/label"]), 1:bus.number))
     @inbounds for i = 1:bus.number
         if bus.layout.type[i] == 3
             bus.layout.slack = i
@@ -198,7 +195,7 @@ function hdf5Branch(system::PowerSystem, hdf5::File)
     branch.layout.inservice = attributes(hdf5)["number of in-service branches"][]
 
     branch.layout.status = readHDF5(layouth5, "status", branch.number)
-    branch.label = OrderedDict(zip(read(hdf5["branch/label"]), collect(1:branch.number)))
+    branch.label = OrderedDict(zip(read(hdf5["branch/label"]), 1:branch.number))
     branch.layout.label = read(layouth5["label"])
 
     parameterh5 = hdf5["branch/parameter"]
@@ -236,7 +233,7 @@ function hdf5Generator(system::PowerSystem, hdf5::File)
 
     gen.layout.status = readHDF5(layouth5, "status", gen.number)
     gen.layout.inservice = attributes(hdf5)["number of in-service generators"][]
-    gen.label = OrderedDict(zip(read(hdf5["generator/label"]), collect(1:gen.number)))
+    gen.label = OrderedDict(zip(read(hdf5["generator/label"]), 1:gen.number))
     gen.layout.label = read(layouth5["label"])
 
     outputh5 = hdf5["generator/output"]
@@ -332,7 +329,7 @@ function matpowerRead(system::PowerSystem, fullpath::String)
         end
     end
 
-    if system.base.power == 0
+    if system.base.power.value == 0
         system.base.power.value = 100
         @info("The variable basePower not found. The algorithm proceeds with value of 1e8 VA.")
     end
@@ -356,7 +353,7 @@ function matpowerBus(system::PowerSystem, lines::Vector{Vector{String}})
     sizehint!(bus.label, bus.number)
 
     labeltype = typeofLabel(lines[5], template.bus.key, template.bus.label, bus.number)
-    master = OrderedDict{Int64, Int64}()
+    master = Dict{Int64, Int64}()
     sizehint!(master, bus.number)
 
     bus.demand.active = fill(0.0, bus.number)
@@ -386,8 +383,8 @@ function matpowerBus(system::PowerSystem, lines::Vector{Vector{String}})
 
     firstn = system.bus.layout.optimal ? 13 : 11
     data = Array{SubString{String}}(undef, firstn)
-    @inbounds for (k, line) in enumerate(eachsplit.(lines[1]))
-        splitLine!(line, data, firstn)
+    @inbounds for (k, line) in enumerate(lines[1])
+        splitLine!(eachsplit(line), data, firstn)
 
         labelInt = parse(Int64, data[1])
         bus.layout.label = max(bus.layout.label, labelInt)
@@ -443,7 +440,7 @@ function matpowerBus(system::PowerSystem, lines::Vector{Vector{String}})
 end
 
 ##### Load Branch Data from MATLAB File #####
-function matpowerBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::OrderedDict{Int64, Int64})
+function matpowerBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::AbstractDict{Int64, Int64})
     if isempty(lines[2])
         throw(ErrorException("The branch data is missing."))
     end
@@ -483,8 +480,8 @@ function matpowerBranch(system::PowerSystem, lines::Vector{Vector{String}}, mast
 
     firstn = system.bus.layout.optimal ? 13 : 11
     data = Array{SubString{String}}(undef, firstn)
-    @inbounds for (k, line) in enumerate(eachsplit.(lines[2]))
-        splitLine!(line, data, firstn)
+    @inbounds for (k, line) in enumerate(lines[2])
+        splitLine!(eachsplit(line), data, firstn)
 
         setLabel!(branch.label, template.branch.label, labeltype, k)
 
@@ -520,7 +517,7 @@ function matpowerBranch(system::PowerSystem, lines::Vector{Vector{String}}, mast
 end
 
 ##### Load Generator Data from MATLAB File #####
-function matpowerGenerator(system::PowerSystem, lines::Vector{Vector{String}}, master::OrderedDict{Int64, Int64})
+function matpowerGenerator(system::PowerSystem, lines::Vector{Vector{String}}, master::AbstractDict{Int64, Int64})
     if isempty(lines[3])
         throw(ErrorException("The generator data is missing."))
     end
@@ -560,8 +557,8 @@ function matpowerGenerator(system::PowerSystem, lines::Vector{Vector{String}}, m
 
     firstn = system.bus.layout.optimal ? 16 : 8
     data = Array{SubString{String}}(undef, firstn)
-    @inbounds for (k, line) in enumerate(eachsplit.(lines[3]))
-        splitLine!(line, data, firstn)
+    @inbounds for (k, line) in enumerate(lines[3])
+        splitLine!(eachsplit(line), data, firstn)
 
         setLabel!(gen.label, template.generator.label, labeltype, k)
 
@@ -608,12 +605,12 @@ function matpowerGenerator(system::PowerSystem, lines::Vector{Vector{String}}, m
         if !isempty(costLine)
             data = Array{SubString{String}}(undef, length(split(costLine[1])))
 
-            costLines = eachsplit.(costLine[1:gen.number])
-            costParser(system, gen.cost.active, costLines, data)
+            costParser(system, gen.cost.active, costLine, 1:gen.number, data)
 
             if size(costLine, 1) == 2 * gen.number
-                costLines = eachsplit.(costLine[gen.number + 1:end])
-                costParser(system, gen.cost.reactive, costLines, data)
+                costParser(
+                    system, gen.cost.reactive, costLine, (gen.number + 1):lastindex(costLine), data
+                )
             end
         end
     end
@@ -625,13 +622,14 @@ end
 function costParser(
     system::PowerSystem,
     cost::Cost,
-    costLines::Vector{Base.SplitIterator{String, typeof(isspace)}},
+    costLines::Vector{String},
+    range::UnitRange{Int64},
     data::Vector{SubString{String}}
 )
     basePowerInv = 1 / system.base.power.value
 
-    @inbounds for (i, line) in enumerate(costLines)
-        for (idx, s) in enumerate(line)
+    @inbounds for (i, lineIdx) in enumerate(range)
+        for (idx, s) in enumerate(eachsplit(costLines[lineIdx]))
             data[idx] = SubString(s)
         end
 
@@ -639,20 +637,21 @@ function costParser(
         cost.model[i] = parse(Int8, data[1])
 
         if cost.model[i] == 1
-            cost.piecewise[i] = zeros(pointNumber, 2)
+            piecewise = Matrix{Float64}(undef, pointNumber, 2)
+            cost.piecewise[i] = piecewise
             for (k, p) in enumerate(1:2:(2 * pointNumber))
-                cost.piecewise[i][k, 1] = parse(Float64, data[4 + p]) * basePowerInv
+                piecewise[k, 1] = parse(Float64, data[4 + p]) * basePowerInv
             end
             for (k, p) in enumerate(2:2:(2 * pointNumber))
-                cost.piecewise[i][k, 2] = parse(Float64, data[4 + p])
+                piecewise[k, 2] = parse(Float64, data[4 + p])
             end
         end
 
         if cost.model[i] == 2
-            cost.polynomial[i] = fill(0.0, pointNumber)
+            polynomial = Vector{Float64}(undef, pointNumber)
+            cost.polynomial[i] = polynomial
             for k = 1:pointNumber
-                cost.polynomial[i][k] =
-                    parse(Float64, data[4 + k]) * system.base.power.value^(pointNumber - k)
+                polynomial[k] = parse(Float64, data[4 + k]) * system.base.power.value^(pointNumber - k)
             end
         end
     end
@@ -680,11 +679,13 @@ function psseRead(system::PowerSystem, fullpath::String)
             end
 
             flag, idx = psseBreakStart(line, idx)
-            psseParse(line, lines, flag, idx)
+            if flag && idx != 0
+                addLine!(line, lines[idx])
+            end
         end
     end
 
-    if system.base.power == 0
+    if system.base.power.value == 0
         system.base.power.value = 100
         @info("The variable basePower not found. The algorithm proceeds with value of 1e8 VA.")
     end
@@ -694,19 +695,18 @@ end
 
 function psseStartBus(line::String)
     bus = split(line, ",")
-    try
-        parse(Int64, bus[1])
-        parse(Float64, bus[3])
-        parse(Float64, bus[9])
-
+    if length(bus) >= 9 &&
+        tryparse(Int64, bus[1]) !== nothing &&
+        tryparse(Float64, bus[3]) !== nothing &&
+        tryparse(Float64, bus[9]) !== nothing
         return false, 1
-    catch
-        return true, 0
     end
+
+    return true, 0
 end
 
 function psseBreakStart(line::String, idx::Int64)
-    if occursin(r"^(Q|\s*0)\s*(/.*)?$", line)
+    if psseBreakLine(line)
 
         if occursin("BEGIN LOAD DATA", line)
             return false, 2
@@ -738,10 +738,34 @@ function psseBreakStart(line::String, idx::Int64)
     return true, idx
 end
 
-function psseParse(line::String, str::Vector{Vector{String}}, flag::Bool, idx::Int64)
-    if flag && idx != 0
-        addLine!(line, str[idx])
+function psseBreakLine(line::String)
+    if isempty(line)
+        return false
     end
+
+    idx = firstindex(line)
+    last = lastindex(line)
+    @inbounds while idx <= last && isspace(line[idx])
+        idx = nextind(line, idx)
+    end
+
+    if idx > last
+        return false
+    end
+
+    char = line[idx]
+    if char == 'Q'
+        return true
+    elseif char == '0'
+        idx = nextind(line, idx)
+        @inbounds while idx <= last && isspace(line[idx])
+            idx = nextind(line, idx)
+        end
+
+        return idx > last || line[idx] == '/'
+    end
+
+    return false
 end
 
 ##### Load Bus Data from PSEE File #####
@@ -760,7 +784,7 @@ function psseBus(system::PowerSystem, lines::Vector{Vector{String}})
     sizehint!(bus.label, bus.number)
 
     labeltype = typeofLabel(template.bus.key)
-    master = OrderedDict{Int64, Int64}()
+    master = Dict{Int64, Int64}()
     sizehint!(master, bus.number)
 
     bus.supply.active = fill(0.0, bus.number)
@@ -784,8 +808,8 @@ function psseBus(system::PowerSystem, lines::Vector{Vector{String}})
     bus.layout.label = 0
     firstn = system.bus.layout.optimal ? 11 : 9
     data = Array{SubString{String}}(undef, firstn)
-    for (k, line) in enumerate(eachsplit.(lines[1], ","))
-        splitLine!(line, data, firstn)
+    for (k, line) in enumerate(lines[1])
+        splitLine!(eachsplit(line, ","), data, firstn)
 
         labelInt = parse(Int64, data[1])
         bus.layout.label = max(bus.layout.label, labelInt)
@@ -797,10 +821,10 @@ function psseBus(system::PowerSystem, lines::Vector{Vector{String}})
             else
                 bus.label[label] = k
             end
-            master[labelInt] = k
         else
             busLabel!(bus.label, data[1], labelInt, k)
         end
+        master[labelInt] = k
 
         bus.voltage.magnitude[k] = parse(Float64, data[8])
         bus.voltage.angle[k] = parse(Float64, data[9]) * deg2rad
@@ -831,11 +855,11 @@ function psseBus(system::PowerSystem, lines::Vector{Vector{String}})
     bus.demand.reactive = fill(0.0, bus.number)
 
     data = Array{SubString{String}}(undef, 11)
-    for line in eachsplit.(lines[2], ",")
-        splitLine!(line, data, 11)
+    for line in lines[2]
+        splitLine!(eachsplit(line, ","), data, 11)
 
         if parse(Int64, data[3]) == 1
-            idx = parse(Int64, data[1])
+            idx = master[parse(Int64, data[1])]
 
             constPower = parse(Float64, data[6])
             constCurrent = parse(Float64, data[8]) * bus.voltage.magnitude[idx]
@@ -853,22 +877,22 @@ function psseBus(system::PowerSystem, lines::Vector{Vector{String}})
     bus.shunt.susceptance = fill(0.0, bus.number)
 
     data = Array{SubString{String}}(undef, 5)
-    for line in eachsplit.(lines[3], ",")
-        splitLine!(line, data, 5)
+    for line in lines[3]
+        splitLine!(eachsplit(line, ","), data, 5)
 
         if parse(Int64, data[3]) == 1
-            idx = parse(Int64, data[1])
+            idx = master[parse(Int64, data[1])]
             bus.shunt.conductance[idx] += parse(Float64, data[4]) * basePowerInv
             bus.shunt.susceptance[idx] += parse(Float64, data[5]) * basePowerInv
         end
     end
 
     data = Array{SubString{String}}(undef, 10)
-    for line in eachsplit.(lines[4], ",")
-        splitLine!(line, data, 10)
+    for line in lines[4]
+        splitLine!(eachsplit(line, ","), data, 10)
 
         if parse(Int64, data[4]) == 1
-            idx = parse(Int64, data[1])
+            idx = master[parse(Int64, data[1])]
             bus.shunt.susceptance[idx] += parse(Float64, data[10]) * basePowerInv
         end
     end
@@ -882,7 +906,7 @@ function psseBus(system::PowerSystem, lines::Vector{Vector{String}})
 end
 
 ##### Load Branch Data from PSSE File #####
-function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::OrderedDict{Int64, Int64})
+function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::AbstractDict{Int64, Int64})
     if isempty(lines[5])
         throw(ErrorException("The branch data is missing."))
     end
@@ -924,8 +948,8 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
     branch.layout.status = fill(Int8(3), branch.number)
 
     data = Array{SubString{String}}(undef, 14)
-    for (k, line) in enumerate(eachsplit.(lines[5], ","))
-        splitLine!(line, data, 14)
+    for (k, line) in enumerate(lines[5])
+        splitLine!(eachsplit(line, ","), data, 14)
 
         setLabel!(branch.label, template.branch.label, labeltype, k)
 
@@ -950,11 +974,12 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
         if branch.layout.status[k] == 1
             branch.layout.inservice += 1
 
-            bus.shunt.conductance[branch.layout.from[k]] += parse(Float64, data[10])
-            bus.shunt.susceptance[branch.layout.from[k]] += parse(Float64, data[11])
+            from, to = fromto(system, k)
+            bus.shunt.conductance[from] += parse(Float64, data[10])
+            bus.shunt.susceptance[from] += parse(Float64, data[11])
 
-            bus.shunt.conductance[branch.layout.to[k]] += parse(Float64, data[12])
-            bus.shunt.susceptance[branch.layout.to[k]] += parse(Float64, data[13])
+            bus.shunt.conductance[to] += parse(Float64, data[12])
+            bus.shunt.susceptance[to] += parse(Float64, data[13])
         end
     end
     branch.layout.label = branch.number
@@ -963,12 +988,12 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
     cntLine = 0
     cnt = 1
     data = Array{SubString{String}}(undef, 83)
-    for line in eachsplit.(lines[6], ",")
+    for line in lines[6]
 
         if cntLine == 0
             cnt = 1
 
-            for s in line
+            for s in eachsplit(line, ",")
                 data[cnt] = SubString(s)
                 cnt += 1
             end
@@ -982,7 +1007,7 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
             cntLine += 1
 
         elseif cntLine < block
-            for s in line
+            for s in eachsplit(line, ",")
                 data[cnt] = SubString(s)
                 cnt += 1
             end
@@ -993,13 +1018,20 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
             if block == 4
                 i = getIndex(buslabel, parse(Int64, data[1]))
                 j = getIndex(buslabel, parse(Int64, data[2]))
+                status = parse(Int8, data[12])
+
+                if status == 1
+                    conductance, susceptance = psseTransformerMagnetizing(system, data, 24)
+                    bus.shunt.conductance[i] += conductance
+                    bus.shunt.susceptance[i] += susceptance
+                end
 
                 τ1 = parse(Float64, data[25])
                 τ2 = parse(Float64, data[42])
 
                 addBranch!(
                     system; from = getLabel(system.bus.label, i), to = getLabel(system.bus.label, j),
-                    reactance = 1.0, status = parse(Int64, data[12]),
+                    reactance = 1.0, status,
                     turnsRatio = τ1 / τ2
                 )
 
@@ -1023,7 +1055,7 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
                 X = branch.parameter.reactance
                 τ = branch.parameter.turnsRatio
 
-                if cz ∈ (2, 3)
+                if cz == 2 || cz == 3
                     Sbinv = 1 / parse(Float64, data[24])
 
                     if cz == 3
@@ -1066,6 +1098,13 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
                 i = getIndex(buslabel, parse(Int64, data[1]))
                 j = getIndex(buslabel, parse(Int64, data[2]))
                 q = getIndex(buslabel, parse(Int64, data[3]))
+                status = parse(Int8, data[12])
+
+                if status != 0 && status != 4
+                    conductance, susceptance = psseTransformerMagnetizing(system, data, 24)
+                    bus.shunt.conductance[i] += conductance
+                    bus.shunt.susceptance[i] += susceptance
+                end
 
                 addBus!(
                     system; base = 1e3 * system.base.voltage.prefix / pfx.baseVoltage,
@@ -1074,8 +1113,6 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
 
                 bus.voltage.magnitude[end] = parse(Float64, data[31])
                 bus.voltage.angle[end] = parse(Float64, data[32]) * deg2rad
-
-                status = parse(Int8, data[12])
 
                 addBranch!(
                     system; from = getLabel(system.bus.label, i),
@@ -1131,7 +1168,7 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
                 Vb2 = parse(Float64, data[51])
                 Vb3 = parse(Float64, data[68])
 
-                if cz ∈ (2, 3)
+                if cz == 2 || cz == 3
                     Sbinv1 = 1 / parse(Float64, data[24])
                     Sbinv2 = 1 / parse(Float64, data[27])
                     Sbinv3 = 1 / parse(Float64, data[30])
@@ -1213,7 +1250,35 @@ function psseBranch(system::PowerSystem, lines::Vector{Vector{String}}, master::
     end
 end
 
-function psseGenerator(system::PowerSystem, lines::Vector{Vector{String}}, master::OrderedDict{Int64, Int64})
+function psseTransformerMagnetizing(
+    system::PowerSystem,
+    data::Vector{SubString{String}},
+    sbaseIdx::Int64
+)
+    cm = parse(Int64, data[7])
+    if cm == 1
+        return parse(Float64, data[8]), parse(Float64, data[9])
+    elseif cm == 2
+        systemBase = system.base.power.value
+        transformerBase = parse(Float64, data[sbaseIdx])
+        if transformerBase == 0.0
+            transformerBase = systemBase
+        end
+
+        coreLoss = parse(Float64, data[8]) * 1e-6
+        excitingCurrent = parse(Float64, data[9])
+        conductance = coreLoss / systemBase
+        conductanceTransformer = coreLoss / transformerBase
+        susceptance = -sqrt(max(excitingCurrent^2 - conductanceTransformer^2, 0.0)) *
+            transformerBase / systemBase
+
+        return conductance, susceptance
+    end
+
+    return 0.0, 0.0
+end
+
+function psseGenerator(system::PowerSystem, lines::Vector{Vector{String}}, master::AbstractDict{Int64, Int64})
     if isempty(lines[7])
         throw(ErrorException("The generator data is missing."))
     end
@@ -1255,8 +1320,8 @@ function psseGenerator(system::PowerSystem, lines::Vector{Vector{String}}, maste
     gen.cost.reactive.model = fill(Int8(0), gen.number)
 
     data = Array{SubString{String}}(undef, 18)
-    for (k, line) in enumerate(eachsplit.(lines[7], ","))
-        splitLine!(line, data, 18)
+    for (k, line) in enumerate(lines[7])
+        splitLine!(eachsplit(line, ","), data, 18)
 
         setLabel!(gen.label, template.generator.label, labeltype, k)
 
@@ -1293,17 +1358,19 @@ end
 
 ##### Read Data From HDF5 File #####
 function readHDF5(group::Group, key::String, number::Int64)
-    if length(group[key]) == 1
-        return fill(read(group[key])::Union{Float64, Int64, Int8, Bool}, number)
+    dataset = group[key]
+    if length(dataset) == 1
+        return fill(read(dataset)::Union{Float64, Int64, Int8, Bool}, number)
     else
-        return read(group[key])::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}, Vector{Bool}}
+        return read(dataset)::Union{Vector{Float64}, Vector{Int64}, Vector{Int8}, Vector{Bool}}
     end
 end
 
 ##### Read Polynomial Cost Function #####
 function loadPolynomial!(cost::Cost, group::Group)
-    if !isempty(group["polynomial"])
-        datah5 = readmmap(group["polynomial"])
+    dataset = group["polynomial"]
+    if !isempty(dataset)
+        datah5 = readmmap(dataset)
         @inbounds for polynomial in eachcol(datah5)
             index = trunc(Int64, polynomial[1])
             indexCoeff = 2 + trunc(Int64, polynomial[2])
@@ -1315,8 +1382,9 @@ end
 
 ##### Read Piecewise Cost Function #####
 function loadPiecewise!(cost::Cost, group::Group)
-    if !isempty(group["piecewise"])
-        datah5 = readmmap(group["piecewise"])
+    dataset = group["piecewise"]
+    if !isempty(dataset)
+        datah5 = readmmap(dataset)
 
         Nrow = size(datah5, 1)
         idx = 1
@@ -1337,11 +1405,11 @@ end
 ##### Matpower and PSSE Parse Lines #####
 function parseLine(line::String, flag::Bool, str::Vector{String}, start::String, last::String)
     if occursin(start, line)
-        line = split(line, start)[end]
+        line = split(line, start; limit = 2)[end]
     end
 
     if occursin(last, line)
-        line = split(line, last)[1]
+        line = split(line, last; limit = 2)[1]
         flag = false
     end
 
@@ -1412,7 +1480,7 @@ end
 
 function typeofLabel(name::Vector{String}, key::DataType, label::String, busNumber::Int64)
     if key == String
-        if !isempty(name) || lastindex(name) == busNumber
+        if !isempty(name) && lastindex(name) == busNumber
             return 3
         elseif label != "?"
             return 2
@@ -1439,7 +1507,7 @@ function typeofLabel(key::DataType)
 end
 
 ##### Choose Label Container #####
-function labelbus(systemlabel::LabelDict, masterlabel::OrderedDict{Int64, Int64})
+function labelbus(systemlabel::LabelDict, masterlabel::AbstractDict{Int64, Int64})
     if isempty(masterlabel)
         return systemlabel
     end

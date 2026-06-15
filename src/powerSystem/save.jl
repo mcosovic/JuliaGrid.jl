@@ -20,13 +20,13 @@ savePowerSystem(system; path = "D:/case14.h5")
 ```
 """
 function savePowerSystem(system::PowerSystem; path::String, reference::String = "", note::String = "")
-    file = h5open(path, "w")
+    h5open(path, "w") do file
         saveBase(system, file)
         saveBus(system, file)
         saveBranch(system, file)
         saveGenerator(system, file)
         saveAttribute(system, file, reference, note)
-    close(file)
+    end
 end
 
 ##### Save Base Power #####
@@ -336,7 +336,7 @@ function compresseArray(
         anchor = data
     else
         anchor = data[1]
-        @inbounds for i in eachindex(data)
+        @inbounds for i = 2:lastindex(data)
             if data[i] != anchor
                 format = "expand"
                 break
@@ -363,13 +363,13 @@ function savePolynomial(file::File, cost::OrderedDict{Int64, Vector{Float64}}, n
         maxDegree = max(maxDegree, length(polynomial))
         numPolynomial += 1
     end
-    savePolynomial = zeros(maxDegree + 2, numPolynomial)
+    polynomialData = zeros(maxDegree + 2, numPolynomial)
 
     @inbounds for (k, (i, polynomial)) in enumerate(cost)
-        savePolynomial[1, k] = i
-        savePolynomial[2, k] = length(polynomial)
+        polynomialData[1, k] = i
+        polynomialData[2, k] = length(polynomial)
         for j in eachindex(polynomial)
-            savePolynomial[j + 2, k] = polynomial[j]
+            polynomialData[j + 2, k] = polynomial[j]
         end
     end
 
@@ -377,7 +377,7 @@ function savePolynomial(file::File, cost::OrderedDict{Int64, Vector{Float64}}, n
         format = "expand"
     end
 
-    write(file, name, savePolynomial)
+    write(file, name, polynomialData)
 
     return format
 end
@@ -390,14 +390,14 @@ function savePiecewise(file::File, cost::OrderedDict{Int64, Matrix{Float64}}, na
     @inbounds for piecewise in values(cost)
         numberPiecewise += size(piecewise, 1)
     end
-    matpiecewise = zeros(numberPiecewise, 3)
+    piecewiseData = Matrix{Float64}(undef, numberPiecewise, 3)
 
     point = 1
     @inbounds for (i, piecewise) in cost
         for j in axes(piecewise, 1)
-            matpiecewise[point, 1] = i
-            matpiecewise[point, 2] = piecewise[j, 1]
-            matpiecewise[point, 3] = piecewise[j, 2]
+            piecewiseData[point, 1] = i
+            piecewiseData[point, 2] = piecewise[j, 1]
+            piecewiseData[point, 3] = piecewise[j, 2]
             point += 1
         end
     end
@@ -406,7 +406,7 @@ function savePiecewise(file::File, cost::OrderedDict{Int64, Matrix{Float64}}, na
         format = "expand"
     end
 
-    write(file, name, matpiecewise)
+    write(file, name, piecewiseData)
 
     return format
 end

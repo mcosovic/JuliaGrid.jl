@@ -17,11 +17,13 @@ Release Date: TBD
 
 #### Fixed
   * Improved package root detection for both installed and development checkouts.
+  * Fixed PSS/E transformer magnetizing data handling.
   * Fixed `@default(power)` to reset the apparent power live unit to per-unit.
   * Updated global settings macros to evaluate keyword values at the call site, including local variables.
   * Updated power system tests to match the current cost-function error messages.
 
 #### Other
+  * Lightly optimized MATPOWER, PSS/E, and HDF5 power system load/save paths.
   * Reviewed and lightly optimized backend equation helpers.
   * Reduced temporary allocations in selected power flow and state estimation hot paths.
   * Expanded the precompile workload to cover additional commonly used analysis solve paths.
