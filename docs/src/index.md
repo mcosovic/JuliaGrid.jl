@@ -150,14 +150,17 @@ printBusData(analysis)                                 # Print bus data
 ---
 
 ### Citing JuliaGrid
-Please consider citing the following [preprint](https://arxiv.org/abs/2502.18229) if JuliaGrid contributes to your research or projects:
+Please consider citing the following [article](https://doi.org/10.1016/j.segan.2025.102073) if JuliaGrid contributes to your research or projects:
 ```latex
 @article{juliagrid,
-   title={JuliaGrid: An Open-Source Julia-Based Framework for Power System State Estimation},
-   author={M. Cosovic, O. Kundacina, M. Delalic, A. Teskeredzic, D. Raca,
-           A. Mesanovic, D. Miskovic, D. Vukobratovic, A. Monti},
-   journal={arXiv preprint arXiv:2502.18229},
-   year={2025}
+   title = {JuliaGrid: An open-source Julia-based framework for power system state estimation},
+   author = {M. Cosovic, O. Kundacina, M. Delalic, A. Teskeredzic, D. Raca,
+             A. Mesanovic, D. Miskovic, D. Vukobratovic, A. Monti},
+   journal = {Sustainable Energy, Grids and Networks},
+   volume = {45},
+   pages = {102073},
+   year = {2026},
+   doi = {10.1016/j.segan.2025.102073}
 }
 ```
 
