@@ -45,7 +45,6 @@ outlier = residualTest!(analysis; threshold = 4.0)
 stateEstimation!(analysis)
 ```
 """
-##### Largest Normalized Residual Test #####
 function residualTest!(
     analysis::DcStateEstimation{WLS{T}};
     threshold::Float64 = 3.0
@@ -946,7 +945,6 @@ stateEstimation!(analysis)
 bad = chiTest(analysis; confidence = 0.96)
 ```
 """
-##### Chi-Squared Test #####
 function chiTest(
     analysis::AcStateEstimation{<:GaussNewton};
     confidence::Float64 = 0.95
