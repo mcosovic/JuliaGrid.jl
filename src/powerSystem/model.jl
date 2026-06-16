@@ -31,7 +31,16 @@ function acModel!(system::PowerSystem)
     ac.nodalFromTo = zeros(ComplexF64, system.branch.number)
     ac.nodalToFrom = zeros(ComplexF64, system.branch.number)
     nodalDiagonals = complex.(system.bus.shunt.conductance, system.bus.shunt.susceptance)
+
+    nnzModel = system.bus.number + 2 * system.branch.number
+    row = Vector{Int64}(undef, nnzModel)
+    col = Vector{Int64}(undef, nnzModel)
+    val = Vector{ComplexF64}(undef, nnzModel)
+
     @inbounds for i = 1:system.branch.number
+        from = layout.from[i]
+        to = layout.to[i]
+
         if layout.status[i] == 1
             impedance = complex(param.resistance[i], param.reactance[i])
             ac.admittance[i] = 1 / impedance
@@ -45,17 +54,29 @@ function acModel!(system::PowerSystem)
             ac.nodalFromTo[i] = -conj(transformerRatio) * ac.admittance[i]
             ac.nodalToFrom[i] = -transformerRatio * ac.admittance[i]
 
-            nodalDiagonals[layout.from[i]] += ac.nodalFromFrom[i]
-            nodalDiagonals[layout.to[i]] += ac.nodalToTo[i]
+            nodalDiagonals[from] += ac.nodalFromFrom[i]
+            nodalDiagonals[to] += ac.nodalToTo[i]
         end
+
+        fromToIdx = system.bus.number + i
+        toFromIdx = system.bus.number + system.branch.number + i
+
+        row[fromToIdx] = from
+        col[fromToIdx] = to
+        val[fromToIdx] = ac.nodalFromTo[i]
+
+        row[toFromIdx] = to
+        col[toFromIdx] = from
+        val[toFromIdx] = ac.nodalToFrom[i]
     end
 
-    idxBus = collect(1:system.bus.number)
-    ac.nodalMatrix = sparse(
-        [idxBus; layout.from; layout.to], [idxBus; layout.to; layout.from],
-        [nodalDiagonals; ac.nodalFromTo; ac.nodalToFrom],
-        system.bus.number, system.bus.number
-    )
+    @inbounds for i = 1:system.bus.number
+        row[i] = i
+        col[i] = i
+        val[i] = nodalDiagonals[i]
+    end
+
+    ac.nodalMatrix = sparse(row, col, val, system.bus.number, system.bus.number)
     ac.nodalMatrixTranspose = copy(transpose(ac.nodalMatrix))
 end
 
@@ -67,15 +88,20 @@ function acNodalUpdate!(system::PowerSystem, idx::Int64)
 
     i, j = fromto(system, idx)
 
-    ac.nodalMatrix[i, i] += ac.nodalFromFrom[idx]
-    ac.nodalMatrix[j, j] += ac.nodalToTo[idx]
-    ac.nodalMatrixTranspose[i, i] += ac.nodalFromFrom[idx]
-    ac.nodalMatrixTranspose[j, j] += ac.nodalToTo[idx]
+    fromFrom = ac.nodalFromFrom[idx]
+    toTo = ac.nodalToTo[idx]
+    fromTo = ac.nodalFromTo[idx]
+    toFrom = ac.nodalToFrom[idx]
 
-    ac.nodalMatrix[i, j] += ac.nodalFromTo[idx]
-    ac.nodalMatrix[j, i] += ac.nodalToFrom[idx]
-    ac.nodalMatrixTranspose[j, i] += ac.nodalFromTo[idx]
-    ac.nodalMatrixTranspose[i, j] += ac.nodalToFrom[idx]
+    ac.nodalMatrix[i, i] += fromFrom
+    ac.nodalMatrix[j, j] += toTo
+    ac.nodalMatrixTranspose[i, i] += fromFrom
+    ac.nodalMatrixTranspose[j, j] += toTo
+
+    ac.nodalMatrix[i, j] += fromTo
+    ac.nodalMatrix[j, i] += toFrom
+    ac.nodalMatrixTranspose[j, i] += fromTo
+    ac.nodalMatrixTranspose[i, j] += toFrom
 
     if filledElements != nnz(ac.nodalMatrix)
         acPatternChanged!(system)
@@ -90,16 +116,18 @@ function acParameterUpdate!(system::PowerSystem, idx::Int64)
     param = system.branch.parameter
 
     impedance = complex(param.resistance[idx], param.reactance[idx])
-    ac.admittance[idx] = 1 / impedance
+    admittance = 1 / impedance
 
     turnsRatioInv = 1 / param.turnsRatio[idx]
     transformerRatio = turnsRatioInv * cis(-param.shiftAngle[idx])
     shunt = complex(param.conductance[idx], param.susceptance[idx])
+    nodalToTo = admittance + 0.5 * shunt
 
-    ac.nodalToTo[idx] = ac.admittance[idx] + 0.5 * shunt
-    ac.nodalFromFrom[idx] = turnsRatioInv^2 * ac.nodalToTo[idx]
-    ac.nodalFromTo[idx] = -conj(transformerRatio) * ac.admittance[idx]
-    ac.nodalToFrom[idx] = -transformerRatio * ac.admittance[idx]
+    ac.admittance[idx] = admittance
+    ac.nodalToTo[idx] = nodalToTo
+    ac.nodalFromFrom[idx] = turnsRatioInv^2 * nodalToTo
+    ac.nodalFromTo[idx] = -conj(transformerRatio) * admittance
+    ac.nodalToFrom[idx] = -transformerRatio * admittance
 end
 
 ##### Check AC Model #####
@@ -135,27 +163,48 @@ function dcModel!(system::PowerSystem)
     dc.shiftPower = fill(0.0, system.bus.number)
     dc.admittance = fill(0.0, branch.number)
     nodalDiagonals = fill(0.0, system.bus.number)
+
+    nnzModel = system.bus.number + 2 * branch.number
+    row = Vector{Int64}(undef, nnzModel)
+    col = Vector{Int64}(undef, nnzModel)
+    val = Vector{Float64}(undef, nnzModel)
+
     @inbounds for i = 1:branch.number
+        from = branch.layout.from[i]
+        to = branch.layout.to[i]
+        admittance = 0.0
+
         if branch.layout.status[i] == 1
-            dc.admittance[i] = 1 / (param.turnsRatio[i] * param.reactance[i])
+            admittance = 1 / (param.turnsRatio[i] * param.reactance[i])
+            dc.admittance[i] = admittance
 
-            from, to = fromto(system, i)
-
-            shift = param.shiftAngle[i] * dc.admittance[i]
+            shift = param.shiftAngle[i] * admittance
             dc.shiftPower[from] -= shift
             dc.shiftPower[to] += shift
 
-            nodalDiagonals[from] += dc.admittance[i]
-            nodalDiagonals[to] += dc.admittance[i]
+            nodalDiagonals[from] += admittance
+            nodalDiagonals[to] += admittance
         end
+
+        fromToIdx = system.bus.number + i
+        toFromIdx = system.bus.number + branch.number + i
+
+        row[fromToIdx] = from
+        col[fromToIdx] = to
+        val[fromToIdx] = -admittance
+
+        row[toFromIdx] = to
+        col[toFromIdx] = from
+        val[toFromIdx] = -admittance
     end
 
-    idxBus = collect(1:system.bus.number)
-    dc.nodalMatrix = sparse(
-        [idxBus; branch.layout.from; branch.layout.to], [idxBus; branch.layout.to; branch.layout.from],
-        [nodalDiagonals; -dc.admittance; -dc.admittance],
-        system.bus.number, system.bus.number
-    )
+    @inbounds for i = 1:system.bus.number
+        row[i] = i
+        col[i] = i
+        val[i] = nodalDiagonals[i]
+    end
+
+    dc.nodalMatrix = sparse(row, col, val, system.bus.number, system.bus.number)
 end
 
 ##### Update DC Nodal Matrix #####
@@ -195,7 +244,11 @@ end
     dc = system.model.dc
     param = system.branch.parameter
 
-    dc.admittance[idx] = status / (param.turnsRatio[idx] * param.reactance[idx])
+    if status == 0
+        dc.admittance[idx] = 0.0
+    else
+        dc.admittance[idx] = 1 / (param.turnsRatio[idx] * param.reactance[idx])
+    end
 end
 
 ##### Check AC and DC Model #####
@@ -297,56 +350,86 @@ function physicalIsland(system::PowerSystem; label::Bool = false)
     bus = system.bus
     branch = system.branch
 
-    maxnnz = branch.number * 4
-    row = Vector{Int64}(undef, maxnnz)
-    col = Vector{Int64}(undef, maxnnz)
-    idx = 0
+    degree = zeros(Int64, bus.number)
+    inservice = 0
     @inbounds for i = 1:branch.number
         if branch.layout.status[i] == 1
-            row[idx + 1] = row[idx + 2] = branch.layout.from[i]
-            row[idx + 3] = row[idx + 4] = branch.layout.to[i]
-
-            col[idx + 1] = col[idx + 4] = branch.layout.to[i]
-            col[idx + 2] = col[idx + 3] = branch.layout.from[i]
-
-            idx += 4
+            degree[branch.layout.from[i]] += 1
+            degree[branch.layout.to[i]] += 1
+            inservice += 1
         end
     end
 
-    resize!(row, idx)
-    resize!(col, idx)
-    gainFlow = sparse(row, col, fill(1, idx), bus.number, bus.number)
+    offset = Vector{Int64}(undef, bus.number + 1)
+    offset[1] = 1
+    @inbounds for i = 1:bus.number
+        offset[i + 1] = offset[i] + degree[i]
+    end
+
+    neighbor = Vector{Int64}(undef, 2 * inservice)
+    fill!(degree, 0)
+    @inbounds for i = 1:branch.number
+        if branch.layout.status[i] == 1
+            from = branch.layout.from[i]
+            to = branch.layout.to[i]
+
+            idx = offset[from] + degree[from]
+            neighbor[idx] = to
+            degree[from] += 1
+
+            idx = offset[to] + degree[to]
+            neighbor[idx] = from
+            degree[to] += 1
+        end
+    end
 
     observe = fill(0, bus.number)
-    queue = Vector{Int64}()
+    queue = Vector{Int64}(undef, bus.number)
     comp = 0
-    for i = 1:bus.number
+    @inbounds for i = 1:bus.number
         if observe[i] == 0
             comp += 1
-            push!(queue, i)
-            while !isempty(queue)
-                v = pop!(queue)
-                observe[v] = comp
-                for index in nzrange(gainFlow, v)
-                    n = gainFlow.rowval[index]
+            head = 1
+            tail = 1
+            queue[tail] = i
+            observe[i] = comp
+
+            while head <= tail
+                v = queue[head]
+                head += 1
+
+                for index = offset[v]:(offset[v + 1] - 1)
+                    n = neighbor[index]
                     if observe[n] == 0
                         observe[n] = comp
-                        push!(queue, n)
+                        tail += 1
+                        queue[tail] = n
                     end
                 end
             end
         end
     end
 
+    fill!(degree, 0)
+    @inbounds for i = 1:bus.number
+        degree[observe[i]] += 1
+    end
+
     if label
-        island = [Vector{keytype(typeof(system.bus.label))}() for i = 1:comp]
-        @inbounds for (k, i) in enumerate(observe)
-            push!(island[i], getLabel(system.bus.label, k))
+        island = [Vector{keytype(typeof(system.bus.label))}(undef, degree[i]) for i = 1:comp]
+        fill!(degree, 0)
+        @inbounds for k = 1:bus.number
+            i = observe[k]
+            degree[i] += 1
+            island[i][degree[i]] = getLabel(system.bus.label, k)
         end
     else
-        island = [Vector{Int64}() for i = 1:comp]
-        @inbounds for (k, i) in enumerate(observe)
-            push!(island[i], k)
+        island = [Vector{Int64}(undef, degree[i]) for i = 1:comp]
+        fill!(degree, 0)
+        @inbounds for k = 1:bus.number
+            i = observe[k]
+            degree[i] += 1
+            island[i][degree[i]] = k
         end
     end
 

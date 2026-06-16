@@ -26,13 +26,13 @@ using JuliaGrid, Ipopt, HiGHS
 ###### PMU State Estimation
 * [`pmuStateEstimation`](@ref pmuStateEstimation)
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation)
-* [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}}))
+* [`solve!`](@ref solve!(::PmuStateEstimation{WLS{T}}) where T <: Normal)
 * [`stateEstimation!`](@ref stateEstimation!(::PmuStateEstimation{<:WLS}))
 
 ###### DC State Estimation
 * [`dcStateEstimation`](@ref dcStateEstimation)
 * [`dcLavStateEstimation`](@ref dcLavStateEstimation)
-* [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}}))
+* [`solve!`](@ref solve!(::DcStateEstimation{WLS{T}}) where T <: Normal)
 * [`stateEstimation!`](@ref stateEstimation!(::DcStateEstimation{<:WLS}))
 
 ###### Bad Data Analysis
@@ -69,7 +69,7 @@ stateEstimation!(::AcStateEstimation{<:GaussNewton})
 ```@docs
 pmuStateEstimation
 pmuLavStateEstimation
-solve!(::PmuStateEstimation{WLS{Normal}})
+solve!(::PmuStateEstimation{WLS{T}}) where T <: Normal
 stateEstimation!(::PmuStateEstimation{<:WLS})
 ```
 
@@ -79,7 +79,7 @@ stateEstimation!(::PmuStateEstimation{<:WLS})
 ```@docs
 dcStateEstimation
 dcLavStateEstimation
-solve!(::DcStateEstimation{WLS{Normal}})
+solve!(::DcStateEstimation{WLS{T}}) where T <: Normal
 stateEstimation!(::DcStateEstimation{<:WLS})
 ```
 

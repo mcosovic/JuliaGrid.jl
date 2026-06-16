@@ -873,7 +873,7 @@ Here, we utilize a "flat start" approach in our method. It is important to keep 
 ---
 
 ##### Iterative Process
-To apply the Gauss-Newton method, JuliaGrid provides the [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{Normal}})) function. This function is utilized iteratively until a stopping criterion is met, as demonstrated in the following code snippet:
+To apply the Gauss-Newton method, JuliaGrid provides the [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{<:Normal}})) function. This function is utilized iteratively until a stopping criterion is met, as demonstrated in the following code snippet:
 ```@example ACSETutorial
 for iteration = 0:20
     stopping = increment!(analysis)
@@ -913,7 +913,7 @@ Then finally, the function computes the vector of state variable increments usin
 ```
 
 !!! tip "Tip"
-    By default, JuliaGrid uses LU factorization as the primary method for factorizing the gain matrix ``\mathbf{G} = \mathbf{L}\mathbf{U}``, aiming to compute the increments. Nevertheless, users have the flexibility to opt for QR or LDLt factorization as an alternative method.
+    By default, JuliaGrid uses LU factorization as the primary method for factorizing the gain matrix ``\mathbf{G} = \mathbf{L}\mathbf{U}``, aiming to compute the increments. The available factorization methods are LL, LDLt, LU, KLU and QR.
 
 Increment values are stored in the `AcStateEstimation` type and can be accessed after each iteration:
 ```@repl ACSETutorial

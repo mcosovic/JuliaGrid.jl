@@ -372,7 +372,7 @@ Next, the WLS equation is solved to obtain the estimate of state variables:
 	\hat{\mathbf x} = [\mathbf H^T \bm \Sigma^{-1} \mathbf H]^{-1} \mathbf H^T \bm \Sigma^{-1} \mathbf z.
 ```
 
-This process is executed using the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function:
+This process is executed using the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function:
 ```@example PMUSETutorial
 solve!(analysis)
 ```
@@ -383,7 +383,7 @@ The initial step involves the LU factorization of the gain matrix:
 ```
 
 !!! tip "Tip"
-    By default, JuliaGrid utilizes LU factorization as the primary method to factorize the gain matrix. However, users maintain the flexibility to opt for alternative factorization methods such as LDLt or QR.
+    By default, JuliaGrid utilizes LU factorization as the primary method to factorize the gain matrix. The available factorization methods are LL, LDLt, LU, KLU and QR.
 
 Access to the factorized gain matrix is available through:
 ```@repl PMUSETutorial
@@ -439,7 +439,7 @@ At this point, QR factorization is performed on the rectangular matrix:
   \bar{\mathbf H} = {\mathbf W^{1/2}} \mathbf H = \mathbf Q \mathbf R.
 ```
 
-Executing this procedure involves the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function:
+Executing this procedure involves the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function:
 ```@example PMUSETutorial
 solve!(analysis)
 nothing # hide
@@ -487,7 +487,7 @@ By eliminating ``\mathbf{U}^T`` from both sides and introducing a new vector ``\
 
 The Peters and Wilkinson method first solves this equation to compute ``\mathbf{y}``, and then obtains ``\mathbf x`` by backward substitution using equation ``\mathbf{y} = \mathbf{U} \mathbf x``. The main advantage of this approach is that ``\mathbf{L}^T \mathbf{L}`` is generally less ill-conditioned than ``\bar{\mathbf{H}}^{T} \bar{\mathbf{H}}``, which improves numerical stability.
 
-To execute this procedure, use the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function:
+To execute this procedure, use the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function:
 ```@example PMUSETutorial
 solve!(analysis)
 nothing # hide

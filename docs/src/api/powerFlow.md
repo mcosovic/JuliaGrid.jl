@@ -13,8 +13,8 @@ using JuliaGrid
 * [`fastNewtonRaphsonBX`](@ref fastNewtonRaphsonBX)
 * [`fastNewtonRaphsonXB`](@ref fastNewtonRaphsonXB)
 * [`gaussSeidel`](@ref gaussSeidel)
-* [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson}))
-* [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson}))
+* [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson}))
+* [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T)
 * [`setInitialPoint!`](@ref setInitialPoint!(::AcPowerFlow))
 * [`reactiveLimit!`](@ref reactiveLimit!)
 * [`adjustAngle!`](@ref adjustAngle!)
@@ -22,7 +22,7 @@ using JuliaGrid
 
 ###### DC Power Flow
 * [`dcPowerFlow`](@ref dcPowerFlow)
-* [`solve!`](@ref solve!(::DcPowerFlow))
+* [`solve!`](@ref solve!(::DcPowerFlow{T}) where T)
 * [`powerFlow!`](@ref powerFlow!(::DcPowerFlow))
 
 ---
@@ -33,8 +33,8 @@ newtonRaphson
 fastNewtonRaphsonBX
 fastNewtonRaphsonXB
 gaussSeidel
-mismatch!(::AcPowerFlow{NewtonRaphson})
-solve!(::AcPowerFlow{NewtonRaphson})
+mismatch!(::AcPowerFlow{<:NewtonRaphson})
+solve!(::AcPowerFlow{NewtonRaphson{T}}) where T
 setInitialPoint!(::AcPowerFlow)
 setInitialPoint!(::AcPowerFlow, ::AC)
 reactiveLimit!
@@ -47,6 +47,6 @@ powerFlow!(::AcPowerFlow)
 ## DC Power Flow
 ```@docs
 dcPowerFlow
-solve!(::DcPowerFlow)
+solve!(::DcPowerFlow{T}) where T
 powerFlow!(::DcPowerFlow)
 ```

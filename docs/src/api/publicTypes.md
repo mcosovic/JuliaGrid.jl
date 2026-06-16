@@ -31,6 +31,7 @@ using JuliaGrid
 * [`AC`](@ref AC)
 * [`DC`](@ref DC)
 * [`PowerFlow`](@ref PowerFlow)
+* [`LL`](@ref JuliaGrid.LL)
 * [`LDLt`](@ref JuliaGrid.LDLt)
 * [`LU`](@ref JuliaGrid.LU)
 * [`KLU`](@ref JuliaGrid.KLU)
@@ -103,6 +104,7 @@ Analysis
 AC
 DC
 PowerFlow
+JuliaGrid.LL
 JuliaGrid.LDLt
 JuliaGrid.LU
 JuliaGrid.KLU

@@ -5,7 +5,7 @@ To perform the DC power flow, we first need to have the `PowerSystem` type that 
 ---
 
 To solve the DC power flow problem and acquire bus voltage angles, users can use the following function:
-* [`solve!`](@ref solve!(::DcPowerFlow)).
+* [`solve!`](@ref solve!(::DcPowerFlow{T}) where T).
 
 Once the DC power flow solution is obtained, JuliaGrid provides a function for computing powers:
 * [`power!`](@ref power!(::DcPowerFlow)).
@@ -47,13 +47,13 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    By default, the user activates `LU` factorization to solve the system of linear equations. Users may also choose the `LDLt`, `QR` or `KLU` factorization methods explicitly:
+    By default, the user activates `LU` factorization to solve the system of linear equations. The available factorization methods are `LL`, `LDLt`, `LU`, `KLU` and `QR`:
     ```julia DCPowerFlowSolution
     analysis = dcPowerFlow(system, KLU)
     ```
     The `KLU` method, using the Gilbert-Peierls algorithm, can significantly speed up power flow computations [davisklu](@cite).
 
-To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!(::DcPowerFlow)) function as follows:
+To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!(::DcPowerFlow{T}) where T) function as follows:
 ```@example DCPowerFlowSolution
 solve!(analysis)
 nothing # hide
@@ -202,7 +202,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This concept removes the need to restart and recreate both the `PowerSystem` within the `dc` field and the `DcPowerFlow` from the beginning when implementing changes to the existing power system. Additionally, JuliaGrid can reuse symbolic factorizations of LU or LDLt, as long as the nonzero pattern of the nodal matrix remains consistent between power system configurations.
+    This concept removes the need to restart and recreate both the `PowerSystem` within the `dc` field and the `DcPowerFlow` from the beginning when implementing changes to the existing power system. Additionally, JuliaGrid can reuse symbolic factorizations of LL, LDLt and LU as long as the nonzero pattern of the nodal matrix remains consistent between power system configurations.
 
 ---
 

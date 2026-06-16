@@ -40,6 +40,19 @@
         teststruct(se.voltage, pf.voltage; atol = 1e-10)
     end
 
+    @testset "Normal Factorizations with One Outlier" begin
+        for method in (LL, QR)
+            updateVarmeter!(monitoring; label = "Varmeter 4", reactive = 10.25, status = 1)
+
+            se = gaussNewton(monitoring, method)
+            stateEstimation!(se)
+
+            outlier = residualTest!(se; threshold = 3.0)
+            @test outlier.label == "Varmeter 4"
+            @test outlier.maxNormalizedResidual ≈ 52.5 atol = 1e-1
+        end
+    end
+
     @pmu(label = "PMU ?")
     @pmu(varianceMagnitudeBus = 1e-5, varianceAngleBus = 1e-5)
     @pmu(varianceMagnitudeFrom = 1e-5, varianceAngleFrom = 1e-5)
@@ -151,6 +164,19 @@ end
 
         stateEstimation!(se)
         teststruct(se.voltage, pf.voltage; atol = 1e-10)
+    end
+
+    @testset "Normal Factorizations with One Outlier" begin
+        for method in (LL, QR)
+            updatePmu!(monitoring; label = "PMU 2", magnitude = 15, status = 1)
+
+            se = pmuStateEstimation(monitoring, method)
+            stateEstimation!(se)
+
+            outlier = residualTest!(se; threshold = 3.0)
+            @test outlier.label == "PMU 2"
+            @test outlier.maxNormalizedResidual ≈ 2606.8 atol = 1e-1
+        end
     end
 
     @testset "Two Outliers" begin
@@ -267,6 +293,19 @@ end
 
         stateEstimation!(se)
         @test pf.voltage.angle ≈ se.voltage.angle
+    end
+
+    @testset "Normal Factorizations with One Outlier" begin
+        for method in (LL, QR)
+            updateWattmeter!(monitoring; label = "Wattmeter 2", active = 100, status = 1)
+
+            se = dcStateEstimation(monitoring, method)
+            stateEstimation!(se)
+
+            outlier = residualTest!(se; threshold = 3.0)
+            @test outlier.label == "Wattmeter 2"
+            @test outlier.maxNormalizedResidual ≈ 829.9 atol = 1e-1
+        end
     end
 
     @testset "Two Outliers" begin

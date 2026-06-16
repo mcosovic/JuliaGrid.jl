@@ -9,7 +9,8 @@ This function requires the `Measurement` type to establish the WLS state estimat
 
 Moreover, the presence of the `method` parameter is not mandatory. To address the WLS state
 estimation method, users can opt to utilize factorization techniques to decompose the gain matrix,
-such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. For improved robustness
+such as `LL`, `LDLt`, `LU`, `KLU`, or `QR`. The `LDLt` and `LL` methods are intended for symmetric
+gain matrices, with `LL` requiring positive definiteness. For improved robustness
 in cases with ill-conditioned data or significant variance disparities, using the `Orthogonal` or
 `PetersWilkinson` method is recommended.
 
@@ -53,7 +54,7 @@ function pmuStateEstimation(monitoring::Measurement, ::Type{T} = LU) where {T <:
         ),
         power,
         current,
-        WLS{selectType(T)}(
+        WLS{T}(
             coeff,
             precision,
             mean,
@@ -365,7 +366,7 @@ analysis = pmuLavStateEstimation(monitoring, Ipopt.Optimizer; verbose = 1)
 solve!(analysis)
 ```
 """
-function solve!(analysis::PmuStateEstimation{WLS{Normal}})
+function solve!(analysis::PmuStateEstimation{WLS{T}}) where T <: Normal
     system = analysis.system
     se = analysis.method
     bus = system.bus
@@ -375,9 +376,9 @@ function solve!(analysis::PmuStateEstimation{WLS{Normal}})
 
     if se.signature[:pattern] == -1
         se.signature[:pattern] = 0
-        se.factorization = factorization(gain, se.factorization)
+        se.factorization = factorization(gain, se.factorization, T)
     else
-        se.factorization = factorization!(gain, se.factorization)
+        se.factorization = factorization!(gain, se.factorization, T)
     end
     b = temp * se.mean
 
@@ -545,7 +546,7 @@ end
     stateEstimation!(analysis::PmuStateEstimation; iteration, tolerance, power, verbose)
 
 The function serves as a wrapper for solving PMU state estimation and includes the functions:
-* [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})),
+* [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})),
 * [`power!`](@ref power!(::AcPowerFlow)),
 * [`current!`](@ref current!(::AC)).
 

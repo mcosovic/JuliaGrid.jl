@@ -85,35 +85,42 @@ function addBranchMain!(system::PowerSystem, from::IntStr, to::IntStr, key::Bran
     param = branch.parameter
     def = template.branch
 
-    branch.number += 1
-    setLabel(branch, key.label, def.label, "branch")
-
     if from == to
         throw(ErrorException("Invalid value for from or to keywords."))
     end
 
-    push!(branch.layout.from, getIndex(system.bus, from, "bus"))
-    push!(branch.layout.to, getIndex(system.bus, to, "bus"))
+    fromIdx = getIndex(system.bus, from, "bus")
+    toIdx = getIndex(system.bus, to, "bus")
+    statusNew = coalesce(key.status, def.status)
+    checkStatus(statusNew)
 
-    add!(branch.layout.status, key.status, def.status)
-    checkStatus(branch.layout.status[end])
-    if branch.layout.status[end] == 1
+    turnsRatioNew = coalesce(key.turnsRatio, def.turnsRatio)
+    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+    baseVoltage = system.base.voltage.value[fromIdx] * system.base.voltage.prefix
+    baseAdmInv = baseImpedance(baseVoltage, basePowerInv, turnsRatioNew)
+    baseImpInv = 1 / baseAdmInv
+
+    resistanceNew = topu(key.resistance, def.resistance, pfx.impedance, baseImpInv)
+    reactanceNew = topu(key.reactance, def.reactance, pfx.impedance, baseImpInv)
+    if resistanceNew == 0.0 && reactanceNew == 0.0
+        throw(ErrorException("At least one of resistance or reactance is required."))
+    end
+    flowTypeNew = checkFlowType(system, key.type, def.type)
+
+    idx = branch.number + 1
+    setLabel(branch, idx, key.label, def.label, "branch")
+    branch.number = idx
+
+    push!(branch.layout.from, fromIdx)
+    push!(branch.layout.to, toIdx)
+    push!(branch.layout.status, statusNew)
+    if statusNew == 1
         branch.layout.inservice += 1
     end
 
-    add!(param.turnsRatio, key.turnsRatio, def.turnsRatio)
-
-    basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-    baseVoltage = system.base.voltage.value[branch.layout.from[end]] * system.base.voltage.prefix
-    baseAdmInv = baseImpedance(baseVoltage, basePowerInv, param.turnsRatio[end])
-    baseImpInv = 1 / baseAdmInv
-
-    add!(param.resistance, key.resistance, def.resistance, pfx.impedance, baseImpInv)
-    add!(param.reactance, key.reactance, def.reactance, pfx.impedance, baseImpInv)
-
-    if param.resistance[end] == 0.0 && param.reactance[end] == 0.0
-        throw(ErrorException("At least one of resistance or reactance is required."))
-    end
+    push!(param.turnsRatio, turnsRatioNew)
+    push!(param.resistance, resistanceNew)
+    push!(param.reactance, reactanceNew)
 
     add!(param.conductance, key.conductance, def.conductance, pfx.admittance, baseAdmInv)
     add!(param.susceptance, key.susceptance, def.susceptance, pfx.admittance, baseAdmInv)
@@ -123,7 +130,7 @@ function addBranchMain!(system::PowerSystem, from::IntStr, to::IntStr, key::Bran
         add!(branch.voltage.minDiffAngle, key.minDiffAngle, def.minDiffAngle, pfx.voltageAngle, 1.0)
         add!(branch.voltage.maxDiffAngle, key.maxDiffAngle, def.maxDiffAngle, pfx.voltageAngle, 1.0)
 
-        add!(branch.flow.type, key.type, def.type)
+        push!(branch.flow.type, flowTypeNew)
 
         pfxLive, baseInvFrom, baseInvTo = flowType(system, pfx, basePowerInv, branch.number)
         add!(branch.flow.minFromBus, key.minFromBus, def.minFromBus, pfxLive, baseInvFrom)
@@ -178,13 +185,13 @@ function _addBranch!(analysis::AcPowerFlow{<:Union{NewtonRaphson, GaussSeidel}})
     errorTypeConversion(analysis.system.model.revision.type, analysis.method.signature.type)
 end
 
-function _addBranch!(analysis::AcPowerFlow{FastNewtonRaphson})
+function _addBranch!(analysis::AcPowerFlow{<:FastNewtonRaphson})
     errorTypeConversion(analysis.system.model.revision.type, analysis.method.signature.type)
 
     if analysis.system.branch.layout.status[analysis.system.branch.number] == 1
         jacobian(analysis.system, analysis, analysis.system.branch.number)
     end
-    analysis.method.signature.jacobian = copy(analysis.system.model.revision.acModel)
+    analysis.method.signature.jacobian = analysis.system.model.revision.acModel
 end
 
 function _addBranch!(analysis::DcPowerFlow)
@@ -217,9 +224,9 @@ function _addBranch!(analysis::AcOptimalPowerFlow)
 
     revision = system.model.revision
     signature = analysis.method.signature
-    signature.topology = copy(revision.topology)
-    signature.acModel = copy(revision.acModel)
-    signature.acOptimization = copy(revision.acOptimization)
+    signature.topology = revision.topology
+    signature.acModel = revision.acModel
+    signature.acOptimization = revision.acOptimization
 end
 
 function _addBranch!(analysis::DcOptimalPowerFlow)
@@ -246,9 +253,9 @@ function _addBranch!(analysis::DcOptimalPowerFlow)
 
     revision = system.model.revision
     signature = analysis.method.signature
-    signature.topology = copy(revision.topology)
-    signature.dcModel = copy(revision.dcModel)
-    signature.dcOptimization = copy(revision.dcOptimization)
+    signature.topology = revision.topology
+    signature.dcModel = revision.dcModel
+    signature.dcOptimization = revision.dcOptimization
 end
 
 """
@@ -296,12 +303,19 @@ function updateBranchMain!(system::PowerSystem, label::IntStr, key::BranchKey)
     statusOld = branch.layout.status[idx]
 
     if ismissing(statusNew)
-        statusNew = copy(statusOld)
+        statusNew = statusOld
     end
     checkStatus(statusNew)
+    if system.bus.layout.optimal && isset(key.type)
+        checkFlowType(system, key.type, branch.flow.type[idx])
+    end
 
+    hasAcModel = !isempty(ac.nodalMatrix)
+    hasDcModel = !isempty(dc.nodalMatrix)
+    shift = isset(key.shiftAngle)
     dcadm = isset(key.reactance) || isset(key.turnsRatio)
-    pimodel = any(isset, (dcadm, key.resistance, key.conductance, key.susceptance, key.shiftAngle))
+    pimodel = dcadm || isset(key.resistance) || isset(key.conductance) ||
+        isset(key.susceptance) || shift
 
     if statusNew == 1 && statusOld == 0
         branch.layout.inservice += 1
@@ -309,7 +323,7 @@ function updateBranchMain!(system::PowerSystem, label::IntStr, key::BranchKey)
         branch.layout.inservice -= 1
     end
 
-    if !isempty(ac.nodalMatrix)
+    if hasAcModel
         if statusOld == 1 && (statusNew == 0 || (statusNew == 1 && pimodel))
             acSubtractAdmittances!(ac, idx)
             acNodalUpdate!(system, idx)
@@ -317,12 +331,12 @@ function updateBranchMain!(system::PowerSystem, label::IntStr, key::BranchKey)
         end
     end
 
-    if !isempty(dc.nodalMatrix)
+    if hasDcModel
         if statusOld == 1
-            if statusNew == 0 || (statusNew == 1 && (isset(dcadm) || isset(key.shiftAngle)))
+            if statusNew == 0 || (statusNew == 1 && (dcadm || shift))
                 dc.admittance[idx] = -dc.admittance[idx]
                 dcShiftUpdate!(system, idx)
-                if statusOld == 1 && (statusNew == 0 || (statusNew == 1 && dcadm))
+                if statusNew == 0 || (statusNew == 1 && dcadm)
                     dcNodalUpdate!(system, idx)
                 end
                 dc.admittance[idx] = 0.0
@@ -330,10 +344,11 @@ function updateBranchMain!(system::PowerSystem, label::IntStr, key::BranchKey)
         end
     end
 
+    baseInv = 1 / (system.base.power.value * system.base.power.prefix)
+
     if pimodel
         update!(branch.parameter.turnsRatio, key.turnsRatio, idx)
 
-        baseInv = 1 / (system.base.power.value * system.base.power.prefix)
         baseVoltage = system.base.voltage.value[branch.layout.from[idx]] * system.base.voltage.prefix
         baseAdmInv = baseImpedance(baseVoltage, baseInv, branch.parameter.turnsRatio[idx])
         baseImpInv = 1 / baseAdmInv
@@ -345,19 +360,19 @@ function updateBranchMain!(system::PowerSystem, label::IntStr, key::BranchKey)
         update!(branch.parameter.shiftAngle, key.shiftAngle, pfx.voltageAngle, 1.0, idx)
     end
 
-    if !isempty(ac.nodalMatrix)
+    if hasAcModel
         if statusNew == 1 && (statusOld == 0 || (statusOld == 1 && pimodel))
             acParameterUpdate!(system, idx)
             acNodalUpdate!(system, idx)
         end
     end
 
-    if !isempty(dc.nodalMatrix)
+    if hasDcModel
         if statusNew == 1
-            if statusOld == 0 || (statusOld == 1 && (isset(dcadm) || isset(key.shiftAngle)))
+            if statusOld == 0 || (statusOld == 1 && (dcadm || shift))
                 dcAdmittanceUpdate!(system, statusNew, idx)
                 dcShiftUpdate!(system, idx)
-                if statusNew == 1 && (statusOld == 0 || (statusOld == 1 && dcadm))
+                if statusOld == 0 || (statusOld == 1 && dcadm)
                     dcNodalUpdate!(system, idx)
                 end
             end
@@ -370,16 +385,15 @@ function updateBranchMain!(system::PowerSystem, label::IntStr, key::BranchKey)
     end
 
     if system.bus.layout.optimal
-        if any(isset, (
-            key.minDiffAngle, key.maxDiffAngle, key.minFromBus, key.maxFromBus,
-            key.minToBus, key.maxToBus, key.type
-        ))
+        angle = isset(key.minDiffAngle) || isset(key.maxDiffAngle)
+        fromFlow = isset(key.minFromBus) || isset(key.maxFromBus)
+        toFlow = isset(key.minToBus) || isset(key.maxToBus)
+        flow = isset(key.type)
+
+        if angle || fromFlow || toFlow || flow
             acOptimizationChanged!(system)
         end
-        if any(isset, (
-            key.minDiffAngle, key.maxDiffAngle, key.minFromBus, key.maxFromBus,
-            key.type
-        ))
+        if angle || fromFlow || flow
             dcOptimizationChanged!(system)
         end
 
@@ -423,22 +437,22 @@ function updateBranch!(analysis::PowerFlow; label::IntStr, kwargs...)
 end
 
 function syncTopology!(analysis::Union{AcPowerFlow, DcPowerFlow})
-    analysis.method.signature.topology = copy(analysis.system.model.revision.topology)
+    analysis.method.signature.topology = analysis.system.model.revision.topology
 end
 
 function syncTopology!(analysis::DcOptimalPowerFlow)
-    analysis.method.signature.topology = copy(analysis.system.model.revision.topology)
+    analysis.method.signature.topology = analysis.system.model.revision.topology
 end
 
 function syncTopology!(analysis::AcOptimalPowerFlow)
-    analysis.method.signature.topology = copy(analysis.system.model.revision.topology)
+    analysis.method.signature.topology = analysis.system.model.revision.topology
 end
 
 function _updateBranch!(analysis::AcPowerFlow{<:Union{NewtonRaphson, GaussSeidel}}, ::Int64)
     errorTypeConversion(analysis.system.model.revision.type, analysis.method.signature.type)
 end
 
-function _updateBranch!(analysis::AcPowerFlow{FastNewtonRaphson}, idx::Int64)
+function _updateBranch!(analysis::AcPowerFlow{<:FastNewtonRaphson}, idx::Int64)
     system = analysis.system
     jcbP = analysis.method.active.jacobian
     jcbQ = analysis.method.reactive.jacobian
@@ -469,15 +483,15 @@ function _updateBranch!(analysis::AcPowerFlow{FastNewtonRaphson}, idx::Int64)
         jcbQ[analysis.method.pq[to], analysis.method.pq[to]] = 0.0
     end
 
-    @inbounds for idx = 1:system.branch.number
-        if system.branch.layout.status[idx] == 1
-            i, j = fromto(system, idx)
+    @inbounds for br = 1:system.branch.number
+        if system.branch.layout.status[br] == 1
+            i, j = fromto(system, br)
 
             if i ∉ (from, to) && j ∉ (from, to)
                 continue
             end
 
-            p, q = jacobianCoefficient(system, analysis.method, idx)
+            p, q = jacobianCoefficient(system, analysis.method, br)
 
             if (from, to) == (i, j) || (to, from) == (i, j)
                 Pijθij(system, analysis.method, p, i, j)
@@ -499,7 +513,7 @@ function _updateBranch!(analysis::AcPowerFlow{FastNewtonRaphson}, idx::Int64)
             jcbQ[analysis.method.pq[i], analysis.method.pq[i]] += system.bus.shunt.susceptance[i]
         end
     end
-    analysis.method.signature.jacobian = copy(system.model.revision.acModel)
+    analysis.method.signature.jacobian = system.model.revision.acModel
 end
 
 function _updateBranch!(analysis::DcPowerFlow, ::Int64)
@@ -536,9 +550,9 @@ function _updateBranch!(analysis::AcOptimalPowerFlow, idx::Int64)
 
     revision = system.model.revision
     signature = analysis.method.signature
-    signature.topology = copy(revision.topology)
-    signature.acModel = copy(revision.acModel)
-    signature.acOptimization = copy(revision.acOptimization)
+    signature.topology = revision.topology
+    signature.acModel = revision.acModel
+    signature.acOptimization = revision.acOptimization
 end
 
 function _updateBranch!(analysis::DcOptimalPowerFlow, idx::Int64)
@@ -568,9 +582,9 @@ function _updateBranch!(analysis::DcOptimalPowerFlow, idx::Int64)
 
     revision = system.model.revision
     signature = analysis.method.signature
-    signature.topology = copy(revision.topology)
-    signature.dcModel = copy(revision.dcModel)
-    signature.dcOptimization = copy(revision.dcOptimization)
+    signature.topology = revision.topology
+    signature.dcModel = revision.dcModel
+    signature.dcOptimization = revision.dcOptimization
 end
 
 function branchTemplatePrefix(parameter::Symbol)
@@ -678,6 +692,19 @@ macro branch(kwargs...)
 end
 
 ##### Branch Flow Rating Type #####
+function checkFlowType(system::PowerSystem, type::Union{Int8, Int64, Missing}, default::Int8)
+    if !system.bus.layout.optimal
+        return default
+    end
+
+    typeNew = coalesce(type, default)
+    if typeNew ∉ (1, 2, 3, 4, 5)
+        throw(ErrorException("The value $typeNew of the branch flow rating type is illegal."))
+    end
+
+    return Int8(typeNew)
+end
+
 function flowType(system::PowerSystem, pfx::PrefixLive, basePowerInv::Float64, idx::Int64)
     baseVoltg = system.base.voltage
     type = system.branch.flow.type[idx]

@@ -92,11 +92,11 @@ function printTop(system::PowerSystem, analysis::Union{AcPowerFlow, DcPowerFlow}
     print(format(Format("%*i\n\n"), col3, tran[3]))
 end
 
-function npq(system::PowerSystem, analysis::AcPowerFlow{NewtonRaphson})
+function npq(system::PowerSystem, analysis::AcPowerFlow{<:NewtonRaphson})
     lastindex(analysis.method.increment) - system.bus.number + 1
 end
 
-function npq(::PowerSystem, analysis::AcPowerFlow{FastNewtonRaphson})
+function npq(::PowerSystem, analysis::AcPowerFlow{<:FastNewtonRaphson})
     lastindex(analysis.method.reactive.increment)
 end
 
@@ -186,7 +186,7 @@ function printTop(analysis::AcStateEstimation, verbose::Int64)
 end
 
 ##### Model Statistics #####
-function printMiddle(analysis::AcPowerFlow{NewtonRaphson}, verbose::Int64)
+function printMiddle(analysis::AcPowerFlow{<:NewtonRaphson}, verbose::Int64)
     if verbose == 2 || verbose == 3
         entri = nnz(analysis.method.jacobian)
         state = lastindex(analysis.method.increment)
@@ -203,7 +203,7 @@ function printMiddle(analysis::AcPowerFlow{NewtonRaphson}, verbose::Int64)
     end
 end
 
-function printMiddle(analysis::AcPowerFlow{FastNewtonRaphson}, verbose::Int64)
+function printMiddle(analysis::AcPowerFlow{<:FastNewtonRaphson}, verbose::Int64)
     if verbose == 2 || verbose == 3
         method = analysis.method
 
@@ -366,12 +366,12 @@ function printSolver(::PowerSystem, ::AcPowerFlow{GaussSeidel}, verbose::Int64)
     end
 end
 
-function minmaxIncrement(system::PowerSystem, analysis::AcPowerFlow{NewtonRaphson})
+function minmaxIncrement(system::PowerSystem, analysis::AcPowerFlow{<:NewtonRaphson})
     extrema(abs, analysis.method.increment[1:(system.bus.number - 1)]),
     extrema(abs, analysis.method.increment[system.bus.number:end])
 end
 
-function minmaxIncrement(::PowerSystem, analysis::AcPowerFlow{FastNewtonRaphson})
+function minmaxIncrement(::PowerSystem, analysis::AcPowerFlow{<:FastNewtonRaphson})
     extrema(abs, analysis.method.active.increment),
     extrema(abs, analysis.method.reactive.increment)
 end
@@ -467,11 +467,11 @@ function printExit(::PmuStateEstimation, verbose::Int64)
     end
 end
 
-function printMethodName(::AcPowerFlow{NewtonRaphson})
+function printMethodName(::AcPowerFlow{<:NewtonRaphson})
     "Newton-Raphson"
 end
 
-function printMethodName(::AcPowerFlow{FastNewtonRaphson})
+function printMethodName(::AcPowerFlow{<:FastNewtonRaphson})
     "fast Newton-Raphson"
 end
 

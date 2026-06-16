@@ -8,8 +8,8 @@ To perform the AC power flow analysis, we will first need the `PowerSystem` type
 ---
 
 To obtain bus voltages and solve the power flow problem, users can implement an iterative process using functions:
-* [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})),
-* [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})).
+* [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})),
+* [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T).
 
 After solving the AC power flow, JuliaGrid provides functions for computing powers and currents:
 * [`power!`](@ref power!(::AcPowerFlow)),
@@ -159,9 +159,9 @@ nothing # hide
     ```
     The `KLU` method, based on the Gilbert-Peierls algorithm, can considerably speed up power flow computations [davisklu](@cite). This option to select a factorization method is available only for the Newton-Raphson and fast Newton-Raphson methods.
 
-This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})). The [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})) computes the voltage magnitudes and angles.
+This function sets up the desired method for an iterative process based on two functions: [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T). The [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function calculates the active and reactive power injection mismatches using the given voltage magnitudes and angles, while [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) computes the voltage magnitudes and angles.
 
-To perform an iterative process with the Newton-Raphson or fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function must be included inside the iteration loop. For instance:
+To perform an iterative process with the Newton-Raphson or fast Newton-Raphson methods in JuliaGrid, the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function must be included inside the iteration loop. For instance:
 ```@example ACPowerFlowSolution
 for iteration = 1:100
     mismatch!(analysis)
@@ -175,7 +175,7 @@ Upon completion of the AC power flow analysis, the solution is conveyed through 
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-In contrast, the iterative loop of the Gauss-Seidel method does not require the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function:
+In contrast, the iterative loop of the Gauss-Seidel method does not require the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function:
 ```@example ACPowerFlowSolution
 analysis = gaussSeidel(system)
 for iteration = 1:100
@@ -191,7 +191,7 @@ In these examples, the algorithms run until the specified number of iterations i
 ---
 
 ##### Breaking the Iterative Process
-We can terminate the iterative process using the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function. The following code shows an example of how to use the function to break out of the iteration loop:
+We can terminate the iterative process using the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function. The following code shows an example of how to use the function to break out of the iteration loop:
 ```@example ACPowerFlowSolution
 @voltage(pu, rad, V) # hide
 analysis = newtonRaphson(system)
@@ -206,7 +206,7 @@ end
 nothing # hide
 ```
 
-The [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function returns the maximum absolute values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms.
+The [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function returns the maximum absolute values of active and reactive power injection mismatches, which are commonly used as a convergence criterion in iterative AC power flow algorithms.
 
 ---
 

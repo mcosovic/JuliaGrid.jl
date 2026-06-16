@@ -6,7 +6,7 @@ To perform the DC state estimation, we first need to have the `PowerSystem` type
 ---
 
 To obtain bus voltage angles and solve the DC state estimation problem, users can use the wrapper function:
-* [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})).
+* [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})).
 
 After solving the DC state estimation, JuliaGrid provides function for computing powers:
 * [`power!`](@ref power!(::DcStateEstimation)).
@@ -50,12 +50,12 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    Here, the user triggers LU factorization as the default method for solving the DC state estimation problem. However, the user also has the option to select alternative factorization methods such as `KLU`, `LDLt` or `QR`:
+    Here, the user triggers LU factorization as the default method for solving the DC state estimation problem. The available factorization methods are `LL`, `LDLt`, `LU`, `KLU` and `QR`:
     ```julia WLSDCStateEstimationSolution
     analysis = dcStateEstimation(monitoring, LDLt)
     ```
 
-To obtain the bus voltage angles, the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function can be invoked as shown:
+To obtain the bus voltage angles, the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function can be invoked as shown:
 ```@example WLSDCStateEstimationSolution
 solve!(analysis)
 nothing # hide
@@ -153,12 +153,12 @@ nothing # hide
 ---
 
 ##### Setup Initial Primal Values
-In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function is executed. These values are derived from the voltage angles stored in the `PowerSystem` type and are assigned to the corresponding `voltage` field within the `DcStateEstimation` type:
+In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function is executed. These values are derived from the voltage angles stored in the `PowerSystem` type and are assigned to the corresponding `voltage` field within the `DcStateEstimation` type:
 ```@repl WLSDCStateEstimationSolution
 print(system.bus.label, analysis.voltage.angle)
 ```
 
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function. One practical approach is to obtaine WLS estimator and then apply the resulting solution as the starting point for state estimation:
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function. One practical approach is to obtaine WLS estimator and then apply the resulting solution as the starting point for state estimation:
 ```@example WLSDCStateEstimationSolution
 wls = dcStateEstimation(monitoring)
 stateEstimation!(wls)
@@ -278,12 +278,12 @@ nothing # hide
 
 
 !!! note "Info"
-    This concept removes the need to rebuild both the `Measurement` and the `DcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse the symbolic factorizations of LU or LDLt, provided that the nonzero pattern of the gain matrix remains unchanged.
+    This concept removes the need to rebuild both the `Measurement` and the `DcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of LL, LDLt and LU, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 
 ##### Reusing Weighted Least-Squares Matrix Factorization
-Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the measurement value of the `Wattmeter 2`. It is important to note that these adjustments do not impact the variance or status of the measurement device, which can affect the gain matrix. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function:
+Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the measurement value of the `Wattmeter 2`. It is important to note that these adjustments do not impact the variance or status of the measurement device, which can affect the gain matrix. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide

@@ -185,17 +185,17 @@ function addPowerMeter!(
             lblBus = getLabel(system.bus, location, "bus")
             idx = system.bus.label[lblBus]
 
-            setLabel(monitoring, label, def.label, lblBus)
+            setLabel(monitoring, monitoring.number, label, def.label, lblBus)
 
             defVariance = def.varianceBus
             defStatus = def.statusBus
         elseif fromFlag
-            setLabel(monitoring, label, def.label, lblBrch; prefix = "From ")
+            setLabel(monitoring, monitoring.number, label, def.label, lblBrch; prefix = "From ")
 
             defVariance = def.varianceFrom
             defStatus = def.statusFrom
         else
-            setLabel(monitoring, label, def.label, lblBrch; prefix = "To ")
+            setLabel(monitoring, monitoring.number, label, def.label, lblBrch; prefix = "To ")
 
             defVariance = def.varianceTo
             defStatus = def.statusTo
@@ -411,7 +411,7 @@ function addPowermeter!(
         if statusBus != -1
             @inbounds for (label, i) in system.bus.label
                 monitoring.number += 1
-                setLabel(monitoring, missing, def.label, label)
+                setLabel(monitoring, monitoring.number, missing, def.label, label)
 
                 monitoring.layout.index[i] = i
                 monitoring.layout.bus[i] = true
@@ -428,7 +428,7 @@ function addPowermeter!(
                 if system.branch.layout.status[i] == 1
                     if statusFrom != -1
                         monitoring.number += 1
-                        setLabel(monitoring, missing, def.label, label; prefix = "From ")
+                        setLabel(monitoring, monitoring.number, missing, def.label, label; prefix = "From ")
 
                         monitoring.layout.index[monitoring.number] = i
                         monitoring.layout.from[monitoring.number] = true
@@ -441,7 +441,7 @@ function addPowermeter!(
 
                     if statusTo != -1
                         monitoring.number += 1
-                        setLabel(monitoring, missing, def.label, label; prefix = "To ")
+                        setLabel(monitoring, monitoring.number, missing, def.label, label; prefix = "To ")
 
                         monitoring.layout.index[monitoring.number] = i
                         monitoring.layout.to[monitoring.number] = true

@@ -80,7 +80,7 @@ function addGeneratorMain!(system::PowerSystem, bus::IntStr, key::GeneratorKey)
     def = template.generator
 
     gen.number += 1
-    setLabel(gen, key.label, def.label, "generator")
+    setLabel(gen, gen.number, key.label, def.label, "generator")
     busIdx = getIndex(system.bus, bus, "bus")
 
     add!(gen.layout.status, key.status, def.status)

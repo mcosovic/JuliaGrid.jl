@@ -9,7 +9,8 @@ This function requires the `Measurement` type to establish the WLS state estimat
 
 Moreover, the presence of the `method` parameter is not mandatory. To address the WLS state
 estimation method, users can opt to utilize factorization techniques to decompose the gain matrix,
-such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. For improved robustness
+such as `LL`, `LDLt`, `LU`, `KLU`, or `QR`. The `LDLt` and `LL` methods are intended for symmetric
+gain matrices, with `LL` requiring positive definiteness. For improved robustness
 in cases with ill-conditioned data or significant variance disparities, using the `Orthogonal` or
 `PetersWilkinson` method is recommended.
 
@@ -49,7 +50,7 @@ function dcStateEstimation(monitoring::Measurement, ::Type{T} = LU) where {T <: 
             Float64[]
         ),
         power,
-        WLS{selectType(T)}(
+        WLS{T}(
             coeff,
             precision,
             mean,
@@ -338,7 +339,7 @@ analysis = dcLavStateEstimation(monitoring, Ipopt.Optimizer; verbose = 1)
 solve!(analysis)
 ```
 """
-function solve!(analysis::DcStateEstimation{WLS{Normal}})
+function solve!(analysis::DcStateEstimation{WLS{T}}) where T <: Normal
     se = analysis.method
     bus = analysis.system.bus
 
@@ -353,9 +354,9 @@ function solve!(analysis::DcStateEstimation{WLS{Normal}})
 
         if se.signature[:pattern] == -1
             se.signature[:pattern] = 0
-            se.factorization = factorization(gain, se.factorization)
+            se.factorization = factorization(gain, se.factorization, T)
         else
-            se.factorization = factorization!(gain, se.factorization)
+            se.factorization = factorization!(gain, se.factorization, T)
         end
     end
     b = temp * se.mean
@@ -494,7 +495,7 @@ end
     stateEstimation!(analysis::DcStateEstimation; iteration, tolerance, power, verbose)
 
 The function serves as a wrapper for solving DC state estimation and includes the functions:
-* [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})),
+* [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})),
 * [`power!`](@ref power!(::DcPowerFlow)).
 
 It computes bus voltage angles using the WLS or LAV model with the option to compute powers.

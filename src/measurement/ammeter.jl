@@ -84,12 +84,12 @@ function addAmmeter!(monitoring::Measurement; magnitude::FltInt, kwargs...)
         from, to = fromto(system, idxBrch)
         basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
         if fromFlag
-            setLabel(monitoring.ammeter, key.label, def.label, lblBrch; prefix = "From ")
+            setLabel(monitoring.ammeter, monitoring.ammeter.number, key.label, def.label, lblBrch; prefix = "From ")
             defVariance = def.varianceFrom
             defStatus = def.statusFrom
             baseVoltage = baseVoltg.value[from] * baseVoltg.prefix
         else
-            setLabel(monitoring.ammeter, key.label, def.label, lblBrch; prefix = "To ")
+            setLabel(monitoring.ammeter, monitoring.ammeter.number, key.label, def.label, lblBrch; prefix = "To ")
             defVariance = def.varianceTo
             defStatus = def.statusTo
             baseVoltage = baseVoltg.value[to] * baseVoltg.prefix
@@ -202,7 +202,7 @@ function addAmmeter!(monitoring::Measurement, analysis::AC;  kwargs...)
 
                 if statusFrom != -1
                     amp.number += 1
-                    setLabel(amp, missing, def.label, label; prefix = "From ")
+                    setLabel(amp, amp.number, missing, def.label, label; prefix = "From ")
 
                     amp.layout.index[amp.number] = i
                     amp.layout.from[amp.number] = true
@@ -217,7 +217,7 @@ function addAmmeter!(monitoring::Measurement, analysis::AC;  kwargs...)
 
                 if statusTo != -1
                     amp.number += 1
-                    setLabel(amp, missing, def.label, label; prefix = "To ")
+                    setLabel(amp, amp.number, missing, def.label, label; prefix = "To ")
 
                     amp.layout.index[amp.number] = i
                     amp.layout.to[amp.number] = true

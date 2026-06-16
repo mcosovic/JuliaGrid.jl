@@ -68,17 +68,20 @@ function addBus!(system::PowerSystem; kwargs...)
     def = template.bus
     key = BusKey(; kwargs...)
 
-    bus.number += 1
-    setLabel(bus, key.label, def.label, "bus")
-
-    add!(bus.layout.type, key.type, def.type)
-    if bus.layout.type[end] ∉ (1, 2, 3)
-        throw(ErrorException("The value $(key.type) of the bus type is illegal."))
+    typeNew = coalesce(key.type, def.type)
+    if typeNew ∉ (1, 2, 3)
+        throw(ErrorException("The value $typeNew of the bus type is illegal."))
     end
-    if bus.layout.type[end] == 3
-        if bus.layout.slack != 0
-            throw(ErrorException("The slack bus has already been designated."))
-        end
+    if typeNew == 3 && bus.layout.slack != 0
+        throw(ErrorException("The slack bus has already been designated."))
+    end
+
+    idx = bus.number + 1
+    setLabel(bus, idx, key.label, def.label, "bus")
+    bus.number = idx
+
+    push!(bus.layout.type, typeNew)
+    if typeNew == 3
         bus.layout.slack = bus.number
     end
 
@@ -201,10 +204,11 @@ function updateBusMain!(system::PowerSystem, label::IntStr, key::BusKey)
     end
 
     baseInv = 1 / (system.base.power.value * system.base.power.prefix)
-    if any(isset, (key.active, key.conductance, key.angle))
+    if isset(key.active) || isset(key.conductance) || isset(key.angle)
         optimizationChanged!(system)
     end
-    if any(isset, (key.reactive, key.susceptance, key.minMagnitude, key.maxMagnitude))
+    if isset(key.reactive) || isset(key.susceptance) ||
+        isset(key.minMagnitude) || isset(key.maxMagnitude)
         acOptimizationChanged!(system)
     end
 
@@ -212,7 +216,8 @@ function updateBusMain!(system::PowerSystem, label::IntStr, key::BusKey)
     update!(bus.demand.reactive, key.reactive, pfx.reactivePower, baseInv, idx)
 
     if isset(key.conductance) || isset(key.susceptance)
-        if !isempty(ac.nodalMatrix)
+        hasAcModel = !isempty(ac.nodalMatrix)
+        if hasAcModel
             acModelChanged!(system)
 
             admittance = complex(bus.shunt.conductance[idx], bus.shunt.susceptance[idx])
@@ -223,7 +228,7 @@ function updateBusMain!(system::PowerSystem, label::IntStr, key::BusKey)
         update!(bus.shunt.conductance, key.conductance, pfx.activePower, baseInv, idx)
         update!(bus.shunt.susceptance, key.susceptance, pfx.reactivePower, baseInv, idx)
 
-        if !isempty(ac.nodalMatrix)
+        if hasAcModel
             admittance = complex(bus.shunt.conductance[idx], bus.shunt.susceptance[idx])
             ac.nodalMatrix[idx, idx] += admittance
             ac.nodalMatrixTranspose[idx, idx] += admittance
@@ -270,52 +275,78 @@ function updateBus!(analysis::PowerFlow; label::IntStr, kwargs...)
     _updateBus!(analysis, getIndex(analysis.system.bus, label, "bus"))
 end
 
-function _updateBus!(analysis::AcPowerFlow{NewtonRaphson}, idx::Int64)
-    errorTypeConversion(analysis.system.model.revision.type, analysis.method.signature.type)
+function updateBus!(analysis::AcPowerFlow; label::IntStr, kwargs...)
+    key = BusKey(; kwargs...)
+    idx = getIndex(analysis.system.bus, label, "bus")
 
-    if analysis.system.bus.layout.type[idx] == 1
-        analysis.voltage.magnitude[idx] = analysis.system.bus.voltage.magnitude[idx]
+    if isset(key.type) && key.type != analysis.system.bus.layout.type[idx]
+        errorTypeConversion()
     end
-    analysis.voltage.angle[idx] = analysis.system.bus.voltage.angle[idx]
+
+    updateBusMain!(analysis.system, label, key)
+    _updateBus!(analysis, idx)
 end
 
-function _updateBus!(analysis::AcPowerFlow{FastNewtonRaphson}, idx::Int64)
+function updateBus!(analysis::DcPowerFlow; label::IntStr, kwargs...)
+    key = BusKey(; kwargs...)
+    idx = getIndex(analysis.system.bus, label, "bus")
+
+    if isset(key.type) && idx == analysis.system.bus.layout.slack && key.type != 3
+        errorTypeConversion()
+    end
+
+    updateBusMain!(analysis.system, label, key)
+    _updateBus!(analysis, idx)
+end
+
+function _updateBus!(analysis::AcPowerFlow{<:NewtonRaphson}, idx::Int64)
     system = analysis.system
+    bus = system.bus
     errorTypeConversion(system.model.revision.type, analysis.method.signature.type)
 
-    if system.bus.layout.type[idx] == 1
-        analysis.voltage.magnitude[idx] = system.bus.voltage.magnitude[idx]
+    if bus.layout.type[idx] == 1
+        analysis.voltage.magnitude[idx] = bus.voltage.magnitude[idx]
+    end
+    analysis.voltage.angle[idx] = bus.voltage.angle[idx]
+end
 
-        if haskey(analysis.method.signature.susceptance, idx)
-            oldSusceptance = analysis.method.signature.susceptance[idx]
-        else
-            oldSusceptance = 0.0
-        end
+function _updateBus!(analysis::AcPowerFlow{<:FastNewtonRaphson}, idx::Int64)
+    system = analysis.system
+    bus = system.bus
+    method = analysis.method
+    signature = method.signature
+    errorTypeConversion(system.model.revision.type, signature.type)
 
+    if bus.layout.type[idx] == 1
+        analysis.voltage.magnitude[idx] = bus.voltage.magnitude[idx]
+
+        oldSusceptance = get(signature.susceptance, idx, 0.0)
         if system.bus.shunt.susceptance[idx] != oldSusceptance
-            i = analysis.method.pq[idx]
+            i = method.pq[idx]
 
-            analysis.method.reactive.jacobian[i, i] -= oldSusceptance
-            analysis.method.reactive.jacobian[i, i] += system.bus.shunt.susceptance[idx]
+            method.reactive.jacobian[i, i] -= oldSusceptance
+            method.reactive.jacobian[i, i] += bus.shunt.susceptance[idx]
 
-            analysis.method.signature.susceptance[idx] = system.bus.shunt.susceptance[idx]
+            signature.susceptance[idx] = bus.shunt.susceptance[idx]
         end
     end
-    analysis.method.signature.jacobian = copy(system.model.revision.acModel)
+    signature.jacobian = copy(system.model.revision.acModel)
 
-    analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
+    analysis.voltage.angle[idx] = bus.voltage.angle[idx]
 end
 
 function _updateBus!(analysis::AcPowerFlow{GaussSeidel}, idx::Int64)
     system = analysis.system
-    errorTypeConversion(system.model.revision.type, analysis.method.signature.type)
+    bus = system.bus
+    method = analysis.method
+    errorTypeConversion(system.model.revision.type, method.signature.type)
 
-    if system.bus.layout.type[idx] == 1
-        analysis.voltage.magnitude[idx] = system.bus.voltage.magnitude[idx]
+    if bus.layout.type[idx] == 1
+        analysis.voltage.magnitude[idx] = bus.voltage.magnitude[idx]
     end
 
-    analysis.voltage.angle[idx] = system.bus.voltage.angle[idx]
-    analysis.method.voltage[idx] = analysis.voltage.magnitude[idx] * cis(analysis.voltage.angle[idx])
+    analysis.voltage.angle[idx] = bus.voltage.angle[idx]
+    method.voltage[idx] = analysis.voltage.magnitude[idx] * cis(analysis.voltage.angle[idx])
 end
 
 function _updateBus!(analysis::DcPowerFlow, ::Int64)
@@ -337,7 +368,7 @@ function _updateBus!(analysis::AcOptimalPowerFlow, idx::Int64)
     addBalance(system, jump, analysis.method.variable, con, idx)
 
     remove!(jump, moi, con.voltage.magnitude, dual.voltage.magnitude, idx)
-    setBound!(v.magnitude,vtg.minMagnitude, vtg.maxMagnitude, idx)
+    setBound!(v.magnitude, vtg.minMagnitude, vtg.maxMagnitude, idx)
     setConstraint!(v.magnitude, con.voltage.magnitude, vtg.minMagnitude, vtg.maxMagnitude, idx)
 
     if analysis.method.signature.slackBus == idx && bus.layout.type[idx] != 3

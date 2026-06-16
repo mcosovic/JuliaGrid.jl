@@ -120,7 +120,7 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    Here, the user triggers LU factorization as the default method for solving the system of linear equations within each iteration of the Gauss-Newton method. However, the user also has the option to select alternative factorization methods such as `KLU`, `LDLt` or `QR`:
+    Here, the user triggers LU factorization as the default method for solving the system of linear equations within each iteration of the Gauss-Newton method. The available factorization methods are `LL`, `LDLt`, `LU`, `KLU` and `QR`:
     ```julia ACSEObservabilityAnalysis
     analysis = gaussNewton(monitoring, LDLt)
     ```
@@ -411,7 +411,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This concept removes the need to rebuild both the `Measurement` and the `AcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse the symbolic factorizations of LU or LDLt, provided that the nonzero pattern of the gain matrix remains unchanged.
+    This concept removes the need to rebuild both the `Measurement` and the `AcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of LL, LDLt and LU, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 

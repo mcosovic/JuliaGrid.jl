@@ -179,7 +179,7 @@ Here, we utilize a "flat start" approach in our method. It is important to keep 
 ---
 
 ##### Iterative Process
-To implement the Newton-Raphson method, the iterative approach based on the Taylor series expansion, JuliaGrid provides the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson}::AcPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})) functions. These functions are utilized to carry out the Newton-Raphson method iteratively until a stopping criterion is reached, as demonstrated in the following code snippet:
+To implement the Newton-Raphson method, the iterative approach based on the Taylor series expansion, JuliaGrid provides the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) functions. These functions are utilized to carry out the Newton-Raphson method iteratively until a stopping criterion is reached, as demonstrated in the following code snippet:
 ```@example PowerFlowSolution
 for iteration = 0:20
     stopping = mismatch!(analysis)
@@ -190,7 +190,7 @@ for iteration = 0:20
 end
 ```
 
-The [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{0, 1, 2, \dots\}``. The equations used for these computations are:
+The [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{0, 1, 2, \dots\}``. The equations used for these computations are:
 ```math
   f_{P_i}(\mathbf x^{(\nu)}) = V_i^{(\nu)} \sum\limits_{j=1}^n (G_{ij}\cos\theta_{ij}^{(\nu)} + B_{ij}\sin\theta_{ij}^{(\nu)}) V_j^{(\nu)} - P_i,
   \;\;\; \forall i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv},
@@ -206,13 +206,13 @@ The resulting vector from these calculations is stored in the `mismatch` variabl
 𝐟 = analysis.method.mismatch
 ```
 
-In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
+In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
 ```math
   \max \{|f_{P_i}(\mathbf x^{(\nu)})|,\; \forall i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv} \} < \epsilon \\
   \max \{|f_{Q_i}(\mathbf x^{(\nu)})|,\; \forall i \in \mathcal{N}_\mathrm{pq} \} < \epsilon.
 ```
 
-Next, the function [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})) computes the increments of bus voltage angle and magnitude at each iteration using:
+Next, the function [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) computes the increments of bus voltage angle and magnitude at each iteration using:
 ```math
   \mathbf \Delta \mathbf{x}^{(\nu)} = -\mathbf J (\mathbf{x}^{(\nu)})^{-1} \mathbf f (\mathbf{x}^{(\nu)}),
 ```
@@ -235,7 +235,7 @@ The last ``n_\mathrm{pq}`` elements of the increment ``\mathbf \Delta  \mathbf x
 
 These specified orders dictate the row and column order of the Jacobian matrix ``\mathbf J(\mathbf x)``.
 
-Finally, the function [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})) adds the computed increment term to the previous solution to obtain a new solution:
+Finally, the function [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) adds the computed increment term to the previous solution to obtain a new solution:
 ```math
   \mathbf{x}^{(\nu + 1)} = \mathbf{x}^{(\nu)} + \mathbf \Delta \mathbf{x}^{(\nu)}.
 ```
@@ -551,7 +551,7 @@ Additionally, during this stage, JuliaGrid generates the initial vectors for bus
 ---
 
 ##### Iterative Process
-JuliaGrid offers the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})) functions to implement the fast Newton-Raphson method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
+JuliaGrid offers the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) functions to implement the fast Newton-Raphson method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
 ```@example PowerFlowSolution
 for iteration = 0:100
     stopping = mismatch!(analysis)
@@ -572,7 +572,7 @@ The functions ``\mathbf{f}_\mathrm{P}(\mathbf x)`` and ``\mathbf{f}_\mathrm{Q}(\
   \end{aligned}
 ```
 
-Therefore, the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{0, 1, 2, \dots\}``:
+Therefore, the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function calculates the mismatch in active power injection for demand and generator buses and the mismatch in reactive power injection for demand buses at each iteration ``\nu = \{0, 1, 2, \dots\}``:
 ```math
   \begin{aligned}
     h_{P_i}(\mathbf {x}^{(\nu)}) &=
@@ -590,13 +590,13 @@ The resulting vectors from these calculations are stored in the `AcPowerFlow` ty
 𝐡ₒ = analysis.method.reactive.increment
 ```
 
-In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
+In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
 ```math
   \max \{|h_{P_i}(\mathbf x^{(\nu)})|,\; \forall i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv} \} < \epsilon \\
   \max \{|h_{Q_i}(\mathbf x^{(\nu)})|,\; \forall i \in \mathcal{N}_\mathrm{pq} \} < \epsilon.
 ```
 
-Next, the function [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})) computes the bus voltage angle increments:
+Next, the function [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) computes the bus voltage angle increments:
 ```math
   \mathbf \Delta \mathbf x_\mathrm{a}^{(\nu)} = \mathbf{B}_1^{-1} \mathbf{h}_\mathrm{P}(\mathbf x^{(\nu)}).
 ```
@@ -712,7 +712,7 @@ This results in the creation of the initial vectors of bus voltage magnitudes ``
 ---
 
 ##### Iterative Process
-JuliaGrid offers the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})) functions to implement the Gauss-Seidel method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
+JuliaGrid offers the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) functions to implement the Gauss-Seidel method iterations. These functions are used iteratively until a stopping criterion is met, as shown in the code snippet below:
 ```@example PowerFlowSolution
 for iteration = 0:300
     stopping = mismatch!(analysis)
@@ -723,7 +723,7 @@ for iteration = 0:300
 end
 ```
 
-In contrast to the Newton-Raphson and fast Newton-Raphson methods, the Gauss-Seidel method does not require the calculation of the mismatch in active and reactive power injection at each iteration. Instead, the [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})) function is used solely to verify the convergence criteria. At each iteration ``\nu = \{0, 1, 2, \dots\}``, we calculate the active power injection mismatch for demand and generator buses, as shown below:
+In contrast to the Newton-Raphson and fast Newton-Raphson methods, the Gauss-Seidel method does not require the calculation of the mismatch in active and reactive power injection at each iteration. Instead, the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function is used solely to verify the convergence criteria. At each iteration ``\nu = \{0, 1, 2, \dots\}``, we calculate the active power injection mismatch for demand and generator buses, as shown below:
 ```math
   f_{P_i}(\mathbf x^{(\nu)}) = \Re\{\bar{V}_i^{(\nu)} \bar{I}_i^{*(\nu)}\} - P_i, \;\;\; \forall i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv}.
 ```
@@ -739,7 +739,7 @@ However, these mismatches are not stored, as they are only used to obtain the ma
   \max \{|f_{Q_i}(\mathbf x^{(\nu)})|,\; \forall i \in \mathcal{N}_\mathrm{pq} \} < \epsilon.
 ```
 
-After initializing complex bus voltages ``\bar{V}_i^{(0)}`` for all buses in the power system, the function [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})) proceeds to compute the voltages for demand buses using the Gauss-Seidel method:
+After initializing complex bus voltages ``\bar{V}_i^{(0)}`` for all buses in the power system, the function [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) proceeds to compute the voltages for demand buses using the Gauss-Seidel method:
 ```math
   \bar{V}_i^{(\nu + 1)} =
   \cfrac{1}{Y_{ii}} \left(\cfrac{P_i - \mathrm{j} Q_i}{\bar{V}_i^{*(\nu)}} -

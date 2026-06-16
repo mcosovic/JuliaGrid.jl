@@ -10,7 +10,8 @@ This function requires the `Measurement` type to establish the WLS state estimat
 
 Moreover, the presence of the `method` parameter is not mandatory. To address the WLS state
 estimation method, users can opt to utilize factorization techniques to decompose the gain matrix,
-such as `LU`, `QR`, or `LDLt` especially when the gain matrix is symmetric. For improved robustness
+such as `LL`, `LDLt`, `LU`, `KLU`, or `QR`. The `LDLt` and `LL` methods are intended for symmetric
+gain matrices, with `LL` requiring positive definiteness. For improved robustness
 in cases with ill-conditioned data or significant variance disparities, using the `Orthogonal` or
 `PetersWilkinson` method is recommended.
 
@@ -54,7 +55,7 @@ function gaussNewton(monitoring::Measurement, ::Type{T} = LU) where {T <: WlsMet
         ),
         power,
         current,
-        GaussNewton{selectType(T)}(
+        GaussNewton{T}(
             jcb,
             pcs,
             mean,
@@ -872,7 +873,7 @@ analysis = gaussNewton(monitoring)
 increment!(analysis)
 ```
 """
-function increment!(analysis::AcStateEstimation{GaussNewton{Normal}})
+function increment!(analysis::AcStateEstimation{GaussNewton{T}}) where T <: Normal
     system = analysis.system
     bus = system.bus
     se = analysis.method
@@ -887,9 +888,9 @@ function increment!(analysis::AcStateEstimation{GaussNewton{Normal}})
 
     if se.signature[:pattern] == -1
         se.signature[:pattern] = 0
-        se.factorization = factorization(gain, se.factorization)
+        se.factorization = factorization(gain, se.factorization, T)
     else
-        se.factorization = factorization!(gain, se.factorization)
+        se.factorization = factorization!(gain, se.factorization, T)
     end
 
     solution!(se.increment, se.factorization, temp * se.residual)
@@ -913,9 +914,9 @@ function increment!(analysis::AcStateEstimation{GaussNewton{Orthogonal}})
     H = se.precision * se.jacobian
     if se.signature[:pattern] == -1
         se.signature[:pattern] = 0
-        se.factorization = factorization(H, se.factorization)
+        se.factorization = factorization(H, se.factorization, Orthogonal)
     else
-        se.factorization = factorization!(H, se.factorization)
+        se.factorization = factorization!(H, se.factorization, Orthogonal)
     end
 
     solution!(se.increment, se.factorization, se.precision * se.residual)
@@ -1229,7 +1230,7 @@ end
         iteration, tolerance, power, current, verbose)
 
 The function serves as a wrapper for solving AC state estimation and includes the functions:
-* [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{Normal}})),
+* [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{<:Normal}})),
 * [`power!`](@ref power!(::AcPowerFlow)),
 * [`current!`](@ref current!(::AC)).
 

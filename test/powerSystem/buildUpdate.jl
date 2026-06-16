@@ -616,7 +616,9 @@ end
 
     @testset "Add and Update Branch Errors" begin
         err = ErrorException("The label Branch 1 is not unique.")
-        @test_throws err addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2")
+        @test_throws err addBranch!(
+            system; label = "Branch 1", from = "Bus 1", to = "Bus 2", resistance = 0.1
+        )
 
         err = ErrorException("Invalid value for from or to keywords.")
         @test_throws err addBranch!(system; label = "Branch 2", from = "Bus 1", to = "Bus 1")

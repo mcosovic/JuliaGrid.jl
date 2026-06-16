@@ -7,9 +7,10 @@ The function sets up the framework to solve the DC power flow.
 The function requires the `PowerSystem` type to establish the framework. Next, the `Factorization`
 argument, while optional, determines the method used to solve the linear system of equations. It can
 take one of the following values:
+- `LL`: Utilizes Cholesky factorization.
+- `LDLt`: Utilizes LDLt factorization.
 - `LU`: Utilizes LU factorization (default).
 - `KLU`: Utilizes KLU factorization.
-- `LDLt`: Utilizes LDLt factorization.
 - `QR`: Utilizes QR factorization.
 
 # Updates
@@ -38,7 +39,7 @@ dcModel!(system)
 analysis = dcPowerFlow(system, KLU)
 ```
 """
-function dcPowerFlow(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LDLt, LU, KLU}}
+function dcPowerFlow(system::PowerSystem, ::Type{T} = LU) where {T <: Union{LL, LDLt, LU, KLU, QR}}
     checkSlackBus(system)
     model!(system, system.model.dc)
     changeSlackBus!(system)
@@ -54,7 +55,7 @@ function dcPowerFlow(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, 
             Real(Float64[]),
             Real(Float64[])
         ),
-        DcPowerFlowMethod(
+        DcPowerFlowMethod{T}(
             selectFactorization(T),
             Float64[],
             DcPowerFlowSignature(
@@ -85,7 +86,7 @@ analysis = dcPowerFlow(system)
 solve!(analysis)
 ```
 """
-function solve!(analysis::DcPowerFlow)
+function solve!(analysis::DcPowerFlow{T}) where T
     system = analysis.system
     bus = system.bus
     dc = system.model.dc
@@ -111,10 +112,10 @@ function solve!(analysis::DcPowerFlow)
         dc.nodalMatrix[bus.layout.slack, bus.layout.slack] = 1.0
 
         if revision.dcPattern == pf.signature.dcPattern && !slackChanged
-            pf.factorization = factorization!(dc.nodalMatrix, pf.factorization)
+            pf.factorization = factorization!(dc.nodalMatrix, pf.factorization, T)
         else
             pf.signature.dcPattern = copy(revision.dcPattern)
-            pf.factorization = factorization(dc.nodalMatrix, pf.factorization)
+            pf.factorization = factorization(dc.nodalMatrix, pf.factorization, T)
         end
 
         restoreRowColumn!(dc.nodalMatrix, removeIdx, removeVal, bus.layout.slack)
@@ -130,7 +131,7 @@ end
     powerFlow!(analysis::DcPowerFlow; power, verbose)
 
 The function serves as a wrapper for solving DC power flow and includes the functions:
-* [`solve!`](@ref solve!(::DcPowerFlow)),
+* [`solve!`](@ref solve!(::DcPowerFlow{T}) where T),
 * [`power!`](@ref power!(::DcPowerFlow)).
 
 It computes bus voltage angles and optionally calculates power values.

@@ -77,7 +77,7 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    By default, JuliaGrid utilizes LU factorization as the primary method to factorize the nodal matrix. However, users maintain the flexibility to opt for alternative factorization methods such as LDLt or QR.
+    By default, JuliaGrid utilizes LU factorization as the primary method to factorize the nodal matrix. The available factorization methods are LL, LDLt, LU, KLU and QR.
 
 The factorization of the nodal matrix can be accessed using:
 ```@repl PowerFlowSolutionDC

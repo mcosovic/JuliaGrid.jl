@@ -194,7 +194,7 @@ function testDevice(meter, fully, idx::Int64, status::Int64)
 end
 
 ##### Test Reusing Power Flow #####
-function testReusing(analysis::AcPowerFlow{NewtonRaphson})
+function testReusing(analysis::AcPowerFlow{<:NewtonRaphson})
     pf = newtonRaphson(analysis.system)
     powerFlow!(pf; tolerance = 1e-10)
 
@@ -205,7 +205,7 @@ function testReusing(analysis::AcPowerFlow{NewtonRaphson})
     teststruct(pf.voltage, analysis.voltage; atol = 1e-8)
 end
 
-function testReusing(analysis::AcPowerFlow{FastNewtonRaphson})
+function testReusing(analysis::AcPowerFlow{<:FastNewtonRaphson})
     pf = fastNewtonRaphsonBX(analysis.system)
     powerFlow!(pf; tolerance = 1e-10)
 
@@ -324,11 +324,11 @@ end
 ##### Test Reusing Gauss-Newton State Estimation #####
 function testReusing(
     monitoring::Measurement,
-    wls::AcStateEstimation{GaussNewton{Normal}},
+    wls::AcStateEstimation{GaussNewton{T}},
     lav::AcStateEstimation{LAV},
     idx::Int64;
     pmu::Bool = false
-)
+) where {T <: Normal}
     setInitialPoint!(wls)
     setInitialPoint!(lav)
 
@@ -390,10 +390,10 @@ end
 ##### Test Reusing PMU State Estimation #####
 function testReusing(
     monitoring::Measurement,
-    wls::PmuStateEstimation{WLS{Normal}},
+    wls::PmuStateEstimation{WLS{T}},
     lav::PmuStateEstimation{LAV},
     idx::Int64
-)
+) where {T <: Normal}
     analysis = pmuStateEstimation(monitoring)
 
     @test analysis.method.precision == wls.method.precision
@@ -418,10 +418,10 @@ end
 ##### Test Reusing DC State Estimation #####
 function testReusing(
     monitoring::Measurement,
-    wls::DcStateEstimation{WLS{Normal}},
+    wls::DcStateEstimation{WLS{T}},
     lav::DcStateEstimation{LAV},
     idx::Int64
-)
+) where {T <: Normal}
     analysis = dcStateEstimation(monitoring)
 
     @test analysis.method.precision == wls.method.precision

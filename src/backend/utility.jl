@@ -124,6 +124,7 @@ end
 ##### Set String Label #####
 function setLabel(
     component::Union{Component, Meter},
+    idx::Int64,
     label::String,
     ::String,
     ::String;
@@ -138,7 +139,7 @@ function setLabel(
         component.layout.label = max(component.layout.label, labelInt)
     end
 
-    setindex!(component.label, component.number, label)
+    setindex!(component.label, idx, label)
 end
 
 function typeLabel(::OrderedDict{String, Int64}, label::String)
@@ -152,6 +153,7 @@ end
 ##### Set Integer Label #####
 function setLabel(
     component::Union{Component, Meter},
+    idx::Int64,
     label::Int64,
     ::String,
     ::IntStr;
@@ -163,7 +165,7 @@ function setLabel(
     end
 
     component.layout.label = max(component.layout.label, label)
-    setindex!(component.label, component.number, labelStrInt)
+    setindex!(component.label, idx, labelStrInt)
 end
 
 function typeLabel(::OrderedDict{Int64, Int64}, label::String)
@@ -177,6 +179,7 @@ end
 ##### Set Missing Label #####
 function setLabel(
     component::Union{Component, Meter},
+    idx::Int64,
     ::Missing,
     default::String,
     key::IntStr;
@@ -190,7 +193,7 @@ function setLabel(
         label = typeLabel(component.label, default, component.layout.label, prefix, key)
     end
 
-    setindex!(component.label, component.number, label)
+    setindex!(component.label, idx, label)
 end
 
 function typeLabel(::OrderedDict{String, Int64}, default::String, idx::Int64)
@@ -440,53 +443,110 @@ function baseCurrentInv(basePowerInv::Float64, baseVoltage::Float64)
 end
 
 ##### Factorizations #####
-function factorization(A::SparseMatrixCSC{Float64, Int64}, ::UMFPACK.UmfpackLU{Float64, Int64})
+function factorization(
+    A::SparseMatrixCSC{Float64, Int64},
+    ::UMFPACK.UmfpackLU{Float64, Int64},
+    ::Type{LU}
+)
     lu(A)
 end
 
-function factorization!(A::SparseMatrixCSC{Float64, Int64}, F::UMFPACK.UmfpackLU{Float64, Int64})
+function factorization!(
+    A::SparseMatrixCSC{Float64, Int64},
+    F::UMFPACK.UmfpackLU{Float64, Int64},
+    ::Type{LU}
+)
     lu!(F, A)
 end
 
-function factorization(A::SparseMatrixCSC{Float64, Int64}, ::CHOLMOD.Factor{Float64})
-    ldlt(A)
-end
-
-function factorization!(A::SparseMatrixCSC{Float64, Int64}, F::CHOLMOD.Factor{Float64})
-    ldlt!(F, A)
-end
-
-function factorization(A::SparseMatrixCSC{Float64, Int64}, ::KLUFactorization{Float64, Int64})
+function factorization(
+    A::SparseMatrixCSC{Float64, Int64},
+    ::KLUFactorization{Float64, Int64},
+    ::Type{KLU}
+)
     klu(A)
 end
 
-function factorization!(A::SparseMatrixCSC{Float64, Int64}, F::KLUFactorization{Float64, Int64})
+function factorization!(
+    A::SparseMatrixCSC{Float64, Int64},
+    F::KLUFactorization{Float64, Int64},
+    ::Type{KLU}
+)
     klu!(F, A)
 end
 
-function factorization(A::SparseMatrixCSC{Float64, Int64}, ::SPQR.QRSparse{Float64, Int64})
+function factorization(
+    A::SparseMatrixCSC{Float64, Int64},
+    ::SPQR.QRSparse{Float64, Int64},
+    ::Type{QR}
+)
     qr(A)
 end
 
-function factorization!(A::SparseMatrixCSC{Float64, Int64}, ::SPQR.QRSparse{Float64, Int64})
+function factorization!(
+    A::SparseMatrixCSC{Float64, Int64},
+    ::SPQR.QRSparse{Float64, Int64},
+    ::Type{QR}
+)
     qr(A)
+end
+
+function factorization(
+    A::SparseMatrixCSC{Float64, Int64},
+    ::SPQR.QRSparse{Float64, Int64},
+    ::Type{Orthogonal}
+)
+    qr(A)
+end
+
+function factorization!(
+    A::SparseMatrixCSC{Float64, Int64},
+    ::SPQR.QRSparse{Float64, Int64},
+    ::Type{Orthogonal}
+)
+    qr(A)
+end
+
+function factorization(
+    A::SparseMatrixCSC{Float64, Int64},
+    ::CHOLMOD.Factor{Float64},
+    ::Type{LDLt}
+)
+    ldlt(Symmetric(A))
+end
+
+function factorization!(
+    A::SparseMatrixCSC{Float64, Int64},
+    F::CHOLMOD.Factor{Float64},
+    ::Type{LDLt}
+)
+    ldlt!(F, Symmetric(A))
+end
+
+function factorization(
+    A::SparseMatrixCSC{Float64, Int64},
+    ::CHOLMOD.Factor{Float64},
+    ::Type{LL}
+)
+    cholesky(Symmetric(A))
+end
+
+function factorization!(
+    A::SparseMatrixCSC{Float64, Int64},
+    F::CHOLMOD.Factor{Float64},
+    ::Type{LL}
+)
+    cholesky!(F, Symmetric(A))
 end
 
 ##### Select Factorization #####
+selectFactorization(::Type{LL}) = cholesky(Symmetric(sparse(Matrix(1.0I, 1, 1))))
 selectFactorization(::Type{LDLt}) = ldlt(sparse(Matrix(1.0I, 1, 1)))
 selectFactorization(::Type{LU}) = lu(sparse(Matrix(1.0I, 1, 1)))
-selectFactorization(::Type{QR}) = qr(sparse(Matrix(1.0I, 1, 1)))
 selectFactorization(::Type{KLU}) = klu(sparse(Matrix(1.0I, 1, 1)))
+selectFactorization(::Type{QR}) = qr(sparse(Matrix(1.0I, 1, 1)))
 selectFactorization(::Type{Orthogonal}) = qr(sparse(Matrix(1.0I, 1, 1)))
 selectFactorization(::Type{PetersWilkinson}) = lu(sparse(Matrix(1.0I, 1, 1)))
-
-##### Select Type #####
-selectType(::Type{LDLt}) = Normal
-selectType(::Type{LU}) = Normal
-selectType(::Type{KLU}) = Normal
-selectType(::Type{QR}) = Normal
-selectType(::Type{Orthogonal}) = Orthogonal
-selectType(::Type{PetersWilkinson}) = PetersWilkinson
 
 ##### Solution #####
 function solution!(x::Vector{Float64}, F::UMFPACK.UmfpackLU{Float64, Int64}, b::Vector{Float64})

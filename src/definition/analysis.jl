@@ -1,4 +1,4 @@
-export LU, QR, LDLt, KLU
+export LL, LDLt, LU, KLU, QR
 export Analysis, AC, DC, WlsMethod, Normal, Orthogonal, PetersWilkinson
 export PowerFlow, AcPowerFlow, NewtonRaphson, FastNewtonRaphson, GaussSeidel, DcPowerFlow
 export OptimalPowerFlow, AcOptimalPowerFlow, DcOptimalPowerFlow
@@ -64,11 +64,18 @@ Wilkinson method. It is used as a type parameter in [`GaussNewton`](@ref GaussNe
 struct PetersWilkinson <: WlsMethod end
 
 """
-    QR
+    LL
 
-A tag type used for selecting QR factorization in JuliaGrid.
+A tag type used for selecting Cholesky factorization in JuliaGrid.
 """
-struct QR <: Normal end
+struct LL <: Normal end
+
+"""
+    LDLt
+
+A tag type used for selecting LDLt factorization in JuliaGrid.
+"""
+struct LDLt <: Normal end
 
 """
     LU
@@ -85,11 +92,11 @@ A tag type used for selecting KLU factorization in JuliaGrid.
 struct KLU <: Normal end
 
 """
-    LDLt
+    QR
 
-A tag type used for selecting LDLt factorization in JuliaGrid.
+A tag type used for selecting QR factorization in JuliaGrid.
 """
-struct LDLt <: Normal end
+struct QR <: Normal end
 
 ##### Powers in the AC Framework #####
 struct AcPower
@@ -143,7 +150,7 @@ flow model, which will be solved using the Newton-Raphson method.
 - `signature::NewtonRaphsonSignature`: Tracks topology, AC matrix pattern, and bus type revisions.
 - `iteration::Int64`: The iteration counter.
 """
-mutable struct NewtonRaphson
+mutable struct NewtonRaphson{T <: Union{LU, KLU, QR}}
     jacobian::SparseMatrixCSC{Float64, Int64}
     mismatch::Vector{Float64}
     increment::Vector{Float64}
@@ -155,7 +162,7 @@ mutable struct NewtonRaphson
 end
 
 ##### Fast Newton-Raphson #####
-mutable struct FastNewtonRaphsonModel
+mutable struct FastNewtonRaphsonModel{T <: Union{LU, KLU, QR}}
     jacobian::SparseMatrixCSC{Float64, Int64}
     mismatch::Vector{Float64}
     increment::Vector{Float64}
@@ -188,9 +195,9 @@ will be solved using the fast Newton-Raphson method.
 - `bx::Bool`: Version of the method, either BX or XB.
 - `iteration::Int64`: The iteration counter.
 """
-mutable struct FastNewtonRaphson
-    active::FastNewtonRaphsonModel
-    reactive::FastNewtonRaphsonModel
+mutable struct FastNewtonRaphson{T <: Union{LU, KLU, QR}}
+    active::FastNewtonRaphsonModel{T}
+    reactive::FastNewtonRaphsonModel{T}
     pq::Vector{Int64}
     pvpq::Vector{Int64}
     signature::FastNewtonRaphsonSignature
@@ -256,7 +263,7 @@ mutable struct DcPowerFlowSignature
     slack::Int64
 end
 
-mutable struct DcPowerFlowMethod
+mutable struct DcPowerFlowMethod{T <: Union{LL, LDLt, LU, KLU, QR}}
     factorization::FactorSparse
     rhs::Vector{Float64}
     signature::DcPowerFlowSignature
@@ -274,10 +281,10 @@ flow model.
 - `method::DcPowerFlowMethod`: Factorization of the nodal admittance matrix.
 - `system::PowerSystem`: The reference to the power system.
 """
-struct DcPowerFlow <: DC
+struct DcPowerFlow{T <: Union{LL, LDLt, LU, KLU, QR}} <: DC
     voltage::Angle
     power::DcPower
-    method::DcPowerFlowMethod
+    method::DcPowerFlowMethod{T}
     system::PowerSystem
 end
 

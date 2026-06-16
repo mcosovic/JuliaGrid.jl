@@ -128,7 +128,7 @@ function newtonRaphson(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        NewtonRaphson(
+        NewtonRaphson{T}(
             sparse(iIdx, jIdx, fill(0.0, nnzJcb), dimJcb, dimJcb),
             fill(0.0, dimJcb),
             fill(0.0, dimJcb),
@@ -230,7 +230,7 @@ function fastNewtonRaphsonXB(system::PowerSystem, ::Type{T} = LU) where {T <: Un
     fastNewtonRaphsonModel(system, T, false)
 end
 
-function fastNewtonRaphsonModel(system::PowerSystem, T::Type{<:Union{QR, LU, KLU}}, bx::Bool)
+function fastNewtonRaphsonModel(system::PowerSystem, ::Type{T}, bx::Bool) where {T <: Union{QR, LU, KLU}}
     bus = system.bus
     branch = system.branch
     ac = system.model.ac
@@ -313,14 +313,14 @@ function fastNewtonRaphsonModel(system::PowerSystem, T::Type{<:Union{QR, LU, KLU
             Polar(Float64[], Float64[]),
             Polar(Float64[], Float64[])
         ),
-        FastNewtonRaphson(
-            FastNewtonRaphsonModel(
+        FastNewtonRaphson{T}(
+            FastNewtonRaphsonModel{T}(
                 sparse(iIdxP, jIdxP, zeros(nnzP), bus.number - 1, bus.number - 1),
                 fill(0.0, bus.number - 1),
                 fill(0.0, bus.number - 1),
                 selectFactorization(T),
             ),
-            FastNewtonRaphsonModel(
+            FastNewtonRaphsonModel{T}(
                 sparse(iIdxQ, jIdxQ, zeros(nnzQ), pqNum, pqNum),
                 fill(0.0, pqNum),
                 fill(0.0, pqNum),
@@ -359,7 +359,7 @@ function fastNewtonRaphsonModel(system::PowerSystem, T::Type{<:Union{QR, LU, KLU
     return analysis
 end
 
-function jacobian(system::PowerSystem, analysis::AcPowerFlow{FastNewtonRaphson}, idx::Int64)
+function jacobian(system::PowerSystem, analysis::AcPowerFlow{<:FastNewtonRaphson}, idx::Int64)
     i, j = fromto(system, idx)
     p, q = jacobianCoefficient(system, analysis.method, idx)
 
@@ -533,7 +533,7 @@ The function calculates both active and reactive power injection mismatches.
 # Updates
 This function updates the `mismatch` variables in the Newton-Raphson and fast Newton-Raphson methods.
 It should be employed during the iteration loop before invoking the
-[`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})) function.
+[`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) function.
 
 # Returns
 The function returns maximum absolute values of the active and reactive power injection mismatches,
@@ -549,7 +549,7 @@ analysis = newtonRaphson(system)
 mismatch!(analysis)
 ```
 """
-function mismatch!(analysis::AcPowerFlow{NewtonRaphson})
+function mismatch!(analysis::AcPowerFlow{<:NewtonRaphson})
     system = analysis.system
     ac = system.model.ac
     bus = system.bus
@@ -591,7 +591,7 @@ function mismatch!(analysis::AcPowerFlow{NewtonRaphson})
     return stopP, stopQ
 end
 
-function mismatch!(analysis::AcPowerFlow{FastNewtonRaphson})
+function mismatch!(analysis::AcPowerFlow{<:FastNewtonRaphson})
     system = analysis.system
     ac = system.model.ac
     bus = system.bus
@@ -697,7 +697,7 @@ for i = 1:10
 end
 ```
 """
-function solve!(analysis::AcPowerFlow{NewtonRaphson})
+function solve!(analysis::AcPowerFlow{NewtonRaphson{T}}) where T
     system = analysis.system
     ac = system.model.ac
     revision = system.model.revision
@@ -768,10 +768,10 @@ function solve!(analysis::AcPowerFlow{NewtonRaphson})
     end
 
     if revision.acPattern == pf.signature.acPattern
-        pf.factorization = factorization!(jcb, pf.factorization)
+        pf.factorization = factorization!(jcb, pf.factorization, T)
     else
         pf.signature.acPattern = copy(revision.acPattern)
-        pf.factorization = factorization(jcb, pf.factorization)
+        pf.factorization = factorization(jcb, pf.factorization, T)
     end
 
     solution!(pf.increment, pf.factorization, pf.mismatch)
@@ -788,7 +788,7 @@ function solve!(analysis::AcPowerFlow{NewtonRaphson})
     pf.iteration += 1
 end
 
-function solve!(analysis::AcPowerFlow{FastNewtonRaphson})
+function solve!(analysis::AcPowerFlow{FastNewtonRaphson{T}}) where T
     system = analysis.system
     ac = system.model.ac
     revision = system.model.revision
@@ -816,13 +816,13 @@ function solve!(analysis::AcPowerFlow{FastNewtonRaphson})
         pf.signature.acModel = copy(revision.acModel)
 
         if revision.acPattern == pf.signature.acPattern
-            active.factorization = factorization!(active.jacobian, active.factorization)
-            reactive.factorization = factorization!(reactive.jacobian, reactive.factorization)
+            active.factorization = factorization!(active.jacobian, active.factorization, T)
+            reactive.factorization = factorization!(reactive.jacobian, reactive.factorization, T)
         else
             pf.signature.acPattern = copy(revision.acPattern)
 
-            active.factorization = factorization(active.jacobian, active.factorization)
-            reactive.factorization = factorization(reactive.jacobian, reactive.factorization)
+            active.factorization = factorization(active.jacobian, active.factorization, T)
+            reactive.factorization = factorization(reactive.jacobian, reactive.factorization, T)
         end
     end
 
@@ -1215,8 +1215,8 @@ end
     powerFlow!(analysis::AcPowerFlow; iteration, tolerance, power, current, verbose)
 
 The function serves as a wrapper for solving AC power flow and includes the functions:
-* [`mismatch!`](@ref mismatch!(::AcPowerFlow{NewtonRaphson})),
-* [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson})),
+* [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})),
+* [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T),
 * [`power!`](@ref power!(::AcPowerFlow)),
 * [`current!`](@ref current!(::AC)).
 

@@ -111,7 +111,7 @@ function addPmu!(monitoring::Measurement; magnitude::FltInt, angle::FltInt, kwar
             lblBus = getLabel(system.bus, location, "bus")
             idx = system.bus.label[lblBus]
 
-            setLabel(pmu, key.label, def.label, lblBus)
+            setLabel(pmu, pmu.number, key.label, def.label, lblBus)
 
             defVarianceMagnitude = def.varianceMagnitudeBus
             defVarianceAngle = def.varianceAngleBus
@@ -123,7 +123,7 @@ function addPmu!(monitoring::Measurement; magnitude::FltInt, angle::FltInt, kwar
             baseInv = sqrt(3) / (baseVoltg.value[idx] * baseVoltg.prefix)
         else
             if fromFlag
-                setLabel(pmu, key.label, def.label, lblBrch; prefix = "From ")
+                setLabel(pmu, pmu.number, key.label, def.label, lblBrch; prefix = "From ")
 
                 defVarianceMagnitude = def.varianceMagnitudeFrom
                 defVarianceAngle = def.varianceAngleFrom
@@ -131,7 +131,7 @@ function addPmu!(monitoring::Measurement; magnitude::FltInt, angle::FltInt, kwar
 
                 baseVoltage = baseVoltg.value[branch.layout.from[idx]] * baseVoltg.prefix
             else
-                setLabel(pmu, key.label, def.label, lblBrch; prefix = "To ")
+                setLabel(pmu, pmu.number, key.label, def.label, lblBrch; prefix = "To ")
 
                 defVarianceMagnitude = def.varianceMagnitudeTo
                 defVarianceAngle = def.varianceAngleTo
@@ -295,7 +295,7 @@ function addPmu!(monitoring::Measurement, analysis::AC; kwargs...)
         if statusBus != -1
             @inbounds for (label, i) in system.bus.label
                 pmu.number += 1
-                setLabel(pmu, missing, def.label, label)
+                setLabel(pmu, pmu.number, missing, def.label, label)
 
                 pmu.layout.index[i] = i
                 pmu.layout.bus[i] = true
@@ -323,7 +323,7 @@ function addPmu!(monitoring::Measurement, analysis::AC; kwargs...)
 
                     if statusFrom != -1
                         pmu.number += 1
-                        setLabel(pmu, missing, def.label, label; prefix = "From ")
+                        setLabel(pmu, pmu.number, missing, def.label, label; prefix = "From ")
 
                         pmu.layout.index[pmu.number] = k
                         pmu.layout.from[pmu.number] = true
@@ -343,7 +343,7 @@ function addPmu!(monitoring::Measurement, analysis::AC; kwargs...)
 
                     if statusTo != -1
                         pmu.number += 1
-                        setLabel(pmu, missing, def.label, label; prefix = "To ")
+                        setLabel(pmu, pmu.number, missing, def.label, label; prefix = "To ")
 
                         pmu.layout.index[pmu.number] = k
                         pmu.layout.to[pmu.number] = true

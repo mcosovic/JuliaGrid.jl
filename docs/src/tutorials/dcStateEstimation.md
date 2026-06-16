@@ -224,7 +224,7 @@ Once the model is established, we solve the WLS equation to derive the estimate 
 	\hat{\bm {\Theta}} = [\mathbf H^{T} \bm \Sigma^{-1} \mathbf H]^{-1} \mathbf H^{T} \bm \Sigma^{-1} (\mathbf z - \mathbf{c}).
 ```
 
-This process is executed using the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function:
+This process is executed using the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function:
 ```@example DCSETutorial
 solve!(analysis)
 ```
@@ -235,7 +235,7 @@ The initial step involves the LU factorization of the gain matrix:
 ```
 
 !!! tip "Tip"
-    By default, JuliaGrid utilizes LU factorization as the primary method to factorize the gain matrix. However, users maintain the flexibility to opt for alternative factorization methods such as LDLt or QR.
+    By default, JuliaGrid utilizes LU factorization as the primary method to factorize the gain matrix. The available factorization methods are LL, LDLt, LU, KLU and QR.
 
 Access to the factorized gain matrix is available through:
 ```@repl DCSETutorial
@@ -287,7 +287,7 @@ At this point, QR factorization is performed on the rectangular matrix:
   \bar{\mathbf{H}} = {\mathbf W^{1/2}} \mathbf H = \mathbf{Q}\mathbf{R}.
 ```
 
-Executing this procedure involves the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function:
+Executing this procedure involves the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function:
 ```@example DCSETutorial
 solve!(analysis)
 nothing # hide
@@ -334,7 +334,7 @@ By eliminating ``\mathbf{U}^T`` from both sides and introducing a new vector ``\
 
 The Peters and Wilkinson method first solves this equation to compute ``\mathbf{y}``, and then obtains ``\bm{\Theta}`` by backward substitution using equation ``\mathbf{y} = \mathbf{U} \bm {\Theta}``. The main advantage of this approach is that ``\mathbf{L}^T \mathbf{L}`` is generally less ill-conditioned than ``\bar{\mathbf{H}}^{T} \bar{\mathbf{H}}``, which improves numerical stability.
 
-To execute this procedure, use the [`solve!`](@ref solve!(::DcStateEstimation{WLS{Normal}})) function:
+To execute this procedure, use the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function:
 ```@example DCSETutorial
 solve!(analysis)
 nothing # hide

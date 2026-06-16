@@ -62,7 +62,7 @@ function addVoltmeter!(monitoring::Measurement; bus::IntStr, magnitude::FltInt, 
 
     volt.number += 1
     lblBus = getLabel(system.bus, bus, "bus")
-    setLabel(volt, key.label, def.label, lblBus)
+    setLabel(volt, volt.number, key.label, def.label, lblBus)
 
     idxBus = system.bus.label[lblBus]
     push!(volt.layout.index, idxBus)
@@ -140,7 +140,7 @@ function addVoltmeter!(monitoring::Measurement, analysis::AC; kwargs...)
             volt.number += 1
 
             lblBus = getLabel(system.bus, label, "bus")
-            setLabel(volt, missing, def.label, lblBus)
+            setLabel(volt, volt.number, missing, def.label, lblBus)
             baseInv = sqrt(3) / (baseVoltg.prefix * baseVoltg.value[i])
 
             add!(

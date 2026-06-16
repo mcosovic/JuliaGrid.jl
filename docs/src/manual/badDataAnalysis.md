@@ -66,6 +66,8 @@ It indicates the presence of outliers in the measurement set. At this point, it 
 ## [Largest Normalized Residual Test](@id ResidualTestManual)
 The largest normalized residual test identifies bad data based on a predefined threshold. Specifically, if the largest normalized residual exceeds the threshold, the corresponding measurement is flagged as bad data, marked as out of service within the `Measurement` type, and removed from the state estimation model. This allows users to solve the state estimation problem immediately without rebuilding the state estimation model.
 
+When computing the residual covariance diagonal, JuliaGrid reuses the factorization from the WLS estimator when possible. In particular, `LU` and `LL` reuse the existing sparse LU or Cholesky factorization, respectively. For other WLS factorization choices, JuliaGrid attempts a local Cholesky factorization of the gain matrix and falls back to sparse LU if needed.
+
 !!! note "Info"
     Readers can refer to the [Largest Normalized Residual Test](@ref ResidualTestTutorials) tutorial for implementation insights.
 

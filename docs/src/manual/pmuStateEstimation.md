@@ -6,7 +6,7 @@ To perform linear state estimation solely based on PMU data, the initial require
 ---
 
 To obtain bus voltages and solve the PMU state estimation problem, users can use the wrapper function:
-* [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})).
+* [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})).
 
 After solving the PMU state estimation, JuliaGrid provides functions for computing powers and currents:
 * [`power!`](@ref power!(::AcPowerFlow)),
@@ -92,12 +92,12 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    Here, the user triggers LU factorization as the default method for solving the PMU state estimation problem. However, the user also has the option to select alternative factorization methods such as `KLU`, `LDLt` or `QR`:
+    Here, the user triggers LU factorization as the default method for solving the PMU state estimation problem. The available factorization methods are `LL`, `LDLt`, `LU`, `KLU` and `QR`:
     ```julia PMUOptimalPlacement
     analysis = pmuStateEstimation(monitoring, QR)
     ```
 
-To obtain the bus voltage magnitudes and angles, the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function can be invoked as shown:
+To obtain the bus voltage magnitudes and angles, the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function can be invoked as shown:
 ```@example PMUOptimalPlacement
 solve!(analysis)
 nothing # hide
@@ -232,12 +232,12 @@ nothing # hide
 ---
 
 ##### Setup Initial Primal Values
-In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function is executed. These values are derived from the voltage magnitudes and angles stored in the `PowerSystem` type and are assigned to the corresponding `voltage` field within the `PmuStateEstimation` type:
+In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function is executed. These values are derived from the voltage magnitudes and angles stored in the `PowerSystem` type and are assigned to the corresponding `voltage` field within the `PmuStateEstimation` type:
 ```@repl PMUOptimalPlacement
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{Normal}})) function. One practical approach is to perform an AC power flow analysis and then apply the resulting solution as the starting point for state estimation:
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function. One practical approach is to perform an AC power flow analysis and then apply the resulting solution as the starting point for state estimation:
 ```@example PMUOptimalPlacement
 pf = newtonRaphson(system)
 powerFlow!(pf)
@@ -366,7 +366,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This concept removes the need to rebuild both the `Measurement` and the `PmuStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse the symbolic factorizations of LU or LDLt, provided that the nonzero pattern of the gain matrix remains unchanged.
+    This concept removes the need to rebuild both the `Measurement` and the `PmuStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of LL, LDLt and LU, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 

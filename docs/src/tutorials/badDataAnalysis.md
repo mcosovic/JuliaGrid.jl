@@ -167,3 +167,5 @@ while for DC state estimation and state estimation using only PMUs, it is comput
 ```
 
 It is important to note that only the diagonal entries of ``\mathbf C`` are required. The main computational challenge lies in computing the inverse on the right-hand side of the equations. The JuliaGrid package employs a computationally efficient sparse inverse method, obtaining only the necessary elements.
+
+Internally, JuliaGrid avoids forming the full inverse. If the WLS estimator was solved with `LU`, the sparse LU factorization is reused to compute the selected sparse inverse. If it was solved with `LL`, the Cholesky factorization is reused through a selected-inverse projection. For other WLS methods, JuliaGrid first attempts a local Cholesky factorization of the gain matrix and falls back to sparse LU when Cholesky is not applicable.

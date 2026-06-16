@@ -3,84 +3,50 @@
 
 ---
 
-## Version 0.5.6
+## Version 0.6.0
 
-Release Date: TBD
+Release Date: June 17, 2026
 
 #### Breaking
   * Renamed the `ChiTest.treshold` field to `ChiTest.threshold`.
 
 #### Added
+  * Added `LL` as a Cholesky-based factorization option for supported power flow and state estimation analyses.
+  * Added `LL` support in bad data analysis by reusing the Cholesky factorization for selected-inverse projections.
+  * Added support for optimal PMU placement that includes legacy measurements.
+  * Introduced the `optimal` keyword in the function [`powerSystem`](@ref powerSystem) to skip importing data related to optimal power flow analyses, see [Partial Load for Faster Import](@ref PartialLoadFasterImportManual).
   * Exported and documented the grouped analysis type aliases [`PowerFlow`](@ref PowerFlow), [`OptimalPowerFlow`](@ref OptimalPowerFlow), and [`StateEstimation`](@ref StateEstimation).
   * Exported and documented the grouped system and measurement type aliases [`Component`](@ref Component) and [`Meter`](@ref Meter).
   * Documented that unit, template, configuration, and default macros modify global JuliaGrid settings.
 
 #### Fixed
+  * Improved `LDLt` handling for symmetric sparse systems whose stored values are not exactly numerically symmetric.
   * Improved package root detection for both installed and development checkouts.
+  * Updated documentation for [optimal PMU placement](@ref optimalpmu).
+  * Defined optimal PMU placement variables as binary rather than integer.
+  * Fixed an error that occurred when bad data was processed after the Peter-Wilkinson method.
   * Fixed PSS/E transformer magnetizing data handling.
   * Fixed `@default(power)` to reset the apparent power live unit to per-unit.
   * Updated global settings macros to evaluate keyword values at the call site, including local variables.
   * Updated power system tests to match the current cost-function error messages.
 
-#### Other
+#### Performance
+  * Improved efficiency when updating wattmeters with DC state estimation.
+  * Reduced allocations and runtime when building AC/DC power system models and detecting physical islands.
+  * Reduced allocations and improved efficiency in bad data analysis routines.
   * Lightly optimized MATPOWER, PSS/E, and HDF5 power system load/save paths.
-  * Reviewed and lightly optimized backend equation helpers.
   * Reduced temporary allocations in selected power flow and state estimation hot paths.
-  * Expanded the precompile workload to cover additional commonly used analysis solve paths.
+
+#### Internal
+  * Removed unused parameters from the `PowerSystem` type.
+  * Refined branch add/update internals to avoid unnecessary work while preserving model reuse behavior.
+  * Reviewed and lightly optimized backend equation helpers.
   * Refined internal template, label, and per-unit conversion utilities for clearer dispatch and less unnecessary work.
   * Refactored template macro helpers and `@default` reset logic to reduce duplicated internal state updates.
+
+#### Testing
+  * Expanded the precompile workload to cover additional commonly used analysis solve paths.
   * Sanity checked the internal cleanup with targeted power flow and state estimation.
-
----
-
-## Version 0.5.5
-
-Release Date: October 6, 2025
-
-#### Fixed
-  * Updated documentation for [optimal PMU placement](@ref optimalpmu).
-
----
-
-## Version 0.5.4
-
-Release Date: October 2, 2025
-
-#### Added
-  * Support for optimal PMU placement that includes legacy measurements.
-
-#### Fixed
-  * Placement variables are now defined as binary rather than integer.
-
----
-
-## Version 0.5.3
-
-Release Date: August 26, 2025
-
-#### Other
-  * Improved efficiency update of wattmeters with DCSE.
-
----
-
-## Version 0.5.2
-
-Release Date: July 25, 2025
-
-#### Fixed
-  * Fixed an error that occurred when bad data was processed after the Peter-Wilkinson method.
-
----
-
-## Version 0.5.1
-
-Release Date: July 12, 2025
-
-#### Added
-  * Introduced the `optimal` keyword in the function [`powerSystem`](@ref powerSystem) to skip importing data related to optimal power flow analyses, see [Partial Load for Faster Import](@ref PartialLoadFasterImportManual).
-
-#### Other
-  * Removed unused parameters from the `PowerSystem` type.
 
 ---
 
