@@ -1,5 +1,5 @@
 # [Installation Guide](@id InstallationGuide)
-JuliaGrid is compatible with Julia version 1.9 and later. To get started with JuliaGrid, users should first install Julia and consider using a code editor for a smoother coding experience.
+JuliaGrid is compatible with Julia versions 1.10 and 1.11. To get started with JuliaGrid, users should first install Julia and consider using a code editor for a smoother coding experience.
 
 ---
 

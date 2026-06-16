@@ -13,7 +13,7 @@ JuliaGrid offers comprehensive support for importing power system data from both
 ---
 
 ### Installation Guide
-JuliaGrid is compatible with Julia version 1.9 and later. To get started with JuliaGrid, users should first install Julia and consider using a code editor for a smoother coding experience. For detailed instructions, please consult the [Installation Guide](@ref InstallationGuide).
+JuliaGrid is compatible with Julia versions 1.10 and 1.11. To get started with JuliaGrid, users should first install Julia and consider using a code editor for a smoother coding experience. For detailed instructions, please consult the [Installation Guide](@ref InstallationGuide).
 
 To get the JuliaGrid package installed, execute the following Julia command:
 ```julia
