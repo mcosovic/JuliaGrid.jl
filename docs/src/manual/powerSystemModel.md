@@ -87,6 +87,8 @@ addBus!(system; label = "Bus 1", type = 3, active = 0.1, base = 345e3)
 addBus!(system; label = "Bus 2", type = 1, reactive = 0.05, base = 345e3)
 
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.05)
+
+nothing # hide
 ```
 
 ---
@@ -136,6 +138,8 @@ system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 3, active = 0.1, base = 345e3)
 addBus!(system; label = "Bus 2", type = 1, angle = -0.034907, base = 345e3)
+
+nothing # hide
 ```
 
 In this case, we have created two buses where the active power demanded by the consumer at `Bus 1` is specified in per-units, which are the same units used to store electrical quantities:
@@ -181,6 +185,8 @@ system = powerSystem()
 
 addBus!(system; label = "Bus 1", type = 3, active = 10.0, base = 345.0)
 addBus!(system; label = "Bus 2", type = 1, angle = -2.0, base = 345.0)
+
+nothing # hide
 ```
 
 As can be observed, electrical quantities will continue to be stored in per-units and radians format:
@@ -225,6 +231,8 @@ addBus!(system; label = "Bus 1", type = 3, active = 0.1)
 addBus!(system; label = "Bus 2", type = 1, angle = -0.2)
 
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 0.12)
+
+nothing # hide
 ```
 
 Here, we created the branch from `Bus 1` to `Bus 2` with following parameter:
@@ -254,6 +262,8 @@ addBus!(system; label = "Bus 1", type = 3, active = 0.1)
 addBus!(system; label = "Bus 2", type = 1, angle = -0.2)
 
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance = 22.8528)
+
+nothing # hide
 ```
 
 Still, all electrical quantities are stored in per-units, and the same branch as before is created:

@@ -82,6 +82,8 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 
 addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 1.0, variance = 1e-3)
 addWattmeter!(monitoring; from = "Branch 1", active = 0.2, variance = 1e-4, noise = true)
+
+nothing # hide
 ```
 
 In this context, we have created the voltmeter responsible for measuring the bus voltage magnitude at `Bus 1`, with associated mean and variance values expressed in per-units:
@@ -119,6 +121,8 @@ addBus!(system; label = "Bus 1")
 
 addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 0.9, variance = 1e-4)
 addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 1.0, variance = 1e-3, noise = true)
+
+nothing # hide
 ```
 
 In this example, we have established two voltmeters designed to measure the bus voltage magnitude at `Bus 1`. In the case of the second voltmeter, the measurement value is generated internally by introducing white Gaussian noise with the `variance` added to the `magnitude` value. As a result, we obtain the following data:
@@ -144,6 +148,8 @@ addBus!(system; label = "Bus 1", base = sqrt(3) * 135e3)
 
 addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 121.5, variance = 0.0135)
 addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 135, variance = 0.135, noise = true)
+
+nothing # hide
 ```
 
 In this example, the voltage magnitude is specified in kilovolts (kV), and the variance uses the corresponding squared unit. It is important to note that even though we have used kilovolts as the input units, these keywords will still be stored in the per-units:
@@ -188,6 +194,8 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 
 addAmmeter!(monitoring; from = "Branch 1", magnitude = 0.8, variance = 0.1, noise = true)
 addAmmeter!(monitoring; to = "Branch 1", magnitude = 0.9, variance = 1e-3, square = true)
+
+nothing # hide
 ```
 
 In this scenario, we have established one ammeter to measure the branch current magnitude at the from-bus end of `Branch 1`, as indicated by the use of the `from` keyword. Similarly, we have added an ammeter to measure the branch current magnitude at the to-bus end of the branch by utilizing the `to` keyword.
@@ -219,6 +227,8 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 
 addAmmeter!(monitoring; from = "Branch 1", magnitude = 342, variance = 43, noise = true)
 addAmmeter!(monitoring; to = "Branch 1", magnitude = 385, variance = 0.43, square = true)
+
+nothing # hide
 ```
 
 In this example, the current magnitude is specified in amperes (A), and the variance uses the corresponding squared unit. It is worth noting that, despite using amperes as the input units, these keywords will still be stored in the per-unit system:
@@ -261,6 +271,8 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addWattmeter!(monitoring; bus = "Bus 1", active = 0.6, variance = 1e-3)
 addWattmeter!(monitoring; from = "Branch 1", active = 0.3, variance = 1e-2)
 addWattmeter!(monitoring; to = "Branch 1", active = 0.1, variance = 1e-3, noise = true)
+
+nothing # hide
 ```
 
 In this scenario, one wattmeter has been added to measure the active power injection at `Bus 1`, as indicated by the use of the `bus` keyword. Additionally, two wattmeters have been introduced to measure the active power flow on both sides of `Branch 1` using the `from` and `to` keywords.
@@ -291,6 +303,8 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addWattmeter!(monitoring; bus = "Bus 1", active = 60, variance = 1e-1)
 addWattmeter!(monitoring; from = "Branch 1", active = 30, variance = 1)
 addWattmeter!(monitoring; to = "Branch 1", active = 10, variance = 1e-1, noise = true)
+
+nothing # hide
 ```
 
 In this example, the active power is specified in megawatts (MW), and the variance uses the corresponding squared unit. Even though we have used megawatts as the input units, these keywords will still be stored in the per-unit system:
@@ -333,6 +347,8 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addVarmeter!(monitoring; bus = "Bus 1", reactive = 0.2, variance = 1e-3)
 addVarmeter!(monitoring; from = "Branch 1", reactive = 0.1, variance = 1e-2)
 addVarmeter!(monitoring; to = "Branch 1", reactive = 0.05, variance = 1e-3, noise = true)
+
+nothing # hide
 ```
 
 In this context, one varmeter has been added to measure the reactive power injection at `Bus 1`, as indicated by the use of the `bus` keyword. Additionally, two varmeters have been introduced to measure the reactive power flow on both sides of `Branch 1` using the `from` and `to` keywords. As a result, the following outcomes are observed:
@@ -361,6 +377,8 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addVarmeter!(monitoring; bus = "Bus 1", reactive = 20, variance = 1e-1)
 addVarmeter!(monitoring; from = "Branch 1", reactive = 10, variance = 1)
 addVarmeter!(monitoring; to = "Branch 1", reactive = 5, variance = 1e-1, noise = true)
+
+nothing # hide
 ```
 
 The reactive power is specified in MVAr, and the variance uses the corresponding squared unit. JuliaGrid will still store the values in the per-unit system:
@@ -403,6 +421,8 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addPmu!(monitoring; bus = "Bus 1", magnitude = 1.1, angle = 0.1, varianceMagnitude = 0.1)
 addPmu!(monitoring; from = "Branch 1", magnitude = 1.0, angle = -0.2, noise = true)
 addPmu!(monitoring; to = "Branch 1", magnitude = 0.9, angle = 0.0, varianceAngle = 0.001)
+
+nothing # hide
 ```
 
 !!! note "Info"
@@ -428,6 +448,8 @@ using JuliaGrid # hide
 
 addPmu!(monitoring; bus = "Bus 2", magnitude = 1, angle = 0)
 addPmu!(monitoring; from = "Branch 1", magnitude = 0.9, angle = -0.3, correlated = true)
+
+nothing # hide
 ```
 For the first phasor measurement, correlation is neglected, whereas for the second, it is considered.
 
@@ -442,6 +464,8 @@ using JuliaGrid # hide
 
 addPmu!(monitoring; bus = "Bus 2", magnitude = 1, angle = 0, polar = true, square = true)
 addPmu!(monitoring; from = "Branch 1", magnitude = 0.9, angle = -0.3, correlated = true)
+
+nothing # hide
 ```
 
 The first phasor measurement will be incorporated into the AC state estimation model using the polar coordinate system. Additionally, by setting `square = true`, the current magnitude measurement will be included in its squared form. The second PMU will be integrated into the rectangular coordinate system with correlation between the real and imaginary components enabled.
@@ -468,6 +492,8 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 addPmu!(monitoring; bus = "Bus 1", magnitude = 85.74, angle = 5.73, varianceAngle = 0.06)
 addPmu!(monitoring; from = "Branch 1", magnitude = 427.67, angle = -11.46, noise = true)
 addPmu!(monitoring; to = "Branch 1", magnitude = 384.91, angle = 0.0)
+
+nothing # hide
 ```
 
 In this example, we have opted to specify kilovolts (kV) and degrees (deg) for the PMU located at `Bus 1`, and amperes (A) and degrees (deg) for the PMUs located at `Branch 1`. The magnitude and angle variances use the corresponding squared units. It is important to note that regardless of the units used, the values will still be stored in per-units and radians:
@@ -547,6 +573,8 @@ addVarmeter!(monitoring; label = "Varmeter 3", to = "Branch 1", reactive = 0.05)
 addPmu!(monitoring; label = "PMU 1", bus = "Bus 1", magnitude = 1.1, angle = -0.1)
 addPmu!(monitoring; label = "PMU 2", from = "Branch 1", magnitude = 1.0, angle = -0.2)
 addPmu!(monitoring; label = "PMU 3", to = "Branch 1", magnitude = 0.9, angle = 0.0)
+
+nothing # hide
 ```
 
 For instance, when adding a wattmeter to the bus, the `varianceBus = 1e-3` will be applied, or if it is added to the from-bus end of the branch, these wattmeters will be set as out-of-service according to `statusFrom = 0`.
@@ -614,6 +642,7 @@ addVoltmeter!(monitoring; label = 1, bus = 1, magnitude = 1.0)
 
 addAmmeter!(monitoring; label = 1, from = 1, magnitude = 1.1)
 addAmmeter!(monitoring; label = 2, to = 1, magnitude = 0.9)
+
 nothing # hide
 ```
 
@@ -640,6 +669,7 @@ addVoltmeter!(monitoring; label = "Voltmeter 1", bus = "Bus 1", magnitude = 1.0)
 
 addAmmeter!(monitoring; label = 1, from = 1, magnitude = 1.1)
 addAmmeter!(monitoring; label = 2, to = 1, magnitude = 0.9)
+
 nothing # hide
 ```
 
@@ -679,6 +709,7 @@ addAmmeter!(monitoring; to = "Branch 1", magnitude = 0.9)
 @wattmeter(label = "Wattmeter ?: !")
 addWattmeter!(monitoring; bus = "Bus 1", active = 0.6)
 addWattmeter!(monitoring; from = "Branch 1", active = 0.3)
+
 nothing # hide
 ```
 
@@ -716,6 +747,7 @@ addWattmeter!(monitoring; label = "Wattmeter 1", bus = "Bus 1", active = 0.2)
 addWattmeter!(monitoring; label = "Wattmeter 4", from = "Branch 1", active = 0.3)
 addWattmeter!(monitoring; label = "Wattmeter 3", to = "Branch 1", active = 0.1)
 addWattmeter!(monitoring; label = "Wattmeter 5", from = "Branch 2", active = 0.1)
+
 nothing # hide
 ```
 
@@ -804,6 +836,7 @@ addVarmeter!(monitoring, analysis; varianceFrom = 1e-3, statusBus = 0)
 
 @pmu(label = "!", polar = true)
 addPmu!(monitoring, analysis; varianceMagnitudeBus = 1e-3)
+
 nothing  # hide
 ```
 
@@ -829,6 +862,7 @@ for (label, idx) in system.branch.label
     addWattmeter!(monitoring; from = label, active = Pᵢⱼ[idx], status = 0)
     addWattmeter!(monitoring; to = label, active = Pⱼᵢ[idx])
 end
+
 nothing  # hide
 ```
 
@@ -843,6 +877,7 @@ After the addition of measurement devices to the `Measurement` type, users posse
 Users have the flexibility to modify all parameters as defined within the [`addVoltmeter!`](@ref addVoltmeter!) function. For illustration, let us continue with the example from the [Add Device Groups](@ref AddDeviceGroupsManual) section:
 ```@example addDeviceGroups
 updateVoltmeter!(monitoring; label = "Bus 2", magnitude = 0.9, noise = false)
+
 nothing  # hide
 ```
 In this example, we update the measurement value of the voltmeter located at `Bus 2`, and this measurement is now generated without the inclusion of white Gaussian noise.
@@ -854,6 +889,7 @@ Similarly, users have the flexibility to modify all parameters defined within th
 ```@example addDeviceGroups
 updateAmmeter!(monitoring; label = "From Branch 2", magnitude = 1.2, variance = 1e-4)
 updateAmmeter!(monitoring; label = "To Branch 2", status = 0)
+
 nothing  # hide
 ```
 In this example, we make adjustments to the measurement and variance values of the ammeter located at `Branch 2`, specifically at the from-bus end. Next, we deactivate the ammeter at the same branch on the to-bus end.
@@ -865,6 +901,7 @@ Following the same logic, users can modify all parameters defined within the [`a
 ```@example addDeviceGroups
 updateWattmeter!(monitoring; label = "Bus 1", active = 1.2, variance = 1e-4)
 updateWattmeter!(monitoring; label = "To Branch 1", variance = 1e-6)
+
 nothing  # hide
 ```
 In this case, we modify the measurement and variance values for the wattmeter located at `Bus 1`. The wattmeter at `Branch 1` on the to-bus end retains its measurement value, while only the measurement variance is adjusted.
@@ -876,6 +913,7 @@ Following the same logic, users can modify all parameters defined within the [`a
 ```@example addDeviceGroups
 updateVarmeter!(monitoring; label = "Bus 1", reactive = 1.2)
 updateVarmeter!(monitoring; label = "Bus 2", status = 0)
+
 nothing  # hide
 ```
 In this instance, we make adjustments to the measurement value of the varmeter located at `Bus 1`, while utilizing a previously defined variance. Furthermore, we deactivate the varmeter at `Bus 2` and designate it as out-of-service.
@@ -887,6 +925,7 @@ Finally, users can modify all PMU parameters defined within the [`addPmu!`](@ref
 ```@example addDeviceGroups
 updatePmu!(monitoring; label = "Bus 1", magnitude = 1.05, noise = true)
 updatePmu!(monitoring; label = "From Branch 1", varianceAngle = 1e-6, polar = false)
+
 nothing  # hide
 ```
 
@@ -921,6 +960,7 @@ powerFlow!(analysis; power = true, current = true)
 addVoltmeter!(monitoring, analysis)
 addAmmeter!(monitoring, analysis)
 addPmu!(monitoring, analysis)
+
 nothing  # hide
 ```
 
@@ -932,6 +972,7 @@ As a starting point, we create the measurement set where all devices are set to 
 Subsequently, we offer users the ability to manipulate the status of in-service devices using the [`status!`](@ref status!) function. For example, within this set, if we wish to have only 12 out of the total 18 devices in-service while the rest are out-of-service, we can accomplish this as follows:
 ```@example measurementSet
 status!(monitoring; inservice = 12)
+
 nothing  # hide
 ```
 Upon executing this function, 12 devices will be randomly selected to be in-service, while the remaining 6 will be set to out-of-service.
@@ -939,6 +980,7 @@ Upon executing this function, 12 devices will be randomly selected to be in-serv
 Furthermore, users can fine-tune the manipulation of specific measurements. Let us say we want to activate only 2 ammeters while deactivating the remaining ammeters:
 ```@example measurementSet
 statusAmmeter!(monitoring; inservice = 2)
+
 nothing  # hide
 ```
 This action will result in 2 ammeters being in-service and 4 being out-of-service.
@@ -946,6 +988,7 @@ This action will result in 2 ammeters being in-service and 4 being out-of-servic
 Users also have the option to further refine these actions by specifying devices at particular locations within the power system. For instance, we can enable 3 PMUs at buses to measure bus voltage phasors while deactivating all PMUs at branches that measure current phasors:
 ```@example measurementSet
 statusPmu!(monitoring; inserviceBus = 3, inserviceFrom = 0, inserviceTo = 0)
+
 nothing  # hide
 ```
 The outcome will be that 3 PMUs are set to in-service at buses for voltage phasor measurements, while all PMUs at branches measuring current phasors will be set to out-of-service.
@@ -956,6 +999,7 @@ The outcome will be that 3 PMUs are set to in-service at buses for voltage phaso
 Likewise, we empower users to specify the number of devices to be set as out-of-service rather than defining the number of in-service devices. For instance, if the intention is to deactivate just 2 devices from the total measurement set, it can be achieved as follows:
 ```@example measurementSet
 status!(monitoring; outservice = 2)
+
 nothing  # hide
 ```
 In this scenario 2 devices will be randomly deactivated, while the rest will remain in in-service status. Similar to the previous approach, users can apply this to specific devices or employ fine-tuning as needed.
@@ -966,6 +1010,7 @@ In this scenario 2 devices will be randomly deactivated, while the rest will rem
 Furthermore, users can take advantage of redundancy, which represents the ratio between measurement devices and state variables. For example, if we wish to have the number of measurement devices be 1.2 times greater than the number of state variables, we can utilize the following command:
 ```@example measurementSet
 status!(monitoring; redundancy = 1.2)
+
 nothing  # hide
 ```
 Considering that the number of state variables is 5 (excluding the voltage angle related to the slack bus), using a redundancy value of 1.2 will result in 6 devices being set to in-service, while the remainder will be deactivated. As before, users can target specific devices or adjust settings as needed.
