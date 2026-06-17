@@ -64,13 +64,68 @@ addWattmeter!(monitoring; label = "Wattmeter 2", from = "Branch 1", active = 10.
 ```
 """
 function addWattmeter!(monitoring::Measurement; active::FltInt, kwargs...)
+    system = monitoring.system
+    watt = monitoring.wattmeter
+    measure = watt.active
+    def = template.wattmeter
     key = WattmeterKey(; kwargs...)
 
-    addPowerMeter!(
-        monitoring.system, monitoring.wattmeter, monitoring.wattmeter.active,
-        template.wattmeter, pfx.activePower, key.label, key.bus, key.from, key.to,
-        active, key.variance, key.status, key.noise
-    )
+    location, busFlag, fromFlag, toFlag = checkLocation(key.bus, key.from, key.to)
+
+    branchFlag = false
+    if !busFlag
+        lblBrch = getLabel(system.branch, location, "branch")
+        idx = system.branch.label[lblBrch]
+        if system.branch.layout.status[idx] == 1
+            branchFlag = true
+        end
+    end
+
+    if busFlag || branchFlag
+        idxMeter = watt.number + 1
+
+        if busFlag
+            lblBus = getLabel(system.bus, location, "bus")
+            idx = system.bus.label[lblBus]
+
+            defVariance = def.varianceBus
+            defStatus = def.statusBus
+        elseif fromFlag
+            defVariance = def.varianceFrom
+            defStatus = def.statusFrom
+        else
+            defVariance = def.varianceTo
+            defStatus = def.statusTo
+        end
+
+        baseInv = 1 / (system.base.power.value * system.base.power.prefix)
+        varianceNew = Float64(topu(key.variance, defVariance, pfx.activePower, baseInv))
+        statusNew = Int8(coalesce(key.status, defStatus))
+        meanNew = Float64(topu(active, pfx.activePower, baseInv))
+
+        checkStatus(statusNew)
+        checkVariance(varianceNew)
+
+        if key.noise
+            meanNew += sqrt(varianceNew) * randn()
+        end
+
+        if busFlag
+            setLabel(watt, idxMeter, key.label, def.label, lblBus)
+        elseif fromFlag
+            setLabel(watt, idxMeter, key.label, def.label, lblBrch; prefix = "From ")
+        else
+            setLabel(watt, idxMeter, key.label, def.label, lblBrch; prefix = "To ")
+        end
+        push!(watt.layout.bus, busFlag)
+        push!(watt.layout.from, fromFlag)
+        push!(watt.layout.to, toFlag)
+        push!(watt.layout.index, idx)
+        push!(measure.variance, varianceNew)
+        push!(measure.mean, meanNew)
+        push!(measure.status, statusNew)
+        watt.number = idxMeter
+    end
 end
 
 """
@@ -139,32 +194,13 @@ addVarmeter!(monitoring; label = "Varmeter 2", from = "Branch 1", reactive = 10.
 ```
 """
 function addVarmeter!(monitoring::Measurement; reactive::FltInt, kwargs...)
+    system = monitoring.system
+    var = monitoring.varmeter
+    measure = var.reactive
+    def = template.varmeter
     key = VarmeterKey(; kwargs...)
 
-    addPowerMeter!(
-        monitoring.system, monitoring.varmeter, monitoring.varmeter.reactive,
-        template.varmeter, pfx.reactivePower, key.label, key.bus, key.from, key.to,
-        reactive, key.variance, key.status, key.noise
-    )
-end
-
-######### Add Wattmeter or Varmeter ##########
-function addPowerMeter!(
-    system::PowerSystem,
-    monitoring::Union{Wattmeter, Varmeter},
-    measure::GaussMeter,
-    def::Union{WattmeterTemplate, VarmeterTemplate},
-    pfxPower::Float64,
-    label::IntStrMiss,
-    bus::IntStrMiss,
-    from::IntStrMiss,
-    to::IntStrMiss,
-    power::FltInt,
-    variance::FltIntMiss,
-    status::FltIntMiss,
-    noise::Bool
-)
-    location, busFlag, fromFlag, toFlag = checkLocation(bus, from, to)
+    location, busFlag, fromFlag, toFlag = checkLocation(key.bus, key.from, key.to)
 
     branchFlag = false
     if !busFlag
@@ -176,37 +212,49 @@ function addPowerMeter!(
     end
 
     if busFlag || branchFlag
-        monitoring.number += 1
-        push!(monitoring.layout.bus, busFlag)
-        push!(monitoring.layout.from, fromFlag)
-        push!(monitoring.layout.to, toFlag)
+        idxMeter = var.number + 1
 
         if busFlag
             lblBus = getLabel(system.bus, location, "bus")
             idx = system.bus.label[lblBus]
 
-            setLabel(monitoring, monitoring.number, label, def.label, lblBus)
-
             defVariance = def.varianceBus
             defStatus = def.statusBus
         elseif fromFlag
-            setLabel(monitoring, monitoring.number, label, def.label, lblBrch; prefix = "From ")
-
             defVariance = def.varianceFrom
             defStatus = def.statusFrom
         else
-            setLabel(monitoring, monitoring.number, label, def.label, lblBrch; prefix = "To ")
-
             defVariance = def.varianceTo
             defStatus = def.statusTo
         end
-        push!(monitoring.layout.index, idx)
 
         baseInv = 1 / (system.base.power.value * system.base.power.prefix)
-        setMeter(
-            measure, power, variance, status, noise,
-            defVariance, defStatus, pfxPower, baseInv
-        )
+        varianceNew = Float64(topu(key.variance, defVariance, pfx.reactivePower, baseInv))
+        statusNew = Int8(coalesce(key.status, defStatus))
+        meanNew = Float64(topu(reactive, pfx.reactivePower, baseInv))
+
+        checkStatus(statusNew)
+        checkVariance(varianceNew)
+
+        if key.noise
+            meanNew += sqrt(varianceNew) * randn()
+        end
+
+        if busFlag
+            setLabel(var, idxMeter, key.label, def.label, lblBus)
+        elseif fromFlag
+            setLabel(var, idxMeter, key.label, def.label, lblBrch; prefix = "From ")
+        else
+            setLabel(var, idxMeter, key.label, def.label, lblBrch; prefix = "To ")
+        end
+        push!(var.layout.bus, busFlag)
+        push!(var.layout.from, fromFlag)
+        push!(var.layout.to, toFlag)
+        push!(var.layout.index, idx)
+        push!(measure.variance, varianceNew)
+        push!(measure.mean, meanNew)
+        push!(measure.status, statusNew)
+        var.number = idxMeter
     end
 end
 
@@ -398,14 +446,26 @@ function addPowermeter!(
             sizehint!(monitoring.label, addNew)
         end
 
-        append!(monitoring.layout.index, fill(0, addNew))
-        append!(monitoring.layout.bus, fill(false, addNew))
-        append!(monitoring.layout.from, fill(false, addNew))
-        append!(monitoring.layout.to, fill(false, addNew))
+        start = monitoring.number + 1
+        stop = monitoring.number + addNew
 
-        append!(measure.mean, fill(0.0, addNew))
-        append!(measure.variance, fill(0.0, addNew))
-        append!(measure.status, fill(Int8(0), addNew))
+        resize!(monitoring.layout.index, stop)
+        resize!(monitoring.layout.bus, stop)
+        resize!(monitoring.layout.from, stop)
+        resize!(monitoring.layout.to, stop)
+        resize!(measure.mean, stop)
+        resize!(measure.variance, stop)
+        resize!(measure.status, stop)
+
+        @inbounds for i = start:stop
+            monitoring.layout.index[i] = 0
+            monitoring.layout.bus[i] = false
+            monitoring.layout.from[i] = false
+            monitoring.layout.to[i] = false
+            measure.mean[i] = 0.0
+            measure.variance[i] = 0.0
+            measure.status[i] = Int8(0)
+        end
 
         baseInv = 1 / (system.base.power.value * system.base.power.prefix)
         if statusBus != -1
@@ -499,8 +559,30 @@ function updateWattmeterMain!(monitoring::Measurement, label::IntStr, key::Wattm
     idx = getIndex(watt, label, "wattmeter")
     baseInv = 1 / (system.base.power.value * system.base.power.prefix)
 
-    update!(watt.active.variance, key.variance, pfx.activePower, baseInv, idx)
-    update!(watt.active, key.active, key, pfx.activePower, baseInv, idx)
+    varianceNew = watt.active.variance[idx]
+    if isset(key.variance)
+        varianceNew = Float64(topu(key.variance, pfx.activePower, baseInv))
+    end
+
+    statusNew = watt.active.status[idx]
+    if isset(key.status)
+        statusNew = Int8(key.status)
+    end
+
+    meanNew = watt.active.mean[idx]
+    if isset(key.active)
+        meanNew = Float64(topu(key.active, pfx.activePower, baseInv))
+        if key.noise
+            meanNew += sqrt(varianceNew) * randn()
+        end
+    end
+
+    checkStatus(statusNew)
+    checkVariance(varianceNew)
+
+    watt.active.variance[idx] = varianceNew
+    watt.active.mean[idx] = meanNew
+    watt.active.status[idx] = statusNew
 
     if !watt.layout.bus[idx]
         idxBrch = watt.layout.index[idx]
@@ -549,24 +631,27 @@ function _updateWattmeter!(analysis::AcStateEstimation{<:GaussNewton}, idxWatt::
     idx = wls.range[3] + idxWatt - 1
 
     status = watt.active.status[idxWatt]
+    busMeter = watt.layout.bus[idxWatt]
+    fromMeter = watt.layout.from[idxWatt]
+    busNumber = bus.number
 
     wls.mean[idx] = status * watt.active.mean[idxWatt]
     wls.residual[idx] = 0.0
 
-    if watt.layout.bus[idxWatt]
+    if busMeter
         for ptr in nodal.colptr[idxBusBrch]:(nodal.colptr[idxBusBrch + 1] - 1)
             j = nodal.rowval[ptr]
-            wls.jacobian[idx, j] = wls.jacobian[idx, bus.number + j] = 0.0
+            wls.jacobian[idx, j] = wls.jacobian[idx, busNumber + j] = 0.0
         end
     else
         i, j = fromto(analysis.system, idxBusBrch)
-        wls.jacobian[idx, i] = wls.jacobian[idx, bus.number + i] = 0.0
-        wls.jacobian[idx, j] = wls.jacobian[idx, bus.number + j] = 0.0
+        wls.jacobian[idx, i] = wls.jacobian[idx, busNumber + i] = 0.0
+        wls.jacobian[idx, j] = wls.jacobian[idx, busNumber + j] = 0.0
     end
 
-    if watt.layout.bus[idxWatt]
+    if busMeter
         wls.type[idx] = status * 6
-    elseif watt.layout.from[idxWatt]
+    elseif fromMeter
         wls.type[idx] = status * 7
     else
         wls.type[idx] = status * 8
@@ -585,10 +670,12 @@ function _updateWattmeter!(analysis::AcStateEstimation{LAV}, idxWatt::Int64)
     remove!(lav, idx)
     if watt.active.status[idxWatt] == 1
         add!(lav, idx)
+        busMeter = watt.layout.bus[idxWatt]
+        fromMeter = watt.layout.from[idxWatt]
 
-        if watt.layout.bus[idxWatt]
+        if busMeter
             expr = Pi(analysis.system, lav.variable.voltage, idxBusBrch)
-        elseif watt.layout.from[idxWatt]
+        elseif fromMeter
             expr = Pij(analysis.system, lav.variable.voltage, AffQuadExpr(), idxBusBrch)
         else
             expr = Pji(analysis.system, lav.variable.voltage, AffQuadExpr(), idxBusBrch)
@@ -608,9 +695,11 @@ function _updateWattmeter!(analysis::DcStateEstimation{<:WLS}, idxWatt::Int64)
     idxBusBrch = watt.layout.index[idxWatt]
     oldPrec = wls.precision.nzval[idxWatt]
     status = watt.active.status[idxWatt]
+    busMeter = watt.layout.bus[idxWatt]
+    fromMeter = watt.layout.from[idxWatt]
 
     changed = false
-    if watt.layout.bus[idxWatt]
+    if busMeter
         for ptr in nodal.colptr[idxBusBrch]:(nodal.colptr[idxBusBrch + 1] - 1)
             j = nodal.rowval[ptr]
             coeff = status * nodal.nzval[ptr]
@@ -624,25 +713,25 @@ function _updateWattmeter!(analysis::DcStateEstimation{<:WLS}, idxWatt::Int64)
             status * (watt.active.mean[idxWatt] - dc.shiftPower[idxBusBrch] -
                 system.bus.shunt.conductance[idxBusBrch])
     else
-        if watt.layout.from[idxWatt]
-            addmitance = status * dc.admittance[idxBusBrch]
+        if fromMeter
+            admittance = status * dc.admittance[idxBusBrch]
         else
-            addmitance = -status * dc.admittance[idxBusBrch]
+            admittance = -status * dc.admittance[idxBusBrch]
         end
 
         i, j = fromto(system, idxBusBrch)
-        if wls.coefficient[idxWatt, i] != addmitance
-            wls.coefficient[idxWatt, i] = addmitance
+        if wls.coefficient[idxWatt, i] != admittance
+            wls.coefficient[idxWatt, i] = admittance
             changed = true
         end
-        if wls.coefficient[idxWatt, j] != -addmitance
-            wls.coefficient[idxWatt, j] = -addmitance
+        if wls.coefficient[idxWatt, j] != -admittance
+            wls.coefficient[idxWatt, j] = -admittance
             changed = true
         end
 
         wls.mean[idxWatt] =
             status * (watt.active.mean[idxWatt] +
-                system.branch.parameter.shiftAngle[idxBusBrch] * addmitance)
+                system.branch.parameter.shiftAngle[idxBusBrch] * admittance)
     end
 
     wls.precision.nzval[idxWatt] = 1 / watt.active.variance[idxWatt]
@@ -664,18 +753,20 @@ function _updateWattmeter!(analysis::DcStateEstimation{LAV}, idxWatt::Int64)
     expr = AffExpr()
     if watt.active.status[idxWatt] == 1
         add!(lav, idxWatt)
+        busMeter = watt.layout.bus[idxWatt]
+        fromMeter = watt.layout.from[idxWatt]
 
-        if watt.layout.bus[idxWatt]
+        if busMeter
             mean = meanPi(analysis.system.bus, dc, watt, idxWatt, idxBusBrch)
             Pi(analysis.system, lav.variable.voltage, expr, idxBusBrch)
         else
-            if watt.layout.from[idxWatt]
+            if fromMeter
                 admittance = dc.admittance[idxBusBrch]
             else
                 admittance = -dc.admittance[idxBusBrch]
             end
             mean = meanPij(analysis.system.branch, watt, admittance, idxWatt, idxBusBrch)
-            Pij(analysis.system,  lav.variable.voltage, admittance, expr, idxBusBrch)
+            Pij(analysis.system, lav.variable.voltage, admittance, expr, idxBusBrch)
         end
 
         addConstrLav!(lav, expr, mean, idxWatt)
@@ -723,8 +814,30 @@ function updateVarmeterMain!(monitoring::Measurement, label::IntStr, key::Varmet
     idx = getIndex(var, label, "varmeter")
     baseInv = 1 / (system.base.power.value * system.base.power.prefix)
 
-    update!(var.reactive.variance, key.variance, pfx.reactivePower, baseInv, idx)
-    update!(var.reactive, key.reactive, key, pfx.reactivePower, baseInv, idx)
+    varianceNew = var.reactive.variance[idx]
+    if isset(key.variance)
+        varianceNew = Float64(topu(key.variance, pfx.reactivePower, baseInv))
+    end
+
+    statusNew = var.reactive.status[idx]
+    if isset(key.status)
+        statusNew = Int8(key.status)
+    end
+
+    meanNew = var.reactive.mean[idx]
+    if isset(key.reactive)
+        meanNew = Float64(topu(key.reactive, pfx.reactivePower, baseInv))
+        if key.noise
+            meanNew += sqrt(varianceNew) * randn()
+        end
+    end
+
+    checkStatus(statusNew)
+    checkVariance(varianceNew)
+
+    var.reactive.variance[idx] = varianceNew
+    var.reactive.mean[idx] = meanNew
+    var.reactive.status[idx] = statusNew
 
     if !var.layout.bus[idx]
         idxBrch = var.layout.index[idx]
@@ -769,24 +882,27 @@ function _updateVarmeter!(analysis::AcStateEstimation{<:GaussNewton}, idxVar::In
     idx = wls.range[4] + idxVar - 1
 
     status = var.reactive.status[idxVar]
+    busMeter = var.layout.bus[idxVar]
+    fromMeter = var.layout.from[idxVar]
+    busNumber = bus.number
 
     wls.mean[idx] = status * var.reactive.mean[idxVar]
     wls.residual[idx] = 0.0
 
-    if var.layout.bus[idxVar]
+    if busMeter
         for ptr in nodal.colptr[idxBusBrch]:(nodal.colptr[idxBusBrch + 1] - 1)
             j = nodal.rowval[ptr]
-            wls.jacobian[idx, j] = wls.jacobian[idx, bus.number + j] = 0.0
+            wls.jacobian[idx, j] = wls.jacobian[idx, busNumber + j] = 0.0
         end
     else
         i, j = fromto(analysis.system, idxBusBrch)
-        wls.jacobian[idx, i] = wls.jacobian[idx, bus.number + i] = 0.0
-        wls.jacobian[idx, j] = wls.jacobian[idx, bus.number + j] = 0.0
+        wls.jacobian[idx, i] = wls.jacobian[idx, busNumber + i] = 0.0
+        wls.jacobian[idx, j] = wls.jacobian[idx, busNumber + j] = 0.0
     end
 
-    if var.layout.bus[idxVar]
+    if busMeter
         wls.type[idx] = status * 9
-    elseif var.layout.from[idxVar]
+    elseif fromMeter
         wls.type[idx] = status * 10
     else
         wls.type[idx] = status * 11
@@ -805,10 +921,12 @@ function _updateVarmeter!(analysis::AcStateEstimation{LAV}, idxVar::Int64)
     remove!(lav, idx)
     if var.reactive.status[idxVar] == 1
         add!(lav, idx)
+        busMeter = var.layout.bus[idxVar]
+        fromMeter = var.layout.from[idxVar]
 
-        if var.layout.bus[idxVar]
+        if busMeter
             expr = Qi(analysis.system, lav.variable.voltage, idxBusBrch)
-        elseif var.layout.from[idxVar]
+        elseif fromMeter
             expr = Qij(analysis.system, lav.variable.voltage, AffQuadExpr(), idxBusBrch)
         else
             expr = Qji(analysis.system, lav.variable.voltage, AffQuadExpr(), idxBusBrch)

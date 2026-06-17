@@ -52,7 +52,7 @@ function status!(
     elseif isset(outservice)
         statusAll(monitoring, outservice; initial = 1, final = 0)
     elseif isset(redundancy)
-        redundacyAll(monitoring, monitoring.system.bus.number, redundancy)
+        redundancyAll(monitoring, monitoring.system.bus.number, redundancy)
     end
 end
 
@@ -113,14 +113,14 @@ out-of-service states based on specified keywords.
 Users can use one main keyword or two fine-tuning keywords to specify distinct locations per
 function call:
 * `inservice`: Sets the number of in-service ammeters or allows fine-tuning:
-  * `inserviceFrom`: sets only ammeters loacted at the from-bus end,
-  * `inserviceTo`: sets only ammeters loacted at the to-bus end.
+  * `inserviceFrom`: sets only ammeters located at the from-bus end,
+  * `inserviceTo`: sets only ammeters located at the to-bus end.
 * `outservice`: Sets the number of out-of-service ammeters or allows fine-tuning:
-  * `outserviceFrom`: sets only ammeters loacted at the from-bus end,
-  * `outserviceTo`: sets only ammeters loacted at the to-bus end.
+  * `outserviceFrom`: sets only ammeters located at the from-bus end,
+  * `outserviceTo`: sets only ammeters located at the to-bus end.
 * `redundancy`: Determines in-service ammeters based on redundancy or allows fine-tuning:
-  * `redundancyFrom`: determines only ammeters loacted at the from-bus end,
-  * `redundancyTo`: determines only ammeters loacted at the to-bus end.
+  * `redundancyFrom`: determines only ammeters located at the from-bus end,
+  * `redundancyTo`: determines only ammeters located at the to-bus end.
 
 # Updates
 The function updates the `status` field within the `Ammeter` type.
@@ -181,7 +181,7 @@ end
 """
     statusWattmeter!(monitoring::Measurement;
         inservice, inserviceBus, inserviceFrom, inserviceTo,
-        outservice, outserviceBus outserviceFrom, outserviceTo,
+        outservice, outserviceBus, outserviceFrom, outserviceTo,
         redundancy, redundancyBus, redundancyFrom, redundancyTo)
 
 The function generates a set of wattmeters, assigning wattmeters randomly to either in-service or
@@ -191,17 +191,17 @@ out-of-service states based on specified keywords.
 Users can use one main keyword or three fine-tuning keywords to specify distinct locations per
 function call:
 * `inservice`: Sets the number of in-service wattmeters or allows fine-tuning:
-  * `inserviceBus`: sets only wattmeters loacted at the bus,
-  * `inserviceFrom`: sets only wattmeters loacted at the from-bus end,
-  * `inserviceTo`: sets only wattmeters loacted at the to-bus end.
+  * `inserviceBus`: sets only wattmeters located at the bus,
+  * `inserviceFrom`: sets only wattmeters located at the from-bus end,
+  * `inserviceTo`: sets only wattmeters located at the to-bus end.
 * `outservice`: Sets the number of out-of-service wattmeters or allows fine-tuning:
-  * `outserviceBus`: sets only wattmeters loacted at the bus,
-  * `outserviceFrom`: sets only wattmeters loacted at the from-bus end,
-  * `outserviceTo`: sets only wattmeters loacted at the to-bus end.
+  * `outserviceBus`: sets only wattmeters located at the bus,
+  * `outserviceFrom`: sets only wattmeters located at the from-bus end,
+  * `outserviceTo`: sets only wattmeters located at the to-bus end.
 * `redundancy`: Determines in-service wattmeters based on redundancy or allows fine-tuning:
-  * `redundancyBus`: determines only wattmeters loacted at the bus,
-  * `redundancyFrom`: determines only wattmeters loacted at the from-bus end,
-  * `redundancyTo`: determines only wattmeters loacted at the to-bus end.
+  * `redundancyBus`: determines only wattmeters located at the bus,
+  * `redundancyFrom`: determines only wattmeters located at the from-bus end,
+  * `redundancyTo`: determines only wattmeters located at the to-bus end.
 
 # Updates
 The function updates the `status` field within the `Wattmeter` type.
@@ -274,7 +274,7 @@ end
 """
     statusVarmeter!(monitoring::Measurement;
         inservice, inserviceBus, inserviceFrom, inserviceTo,
-        outservice, outserviceBus outserviceFrom, outserviceTo,
+        outservice, outserviceBus, outserviceFrom, outserviceTo,
         redundancy, redundancyBus, redundancyFrom, redundancyTo)
 
 The function generates a set of varmeters, assigning varmeters randomly to either in-service or
@@ -284,17 +284,17 @@ out-of-service states based on specified keywords.
 Users can use one main keyword or three fine-tuning keywords to specify distinct locations per
 function call:
 * `inservice`: Sets the number of in-service varmeters or allows fine-tuning:
-  * `inserviceBus`: sets only varmeters loacted at the bus,
-  * `inserviceFrom`: sets only varmeters loacted at the from-bus end,
-  * `inserviceTo`: sets only varmeters loacted at the to-bus end.
+  * `inserviceBus`: sets only varmeters located at the bus,
+  * `inserviceFrom`: sets only varmeters located at the from-bus end,
+  * `inserviceTo`: sets only varmeters located at the to-bus end.
 * `outservice`: Sets the number of out-of-service varmeters or allows fine-tuning:
-  * `outserviceBus`: sets only varmeters loacted at the bus,
-  * `outserviceFrom`: sets only varmeters loacted at the from-bus end,
-  * `outserviceTo`: sets only varmeters loacted at the to-bus end.
+  * `outserviceBus`: sets only varmeters located at the bus,
+  * `outserviceFrom`: sets only varmeters located at the from-bus end,
+  * `outserviceTo`: sets only varmeters located at the to-bus end.
 * `redundancy`: Determines in-service varmeters based on redundancy or allows fine-tuning:
-  * `redundancyBus`: determines only varmeters loacted at the bus,
-  * `redundancyFrom`: determines only varmeters loacted at the from-bus end,
-  * `redundancyTo`: determines only varmeters loacted at the to-bus end.
+  * `redundancyBus`: determines only varmeters located at the bus,
+  * `redundancyFrom`: determines only varmeters located at the from-bus end,
+  * `redundancyTo`: determines only varmeters located at the to-bus end.
 
 # Updates
 The function updates the `status` field within the `Varmeter` type.
@@ -368,7 +368,7 @@ end
 """
     statusPmu!(monitoring::Measurement;
         inservice, inserviceBus, inserviceFrom, inserviceTo,
-        outservice, outserviceBus outserviceFrom, outserviceTo,
+        outservice, outserviceBus, outserviceFrom, outserviceTo,
         redundancy, redundancyBus, redundancyFrom, redundancyTo)
 
 The function generates a set of PMUs, assigning PMUs randomly to either in-service or out-of-service
@@ -379,17 +379,17 @@ both magnitude and angle measurements.
 Users may use either one main keyword or three fine-tuning keywords that specify distinct locations
 per function call:
 * `inservice`: Sets the number of in-service PMUs or allows fine-tuning:
-  * `inserviceBus`: sets only PMUs loacted at the bus,
-  * `inserviceFrom`: sets only PMUs loacted at the from-bus end,
-  * `inserviceTo`: sets only PMUs loacted at the to-bus end.
+  * `inserviceBus`: sets only PMUs located at the bus,
+  * `inserviceFrom`: sets only PMUs located at the from-bus end,
+  * `inserviceTo`: sets only PMUs located at the to-bus end.
 * `outservice`: Sets the number of out-of-service PMUs or allows fine-tuning:
-  * `outserviceBus`: sets only PMUs loacted at the bus,
-  * `outserviceFrom`: sets only PMUs loacted at the from-bus end,
-  * `outserviceTo`: sets only PMUs loacted at the to-bus end.
+  * `outserviceBus`: sets only PMUs located at the bus,
+  * `outserviceFrom`: sets only PMUs located at the from-bus end,
+  * `outserviceTo`: sets only PMUs located at the to-bus end.
 * `redundancy`: Determines in-service PMUs based on redundancy or allows fine-tuning:
-  * `redundancyBus`: determines only PMUs loacted at the bus,
-  * `redundancyFrom`: determines only PMUs loacted at the from-bus end,
-  * `redundancyTo`: determines only PMUs loacted at the to-bus end.
+  * `redundancyBus`: determines only PMUs located at the bus,
+  * `redundancyFrom`: determines only PMUs located at the from-bus end,
+  * `redundancyTo`: determines only PMUs located at the to-bus end.
 
 # Updates
 The function updates the `status` fields within the `PMU` type.
@@ -467,9 +467,12 @@ function statusAll(
         errorStatusDevice()
     end
 
-    indices = randperm(numberDevice)[1:service]
+    indices = randperm(numberDevice)
     status .= initial
-    status[indices] .= final
+
+    @inbounds for k = 1:service
+        status[indices[k]] = final
+    end
 end
 
 function statusAll(pmu::PMU, service::IntMiss; initial::Int64, final::Int64)
@@ -477,16 +480,17 @@ function statusAll(pmu::PMU, service::IntMiss; initial::Int64, final::Int64)
         errorStatusDevice()
     end
 
-    indices = randperm(pmu.number)[1:service]
+    indices = randperm(pmu.number)
 
     @inbounds for i = 1:pmu.number
         pmu.magnitude.status[i] = initial
         pmu.angle.status[i] = initial
     end
 
-    @inbounds for i in indices
-        pmu.magnitude.status[i] = final
-        pmu.angle.status[i] = final
+    @inbounds for k = 1:service
+        idx = indices[k]
+        pmu.magnitude.status[idx] = final
+        pmu.angle.status[idx] = final
     end
 end
 
@@ -502,17 +506,6 @@ function statusAll(monitoring::Measurement, service::IntMiss; initial::Int64, fi
         errorStatusDevice()
     end
 
-    indices = [
-        fill(1, volt.number) collect(1:volt.number);
-        fill(2, amp.number) collect(1:amp.number);
-        fill(3, watt.number) collect(1:watt.number);
-        fill(4, var.number) collect(1:var.number);
-        fill(5, pmu.number) collect(1:pmu.number)
-    ]
-
-    indices = indices[shuffle(1:end), :]
-    indices = indices[1:service, :]
-
     volt.magnitude.status .= initial
     amp.magnitude.status .= initial
     watt.active.status .= initial
@@ -520,18 +513,26 @@ function statusAll(monitoring::Measurement, service::IntMiss; initial::Int64, fi
     pmu.magnitude.status .= initial
     pmu.angle.status .= initial
 
-    for row in eachrow(indices)
-        if row[1] == 1
-            volt.magnitude.status[row[2]] = final
-        elseif row[1] == 2
-            amp.magnitude.status[row[2]] = final
-        elseif row[1] == 3
-            watt.active.status[row[2]] = final
-        elseif row[1] == 4
-            var.reactive.status[row[2]] = final
+    ampOffset = volt.number
+    wattOffset = ampOffset + amp.number
+    varOffset = wattOffset + watt.number
+    pmuOffset = varOffset + var.number
+    indices = randperm(n)
+
+    @inbounds for k = 1:service
+        idx = indices[k]
+        if idx <= ampOffset
+            volt.magnitude.status[idx] = final
+        elseif idx <= wattOffset
+            amp.magnitude.status[idx - ampOffset] = final
+        elseif idx <= varOffset
+            watt.active.status[idx - wattOffset] = final
+        elseif idx <= pmuOffset
+            var.reactive.status[idx - varOffset] = final
         else
-            pmu.magnitude.status[row[2]] = final
-            pmu.angle.status[row[2]] = final
+            idxPmu = idx - pmuOffset
+            pmu.magnitude.status[idxPmu] = final
+            pmu.angle.status[idxPmu] = final
         end
     end
 end
@@ -543,15 +544,20 @@ function statusLocation(
     initial::Int64,
     final::Int64
 )
-    indices = findall(x -> x == true, location)
+    indices = findall(location)
 
     if service > length(indices)
         errorStatusDevice()
     end
 
-    status[indices] .= initial
+    @inbounds for i in indices
+        status[i] = initial
+    end
     shuffle!(indices)
-    status[indices[1:service]] .= final
+
+    @inbounds for k = 1:service
+        status[indices[k]] = final
+    end
 end
 
 function statusLocation(
@@ -561,7 +567,7 @@ function statusLocation(
     initial::Int64,
     final::Int64
 )
-    indices = findall(x -> x == true, location)
+    indices = findall(location)
 
     if service > length(indices)
         errorStatusDevice()
@@ -573,9 +579,10 @@ function statusLocation(
     end
 
     shuffle!(indices)
-    @inbounds for i in indices[1:service]
-        pmu.magnitude.status[i] = final
-        pmu.angle.status[i] = final
+    @inbounds for k = 1:service
+        idx = indices[k]
+        pmu.magnitude.status[idx] = final
+        pmu.angle.status[idx] = final
     end
 end
 
@@ -592,9 +599,13 @@ function redundancyAll(
     end
 
     measurementNumber = redundancy * (2 * busNumber - 1)
-    indices = randperm(numberDevice)[1:trunc(Int64, round(measurementNumber))]
+    indices = randperm(numberDevice)
+    service = trunc(Int64, round(measurementNumber))
     status .= 0
-    status[indices] .= 1
+
+    @inbounds for k = 1:service
+        status[indices[k]] = 1
+    end
 end
 
 function redundancyAll(pmu::PMU, busNumber::Int64, redundancy::FltIntMiss)
@@ -609,14 +620,16 @@ function redundancyAll(pmu::PMU, busNumber::Int64, redundancy::FltIntMiss)
     end
 
     measurementNumber = redundancy * (2 * busNumber - 1)
-    indices = randperm(pmu.number)[1:trunc(Int64, round(measurementNumber))]
-    @inbounds for i in indices
-        pmu.magnitude.status[i] = 1
-        pmu.angle.status[i] = 1
+    indices = randperm(pmu.number)
+    service = trunc(Int64, round(measurementNumber))
+    @inbounds for k = 1:service
+        idx = indices[k]
+        pmu.magnitude.status[idx] = 1
+        pmu.angle.status[idx] = 1
     end
 end
 
-function redundacyAll(monitoring::Measurement, busNumber::Int64, redundancy::FltIntMiss)
+function redundancyAll(monitoring::Measurement, busNumber::Int64, redundancy::FltIntMiss)
     volt = monitoring.voltmeter
     amp = monitoring.ammeter
     watt = monitoring.wattmeter
@@ -630,17 +643,6 @@ function redundacyAll(monitoring::Measurement, busNumber::Int64, redundancy::Flt
     end
     measurementNumber = redundancy * (2 * busNumber - 1)
 
-    indices = [
-        fill(1, volt.number) collect(1:volt.number);
-        fill(2, amp.number) collect(1:amp.number);
-        fill(3, watt.number) collect(1:watt.number);
-        fill(4, var.number) collect(1:var.number);
-        fill(5, pmu.number) collect(1:pmu.number)
-    ]
-
-    indices = indices[shuffle(1:end), :]
-    indices = indices[1:trunc(Int64, round(measurementNumber)), :]
-
     volt.magnitude.status .= 0
     amp.magnitude.status .= 0
     watt.active.status .= 0
@@ -648,18 +650,27 @@ function redundacyAll(monitoring::Measurement, busNumber::Int64, redundancy::Flt
     pmu.magnitude.status .= 0
     pmu.angle.status .= 0
 
-    for row in eachrow(indices)
-        if row[1] == 1
-            volt.magnitude.status[row[2]] = 1
-        elseif row[1] == 2
-            amp.magnitude.status[row[2]] = 1
-        elseif row[1] == 3
-            watt.active.status[row[2]] = 1
-        elseif row[1] == 4
-            var.reactive.status[row[2]] = 1
+    ampOffset = volt.number
+    wattOffset = ampOffset + amp.number
+    varOffset = wattOffset + watt.number
+    pmuOffset = varOffset + var.number
+    indices = randperm(n)
+    service = trunc(Int64, round(measurementNumber))
+
+    @inbounds for k = 1:service
+        idx = indices[k]
+        if idx <= ampOffset
+            volt.magnitude.status[idx] = 1
+        elseif idx <= wattOffset
+            amp.magnitude.status[idx - ampOffset] = 1
+        elseif idx <= varOffset
+            watt.active.status[idx - wattOffset] = 1
+        elseif idx <= pmuOffset
+            var.reactive.status[idx - varOffset] = 1
         else
-            pmu.magnitude.status[row[2]] = 1
-            pmu.angle.status[row[2]] = 1
+            idxPmu = idx - pmuOffset
+            pmu.magnitude.status[idxPmu] = 1
+            pmu.angle.status[idxPmu] = 1
         end
     end
 end
@@ -670,18 +681,24 @@ function redundancyLocation(
     busNumber::Int64,
     redundancy::FltIntMiss
 )
-    indices = findall(x -> x == true, location)
+    indices = findall(location)
     numberDevice = length(indices)
     maxRedundancy = numberDevice / (2 * busNumber - 1)
 
     if redundancy > maxRedundancy
         redundancy = maxRedundancy
     end
-    status[indices] .= 0
+    @inbounds for i in indices
+        status[i] = 0
+    end
 
     measurementNumber = redundancy * (2 * busNumber - 1)
     shuffle!(indices)
-    status[indices[1:trunc(Int64, round(measurementNumber))]] .= 1
+    service = trunc(Int64, round(measurementNumber))
+
+    @inbounds for k = 1:service
+        status[indices[k]] = 1
+    end
 end
 
 function redundancyLocation(
@@ -690,7 +707,7 @@ function redundancyLocation(
     busNumber::Int64,
     redundancy::FltIntMiss
 )
-    indices = findall(x -> x == true, location)
+    indices = findall(location)
     numberDevice = length(indices)
     maxRedundancy = numberDevice / (2 * busNumber - 1)
 
@@ -705,8 +722,10 @@ function redundancyLocation(
 
     measurementNumber = redundancy * (2 * busNumber - 1)
     shuffle!(indices)
-    @inbounds for i in indices[1:trunc(Int64, round(measurementNumber))]
-        pmu.magnitude.status[i] = 1
-        pmu.angle.status[i] = 1
+    service = trunc(Int64, round(measurementNumber))
+    @inbounds for k = 1:service
+        idx = indices[k]
+        pmu.magnitude.status[idx] = 1
+        pmu.angle.status[idx] = 1
     end
 end

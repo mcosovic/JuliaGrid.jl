@@ -85,57 +85,77 @@ function connectedComponents(system::PowerSystem, observe::Island, watt::Wattmet
     bus = system.bus
     branch = system.branch
 
-    nnzElement = 0
+    degree = zeros(Int64, bus.number)
+    inservice = 0
     @inbounds for (i, k) in enumerate(watt.layout.index)
-        if !watt.layout.bus[i]
-            if watt.active.status[i] == 1 && branch.layout.status[k] == 1
-                nnzElement += 4
-            end
+        if !watt.layout.bus[i] && watt.active.status[i] == 1 && branch.layout.status[k] == 1
+            degree[branch.layout.from[k]] += 1
+            degree[branch.layout.to[k]] += 1
+            inservice += 1
         end
     end
 
-    row = fill(0, nnzElement)
-    col = similar(row)
-    idx = 0
+    offset = Vector{Int64}(undef, bus.number + 1)
+    offset[1] = 1
+    @inbounds for i = 1:bus.number
+        offset[i + 1] = offset[i] + degree[i]
+    end
+
+    neighbor = Vector{Int64}(undef, 2 * inservice)
+    fill!(degree, 0)
     @inbounds for (i, k) in enumerate(watt.layout.index)
-        if !watt.layout.bus[i]
-            if watt.active.status[i] == 1 && branch.layout.status[k] == 1
-                row[idx + 1] = row[idx + 2] = branch.layout.from[k]
-                row[idx + 3] = row[idx + 4] = branch.layout.to[k]
+        if !watt.layout.bus[i] && watt.active.status[i] == 1 && branch.layout.status[k] == 1
+            from = branch.layout.from[k]
+            to = branch.layout.to[k]
 
-                col[idx + 1] = col[idx + 4] = branch.layout.to[k]
-                col[idx + 2] = col[idx + 3] = branch.layout.from[k]
+            idx = offset[from] + degree[from]
+            neighbor[idx] = to
+            degree[from] += 1
 
-                idx += 4
-            end
+            idx = offset[to] + degree[to]
+            neighbor[idx] = from
+            degree[to] += 1
         end
     end
-    gainFlow = sparse(row, col, fill(1, nnzElement), bus.number, bus.number)
 
     observe.bus = fill(0, bus.number)
-    queue = Vector{Int64}()
-    n = copy(bus.number)
+    queue = Vector{Int64}(undef, bus.number)
     comp = 0
-    @inbounds for i = 1:n
+    @inbounds for i = 1:bus.number
         if observe.bus[i] == 0
             comp += 1
-            push!(queue, i)
-            while !isempty(queue)
-                v = pop!(queue)
-                observe.bus[v] = comp
-                for index in nzrange(gainFlow, v)
-                    n = gainFlow.rowval[index]
-                    if observe.bus[n] == 0
-                        push!(queue, n)
+            head = 1
+            tail = 1
+            queue[tail] = i
+            observe.bus[i] = comp
+
+            while head <= tail
+                v = queue[head]
+                head += 1
+
+                for index = offset[v]:(offset[v + 1] - 1)
+                    next = neighbor[index]
+                    if observe.bus[next] == 0
+                        observe.bus[next] = comp
+                        tail += 1
+                        queue[tail] = next
                     end
                 end
             end
         end
     end
 
-    observe.island = [Vector{Int64}()  for i = 1:comp]
-    @inbounds for (k, i) in enumerate(observe.bus)
-        push!(observe.island[i], k)
+    fill!(degree, 0)
+    @inbounds for i = 1:bus.number
+        degree[observe.bus[i]] += 1
+    end
+
+    observe.island = [Vector{Int64}(undef, degree[i]) for i = 1:comp]
+    fill!(degree, 0)
+    @inbounds for k = 1:bus.number
+        i = observe.bus[k]
+        degree[i] += 1
+        observe.island[i][degree[i]] = k
     end
 end
 
@@ -171,26 +191,53 @@ function mergePairs(
 )
     merge = true
     flag = false
-    con = fill(false, bus.number)
-    removeIsland = fill(false, size(observe.island, 1))
+    islandCount = size(observe.island, 1)
+    removeIsland = fill(false, islandCount)
+    head = zeros(Int64, islandCount)
+    tail = zeros(Int64, islandCount)
+    islandSize = zeros(Int64, islandCount)
+    nextBus = zeros(Int64, bus.number)
+
+    @inbounds for (k, island) in enumerate(observe.island)
+        islandSize[k] = length(island)
+        if !isempty(island)
+            head[k] = island[1]
+            tail[k] = island[end]
+            for i = 1:(lastindex(island) - 1)
+                nextBus[island[i]] = island[i + 1]
+            end
+        end
+    end
 
     @inbounds while merge
         merge = false
         for idxBus in observe.tie.injection
             island = observe.bus[idxBus]
-            conection = rowval[colptr[idxBus]:(colptr[idxBus + 1] - 1)]
 
-            con[conection] .= true
-            con[observe.island[island]] .= false
-            incidentToIslands = Set(observe.bus[con])
-            con[conection] .= false
+            index = 0
+            incidentCount = 0
+            for idx = colptr[idxBus]:(colptr[idxBus + 1] - 1)
+                incident = observe.bus[rowval[idx]]
+                if incident != island && incident != index
+                    incidentCount += 1
+                    if incidentCount > 1
+                        break
+                    end
+                    index = incident
+                end
+            end
 
-            if length(incidentToIslands) == 1 || length(incidentToIslands) == 0
-                if length(incidentToIslands) == 1
-                    index = collect(incidentToIslands)[1]
+            if incidentCount <= 1
+                if incidentCount == 1
+                    nextBus[tail[island]] = head[index]
+                    tail[island] = tail[index]
+                    islandSize[island] += islandSize[index]
 
-                    append!(observe.island[island], observe.island[index])
-                    observe.bus[observe.island[index]] .= island
+                    i = head[index]
+                    while i != 0
+                        observe.bus[i] = island
+                        i = nextBus[i]
+                    end
 
                     removeIsland[index] = true
                     flag = true
@@ -203,14 +250,23 @@ function mergePairs(
             break
         end
     end
-    deleteat!(observe.island, removeIsland)
 
     if flag
-        @inbounds for (k, island) in enumerate(observe.island)
-            for i in island
-                observe.bus[i] = k
+        keep = findall(!, removeIsland)
+        observe.island = [Vector{Int64}(undef, islandSize[i]) for i in keep]
+
+        @inbounds for (k, idxIsland) in enumerate(keep)
+            busIndex = head[idxIsland]
+            position = 1
+            while busIndex != 0
+                observe.island[k][position] = busIndex
+                observe.bus[busIndex] = k
+                position += 1
+                busIndex = nextBus[busIndex]
             end
         end
+    else
+        deleteat!(observe.island, removeIsland)
     end
 end
 
@@ -308,59 +364,68 @@ function decisionTree(measurments::Matrix{Vector{Int64}})
         end
     end
 
+    appeared = zeros(Int64, totalIslands)
+    marker = Ref(1)
     @inbounds for t = 2:length(measurments)
-        totalCombinations = combinations(length(measurments), t)
-        for combination in totalCombinations
-            if check(measurments, combination, totalIslands , t + 1)
-                return combination
-            end
+        result = Vector{Int64}(undef, t)
+        combination = searchCombination(
+            measurments, result, 1, 0, length(measurments) - t, t, appeared, marker
+        )
+        if combination != false
+            return combination
         end
     end
 
     return false
 end
 
-function combinationsRecursive(
+function searchCombination(
+    measurments::Matrix{Vector{Int64}},
+    result::Vector{Int64},
     position::Int64,
     value::Int64,
-    result::Vector{Int64},
     maxN::Int64,
     k::Int64,
-    accumulator::Vector{Vector{Int64}}
+    appeared::Vector{Int64},
+    marker::Base.RefValue{Int64}
 )
     @inbounds for i = value:maxN
         result[position] = position + i
         if position < k
-            combinationsRecursive(position + 1, i, result, maxN, k, accumulator)
+            combination = searchCombination(
+                measurments, result, position + 1, i, maxN, k, appeared, marker
+            )
+            if combination != false
+                return combination
+            end
+        elseif checkCombination(measurments, result, appeared, marker[], k + 1)
+            return copy(result)
         else
-            push!(accumulator, copy(result))
+            marker[] += 1
         end
     end
+
+    return false
 end
 
-function combinations(n::Int64, k::Int64)
-    maxN = n - k
-    accumulator = Vector{Vector{Int64}}()
-    result = zeros(Int64, k)
-    combinationsRecursive(1, 0, result, maxN, k, accumulator)
-
-    return accumulator
-end
-
-function check(
+function checkCombination(
     measurments::Matrix{Vector{Int64}},
     indicies::Vector{Int64},
-    total::Int64,
+    appeared::Vector{Int64},
+    marker::Int64,
     required::Int64
 )
-    appeared = zeros(Bool, total)
+    count = 0
     @inbounds for index in indicies
         for island in measurments[index]
-            appeared[island] = true
+            if appeared[island] != marker
+                appeared[island] = marker
+                count += 1
+            end
         end
     end
 
-    return sum(appeared) == required
+    return count == required
 end
 
 """
@@ -704,7 +769,7 @@ function pmuPlacement(
                         rhs += 1
                         for q in ac.nodalMatrix.colptr[row]:(ac.nodalMatrix.colptr[row + 1] - 1)
                             h = ac.nodalMatrix.rowval[q]
-                            add_to_expression!(expr, placement[h])
+                            add_to_expression!(expr, var[h])
                         end
                     end
                 else
@@ -713,7 +778,7 @@ function pmuPlacement(
                         rhs += 1
                         for k in ac.nodalMatrix.colptr[j]:(ac.nodalMatrix.colptr[j + 1] - 1)
                             row = ac.nodalMatrix.rowval[k]
-                            add_to_expression!(expr, placement[row])
+                            add_to_expression!(expr, var[row])
                         end
                     end
                 end
@@ -749,18 +814,55 @@ function pmuPlacement(
     @objective(jump, Min, sum(var))
     optimize!(jump)
 
+    fromDegree = zeros(Int64, bus.number)
+    toDegree = zeros(Int64, bus.number)
+    activeBranch = 0
+    @inbounds for i = 1:branch.number
+        if branch.layout.status[i] == 1
+            fromDegree[branch.layout.from[i]] += 1
+            toDegree[branch.layout.to[i]] += 1
+            activeBranch += 1
+        end
+    end
+
+    fromOffset = Vector{Int64}(undef, bus.number + 1)
+    toOffset = Vector{Int64}(undef, bus.number + 1)
+    fromOffset[1] = 1
+    toOffset[1] = 1
+    @inbounds for i = 1:bus.number
+        fromOffset[i + 1] = fromOffset[i] + fromDegree[i]
+        toOffset[i + 1] = toOffset[i] + toDegree[i]
+    end
+
+    fromIndex = Vector{Int64}(undef, activeBranch)
+    toIndex = Vector{Int64}(undef, activeBranch)
+    fill!(fromDegree, 0)
+    fill!(toDegree, 0)
+    @inbounds for i = 1:branch.number
+        if branch.layout.status[i] == 1
+            from = branch.layout.from[i]
+            to = branch.layout.to[i]
+
+            idx = fromOffset[from] + fromDegree[from]
+            fromIndex[idx] = i
+            fromDegree[from] += 1
+
+            idx = toOffset[to] + toDegree[to]
+            toIndex[idx] = i
+            toDegree[to] += 1
+        end
+    end
+
     @inbounds for i = 1:bus.number
         if value(var[i]) == 1
             placementPmu.bus[getLabel(bus.label, i)] = i
-            for j = 1:branch.number
-                if branch.layout.status[j] == 1
-                    if branch.layout.from[j] == i
-                        placementPmu.from[getLabel(system.branch.label, j)] = j
-                    end
-                    if branch.layout.to[j] == i
-                        placementPmu.to[getLabel(system.branch.label, j)] = j
-                    end
-                end
+            for idx = fromOffset[i]:(fromOffset[i + 1] - 1)
+                j = fromIndex[idx]
+                placementPmu.from[getLabel(system.branch.label, j)] = j
+            end
+            for idx = toOffset[i]:(toOffset[i + 1] - 1)
+                j = toIndex[idx]
+                placementPmu.to[getLabel(system.branch.label, j)] = j
             end
         end
     end

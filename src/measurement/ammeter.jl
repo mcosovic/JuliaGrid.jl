@@ -75,32 +75,38 @@ function addAmmeter!(monitoring::Measurement; magnitude::FltInt, kwargs...)
     idxBrch = branch.label[lblBrch]
 
     if branch.layout.status[idxBrch] == 1
-        monitoring.ammeter.number += 1
+        idx = monitoring.ammeter.number + 1
+
+        from, to = fromto(system, idxBrch)
+        basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
+        if fromFlag
+            defVariance = def.varianceFrom
+            defStatus = def.statusFrom
+            baseVoltage = baseVoltg.value[from] * baseVoltg.prefix
+            prefix = "From "
+        else
+            defVariance = def.varianceTo
+            defStatus = def.statusTo
+            baseVoltage = baseVoltg.value[to] * baseVoltg.prefix
+            prefix = "To "
+        end
+
+        baseInv = baseCurrentInv(basePowerInv, baseVoltage)
+        measure, variance, status = meterValue(
+            magnitude, key.variance, key.status, key.noise,
+            defVariance, defStatus, pfx.currentMagnitude, baseInv
+        )
+
+        setLabel(monitoring.ammeter, idx, key.label, def.label, lblBrch; prefix = prefix)
         push!(monitoring.ammeter.layout.index, idxBrch)
         push!(monitoring.ammeter.layout.from, fromFlag)
         push!(monitoring.ammeter.layout.to, toFlag)
         add!(monitoring.ammeter.layout.square, key.square, def.square)
 
-        from, to = fromto(system, idxBrch)
-        basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
-        if fromFlag
-            setLabel(monitoring.ammeter, monitoring.ammeter.number, key.label, def.label, lblBrch; prefix = "From ")
-            defVariance = def.varianceFrom
-            defStatus = def.statusFrom
-            baseVoltage = baseVoltg.value[from] * baseVoltg.prefix
-        else
-            setLabel(monitoring.ammeter, monitoring.ammeter.number, key.label, def.label, lblBrch; prefix = "To ")
-            defVariance = def.varianceTo
-            defStatus = def.statusTo
-            baseVoltage = baseVoltg.value[to] * baseVoltg.prefix
-        end
-
-        baseInv = baseCurrentInv(basePowerInv, baseVoltage)
-
-        setMeter(
-            monitoring.ammeter.magnitude, magnitude, key.variance, key.status, key.noise,
-            defVariance, defStatus, pfx.currentMagnitude, baseInv
-        )
+        push!(monitoring.ammeter.magnitude.variance, variance)
+        push!(monitoring.ammeter.magnitude.mean, measure)
+        push!(monitoring.ammeter.magnitude.status, status)
+        monitoring.ammeter.number = idx
     end
 end
 
@@ -186,14 +192,27 @@ function addAmmeter!(monitoring::Measurement, analysis::AC;  kwargs...)
             sizehint!(amp.label, addNew)
         end
 
-        append!(amp.layout.index, fill(0, addNew))
-        append!(amp.layout.from, fill(false, addNew))
-        append!(amp.layout.to, fill(false, addNew))
-        append!(amp.layout.square, fill(coalesce(key.square, def.square), addNew))
+        start = amp.number + 1
+        stop = amp.number + addNew
+        square = coalesce(key.square, def.square)
 
-        append!(amp.magnitude.mean, fill(0.0, addNew))
-        append!(amp.magnitude.variance, fill(0.0, addNew))
-        append!(amp.magnitude.status, fill(Int8(0), addNew))
+        resize!(amp.layout.index, stop)
+        resize!(amp.layout.from, stop)
+        resize!(amp.layout.to, stop)
+        resize!(amp.layout.square, stop)
+        resize!(amp.magnitude.mean, stop)
+        resize!(amp.magnitude.variance, stop)
+        resize!(amp.magnitude.status, stop)
+
+        @inbounds for i = start:stop
+            amp.layout.index[i] = 0
+            amp.layout.from[i] = false
+            amp.layout.to[i] = false
+            amp.layout.square[i] = square
+            amp.magnitude.mean[i] = 0.0
+            amp.magnitude.variance[i] = 0.0
+            amp.magnitude.status[i] = Int8(0)
+        end
 
         baseInv = 1 / (system.base.power.value * system.base.power.prefix)
         @inbounds for (label, i) in system.branch.label
@@ -201,33 +220,35 @@ function addAmmeter!(monitoring::Measurement, analysis::AC;  kwargs...)
                 from, to = fromto(system, i)
 
                 if statusFrom != -1
-                    amp.number += 1
-                    setLabel(amp, amp.number, missing, def.label, label; prefix = "From ")
+                    idx = amp.number + 1
+                    setLabel(amp, idx, missing, def.label, label; prefix = "From ")
 
-                    amp.layout.index[amp.number] = i
-                    amp.layout.from[amp.number] = true
+                    amp.layout.index[idx] = i
+                    amp.layout.from[idx] = true
                     baseFromInv = baseCurrentInv(baseInv, baseVoltg.value[from] * baseVoltg.prefix)
 
                     add!(
-                        amp.magnitude, amp.number, key.noise, pfx.currentMagnitude,
+                        amp.magnitude, idx, key.noise, pfx.currentMagnitude,
                         current.from.magnitude[i], key.varianceFrom, def.varianceFrom,
                         statusFrom, baseFromInv
                     )
+                    amp.number = idx
                 end
 
                 if statusTo != -1
-                    amp.number += 1
-                    setLabel(amp, amp.number, missing, def.label, label; prefix = "To ")
+                    idx = amp.number + 1
+                    setLabel(amp, idx, missing, def.label, label; prefix = "To ")
 
-                    amp.layout.index[amp.number] = i
-                    amp.layout.to[amp.number] = true
+                    amp.layout.index[idx] = i
+                    amp.layout.to[idx] = true
                     baseToInv = baseCurrentInv(baseInv, baseVoltg.value[to] * baseVoltg.prefix)
 
                     add!(
-                        amp.magnitude, amp.number, key.noise, pfx.currentMagnitude,
+                        amp.magnitude, idx, key.noise, pfx.currentMagnitude,
                         current.to.magnitude[i], key.varianceTo, def.varianceTo,
                         statusTo, baseToInv
                     )
+                    amp.number = idx
                 end
             end
         end
@@ -277,16 +298,38 @@ function updateAmmeterMain!(monitoring::Measurement, label::IntStr, key::Ammeter
     idx = getIndex(amp, label, "ammeter")
     idxBrch = amp.layout.index[idx]
 
-    if isset(key.square)
-        amp.layout.square[idx] = key.square
-    end
-
     basePowerInv = 1 / (system.base.power.value * system.base.power.prefix)
     baseVoltage = baseVoltageEnd(system, baseVoltg, amp.layout.from[idx], idxBrch)
     baseInv = baseCurrentInv(basePowerInv, baseVoltage)
 
-    update!(amp.magnitude.variance, key.variance, pfx.currentMagnitude, baseInv, idx)
-    update!(amp.magnitude, key.magnitude, key, pfx.currentMagnitude, baseInv, idx)
+    varianceNew = amp.magnitude.variance[idx]
+    if isset(key.variance)
+        varianceNew = Float64(topu(key.variance, pfx.currentMagnitude, baseInv))
+    end
+
+    statusNew = amp.magnitude.status[idx]
+    if isset(key.status)
+        statusNew = Int8(key.status)
+    end
+
+    meanNew = amp.magnitude.mean[idx]
+    if isset(key.magnitude)
+        meanNew = Float64(topu(key.magnitude, pfx.currentMagnitude, baseInv))
+        if key.noise
+            meanNew += sqrt(varianceNew) * randn()
+        end
+    end
+
+    checkStatus(statusNew)
+    checkVariance(varianceNew)
+
+    amp.magnitude.variance[idx] = varianceNew
+    amp.magnitude.mean[idx] = meanNew
+    amp.magnitude.status[idx] = statusNew
+
+    if isset(key.square)
+        amp.layout.square[idx] = key.square
+    end
 
     amp.magnitude.status[idx] &= system.branch.layout.status[idxBrch]
 end
@@ -326,18 +369,20 @@ function _updateAmmeter!(analysis::AcStateEstimation{<:GaussNewton}, idxAmp::Int
     idx = analysis.monitoring.voltmeter.number + idxAmp
 
     status = amp.magnitude.status[idxAmp] == 1
-    sq = if2exp(amp.layout.square[idxAmp])
-    ty = if2type(amp.layout.square[idxAmp])
+    square = amp.layout.square[idxAmp]
+    sq = if2exp(square)
+    ty = if2type(square)
     i, j = fromto(analysis.system, idxBrch)
+    busNumber = analysis.system.bus.number
 
     wls.mean[idx] = status * (amp.magnitude.mean[idxAmp]^sq)
     wls.precision[idx, idx] = 1 / (sq * amp.magnitude.variance[idxAmp])
     wls.residual[idx] = 0.0
 
     wls.jacobian[idx, i] = 0.0
-    wls.jacobian[idx, analysis.system.bus.number + i] = 0.0
+    wls.jacobian[idx, busNumber + i] = 0.0
     wls.jacobian[idx, j] = 0.0
-    wls.jacobian[idx, analysis.system.bus.number + j] = 0.0
+    wls.jacobian[idx, busNumber + j] = 0.0
 
     if amp.layout.from[idxAmp]
         wls.type[idx] = status * (2 + ty)
@@ -357,13 +402,14 @@ function _updateAmmeter!(analysis::AcStateEstimation{LAV}, idxAmp::Int64)
 
     if amp.magnitude.status[idxAmp] == 1
         add!(lav, idx)
+        square = amp.layout.square[idxAmp]
         if amp.layout.from[idxAmp]
-            expr = Iij(analysis.system, lav.variable.voltage, amp.layout.square[idxAmp], AffQuadExpr(), idxBrch)
+            expr = Iij(analysis.system, lav.variable.voltage, square, AffQuadExpr(), idxBrch)
         else
-            expr = Iji(analysis.system, lav.variable.voltage, amp.layout.square[idxAmp], AffQuadExpr(), idxBrch)
+            expr = Iji(analysis.system, lav.variable.voltage, square, AffQuadExpr(), idxBrch)
         end
 
-        sq = if2exp(amp.layout.square[idxAmp])
+        sq = if2exp(square)
         addConstrLav!(lav, expr, amp.magnitude.mean[idxAmp]^sq, AffExpr(), idx)
     end
 end

@@ -79,12 +79,12 @@ function addGeneratorMain!(system::PowerSystem, bus::IntStr, key::GeneratorKey)
     cbt = gen.capability
     def = template.generator
 
-    gen.number += 1
-    setLabel(gen, gen.number, key.label, def.label, "generator")
+    idx = gen.number + 1
+    setLabel(gen, idx, key.label, def.label, "generator")
     busIdx = getIndex(system.bus, bus, "bus")
 
-    add!(gen.layout.status, key.status, def.status)
-    checkStatus(gen.layout.status[end])
+    statusNew = coalesce(key.status, def.status)
+    checkStatus(statusNew)
 
     baseInv = 1 / (system.base.power.value * system.base.power.prefix)
     add!(gen.output.active, key.active, def.active, pfx.activePower, baseInv)
@@ -105,8 +105,10 @@ function addGeneratorMain!(system::PowerSystem, bus::IntStr, key::GeneratorKey)
         add!(cbt.maxUpReactive, key.maxUpReactive, def.maxUpReactive, pfx.reactivePower, baseInv)
     end
 
-    if gen.layout.status[end] == 1
-        addGenInBus!(system, busIdx, gen.number)
+    push!(gen.layout.status, statusNew)
+
+    if statusNew == 1
+        addGenInBus!(system, busIdx, idx)
         gen.layout.inservice += 1
 
         system.bus.supply.active[busIdx] += gen.output.active[end]
@@ -121,6 +123,7 @@ function addGeneratorMain!(system::PowerSystem, bus::IntStr, key::GeneratorKey)
     push!(gen.cost.active.model, 0)
     push!(gen.cost.reactive.model, 0)
 
+    gen.number = idx
     topologyChanged!(system)
 end
 
@@ -188,8 +191,8 @@ function _addGenerator!(analysis::AcOptimalPowerFlow)
 
     revision = system.model.revision
     signature = analysis.method.signature
-    signature.topology = copy(revision.topology)
-    signature.acOptimization = copy(revision.acOptimization)
+    signature.topology = revision.topology
+    signature.acOptimization = revision.acOptimization
 end
 
 function _addGenerator!(analysis::DcOptimalPowerFlow)
@@ -217,8 +220,8 @@ function _addGenerator!(analysis::DcOptimalPowerFlow)
 
     revision = system.model.revision
     signature = analysis.method.signature
-    signature.topology = copy(revision.topology)
-    signature.dcOptimization = copy(revision.dcOptimization)
+    signature.topology = revision.topology
+    signature.dcOptimization = revision.dcOptimization
 end
 
 """
@@ -257,6 +260,7 @@ end
 function updateGeneratorMain!(system::PowerSystem, label::IntStr, key::GeneratorKey)
     bus = system.bus
     gen = system.generator
+    cbt = gen.capability
 
     idx = getIndex(gen, label, "generator")
     idxBus = gen.layout.bus[idx]
@@ -265,17 +269,21 @@ function updateGeneratorMain!(system::PowerSystem, label::IntStr, key::Generator
     statusOld = gen.layout.status[idx]
 
     if ismissing(statusNew)
-        statusNew = copy(statusOld)
+        statusNew = statusOld
     end
     checkStatus(statusNew)
 
-    if statusNew != statusOld || any(isset, (key.active, key.minActive, key.maxActive))
+    active = isset(key.active) || isset(key.minActive) || isset(key.maxActive)
+    reactive = (
+        isset(key.reactive) || isset(key.minReactive) || isset(key.maxReactive) ||
+        isset(key.lowActive) || isset(key.upActive) || isset(key.minLowReactive) ||
+        isset(key.maxLowReactive) || isset(key.minUpReactive) || isset(key.maxUpReactive)
+    )
+
+    if statusNew != statusOld || active
         optimizationChanged!(system)
     end
-    if any(isset, (
-        key.reactive, key.minReactive, key.maxReactive, key.lowActive, key.upActive,
-        key.minLowReactive, key.maxLowReactive, key.minUpReactive, key.maxUpReactive
-    ))
+    if reactive
         acOptimizationChanged!(system)
     end
 
@@ -323,18 +331,18 @@ function updateGeneratorMain!(system::PowerSystem, label::IntStr, key::Generator
     end
     gen.layout.status[idx] = statusNew
 
-    update!(gen.capability.minReactive, key.minReactive, pfx.reactivePower, baseInv, idx)
-    update!(gen.capability.maxReactive, key.maxReactive, pfx.reactivePower, baseInv, idx)
+    update!(cbt.minReactive, key.minReactive, pfx.reactivePower, baseInv, idx)
+    update!(cbt.maxReactive, key.maxReactive, pfx.reactivePower, baseInv, idx)
 
     if system.bus.layout.optimal
-        update!(gen.capability.minActive, key.minActive, pfx.activePower, baseInv, idx)
-        update!(gen.capability.maxActive, key.maxActive, pfx.activePower, baseInv, idx)
-        update!(gen.capability.lowActive, key.lowActive, pfx.activePower, baseInv, idx)
-        update!(gen.capability.minLowReactive, key.minLowReactive, pfx.reactivePower, baseInv, idx)
-        update!(gen.capability.maxLowReactive, key.maxLowReactive, pfx.reactivePower, baseInv, idx)
-        update!(gen.capability.upActive, key.upActive, pfx.activePower, baseInv, idx)
-        update!(gen.capability.minUpReactive, key.minUpReactive, pfx.reactivePower, baseInv, idx)
-        update!(gen.capability.maxUpReactive, key.maxUpReactive, pfx.reactivePower, baseInv, idx)
+        update!(cbt.minActive, key.minActive, pfx.activePower, baseInv, idx)
+        update!(cbt.maxActive, key.maxActive, pfx.activePower, baseInv, idx)
+        update!(cbt.lowActive, key.lowActive, pfx.activePower, baseInv, idx)
+        update!(cbt.minLowReactive, key.minLowReactive, pfx.reactivePower, baseInv, idx)
+        update!(cbt.maxLowReactive, key.maxLowReactive, pfx.reactivePower, baseInv, idx)
+        update!(cbt.upActive, key.upActive, pfx.activePower, baseInv, idx)
+        update!(cbt.minUpReactive, key.minUpReactive, pfx.reactivePower, baseInv, idx)
+        update!(cbt.maxUpReactive, key.maxUpReactive, pfx.reactivePower, baseInv, idx)
     end
 
     baseInv = sqrt(3) / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
@@ -427,7 +435,8 @@ end
 
 function _updateGenerator!(analysis::AcOptimalPowerFlow, idx::Int64)
     system = analysis.system
-    cbt = system.generator.capability
+    gen = system.generator
+    cbt = gen.capability
 
     jump = analysis.method.jump
     moi = backend(jump)
@@ -445,11 +454,11 @@ function _updateGenerator!(analysis::AcOptimalPowerFlow, idx::Int64)
     freeP = analysis.method.signature.freeP
     freeQ = analysis.method.signature.freeQ
 
-    idxBus = system.generator.layout.bus[idx]
+    idxBus = gen.layout.bus[idx]
 
-    if lastindex(analysis.power.generator.active) == system.generator.number
-        analysis.power.generator.active[idx] = system.generator.output.active[idx]
-        analysis.power.generator.reactive[idx] = system.generator.output.reactive[idx]
+    if lastindex(analysis.power.generator.active) == gen.number
+        analysis.power.generator.active[idx] = gen.output.active[idx]
+        analysis.power.generator.reactive[idx] = gen.output.reactive[idx]
 
         remove!(jump, moi, con.capability.active, dual.capability.active, idx)
         remove!(jump, moi, con.capability.reactive, dual.capability.reactive, idx)
@@ -459,8 +468,8 @@ function _updateGenerator!(analysis::AcOptimalPowerFlow, idx::Int64)
     else
         add!(jump, P, cbt.minActive, cbt.maxActive, jump.ext[:active], idx)
         add!(jump,Q, cbt.minReactive, cbt.maxReactive, jump.ext[:reactive], idx)
-        push!(analysis.power.generator.active, system.generator.output.active[idx])
-        push!(analysis.power.generator.reactive, system.generator.output.reactive[idx])
+        push!(analysis.power.generator.active, gen.output.active[idx])
+        push!(analysis.power.generator.reactive, gen.output.reactive[idx])
     end
 
     remove!(jump, moi, con.capability.lower, dual.capability.lower, idx)
@@ -472,7 +481,7 @@ function _updateGenerator!(analysis::AcOptimalPowerFlow, idx::Int64)
     removeObjective!(jump, moi, Q, G, con.piecewise.reactive, dual.piecewise.reactive, quad, freeQ, idx)
     removeNonlinear!(analysis.method.objective, idx)
 
-    if system.generator.layout.status[idx] == 1
+    if gen.layout.status[idx] == 1
         addObjective(system, jump, var, con, obj, freeP, freeQ, idx)
 
         capabilityCurve(system, jump, var, con, idx)
@@ -491,14 +500,15 @@ function _updateGenerator!(analysis::AcOptimalPowerFlow, idx::Int64)
 
     revision = system.model.revision
     signature = analysis.method.signature
-    signature.topology = copy(revision.topology)
-    signature.acOptimization = copy(revision.acOptimization)
+    signature.topology = revision.topology
+    signature.acOptimization = revision.acOptimization
 end
 
 function _updateGenerator!(analysis::DcOptimalPowerFlow, idx::Int64)
     system = analysis.system
-    cbt = system.generator.capability
-    cost = system.generator.cost.active
+    gen = system.generator
+    cbt = gen.capability
+    cost = gen.cost.active
 
     jump = analysis.method.jump
     moi = backend(jump)
@@ -511,21 +521,21 @@ function _updateGenerator!(analysis::DcOptimalPowerFlow, idx::Int64)
     free = analysis.method.signature.free
     actwise = jump.ext[:actwise]
 
-    idxBus = system.generator.layout.bus[idx]
+    idxBus = gen.layout.bus[idx]
 
-    if lastindex(analysis.power.generator.active) == system.generator.number
-        analysis.power.generator.active[idx] = system.generator.output.active[idx]
+    if lastindex(analysis.power.generator.active) == gen.number
+        analysis.power.generator.active[idx] = gen.output.active[idx]
 
         remove!(jump, moi, con.capability.active, dual.capability.active, idx)
         setBound!(power, cbt.minActive, cbt.maxActive, idx)
     else
         add!(jump, power, cbt.minActive, cbt.maxActive, jump.ext[:active], idx)
-        push!(analysis.power.generator.active, system.generator.output.active[idx])
+        push!(analysis.power.generator.active, gen.output.active[idx])
     end
 
     removeObjective!(jump, moi, power, helper, con.piecewise.active, dual.piecewise.active, obj, free, idx)
 
-    if system.generator.layout.status[idx] == 1
+    if gen.layout.status[idx] == 1
         addObjective(system, cost, jump, power, helper, con, obj, free, idx)
         setConstraint!(power, con.capability.active, cbt.minActive, cbt.maxActive, idx)
     else
@@ -539,8 +549,8 @@ function _updateGenerator!(analysis::DcOptimalPowerFlow, idx::Int64)
 
     revision = system.model.revision
     signature = analysis.method.signature
-    signature.topology = copy(revision.topology)
-    signature.dcOptimization = copy(revision.dcOptimization)
+    signature.topology = revision.topology
+    signature.dcOptimization = revision.dcOptimization
 end
 
 function generatorTemplatePrefix(parameter::Symbol)
@@ -695,7 +705,8 @@ function costMain!(system::PowerSystem, generator::IntStr, key::CostKey)
         )
     elseif ismissing(key.active) && ismissing(key.reactive)
         throw(ErrorException("The cost model is missing."))
-    elseif isset(key.active) && key.active ∉ (1, 2) || isset(key.reactive) && key.reactive ∉ (1, 2)
+    elseif (isset(key.active) && key.active ∉ (1, 2)) ||
+           (isset(key.reactive) && key.reactive ∉ (1, 2))
         throw(ErrorException(
             "The model is not allowed; it should be piecewise (1) or polynomial (2).")
         )
@@ -704,14 +715,8 @@ function costMain!(system::PowerSystem, generator::IntStr, key::CostKey)
     idx = getIndex(system.generator, generator, "generator")
 
     if isset(key.active)
-        optimizationChanged!(system)
-    elseif isset(key.reactive)
-        acOptimizationChanged!(system)
-    end
-
-    if isset(key.active)
         container = system.generator.cost.active
-        container.model[idx] = key.active
+        model = key.active
         if pfx.activePower == 0.0
             scale = 1.0
         else
@@ -719,7 +724,7 @@ function costMain!(system::PowerSystem, generator::IntStr, key::CostKey)
         end
     elseif isset(key.reactive)
         container = system.generator.cost.reactive
-        container.model[idx] = key.reactive
+        model = key.reactive
         if pfx.reactivePower == 0.0
             scale = 1.0
         else
@@ -727,24 +732,39 @@ function costMain!(system::PowerSystem, generator::IntStr, key::CostKey)
         end
     end
 
-    if container.model[idx] == 1 && isempty(key.piecewise) && !haskey(container.piecewise, idx)
+    if model == 1 && isempty(key.piecewise) && !haskey(container.piecewise, idx)
         errorAssignCost("piecewise")
     end
-    if container.model[idx] == 2 && isempty(key.polynomial) && !haskey(container.polynomial, idx)
+    if model == 2 && isempty(key.polynomial) && !haskey(container.polynomial, idx)
         errorAssignCost("polynomial")
     end
 
+    if isset(key.active)
+        optimizationChanged!(system)
+    elseif isset(key.reactive)
+        acOptimizationChanged!(system)
+    end
+    container.model[idx] = model
+
     if !isempty(key.polynomial)
         numCoeff = lastindex(key.polynomial)
-        container.polynomial[idx] = fill(0.0, numCoeff)
+        polynomial = Vector{Float64}(undef, numCoeff)
 
         @inbounds for i = 1:numCoeff
-            container.polynomial[idx][i] = key.polynomial[i] / (scale^(numCoeff - i))
+            polynomial[i] = key.polynomial[i] / (scale^(numCoeff - i))
         end
+        container.polynomial[idx] = polynomial
     end
 
     if !isempty(key.piecewise)
-        container.piecewise[idx] = [scale .* key.piecewise[:, 1] key.piecewise[:, 2]]
+        rows = size(key.piecewise, 1)
+        piecewise = Matrix{Float64}(undef, rows, 2)
+
+        @inbounds for i = 1:rows
+            piecewise[i, 1] = scale * key.piecewise[i, 1]
+            piecewise[i, 2] = key.piecewise[i, 2]
+        end
+        container.piecewise[idx] = piecewise
     end
 end
 
@@ -804,7 +824,7 @@ function _cost!(analysis::AcOptimalPowerFlow, idx::Int64)
 
     setObjective(jump, obj)
 
-    analysis.method.signature.acOptimization = copy(system.model.revision.acOptimization)
+    analysis.method.signature.acOptimization = system.model.revision.acOptimization
 end
 
 function _cost!(analysis::DcOptimalPowerFlow, idx::Int64)
@@ -829,5 +849,5 @@ function _cost!(analysis::DcOptimalPowerFlow, idx::Int64)
         set_objective_function(jump, obj)
     end
 
-    analysis.method.signature.dcOptimization = copy(system.model.revision.dcOptimization)
+    analysis.method.signature.dcOptimization = system.model.revision.dcOptimization
 end

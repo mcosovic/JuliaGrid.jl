@@ -3,6 +3,23 @@
 
 ---
 
+## Version 0.6.1
+
+Release Date: TBD
+
+#### Performance
+  * Reduced allocations in measurement add/update paths for voltmeters, ammeters, wattmeters, varmeters, and PMUs.
+  * Improved measurement status configuration routines by avoiding temporary index slices and matrix construction.
+  * Reduced allocations in AC/DC postprocessing, including DC state-estimation power updates and DC injection calculations.
+  * Improved AC/DC power model postprocessing by reusing existing result containers where possible.
+  * Reduced allocations and runtime in observability island detection, especially when merging flow-observable islands.
+  * Improved optimal PMU placement result assembly for large systems by avoiding repeated scans over all branches.
+
+#### Internal
+  * Cleaned up repeated field access in postprocessing routines.
+
+---
+
 ## Version 0.6.0
 
 Release Date: June 17, 2026

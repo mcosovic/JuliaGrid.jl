@@ -47,7 +47,7 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    By default, the user activates `LU` factorization to solve the system of linear equations. The available factorization methods are `LL`, `LDLt`, `LU`, `KLU` and `QR`:
+    By default, the user activates `LU` factorization to solve the system of linear equations. The available factorization methods are `LL`, `LDLt`, `LU`, `KLU`, and `QR`:
     ```julia DCPowerFlowSolution
     analysis = dcPowerFlow(system, KLU)
     ```
@@ -202,7 +202,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This concept removes the need to restart and recreate both the `PowerSystem` within the `dc` field and the `DcPowerFlow` from the beginning when implementing changes to the existing power system. Additionally, JuliaGrid can reuse symbolic factorizations of LL, LDLt and LU as long as the nonzero pattern of the nodal matrix remains consistent between power system configurations.
+    This concept removes the need to restart and recreate both the `PowerSystem` within the `dc` field and the `DcPowerFlow` from the beginning when implementing changes to the existing power system. Additionally, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, and `LU` as long as the nonzero pattern of the nodal matrix remains consistent between power system configurations.
 
 ---
 
@@ -229,7 +229,7 @@ updateGenerator!(analysis; label = "Generator 1", status = 0)
 ```
 
 To resolve this, the user must recreate the `DcPowerFlow` type rather than attempting to reuse the existing one:
-```julia DCPowerFlowSolution
+```julia DCPowerFlowRecreate
 updateGenerator!(system; label = "Generator 1", status = 0)
 
 analysis = dcPowerFlow(system)
@@ -240,7 +240,7 @@ powerFlow!(analysis)
 
 ## [Power Analysis](@id DCPowerAnalysisManual)
 After obtaining the solution, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::DcPowerFlow)) function. For example, let us consider the power system for which we obtained the DC power flow solution:
-```@example ComputationPowersCurrentsLosses
+```@example ComputationDCPowers
 using JuliaGrid # hide
 @default(unit) # hide
 @default(template) # hide
@@ -263,19 +263,19 @@ nothing # hide
 ```
 
 Now we can calculate the active powers using the following function:
-```@example ComputationPowersCurrentsLosses
+```@example ComputationDCPowers
 power!(analysis)
 nothing # hide
 ```
 
 Next, let us convert the base power unit to megavolt-amperes (MVA):
-```@example ComputationPowersCurrentsLosses
+```@example ComputationDCPowers
 @base(system, MVA, V)
 nothing # hide
 ```
 
 Finally, here are the calculated active power values in megawatts (MW) corresponding to buses and branches:
-```@repl ComputationPowersCurrentsLosses
+```@repl ComputationDCPowers
 print(system.bus.label, system.base.power.value * analysis.power.injection.active)
 print(system.branch.label, system.base.power.value * analysis.power.from.active)
 ```
@@ -287,7 +287,7 @@ print(system.branch.label, system.base.power.value * analysis.power.from.active)
 
 ##### Print Results in the REPL
 Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, users have the option to print the results in the REPL using any units that have been configured:
-```@example ComputationPowersCurrentsLosses
+```@example ComputationDCPowers
 @power(MW, pu)
 printBranchData(analysis)
 @default(unit) # hide
@@ -297,24 +297,24 @@ nothing # hide
 ---
 
 ##### Active Power Injection
-To calculate active power injection associated with a specific bus, the function can be used:
-```@repl ComputationPowersCurrentsLosses
+To calculate the active power injection associated with a specific bus, use:
+```@repl ComputationDCPowers
 active = injectionPower(analysis; label = "Bus 1")
 ```
 
 ---
 
 ##### Active Power Injection from Generators
-To calculate active power injection from the generators at a specific bus, the function can be used:
-```@repl ComputationPowersCurrentsLosses
+To calculate the active power injection from generators at a specific bus, use:
+```@repl ComputationDCPowers
 active = supplyPower(analysis; label = "Bus 1")
 ```
 
 ---
 
 ##### Active Power Flow
-Similarly, we can compute the active power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
-```@repl ComputationPowersCurrentsLosses
+Similarly, to compute the active power flow at both the from-bus and to-bus ends of a specific branch, use:
+```@repl ComputationDCPowers
 active = fromPower(analysis; label = "Branch 2")
 active = toPower(analysis; label = "Branch 2")
 ```
@@ -322,8 +322,8 @@ active = toPower(analysis; label = "Branch 2")
 ---
 
 ##### Generator Active Power Output
-Finally, we can compute the active power output of a particular generator using the function:
-```@repl ComputationPowersCurrentsLosses
+Finally, to compute the active power output of a particular generator, use:
+```@repl ComputationDCPowers
 active = generatorPower(analysis; label = "Generator 1")
 @voltage(pu, pu, V) # hide
 @power(pu, pu, pu) # hide

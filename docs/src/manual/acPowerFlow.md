@@ -98,7 +98,7 @@ addGenerator!(system; bus = "Bus 3", magnitude = 1.2)
 nothing # hide
 ```
 
-Now, the user can initiate a flat start, this can be easily done as follows:
+Now, the user can initiate a flat start as follows:
 ```@example initializeACPowerFlowFlat
 for i = 1:system.bus.number
     system.bus.voltage.magnitude[i] = 1.0
@@ -114,7 +114,7 @@ The initial voltage values are:
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Consequently, the iteration begins with a fixed set of voltage magnitude values that remain constant throughout the iteration process. The remaining values are initialized as part of the flat start approach.
+Consequently, the iteration begins with the specified initial voltage values, while voltage magnitudes at slack and generator buses remain fixed according to their setpoints throughout the iteration process. The remaining values are initialized as part of the flat start approach.
 
 ---
 
@@ -154,7 +154,7 @@ nothing # hide
 
 !!! tip "Tip"
     By default, the user activates `LU` factorization to solve the system of linear equations within each iteration of the Newton-Raphson method. Users may also choose the `QR` or `KLU` factorization methods explicitly:
-    ```julia DCPowerFlowSolution
+    ```julia ACPowerFlowFactorization
     analysis = newtonRaphson(system, KLU)
     ```
     The `KLU` method, based on the Gilbert-Peierls algorithm, can considerably speed up power flow computations [davisklu](@cite). This option to select a factorization method is available only for the Newton-Raphson and fast Newton-Raphson methods.
@@ -511,7 +511,7 @@ active, reactive = supplyPower(analysis; label = "Bus 1")
 ---
 
 ##### Active and Reactive Power at Shunt Element
-To calculate the active and reactive power associated with shunt element at a specific bus, the function can be used:
+To calculate the active and reactive power associated with the shunt element at a specific bus, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
 active, reactive = shuntPower(analysis; label = "Bus 3")
 ```
@@ -528,12 +528,12 @@ active, reactive = toPower(analysis; label = "Branch 2")
 ---
 
 ##### Active and Reactive Power at Charging Admittances
-To calculate the active and reactive power linked with branch charging admittances of the particular branch, the function can be used:
+To calculate the active and reactive power associated with the branch charging admittances of a particular branch, the function can be used:
 ```@repl ComputationPowersCurrentsLosses
 active, reactive = chargingPower(analysis; label = "Branch 1")
 ```
 
-Active powers indicate active losses within the branch's charging admittances. Moreover, charging admittances injected reactive powers into the power system due to their capacitive nature.
+Active powers indicate active losses within the branch's charging admittances. Moreover, charging admittances inject reactive power into the power system due to their capacitive nature.
 
 ---
 
@@ -641,13 +641,13 @@ powerFlow!(analysis)
 nothing # hide
 ```
 
-Once the simulation is complete, we can verify that all generator reactive power outputs now satisfy the limits by checking the violate variable again:
+Once the simulation is complete, we can verify that all generator reactive power outputs now satisfy the limits by checking the `violate` variable again:
 ```@repl GeneratorReactivePowerLimits
 violate = reactiveLimit!(analysis)
 ```
 
 !!! note "Info"
-    The [`reactiveLimit!`](@ref reactiveLimit!) function changes the `PowerSystem` type deliberately because it is intended to help users create the power system where all reactive power outputs of the generators are within limits.
+    The [`reactiveLimit!`](@ref reactiveLimit!) function changes the `PowerSystem` type deliberately because it is intended to help users create a power system where all reactive power outputs of the generators are within limits.
 
 ---
 
@@ -679,7 +679,7 @@ powerFlow!(analysis)
 nothing # hide
 ```
 
-Upon checking the limits, we can observe that the slack bus has been transformed by executing the following code:
+Upon checking the limits, we can observe that the slack bus has been converted by executing the following code:
 ```@repl NewSlackBus
 violate = reactiveLimit!(analysis)
 ```

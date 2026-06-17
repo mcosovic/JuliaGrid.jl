@@ -1,5 +1,5 @@
 # [Power System Model](@id PowerSystemModelManual)
-JuliaGrid supports the type `PowerSystem` to preserve power system data, with the following fields: `bus`, `branch`, `generator`, `base`, and `model`. The `bus`, `branch`, and `generator` fields hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. Within the `model` field, the `ac` and `dc` subfields store vectors and matrices pertinent to the power system's topology and parameters, and these are utilized in either the AC or DC framework.
+JuliaGrid provides the `PowerSystem` type to store power system data, with the following fields: `bus`, `branch`, `generator`, `base`, and `model`. The `bus`, `branch`, and `generator` fields hold data related to buses, branches, and generators, respectively. The `base` field stores base values for power and voltages, with the default being three-phase power measured in volt-amperes for the base power and line-to-line voltages measured in volts for base voltages. Within the `model` field, the `ac` and `dc` subfields store vectors and matrices pertinent to the power system's topology and parameters, and these are utilized in either the AC or DC framework.
 
 The type `PowerSystem` can be created using a function:
 * [`powerSystem`](@ref powerSystem).
@@ -173,9 +173,9 @@ using JuliaGrid # hide
 nothing # hide
 ```
 
-This practical example showcases the customization approach. For keywords tied to active powers, the unit is set as megawatts (MW), while reactive powers employ megavolt-amperes reactive (MVAr). Apparent power, on the other hand, employs per-units (pu). As for keywords concerning voltage magnitude, per-units (pu) remain the choice, but voltage angle mandates degrees (deg). Lastly, the input unit for base voltage is elected to be kilovolts (kV).
+This example shows how the input units are customized. For keywords related to active powers, the unit is set as megawatts (MW), while reactive powers use megavolt-amperes reactive (MVAr). Apparent power, on the other hand, uses per-units (pu). For keywords concerning voltage magnitude, per-units (pu) are used, but voltage angle uses degrees (deg). Lastly, the input unit for base voltage is set to kilovolts (kV).
 
-Now we can create identical two buses as before using new system of units as follows:
+Now we can create the same two buses as before using the new unit system:
 ```@example addBusUnit
 system = powerSystem()
 
@@ -305,7 +305,7 @@ print(system; generator = "Generator 1")
 ---
 
 ## [Add Templates](@id AddTemplatesManual)
-The functions [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`addGenerator!`](@ref addGenerator!) are used to add bus, branch, and generator to the power system, respectively. If certain keywords are not specified, default values are assigned to parameters.
+The functions [`addBus!`](@ref addBus!), [`addBranch!`](@ref addBranch!), and [`addGenerator!`](@ref addGenerator!) are used to add buses, branches, and generators to the power system, respectively. If certain keywords are not specified, default values are assigned to parameters.
 
 ---
 
@@ -696,7 +696,7 @@ system.model.dc.nodalMatrix
 ```
 
 !!! tip "Tip"
-    It is not fully recommended to create AC and DC models before adding a large number of branches if the execution time of functions is important. Instead, triggering updates to the AC and DC models using the [`addBranch!`](@ref addBranch!) function is useful for power systems that require the addition of several branches. This update avoids the need to recreate vectors and matrices from scratch.
+    It is generally not recommended to create AC and DC models before adding a large number of branches if execution time is important. Instead, triggering updates to the AC and DC models using the [`addBranch!`](@ref addBranch!) function is useful for power systems that require the addition of several branches. This update avoids the need to recreate vectors and matrices from scratch.
 
 ---
 
@@ -838,25 +838,25 @@ Let us define a quadratic polynomial cost function for the active power produced
 ```@example addActiveCost
 cost!(system; generator = "Generator 1", active = 2, polynomial = [1100.0; 500.0; 150.0])
 ```
-In essence, what we have accomplished is the establishment of a cost function depicted as ``f(P_{\text{g}1}) = 1100 P_{\text{g}1}^2 + 500 P_{\text{g}1} + 150`` through the code provided. In general, when constructing a polynomial cost function, the coefficients must be ordered from the highest degree to the lowest.
+The code above defines the cost function ``f(P_{\text{g}1}) = 1100 P_{\text{g}1}^2 + 500 P_{\text{g}1} + 150``. In general, when constructing a polynomial cost function, the coefficients must be ordered from the highest degree to the lowest.
 
 The default input units are in per-units, with coefficients of the cost function having units of currency/pu²-hr for 1100, currency/pu-hr for 500, and currency/hr for 150. Therefore, the coefficients are stored exactly as entered:
 ```@repl addActiveCost
 system.generator.cost.active.polynomial[1]
 ```
 
-By setting `active = 2` within the function, we express our intent to specify the active power cost using the `active` key. By using a value of `2`, we signify our preference for employing a polynomial cost model for the associated generator. This flexibility is neccessary when we have also previously defined a piecewise linear cost function for the same generator. In such cases, we can set `active = 1` to utilize the piecewise linear cost function to represent the cost of the corresponding generators. Thus, we retain the freedom to choose between these two cost functions according to the requirements of our simulation. Additionally, users have the option to define both piecewise and polynomial costs within a single function call, further enhancing the versatility of the implementation.
+By setting `active = 2` within the function, we express our intent to specify the active power cost using the `active` key. By using a value of `2`, we choose to use a polynomial cost model for the associated generator. This flexibility is necessary when we have previously defined a piecewise linear cost function for the same generator. In such cases, we can set `active = 1` to utilize the piecewise linear cost function to represent the cost of the corresponding generator. Thus, we can choose between these two cost functions according to the requirements of the simulation. Users can also define both piecewise and polynomial costs within a single function call.
 
 ---
 
 ##### Piecewise Linear Cost
-We can also create a piecewise linear cost function, for example, let us create the reactive power cost function for the same generator using the following code:
+We can also create a piecewise linear cost function. For example, let us create the reactive power cost function for the same generator using the following code:
 ```@example addActiveCost
 cost!(system; generator = "Generator 1", reactive = 1, piecewise = [0.11 12.3; 0.15 16.8])
 nothing # hide
 ```
 
-The first column denotes the generator's output reactive powers in per-units, while the second column specifies the corresponding costs for the specified reactive power in currency/hr. Thus, the data is stored exactly as entered:
+The first column gives the generator's reactive power output points in per-units, while the second column gives the corresponding costs in currency/hr. Thus, the data is stored exactly as entered:
 ```@repl addActiveCost
 system.generator.cost.reactive.piecewise[1]
 ```

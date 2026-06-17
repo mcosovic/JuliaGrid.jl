@@ -26,8 +26,7 @@ function checkLocation(bus::IntStrMiss, from::IntStrMiss, to::IntStrMiss)
 end
 
 ##### Set Mean, Variance, and Status #####
-function setMeter(
-    meter::GaussMeter,
+function meterValue(
     mean::FltIntMiss,
     variance::FltIntMiss,
     status::IntMiss,
@@ -37,41 +36,18 @@ function setMeter(
     pfxLive::Float64,
     baseInv::Float64
 )
-    add!(meter.variance, variance, defVariance, pfxLive, baseInv)
+    varianceNew = Float64(topu(variance, defVariance, pfxLive, baseInv))
+    statusNew = coalesce(status, defStatus)
 
-    measure = topu(mean, pfxLive, baseInv)
+    checkStatus(statusNew)
+    checkVariance(varianceNew)
+
+    measure = Float64(topu(mean, pfxLive, baseInv))
     if noise
-        measure += meter.variance[end]^(1/2) * randn(1)[1]
-    end
-    push!(meter.mean, measure)
-
-    add!(meter.status, status, defStatus)
-    checkStatus(meter.status[end])
-
-    checkVariance(meter.variance[end])
-end
-
-#### Update Mean, Variance, and Status #####
-function update!(
-    meter::GaussMeter,
-    mean::FltIntMiss,
-    key::Union{VoltmeterKey, AmmeterKey, WattmeterKey, VarmeterKey, PmuKey},
-    pfxLive::Float64,
-    baseInv::Float64,
-    idx::Int64
-)
-    if isset(mean)
-        meter.mean[idx] = topu(mean, pfxLive, baseInv)
-        if key.noise
-            meter.mean[idx] += meter.variance[idx]^(1/2) * randn(1)[1]
-        end
+        measure += sqrt(varianceNew) * randn()
     end
 
-    if isset(key.status)
-        meter.status[idx] = key.status
-    end
-    checkStatus(meter.status[idx])
-    checkVariance(meter.variance[idx])
+    return measure, varianceNew, statusNew
 end
 
 ##### Add Meter #####
@@ -93,7 +69,7 @@ function add!(
 
     meter.mean[idx] = exact
     if noise
-        meter.mean[idx] += meter.variance[idx]^(1/2) * randn(1)[1]
+        meter.mean[idx] += sqrt(meter.variance[idx]) * randn()
     end
 end
 

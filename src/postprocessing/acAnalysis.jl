@@ -38,72 +38,91 @@ function power!(analysis::AcPowerFlow)
     ac = system.model.ac
     voltg = analysis.voltage
     power = analysis.power
-    slack = system.bus.layout.slack
+    slack = bus.layout.slack
 
     initialize!(power, bus.number, (:injection, :supply, :shunt))
+    shunt = power.shunt
+    injection = power.injection
+    supply = power.supply
+    busSupply = bus.supply
+    demand = bus.demand
+    busType = bus.layout.type
     @inbounds for i = 1:bus.number
-        power.shunt.active[i], power.shunt.reactive[i] = PsQs(bus, voltg, i)
-        power.injection.active[i], power.injection.reactive[i] = PiQi(ac, voltg, i)
+        shunt.active[i], shunt.reactive[i] = PsQs(bus, voltg, i)
+        injection.active[i], injection.reactive[i] = PiQi(ac, voltg, i)
 
-        power.supply.active[i] = bus.supply.active[i]
-        if bus.layout.type[i] != 1
-            power.supply.reactive[i] = power.injection.reactive[i] + bus.demand.reactive[i]
+        supply.active[i] = busSupply.active[i]
+        if busType[i] != 1
+            supply.reactive[i] = injection.reactive[i] + demand.reactive[i]
         else
-            power.supply.reactive[i] = bus.supply.reactive[i]
+            supply.reactive[i] = busSupply.reactive[i]
         end
     end
-    power.supply.active[slack] = power.injection.active[slack] + bus.demand.active[slack]
+    supply.active[slack] = injection.active[slack] + demand.active[slack]
 
     initialize!(power, branch.number, (:from, :to, :charging, :series))
+    from = power.from
+    to = power.to
+    series = power.series
+    charging = power.charging
+    branchStatus = branch.layout.status
     @inbounds for k = 1:branch.number
-        if branch.layout.status[k] == 1
+        if branchStatus[k] == 1
             Vi, Vj, Vij = ViVjVij(system, voltg, k)
 
-            power.from.active[k], power.from.reactive[k] = PijQij(ac, Vi, Vj, k)
-            power.to.active[k], power.to.reactive[k] = PjiQji(ac, Vi, Vj, k)
-            power.series.active[k], power.series.reactive[k] = PlQl(ac, Vij, k)
-            power.charging.active[k], power.charging.reactive[k] = PcQc(branch, voltg, k)
+            from.active[k], from.reactive[k] = PijQij(ac, Vi, Vj, k)
+            to.active[k], to.reactive[k] = PjiQji(ac, Vi, Vj, k)
+            series.active[k], series.reactive[k] = PlQl(ac, Vij, k)
+            charging.active[k], charging.reactive[k] = PcQc(branch, voltg, k)
         end
     end
 
     initialize!(power, gen.number, (:generator,))
+    generator = power.generator
     basePowerMVA = system.base.power.value * system.base.power.prefix * 1e-6
+    genStatus = gen.layout.status
+    genBus = gen.layout.bus
+    genActive = gen.output.active
+    minReactive = gen.capability.minReactive
+    maxReactive = gen.capability.maxReactive
+    busGenerators = bus.supply.generator
+    demandActive = bus.demand.active
+    demandReactive = bus.demand.reactive
     @inbounds for i = 1:gen.number
-        if gen.layout.status[i] == 1
-            idxBus = gen.layout.bus[i]
-            Pi = power.injection.active[idxBus]
-            Qi = power.injection.reactive[idxBus]
-            service = length(bus.supply.generator[idxBus])
+        if genStatus[i] == 1
+            idxBus = genBus[i]
+            Pi = injection.active[idxBus]
+            Qi = injection.reactive[idxBus]
+            idxGen = busGenerators[idxBus]
+            service = length(idxGen)
 
             if service == 1
-                power.generator.active[i] = gen.output.active[i]
-                power.generator.reactive[i] = Qi + bus.demand.reactive[idxBus]
+                generator.active[i] = genActive[i]
+                generator.reactive[i] = Qi + demandReactive[idxBus]
                 if idxBus == slack
-                    power.generator.active[i] = Pi + bus.demand.active[idxBus]
+                    generator.active[i] = Pi + demandActive[idxBus]
                 end
             else
                 Qminsum = 0.0
                 Qmaxsum = 0.0
-                Qgensum = 0.0
+                Qgensum = Qi + demandReactive[idxBus]
                 QminInf = 0.0
                 QmaxInf = 0.0
-                QminNew = gen.capability.minReactive[i]
-                QmaxNew = gen.capability.maxReactive[i]
+                QminNew = minReactive[i]
+                QmaxNew = maxReactive[i]
 
-                idxGen = bus.supply.generator[idxBus]
                 for j in idxGen
-                    if !isinf(gen.capability.minReactive[j])
-                        Qminsum += gen.capability.minReactive[j]
+                    if !isinf(minReactive[j])
+                        Qminsum += minReactive[j]
                     end
-                    if !isinf(gen.capability.maxReactive[j])
-                        Qmaxsum += gen.capability.maxReactive[j]
+                    if !isinf(maxReactive[j])
+                        Qmaxsum += maxReactive[j]
                     end
-                    Qgensum += (Qi + bus.demand.reactive[idxBus]) / service
                 end
                 for j in idxGen
-                    if isinf(gen.capability.minReactive[j])
+                    if isinf(minReactive[j])
                         Qmin = -abs(Qgensum) - abs(Qminsum) - abs(Qmaxsum)
-                        if gen.capability.minReactive[j] == Inf
+                        if minReactive[j] == Inf
                             Qmin = -Qmin
                         end
                         if i == j
@@ -111,9 +130,9 @@ function power!(analysis::AcPowerFlow)
                         end
                         QminInf += Qmin
                     end
-                    if isinf(gen.capability.maxReactive[j])
+                    if isinf(maxReactive[j])
                         Qmax = abs(Qgensum) + abs(Qminsum) + abs(Qmaxsum)
-                        if gen.capability.maxReactive[j] == -Inf
+                        if maxReactive[j] == -Inf
                             Qmax = -Qmax
                         end
                         if i == j
@@ -126,21 +145,21 @@ function power!(analysis::AcPowerFlow)
                 Qmaxsum += QmaxInf
 
                 if basePowerMVA * abs(Qminsum - Qmaxsum) > 10 * eps(Float64)
-                    power.generator.reactive[i] =
+                    generator.reactive[i] =
                         QminNew + ((Qgensum - Qminsum) / (Qmaxsum - Qminsum)) *
                         (QmaxNew - QminNew)
                 else
-                    power.generator.reactive[i] = QminNew + (Qgensum - Qminsum) / service
+                    generator.reactive[i] = QminNew + (Qgensum - Qminsum) / service
                 end
 
                 if idxBus == slack && idxGen[1] == i
-                    power.generator.active[i] = Pi + bus.demand.active[idxBus]
+                    generator.active[i] = Pi + demandActive[idxBus]
 
                     for j = 2:service
-                        power.generator.active[i] -= gen.output.active[idxGen[j]]
+                        generator.active[i] -= genActive[idxGen[j]]
                     end
                 else
-                    power.generator.active[i] = gen.output.active[i]
+                    generator.active[i] = genActive[i]
                 end
             end
         end
@@ -159,28 +178,39 @@ function power!(analysis::AcOptimalPowerFlow)
     power = analysis.power
 
     initialize!(power, bus.number, (:injection, :supply, :shunt))
+    shunt = power.shunt
+    injection = power.injection
     @inbounds for i = 1:bus.number
-        power.shunt.active[i], power.shunt.reactive[i] = PsQs(bus, voltg, i)
-        power.injection.active[i], power.injection.reactive[i] = PiQi(ac, voltg, i)
+        shunt.active[i], shunt.reactive[i] = PsQs(bus, voltg, i)
+        injection.active[i], injection.reactive[i] = PiQi(ac, voltg, i)
     end
 
     initialize!(power, branch.number, (:from, :to, :charging, :series))
+    from = power.from
+    to = power.to
+    series = power.series
+    charging = power.charging
+    branchStatus = branch.layout.status
     @inbounds for k = 1:branch.number
-        if branch.layout.status[k] == 1
+        if branchStatus[k] == 1
             Vi, Vj, Vij = ViVjVij(system, voltg, k)
 
-            power.from.active[k], power.from.reactive[k] = PijQij(ac, Vi, Vj, k)
-            power.to.active[k], power.to.reactive[k] = PjiQji(ac, Vi, Vj, k)
-            power.series.active[k], power.series.reactive[k] = PlQl(ac, Vij, k)
-            power.charging.active[k], power.charging.reactive[k] = PcQc(branch, voltg, k)
+            from.active[k], from.reactive[k] = PijQij(ac, Vi, Vj, k)
+            to.active[k], to.reactive[k] = PjiQji(ac, Vi, Vj, k)
+            series.active[k], series.reactive[k] = PlQl(ac, Vij, k)
+            charging.active[k], charging.reactive[k] = PcQc(branch, voltg, k)
         end
     end
 
-    @inbounds for i = 1:system.generator.number
-        idxBus = system.generator.layout.bus[i]
+    gen = system.generator
+    genBus = gen.layout.bus
+    generator = power.generator
+    supply = power.supply
+    @inbounds for i = 1:gen.number
+        idxBus = genBus[i]
 
-        power.supply.active[idxBus] += analysis.power.generator.active[i]
-        power.supply.reactive[idxBus] += analysis.power.generator.reactive[i]
+        supply.active[idxBus] += generator.active[i]
+        supply.reactive[idxBus] += generator.reactive[i]
     end
 end
 
@@ -195,23 +225,32 @@ function power!(analysis::Union{PmuStateEstimation, AcStateEstimation})
     power = analysis.power
 
     initialize!(power, bus.number, (:injection, :supply, :shunt))
+    shunt = power.shunt
+    injection = power.injection
+    supply = power.supply
+    demand = bus.demand
     @inbounds for i = 1:bus.number
-        power.shunt.active[i], power.shunt.reactive[i] = PsQs(bus, voltg, i)
-        power.injection.active[i], power.injection.reactive[i] = PiQi(ac, voltg, i)
+        shunt.active[i], shunt.reactive[i] = PsQs(bus, voltg, i)
+        injection.active[i], injection.reactive[i] = PiQi(ac, voltg, i)
 
-        power.supply.active[i] = power.injection.active[i] + bus.demand.active[i]
-        power.supply.reactive[i] = power.injection.reactive[i] + bus.demand.reactive[i]
+        supply.active[i] = injection.active[i] + demand.active[i]
+        supply.reactive[i] = injection.reactive[i] + demand.reactive[i]
     end
 
     initialize!(power, branch.number, (:from, :to, :charging, :series))
+    from = power.from
+    to = power.to
+    series = power.series
+    charging = power.charging
+    branchStatus = branch.layout.status
     @inbounds for k = 1:branch.number
-        if branch.layout.status[k] == 1
+        if branchStatus[k] == 1
             Vi, Vj, Vij = ViVjVij(system, voltg, k)
 
-            power.from.active[k], power.from.reactive[k] = PijQij(ac, Vi, Vj, k)
-            power.to.active[k], power.to.reactive[k] = PjiQji(ac, Vi, Vj, k)
-            power.series.active[k], power.series.reactive[k] = PlQl(ac, Vij, k)
-            power.charging.active[k], power.charging.reactive[k] = PcQc(branch, voltg, k)
+            from.active[k], from.reactive[k] = PijQij(ac, Vi, Vj, k)
+            to.active[k], to.reactive[k] = PjiQji(ac, Vi, Vj, k)
+            series.active[k], series.reactive[k] = PlQl(ac, Vij, k)
+            charging.active[k], charging.reactive[k] = PcQc(branch, voltg, k)
         end
     end
 end
@@ -236,7 +275,9 @@ active, reactive = injectionPower(analysis; label = "Bus 1 HV")
 function injectionPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
-    PiQi(analysis.system.model.ac, analysis.voltage, getIndex(analysis.system.bus, label, "bus"))
+    system = analysis.system
+
+    PiQi(system.model.ac, analysis.voltage, getIndex(system.bus, label, "bus"))
 end
 
 """
@@ -260,22 +301,24 @@ function supplyPower(analysis::AcPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = getIndex(system.bus, label, "bus")
+    bus = system.bus
+    idx = getIndex(bus, label, "bus")
+    busType = bus.layout.type[idx]
 
-    if system.bus.layout.type[idx] != 1
+    if busType != 1
         Pi, Qi = PiQi(system.model.ac, analysis.voltage, idx)
     end
 
-    if system.bus.layout.type[idx] == 3
-        supplyActive = Pi + system.bus.demand.active[idx]
+    if busType == 3
+        supplyActive = Pi + bus.demand.active[idx]
     else
-        supplyActive = system.bus.supply.active[idx]
+        supplyActive = bus.supply.active[idx]
     end
 
-    if system.bus.layout.type[idx] != 1
-        supplyReactive = Qi + system.bus.demand.reactive[idx]
+    if busType != 1
+        supplyReactive = Qi + bus.demand.reactive[idx]
     else
-        supplyReactive = system.bus.supply.reactive[idx]
+        supplyReactive = bus.supply.reactive[idx]
     end
 
     return supplyActive, supplyReactive
@@ -285,14 +328,17 @@ function supplyPower(analysis::AcOptimalPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = getIndex(system.bus, label, "bus")
+    bus = system.bus
+    idx = getIndex(bus, label, "bus")
+    busGenerators = bus.supply.generator
+    generator = analysis.power.generator
 
     supplyActive = 0.0
     supplyReactive = 0.0
-    if haskey(system.bus.supply.generator, idx)
-        @inbounds for i in system.bus.supply.generator[idx]
-            supplyActive += analysis.power.generator.active[i]
-            supplyReactive += analysis.power.generator.reactive[i]
+    if haskey(busGenerators, idx)
+        @inbounds for i in busGenerators[idx]
+            supplyActive += generator.active[i]
+            supplyReactive += generator.reactive[i]
         end
     end
 
@@ -303,11 +349,13 @@ function supplyPower(analysis::Union{PmuStateEstimation, AcStateEstimation}; lab
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = getIndex(system.bus, label, "bus")
+    bus = system.bus
+    demand = bus.demand
+    idx = getIndex(bus, label, "bus")
 
-    Pi, Qi = injectionPower(analysis; label = label)
+    Pi, Qi = PiQi(system.model.ac, analysis.voltage, idx)
 
-    return Pi + system.bus.demand.active[idx], Qi + system.bus.demand.reactive[idx]
+    return Pi + demand.active[idx], Qi + demand.reactive[idx]
 end
 
 """
@@ -330,7 +378,10 @@ active, reactive = shuntPower(analysis; label = "Bus 9 LV")
 function shuntPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
-    PsQs(analysis.system.bus, analysis.voltage, getIndex(analysis.system.bus, label, "bus"))
+    system = analysis.system
+    bus = system.bus
+
+    PsQs(bus, analysis.voltage, getIndex(bus, label, "bus"))
 end
 
 """
@@ -354,9 +405,10 @@ function fromPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = getIndex(system.branch, label, "branch")
+    branch = system.branch
+    idx = getIndex(branch, label, "branch")
 
-    if system.branch.layout.status[idx] == 1
+    if branch.layout.status[idx] == 1
         Vi, Vj = ViVj(system, analysis.voltage, idx)
         return PijQij(system.model.ac, Vi, Vj, idx)
     else
@@ -385,9 +437,10 @@ function toPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = getIndex(system.branch, label, "branch")
+    branch = system.branch
+    idx = getIndex(branch, label, "branch")
 
-    if system.branch.layout.status[idx] == 1
+    if branch.layout.status[idx] == 1
         Vi, Vj = ViVj(system, analysis.voltage, idx)
         return PjiQji(system.model.ac, Vi, Vj, idx)
     else
@@ -417,10 +470,11 @@ function chargingPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = getIndex(system.branch, label, "branch")
+    branch = system.branch
+    idx = getIndex(branch, label, "branch")
 
-    if system.branch.layout.status[idx] == 1
-        return PcQc(system.branch, analysis.voltage, idx)
+    if branch.layout.status[idx] == 1
+        return PcQc(branch, analysis.voltage, idx)
     else
         return 0.0, 0.0
     end
@@ -448,10 +502,11 @@ function seriesPower(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = getIndex(system.branch, label, "branch")
+    branch = system.branch
+    idx = getIndex(branch, label, "branch")
 
-    if system.branch.layout.status[idx] == 1
-        return PlQl(system.model.ac, ViVjVij(system, analysis.voltage, idx)[3], idx)
+    if branch.layout.status[idx] == 1
+        return PlQl(system.model.ac, Vij(system, analysis.voltage, idx), idx)
     else
         return 0.0, 0.0
     end
@@ -478,7 +533,15 @@ function generatorPower(analysis::AcPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
+    bus = system.bus
     gen = system.generator
+    genActive = gen.output.active
+    minReactive = gen.capability.minReactive
+    maxReactive = gen.capability.maxReactive
+    demandActive = bus.demand.active
+    demandReactive = bus.demand.reactive
+    busGenerators = bus.supply.generator
+    slack = bus.layout.slack
 
     idx = getIndex(gen, label, "generator")
     idxBus = gen.layout.bus[idx]
@@ -486,38 +549,37 @@ function generatorPower(analysis::AcPowerFlow; label::IntStr)
     if gen.layout.status[idx] == 1
         Pi, Qi = PiQi(system.model.ac, analysis.voltage, idxBus)
 
-        service = length(system.bus.supply.generator[idxBus])
+        idxGen = busGenerators[idxBus]
+        service = length(idxGen)
         if service == 1
-            Pg = gen.output.active[idx]
-            Qg = Qi + system.bus.demand.reactive[idxBus]
+            Pg = genActive[idx]
+            Qg = Qi + demandReactive[idxBus]
 
-            if idxBus == system.bus.layout.slack
-                Pg = Pi + system.bus.demand.active[idxBus]
+            if idxBus == slack
+                Pg = Pi + demandActive[idxBus]
             end
         else
             Qminsum = 0.0
             Qmaxsum = 0.0
-            Qgensum = 0.0
+            Qgensum = Qi + demandReactive[idxBus]
             QminInf = 0.0
             QmaxInf = 0.0
-            QminNew = gen.capability.minReactive[idx]
-            QmaxNew = gen.capability.maxReactive[idx]
+            QminNew = minReactive[idx]
+            QmaxNew = maxReactive[idx]
 
-            idxGen = system.bus.supply.generator[idxBus]
             @inbounds for i in idxGen
-                if !isinf(gen.capability.minReactive[i])
-                    Qminsum += gen.capability.minReactive[i]
+                if !isinf(minReactive[i])
+                    Qminsum += minReactive[i]
                 end
-                if !isinf(gen.capability.maxReactive[i])
-                    Qmaxsum += gen.capability.maxReactive[i]
+                if !isinf(maxReactive[i])
+                    Qmaxsum += maxReactive[i]
                 end
-                Qgensum += (Qi + system.bus.demand.reactive[idxBus]) / service
             end
 
             @inbounds for i in idxGen
-                if isinf(gen.capability.minReactive[i])
+                if isinf(minReactive[i])
                     Qmin = -abs(Qgensum) - abs(Qminsum) - abs(Qmaxsum)
-                    if gen.capability.minReactive[i] == Inf
+                    if minReactive[i] == Inf
                         Qmin = -Qmin
                     end
                     if i == idx
@@ -525,9 +587,9 @@ function generatorPower(analysis::AcPowerFlow; label::IntStr)
                     end
                     QminInf += Qmin
                 end
-                if isinf(gen.capability.maxReactive[i])
+                if isinf(maxReactive[i])
                     Qmax = abs(Qgensum) + abs(Qminsum) + abs(Qmaxsum)
-                    if gen.capability.maxReactive[i] == -Inf
+                    if maxReactive[i] == -Inf
                         Qmax = -Qmax
                     end
                     if i == idx
@@ -546,14 +608,14 @@ function generatorPower(analysis::AcPowerFlow; label::IntStr)
                 Qg = QminNew + (Qgensum - Qminsum) / service
             end
 
-            if idxBus == system.bus.layout.slack && idxGen[1] == idx
-                Pg = Pi + system.bus.demand.active[idxBus]
+            if idxBus == slack && idxGen[1] == idx
+                Pg = Pi + demandActive[idxBus]
 
                 for i = 2:service
-                    Pg -= gen.output.active[idxGen[i]]
+                    Pg -= genActive[idxGen[i]]
                 end
             else
-                Pg = gen.output.active[idx]
+                Pg = genActive[idx]
             end
         end
     else
@@ -568,9 +630,10 @@ function generatorPower(analysis::AcOptimalPowerFlow; label::IntStr)
     errorVoltage(analysis.voltage.angle)
 
     system = analysis.system
+    generator = analysis.power.generator
     idx = getIndex(system.generator, label, "generator")
 
-    return analysis.power.generator.active[idx], analysis.power.generator.reactive[idx]
+    return generator.active[idx], generator.reactive[idx]
 end
 
 """
@@ -604,24 +667,30 @@ function current!(analysis::AC)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
+    bus = system.bus
+    branch = system.branch
     ac = system.model.ac
-    prmtr = system.branch.parameter
     voltg = analysis.voltage
     current = analysis.current
 
-    initialize!(current, system.bus.number, (:injection,))
-    @inbounds for i = 1:system.bus.number
-        current.injection.magnitude[i], current.injection.angle[i] = absang(Ii(ac, voltg, i))
+    initialize!(current, bus.number, (:injection,))
+    injection = current.injection
+    @inbounds for i = 1:bus.number
+        injection.magnitude[i], injection.angle[i] = absang(Ii(ac, voltg, i))
     end
 
-    initialize!(current, system.branch.number, (:from, :to, :series))
-    @inbounds for k = 1:system.branch.number
-        if system.branch.layout.status[k] == 1
+    initialize!(current, branch.number, (:from, :to, :series))
+    from = current.from
+    to = current.to
+    series = current.series
+    branchStatus = branch.layout.status
+    @inbounds for k = 1:branch.number
+        if branchStatus[k] == 1
             Vi, Vj, Vij = ViVjVij(system, voltg, k)
 
-            current.from.magnitude[k], current.from.angle[k] = IijΨij(ac, Vi, Vj, k)
-            current.to.magnitude[k], current.to.angle[k] = IjiΨji(ac, Vi, Vj, k)
-            current.series.magnitude[k], current.series.angle[k] = IsΨs(ac, Vij, k)
+            from.magnitude[k], from.angle[k] = IijΨij(ac, Vi, Vj, k)
+            to.magnitude[k], to.angle[k] = IjiΨji(ac, Vi, Vj, k)
+            series.magnitude[k], series.angle[k] = IsΨs(ac, Vij, k)
         end
     end
 end
@@ -647,9 +716,11 @@ magnitude, angle = injectionCurrent(analysis; label = "Bus 1 HV")
 """
 function injectionCurrent(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
-    idx = getIndex(analysis.system.bus, label, "bus")
 
-    absang(Ii(analysis.system.model.ac, analysis.voltage, idx))
+    system = analysis.system
+    idx = getIndex(system.bus, label, "bus")
+
+    absang(Ii(system.model.ac, analysis.voltage, idx))
 end
 
 """
@@ -676,9 +747,10 @@ function fromCurrent(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = getIndex(system.branch, label, "branch")
+    branch = system.branch
+    idx = getIndex(branch, label, "branch")
 
-    if system.branch.layout.status[idx] == 1
+    if branch.layout.status[idx] == 1
         Vi, Vj = ViVj(system, analysis.voltage, idx)
         return IijΨij(system.model.ac, Vi, Vj, idx)
     else
@@ -709,9 +781,10 @@ function toCurrent(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = getIndex(system.branch, label, "branch")
+    branch = system.branch
+    idx = getIndex(branch, label, "branch")
 
-    if system.branch.layout.status[idx] == 1
+    if branch.layout.status[idx] == 1
         Vi, Vj = ViVj(system, analysis.voltage, idx)
         return IjiΨji(system.model.ac, Vi, Vj, idx)
     else
@@ -743,10 +816,11 @@ function seriesCurrent(analysis::AC; label::IntStr)
     errorVoltage(analysis.voltage.magnitude)
 
     system = analysis.system
-    idx = getIndex(system.branch, label, "branch")
+    branch = system.branch
+    idx = getIndex(branch, label, "branch")
 
-    if system.branch.layout.status[idx] == 1
-        return IsΨs(system.model.ac, ViVjVij(system, analysis.voltage, idx)[3], idx)
+    if branch.layout.status[idx] == 1
+        return IsΨs(system.model.ac, Vij(system, analysis.voltage, idx), idx)
     else
         return 0.0, 0.0
     end
@@ -755,8 +829,10 @@ end
 ######### AC Analysis Functions ##########
 @inline function ViVj(system::PowerSystem, V::Polar, idx::Int64)
     i, j = fromto(system, idx)
+    magnitude = V.magnitude
+    angle = V.angle
 
-    V.magnitude[i] * cis(V.angle[i]), V.magnitude[j] * cis(V.angle[j])
+    magnitude[i] * cis(angle[i]), magnitude[j] * cis(angle[j])
 end
 
 @inline function ViVjVij(system::PowerSystem, V::Polar, idx::Int64)
@@ -768,22 +844,47 @@ end
     Vi, Vj, tij * Vi - Vj
 end
 
+@inline function Vij(system::PowerSystem, V::Polar, idx::Int64)
+    branch = system.branch
+    prmtr = branch.parameter
+    i = branch.layout.from[idx]
+    j = branch.layout.to[idx]
+    magnitude = V.magnitude
+    angle = V.angle
+
+    tij = (1 / prmtr.turnsRatio[idx]) * cis(-prmtr.shiftAngle[idx])
+
+    tij * (magnitude[i] * cis(angle[i])) - magnitude[j] * cis(angle[j])
+end
+
 function Ii(ac::AcModel, V::Polar, i::Int64)
     I = 0.0 + im * 0.0
-    for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-        k = ac.nodalMatrix.rowval[j]
-        I += ac.nodalMatrixTranspose.nzval[j] * (V.magnitude[k] * cis(V.angle[k]))
+    colptr = ac.nodalMatrix.colptr
+    rowval = ac.nodalMatrix.rowval
+    nzval = ac.nodalMatrixTranspose.nzval
+    magnitude = V.magnitude
+    angle = V.angle
+
+    @inbounds for j in colptr[i]:(colptr[i + 1] - 1)
+        k = rowval[j]
+        I += nzval[j] * (magnitude[k] * cis(angle[k]))
     end
 
     I
 end
 
 @inline function PsQs(bus::Bus, V::Polar, i::Int64)
-    reim(V.magnitude[i]^2 * conj(complex(bus.shunt.conductance[i], bus.shunt.susceptance[i])))
+    shunt = bus.shunt
+    magnitude = V.magnitude
+
+    reim(magnitude[i]^2 * conj(complex(shunt.conductance[i], shunt.susceptance[i])))
 end
 
 @inline function PiQi(ac::AcModel, V::Polar, idx::Int64)
-    reim(conj(Ii(ac, V, idx)) * (V.magnitude[idx] * cis(V.angle[idx])))
+    magnitude = V.magnitude
+    angle = V.angle
+
+    reim(conj(Ii(ac, V, idx)) * (magnitude[idx] * cis(angle[idx])))
 end
 
 @inline function PijQij(ac::AcModel, Vi::ComplexF64, Vj::ComplexF64, i::Int64)
@@ -800,9 +901,11 @@ end
 
 @inline function PcQc(branch::Branch, V::Polar, i::Int64)
     prmtr = branch.parameter
+    layout = branch.layout
+    magnitude = V.magnitude
     τinv = 1 / prmtr.turnsRatio[i]
-    Vi = V.magnitude[branch.layout.from[i]]
-    Vj = V.magnitude[branch.layout.to[i]]
+    Vi = magnitude[layout.from[i]]
+    Vj = magnitude[layout.to[i]]
 
     reim(0.5 * conj(prmtr.conductance[i] + im * prmtr.susceptance[i]) * ((τinv * Vi)^2 + Vj^2))
 end
@@ -825,12 +928,18 @@ function initialize!(power::Union{AcPower, AcCurrent, DcPower}, n::Int64, fields
         for component in propertynames(fieldData)
             compData = getfield(fieldData, component)
             if isempty(compData)
-                setfield!(fieldData, component, fill(0.0, n))
+                resize!(compData, n)
+                fill!(compData, 0.0)
             else
                 fill!(compData, 0.0)
                 m = lastindex(compData)
-                if m != n
-                    append!(compData, fill(0.0, n - m))
+                if m < n
+                    resize!(compData, n)
+                    @inbounds for i = (m + 1):n
+                        compData[i] = 0.0
+                    end
+                elseif m > n
+                    resize!(compData, n)
                 end
             end
         end
