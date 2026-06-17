@@ -1,25 +1,6 @@
 # [Release Notes](@id ReleaseNotes)
 
 
----
-
-## Version 0.6.1
-
-Release Date: TBD
-
-#### Performance
-  * Reduced allocations in measurement add/update paths for voltmeters, ammeters, wattmeters, varmeters, and PMUs.
-  * Improved measurement status configuration routines by avoiding temporary index slices and matrix construction.
-  * Reduced allocations in AC/DC postprocessing, including DC state-estimation power updates and DC injection calculations.
-  * Improved AC/DC power model postprocessing by reusing existing result containers where possible.
-  * Reduced allocations and runtime in observability island detection, especially when merging flow-observable islands.
-  * Improved optimal PMU placement result assembly for large systems by avoiding repeated scans over all branches.
-
-#### Internal
-  * Cleaned up repeated field access in postprocessing routines.
-
----
-
 ## Version 0.6.0
 
 Release Date: June 17, 2026
@@ -46,13 +27,20 @@ Release Date: June 17, 2026
   * Fixed `@default(power)` to reset the apparent power live unit to per-unit.
   * Updated global settings macros to evaluate keyword values at the call site, including local variables.
   * Updated power system tests to match the current cost-function error messages.
+  * Adjusted MATPOWER and PSS/E section parsing to avoid a Julia 1.12 compiler regression affecting boolean flag propagation.
 
 #### Performance
   * Improved efficiency when updating wattmeters with DC state estimation.
   * Reduced allocations and runtime when building AC/DC power system models and detecting physical islands.
   * Reduced allocations and improved efficiency in bad data analysis routines.
+  * Reduced allocations in measurement add/update paths for voltmeters, ammeters, wattmeters, varmeters, and PMUs.
+  * Improved measurement status configuration routines by avoiding temporary index slices and matrix construction.
+  * Reduced allocations in AC/DC postprocessing, including DC state-estimation power updates and DC injection calculations.
+  * Improved AC/DC power model postprocessing by reusing existing result containers where possible.
   * Lightly optimized MATPOWER, PSS/E, and HDF5 power system load/save paths.
   * Reduced temporary allocations in selected power flow and state estimation hot paths.
+  * Reduced allocations and runtime in observability island detection, especially when merging flow-observable islands.
+  * Improved optimal PMU placement result assembly for large systems by avoiding repeated scans over all branches.
 
 #### Internal
   * Removed unused parameters from the `PowerSystem` type.
@@ -60,6 +48,7 @@ Release Date: June 17, 2026
   * Reviewed and lightly optimized backend equation helpers.
   * Refined internal template, label, and per-unit conversion utilities for clearer dispatch and less unnecessary work.
   * Refactored template macro helpers and `@default` reset logic to reduce duplicated internal state updates.
+  * Cleaned up repeated field access in postprocessing routines.
 
 #### Testing
   * Expanded the precompile workload to cover additional commonly used analysis solve paths.

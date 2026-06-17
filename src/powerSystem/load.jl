@@ -317,15 +317,15 @@ function matpowerRead(system::PowerSystem, fullpath::String)
         end
 
         if busFlag
-            busFlag = parseLine(line, busFlag, lines[1], "[", "]")
+            busFlag = parseLine(line, lines[1], "[", "]")
         elseif branchFlag
-            branchFlag = parseLine(line, branchFlag, lines[2], "[", "]")
+            branchFlag = parseLine(line, lines[2], "[", "]")
         elseif genFlag
-            genFlag = parseLine(line, genFlag, lines[3], "[", "]")
+            genFlag = parseLine(line, lines[3], "[", "]")
         elseif costFlag
-            costFlag = parseLine(line, costFlag, lines[4], "[", "]")
+            costFlag = parseLine(line, lines[4], "[", "]")
         elseif nameFlag
-            nameFlag = parseLine(line, nameFlag, lines[5], "{", "}")
+            nameFlag = parseLine(line, lines[5], "{", "}")
         end
     end
 
@@ -1403,7 +1403,7 @@ function loadPiecewise!(cost::Cost, group::Group)
 end
 
 ##### Matpower and PSSE Parse Lines #####
-function parseLine(line::String, flag::Bool, str::Vector{String}, start::String, last::String)
+function parseLine(line::String, str::Vector{String}, start::String, last::String)
     if occursin(start, line)
         line = split(line, start; limit = 2)[end]
     end
@@ -1411,6 +1411,8 @@ function parseLine(line::String, flag::Bool, str::Vector{String}, start::String,
     if occursin(last, line)
         line = split(line, last; limit = 2)[1]
         flag = false
+    else
+        flag = true
     end
 
     @inbounds for line in eachsplit(line, ";")
