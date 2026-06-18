@@ -133,10 +133,12 @@ macro addConstraint(args...)
             analysis.method.jump.ext[:ncon] += 1
             analysis.extended.constraint[analysis.method.jump.ext[:ncon]] = conref
 
-            if dual !== nothing && length(dual) == 1
-                analysis.extended.dual.constraint[analysis.method.jump.ext[:ncon]] = dual
-            else
-                throw(ArgumentError("The length of dual does not match the number of constraints."))
+            if dual !== nothing
+                if length(dual) == 1
+                    analysis.extended.dual.constraint[analysis.method.jump.ext[:ncon]] = dual
+                else
+                    throw(ArgumentError("The length of dual does not match the number of constraints."))
+                end
             end
         else
             if dual != nothing && length(dual) != length(conref)

@@ -324,9 +324,6 @@ function solve!(analysis::AcOptimalPowerFlow)
         setdual(jump, moi, dual.flow.from, con.flow.from)
         setdual(jump, moi, dual.flow.to, con.flow.to)
 
-        setdual(jump, moi, dual.flow.from, con.flow.from)
-        setdual(jump, moi, dual.flow.to, con.flow.to)
-
         setdual(jump, moi, dual.piecewise.active, con.piecewise.active)
         setdual(jump, moi, dual.piecewise.reactive, con.piecewise.reactive)
 
@@ -365,9 +362,6 @@ function solve!(analysis::AcOptimalPowerFlow)
         getdual(jump, moi, dual.flow.from, con.flow.from)
         getdual(jump, moi, dual.flow.to, con.flow.to)
 
-        getdual(jump, moi, dual.flow.from, con.flow.from)
-        getdual(jump, moi, dual.flow.to, con.flow.to)
-
         getdual(jump, moi, dual.piecewise.active, con.piecewise.active)
         getdual(jump, moi, dual.piecewise.reactive, con.piecewise.reactive)
 
@@ -375,6 +369,8 @@ function solve!(analysis::AcOptimalPowerFlow)
     end
 
     printExit(analysis.method.jump, analysis.method.jump.ext[:verbose])
+
+    return nothing
 end
 
 ##### Objective Function #####
@@ -408,7 +404,7 @@ function addObjective(
     if costQ.model[i] == 2
         addPolynomial(system, costQ, jump, Q, quad, nonlin.reactive, freeQ, i)
     elseif costQ.model[i] == 1
-        addPiecewise(system, costQ, jump, Q, G, con.piecewise.reactive, quad, :reactive, freeQ, i)
+        addPiecewise(system, costQ, jump, Q, G, con.piecewise.reactive, quad, :reactwise, freeQ, i)
     end
 end
 
@@ -598,10 +594,10 @@ function capabilityCurve(
             minLowP = cbt.minActive[i] - cbt.lowActive[i]
             maxLowP = cbt.maxActive[i] - cbt.lowActive[i]
 
-            diffQ = cbt.minUpReactive[i] - cbt.minLowReactive[i]
-            minQminP = cbt.minLowReactive[i] + minLowP * diffQ * diffPInv
-            minQmaxP = cbt.minLowReactive[i] + maxLowP * diffQ * diffPInv
-            if  minQminP > cbt.minReactive[i] || minQmaxP > cbt.minReactive[i]
+            diffQ = cbt.maxUpReactive[i] - cbt.maxLowReactive[i]
+            maxQminP = cbt.maxLowReactive[i] + minLowP * diffQ * diffPInv
+            maxQmaxP = cbt.maxLowReactive[i] + maxLowP * diffQ * diffPInv
+            if maxQminP < cbt.maxReactive[i] || maxQmaxP < cbt.maxReactive[i]
                 deltaQ = cbt.maxLowReactive[i] - cbt.maxUpReactive[i]
                 deltaP = cbt.upActive[i] - cbt.lowActive[i]
                 b = deltaQ * cbt.lowActive[i] + deltaP * cbt.maxLowReactive[i]
@@ -613,10 +609,10 @@ function capabilityCurve(
                 )
             end
 
-            diffQ = cbt.maxUpReactive[i] - cbt.maxLowReactive[i]
-            minQminP = cbt.maxLowReactive[i] + minLowP * diffQ * diffPInv
+            diffQ = cbt.minUpReactive[i] - cbt.minLowReactive[i]
+            minQminP = cbt.minLowReactive[i] + minLowP * diffQ * diffPInv
             minQmaxP = cbt.minLowReactive[i] + maxLowP * diffQ * diffPInv
-            if minQminP < cbt.maxReactive[i] || minQmaxP < cbt.maxReactive[i]
+            if minQminP > cbt.minReactive[i] || minQmaxP > cbt.minReactive[i]
                 deltaQ = cbt.minUpReactive[i] - cbt.minLowReactive[i]
                 deltaP = cbt.lowActive[i] - cbt.upActive[i]
                 b = deltaQ * cbt.lowActive[i] + deltaP * cbt.minLowReactive[i]
@@ -788,6 +784,8 @@ function setInitialPoint!(analysis::AcOptimalPowerFlow)
     empty!(analysis.method.dual.capability.upper)
     empty!(analysis.method.dual.piecewise.active)
     empty!(analysis.method.dual.piecewise.reactive)
+
+    return nothing
 end
 
 """
@@ -860,6 +858,8 @@ function setInitialPoint!(target::AcOptimalPowerFlow, source::AC)
             )
         end
     end
+
+    return nothing
 end
 
 function setInitialPoint!(target::AcOptimalPowerFlow, source::DC)
@@ -890,6 +890,8 @@ function setInitialPoint!(target::AcOptimalPowerFlow, source::DC)
             )
         end
     end
+
+    return nothing
 end
 
 """

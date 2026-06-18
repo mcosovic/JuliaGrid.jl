@@ -120,7 +120,7 @@ CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ---
 
 ## [Power System Update](@id DCPowerSystemAlterationManual)
-We begin by creating the `PowerSystem` type with the [`powerSystem`](@ref powerSystem) function. The DC model is then configured using [`dcModel!`](@ref dcModel!) function. After that, we initialize the `DcPowerFlow` type through the [`dcPowerFlow`](@ref dcPowerFlow) function and solve the resulting power flow problem:
+We begin by creating the `PowerSystem` type with the [`powerSystem`](@ref powerSystem) function. The DC model is then configured using the [`dcModel!`](@ref dcModel!) function. After that, we initialize the `DcPowerFlow` type through the [`dcPowerFlow`](@ref dcPowerFlow) function and solve the resulting power flow problem:
 ```@example DCPowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide

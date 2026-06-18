@@ -394,6 +394,8 @@ function solve!(analysis::PmuStateEstimation{WLS{T}}) where T <: Normal
         analysis.voltage.magnitude[i] = abs(voltage)
         analysis.voltage.angle[i] = angle(voltage)
     end
+
+    return nothing
 end
 
 function solve!(analysis::PmuStateEstimation{WLS{Orthogonal}})
@@ -421,6 +423,8 @@ function solve!(analysis::PmuStateEstimation{WLS{Orthogonal}})
     end
 
     squarePrecision!(se.precision, se.number)
+
+    return nothing
 end
 
 function solve!(analysis::PmuStateEstimation{WLS{PetersWilkinson}})
@@ -463,6 +467,8 @@ function solve!(analysis::PmuStateEstimation{WLS{PetersWilkinson}})
     end
 
     squarePrecision!(se.precision, se.number)
+
+    return nothing
 end
 
 function solve!(analysis::PmuStateEstimation{LAV})
@@ -501,6 +507,8 @@ function solve!(analysis::PmuStateEstimation{LAV})
     end
 
     printExit(lav.jump, verbose)
+
+    return nothing
 end
 
 function setInitialPoint!(analysis::PmuStateEstimation{LAV})
@@ -511,6 +519,8 @@ function setInitialPoint!(analysis::PmuStateEstimation{LAV})
         analysis.voltage.magnitude[i] = analysis.system.bus.voltage.magnitude[i]
         analysis.voltage.angle[i] = analysis.system.bus.voltage.angle[i]
     end
+
+    return nothing
 end
 
 function setInitialPoint!(target::PmuStateEstimation{LAV}, source::AC)
@@ -521,6 +531,8 @@ function setInitialPoint!(target::PmuStateEstimation{LAV}, source::AC)
         target.voltage.magnitude[i] = source.voltage.magnitude[i]
         target.voltage.angle[i] = source.voltage.angle[i]
     end
+
+    return nothing
 end
 
 function setInitialPoint!(target::PmuStateEstimation{LAV}, source::DC)
@@ -529,6 +541,8 @@ function setInitialPoint!(target::PmuStateEstimation{LAV}, source::DC)
     @inbounds for i = 1:target.system.bus.number
         target.voltage.angle[i] = source.voltage.angle[i]
     end
+
+    return nothing
 end
 
 ##### Indices of the Coefficient Matrix #####
@@ -604,6 +618,8 @@ function stateEstimation!(
     if current
         current!(analysis)
     end
+
+    return nothing
 end
 
 function stateEstimation!(
@@ -628,4 +644,6 @@ function stateEstimation!(
     end
 
     analysis.method.jump.ext[:verbose] = masterVerbose
+
+    return nothing
 end

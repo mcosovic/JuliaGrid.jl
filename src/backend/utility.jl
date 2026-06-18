@@ -67,58 +67,84 @@ function setContainerTemplate!(container::ContainerTemplate, value::Base.Real, p
         container.value = val
         container.pu = true
     end
+
+    return nothing
 end
 
 ##### Revision Counters #####
 function bump!(revision::SystemRevision, field::Symbol)
     setfield!(revision, field, getfield(revision, field) + 1)
+
+    return nothing
 end
 
 function bump!(revision::MeasurementRevision, field::Symbol = :measurement)
     setfield!(revision, field, getfield(revision, field) + 1)
+
+    return nothing
 end
 
 function topologyChanged!(system::PowerSystem)
     bump!(system.model.revision, :topology)
+
+    return nothing
 end
 
 function typeChanged!(system::PowerSystem)
     bump!(system.model.revision, :type)
+
+    return nothing
 end
 
 function slackChanged!(system::PowerSystem)
     bump!(system.model.revision, :slack)
+
+    return nothing
 end
 
 function acModelChanged!(system::PowerSystem)
     bump!(system.model.revision, :acModel)
+
+    return nothing
 end
 
 function acPatternChanged!(system::PowerSystem)
     acModelChanged!(system)
     bump!(system.model.revision, :acPattern)
+
+    return nothing
 end
 
 function dcModelChanged!(system::PowerSystem)
     bump!(system.model.revision, :dcModel)
+
+    return nothing
 end
 
 function dcPatternChanged!(system::PowerSystem)
     dcModelChanged!(system)
     bump!(system.model.revision, :dcPattern)
+
+    return nothing
 end
 
 function acOptimizationChanged!(system::PowerSystem)
     bump!(system.model.revision, :acOptimization)
+
+    return nothing
 end
 
 function dcOptimizationChanged!(system::PowerSystem)
     bump!(system.model.revision, :dcOptimization)
+
+    return nothing
 end
 
 function optimizationChanged!(system::PowerSystem)
     acOptimizationChanged!(system)
     dcOptimizationChanged!(system)
+
+    return nothing
 end
 
 ##### Set String Label #####
@@ -335,6 +361,8 @@ function add!(
     baseInv::Float64
 )
     push!(vector, topu(value, default, pfxLive, baseInv))
+
+    return nothing
 end
 
 function add!(
@@ -350,6 +378,8 @@ function add!(
     end
 
     push!(vector, topu(value, default, pfxLive, baseInv))
+
+    return nothing
 end
 
 function add!(
@@ -358,10 +388,14 @@ function add!(
     default::Union{FltIntMiss, Int8, Bool}
 )
     push!(vector, coalesce(value, default))
+
+    return nothing
 end
 
 function addGenInBus!(system::PowerSystem, busIdx::Int64, genIdx::Int64)
     push!(get!(system.bus.supply.generator, busIdx, Int64[]), genIdx)
+
+    return nothing
 end
 
 ##### Update Values #####
@@ -375,6 +409,8 @@ function update!(
     if isset(value)
         vector[idx] = topu(value, pfxLive, baseInv)
     end
+
+    return nothing
 end
 
 function update!(
@@ -385,6 +421,8 @@ function update!(
     if isset(value)
         vector[idx] = value
     end
+
+    return nothing
 end
 
 ##### Check if the Value is Stored #####
@@ -605,6 +643,8 @@ function restoreColumn!(
     @inbounds for (k, i) in enumerate(removeIdx)
         A[A.rowval[i], idx] = removeVal[k]
     end
+
+    return nothing
 end
 
 function restoreRowColumn!(
@@ -617,6 +657,8 @@ function restoreRowColumn!(
         A[A.rowval[i], idx] = removeVal[k]
         A[idx, A.rowval[i]] = removeVal[k]
     end
+
+    return nothing
 end
 
 ##### Check Slack Bus #####
@@ -651,6 +693,8 @@ function addSlackAngle!(system::PowerSystem, analysis::DC)
             analysis.voltage.angle[i] += slackAngle
         end
     end
+
+    return nothing
 end
 
 ##### Print Data #####

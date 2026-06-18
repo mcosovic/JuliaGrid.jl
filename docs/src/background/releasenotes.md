@@ -1,5 +1,29 @@
 # [Release Notes](@id ReleaseNotes)
 
+## Version 0.6.1
+
+Release Date: June 18, 2026
+
+#### Fixed
+  * Corrected AC optimal power flow PQ capability curve constraint selection for upper and lower reactive power limits.
+  * Fixed reactive piecewise cost helper naming in AC optimal power flow.
+  * Removed duplicated AC optimal power flow branch-flow dual start and retrieval calls.
+  * Fixed `@addConstraint` for scalar custom constraints without an initial `dual` value.
+  * Improved `addDual!` error handling for piecewise constraints when `subindex` is missing or out of range.
+  * Fixed `remove!(analysis, :variable; index)` to remove bound or fixed constraints on custom variables without deleting the variables.
+
+#### Performance
+  * Reduced unnecessary allocations in power system, measurement, model, and postprocessing update paths.
+  * Improved model-building and analysis update routines by avoiding redundant work and reusing existing containers where possible.
+
+#### Internal
+  * Standardized mutating helper and wrapper functions to return `nothing` when no result is intended.
+
+#### Documentation
+  * Polished manual wording, examples, references, and release-note organization for clarity and consistency.
+
+---
+
 
 ## Version 0.6.0
 

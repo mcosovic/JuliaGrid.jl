@@ -108,6 +108,8 @@ function addAmmeter!(monitoring::Measurement; magnitude::FltInt, kwargs...)
         push!(monitoring.ammeter.magnitude.status, status)
         monitoring.ammeter.number = idx
     end
+
+    return nothing
 end
 
 """
@@ -254,6 +256,8 @@ function addAmmeter!(monitoring::Measurement, analysis::AC;  kwargs...)
         end
         amp.layout.label = amp.number
     end
+
+    return nothing
 end
 
 """
@@ -288,6 +292,8 @@ updateAmmeter!(monitoring; label = "Ammeter 1", magnitude = 1.2, variance = 1e-3
 """
 function updateAmmeter!(monitoring::Measurement; label::IntStr, kwargs...)
     updateAmmeterMain!(monitoring, label, AmmeterKey(; kwargs...))
+
+    return nothing
 end
 
 function updateAmmeterMain!(monitoring::Measurement, label::IntStr, key::AmmeterKey)
@@ -332,6 +338,8 @@ function updateAmmeterMain!(monitoring::Measurement, label::IntStr, key::Ammeter
     end
 
     amp.magnitude.status[idx] &= system.branch.layout.status[idxBrch]
+
+    return nothing
 end
 
 """
@@ -359,6 +367,8 @@ updateAmmeter!(analysis; label = "From 1", magnitude = 0.9, variance = 1e-5)
 function updateAmmeter!(analysis::AcStateEstimation; label::IntStr, kwargs...)
     updateAmmeterMain!(analysis.monitoring, label, AmmeterKey(; kwargs...))
     _updateAmmeter!(analysis, getIndex(analysis.monitoring.ammeter, label, "ammeter"))
+
+    return nothing
 end
 
 function _updateAmmeter!(analysis::AcStateEstimation{<:GaussNewton}, idxAmp::Int64)
@@ -429,6 +439,8 @@ function setAmmeterTemplate!(parameter::Symbol, value)
     else
         errorTemplateKeyword(parameter)
     end
+
+    return nothing
 end
 
 """

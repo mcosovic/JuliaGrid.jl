@@ -617,6 +617,8 @@ function precision!(
     precision[idx + 1, idx] = offDiagonal
     precision[idx, idx] = (L1⁻¹ - L2 * offDiagonal) * L1⁻¹
     precision[idx + 1, idx + 1] = L3⁻²
+
+    return nothing
 end
 
 function precision!(
@@ -649,6 +651,8 @@ function precision!(
 
     pcs.cnt += 4
     pcs.idx += 2
+
+    return nothing
 end
 
 function precision!(pcs::SparseModel, variance::Float64)
@@ -658,6 +662,8 @@ function precision!(pcs::SparseModel, variance::Float64)
 
     pcs.cnt += 1
     pcs.idx += 1
+
+    return nothing
 end
 
 ##### Base Voltages at the Branch Ends #####

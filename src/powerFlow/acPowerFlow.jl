@@ -786,6 +786,8 @@ function solve!(analysis::AcPowerFlow{NewtonRaphson{T}}) where T
     end
 
     pf.iteration += 1
+
+    return nothing
 end
 
 function solve!(analysis::AcPowerFlow{FastNewtonRaphson{T}}) where T
@@ -856,6 +858,8 @@ function solve!(analysis::AcPowerFlow{FastNewtonRaphson{T}}) where T
     end
 
     pf.iteration += 1
+
+    return nothing
 end
 
 function solve!(analysis::AcPowerFlow{GaussSeidel})
@@ -900,6 +904,8 @@ function solve!(analysis::AcPowerFlow{GaussSeidel})
     end
 
     analysis.method.iteration += 1
+
+    return nothing
 end
 
 """
@@ -1059,6 +1065,8 @@ function adjustAngle!(analysis::AcPowerFlow; slack::IntStrMiss)
     @inbounds for i = 1:system.bus.number
         analysis.voltage.angle[i] = analysis.voltage.angle[i] + T
     end
+
+    return nothing
 end
 
 """
@@ -1104,6 +1112,8 @@ function setInitialPoint!(analysis::AcPowerFlow)
             analysis.method.voltage[i] = volt.magnitude[i] * cis(volt.angle[i])
         end
     end
+
+    return nothing
 end
 
 """
@@ -1148,6 +1158,8 @@ function setInitialPoint!(target::AcPowerFlow, source::AC)
             target.method.voltage[i] = target.voltage.magnitude[i] * cis(target.voltage.angle[i])
         end
     end
+
+    return nothing
 end
 
 function setInitialPoint!(target::AcPowerFlow, source::DC)
@@ -1160,6 +1172,8 @@ function setInitialPoint!(target::AcPowerFlow, source::DC)
             target.method.voltage[i] = target.voltage.magnitude[i] * cis(target.voltage.angle[i])
         end
     end
+
+    return nothing
 end
 
 ##### Initialize Voltages for AC Power Flow #####
@@ -1282,4 +1296,6 @@ function powerFlow!(
     if current
         current!(analysis)
     end
+
+    return nothing
 end

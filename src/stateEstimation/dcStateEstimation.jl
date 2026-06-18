@@ -366,6 +366,8 @@ function solve!(analysis::DcStateEstimation{WLS{T}}) where T <: Normal
 
     addSlackAngle!(analysis.system, analysis)
     restoreColumn!(se.coefficient, removeIdx, removeVal, bus.layout.slack)
+
+    return nothing
 end
 
 function solve!(analysis::DcStateEstimation{WLS{Orthogonal}})
@@ -386,6 +388,8 @@ function solve!(analysis::DcStateEstimation{WLS{Orthogonal}})
     addSlackAngle!(analysis.system, analysis)
     squarePrecision!(se.precision, se.number)
     restoreColumn!(se.coefficient, removeIdx, removeVal, bus.layout.slack)
+
+    return nothing
 end
 
 function solve!(analysis::DcStateEstimation{WLS{PetersWilkinson}})
@@ -425,6 +429,8 @@ function solve!(analysis::DcStateEstimation{WLS{PetersWilkinson}})
     addSlackAngle!(analysis.system, analysis)
     squarePrecision!(se.precision, se.number)
     restoreColumn!(se.coefficient, removeIdx, removeVal, bus.layout.slack)
+
+    return nothing
 end
 
 function solve!(analysis::DcStateEstimation{LAV})
@@ -446,6 +452,8 @@ function solve!(analysis::DcStateEstimation{LAV})
     end
 
     printExit(lav.jump, verbose)
+
+    return nothing
 end
 
 function setInitialPoint!(analysis::DcStateEstimation{LAV})
@@ -454,6 +462,8 @@ function setInitialPoint!(analysis::DcStateEstimation{LAV})
     @inbounds for i = 1:analysis.system.bus.number
         analysis.voltage.angle[i] = analysis.system.bus.voltage.angle[i]
     end
+
+    return nothing
 end
 
 function setInitialPoint!(target::DcStateEstimation{LAV}, source::Analysis)
@@ -462,6 +472,8 @@ function setInitialPoint!(target::DcStateEstimation{LAV}, source::Analysis)
     @inbounds for i = 1:target.system.bus.number
         target.voltage.angle[i] = source.voltage.angle[i]
     end
+
+    return nothing
 end
 
 ##### Indices of the Coefficient Matrix #####
@@ -546,6 +558,8 @@ function stateEstimation!(
     if power
         power!(analysis)
     end
+
+    return nothing
 end
 
 function stateEstimation!(
@@ -566,4 +580,6 @@ function stateEstimation!(
     end
 
     analysis.method.jump.ext[:verbose] = masterVerbose
+
+    return nothing
 end

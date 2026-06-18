@@ -172,6 +172,8 @@ function addPmu!(monitoring::Measurement; magnitude::FltInt, angle::FltInt, kwar
         push!(pmu.angle.status, angStatus)
         pmu.number = idxPmu
     end
+
+    return nothing
 end
 
 """
@@ -398,6 +400,8 @@ function addPmu!(monitoring::Measurement, analysis::AC; kwargs...)
         end
         pmu.layout.label = pmu.number
     end
+
+    return nothing
 end
 
 """
@@ -430,6 +434,8 @@ updatePmu!(monitoring; label = "PMU 1", magnitude = 1.05)
 """
 function updatePmu!(monitoring::Measurement; label::IntStr, kwargs...)
     updatePmuMain!(monitoring, label, PmuKey(; kwargs...))
+
+    return nothing
 end
 
 function updatePmuMain!(monitoring::Measurement, label::IntStr, key::PmuKey)
@@ -525,6 +531,8 @@ function updatePmuMain!(monitoring::Measurement, label::IntStr, key::PmuKey)
         pmu.magnitude.status[idx] &= system.branch.layout.status[idxBrch]
         pmu.angle.status[idx] &= system.branch.layout.status[idxBrch]
     end
+
+    return nothing
 end
 
 """
@@ -551,6 +559,8 @@ updatePmu!(analysis; label = 4, magnitude = 0.95, angle = -0.1)
 function updatePmu!(analysis::StateEstimation; label::IntStr, kwargs...)
     updatePmuMain!(analysis.monitoring, label, PmuKey(; kwargs...))
     _updatePmu!(analysis, getIndex(analysis.monitoring.pmu, label, "PMU"))
+
+    return nothing
 end
 
 function _updatePmu!(analysis::AcStateEstimation{<:GaussNewton}, idxPmu::Int64)
@@ -934,6 +944,8 @@ function setPmuTemplate!(parameter::Symbol, value)
     else
         errorTemplateKeyword(parameter)
     end
+
+    return nothing
 end
 
 """

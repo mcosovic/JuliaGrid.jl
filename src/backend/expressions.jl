@@ -383,6 +383,8 @@ function addConstrLav!(lav::LAV, expr::AffExpr, z::Float64, idx::Int64)
     add_to_expression!(expr, -1.0, lav.variable.deviation.negative[idx])
 
     lav.residual[idx] = add_constraint(lav.jump, ScalarConstraint(expr, MOI.EqualTo(z)))
+
+    return nothing
 end
 
 function addConstrLav!(lav::LAV, expr::NonlinearExpr, z::Float64, aff::AffExpr, idx::Int64)
@@ -391,33 +393,45 @@ function addConstrLav!(lav::LAV, expr::NonlinearExpr, z::Float64, aff::AffExpr, 
 
     lav.residual[idx] = @constraint(lav.jump, expr + aff == z)
     emptyExpr!(aff)
+
+    return nothing
 end
 
 function addConstrLav!(lav::LAV, var::VariableRef, z::Float64, idx::Int64)
     dev = lav.variable.deviation
     lav.residual[idx] = @constraint(lav.jump, var + dev.positive[idx] - dev.negative[idx] == z)
+
+    return nothing
 end
 
 ##### Add Objective #####
 function addObjectLav!(lav::LAV, objective::AffExpr, idx::Int64)
     add_to_expression!(objective, lav.variable.deviation.positive[idx])
     add_to_expression!(objective, lav.variable.deviation.negative[idx])
+
+    return nothing
 end
 
 ##### Fix Values #####
 function fix!(deviation::DeviationVariableRef, idx::Int64)
     fix(deviation.positive[idx], 0.0; force = true)
     fix(deviation.negative[idx], 0.0; force = true)
+
+    return nothing
 end
 
 ##### Reset Expression #####
 function emptyExpr!(expr::AffExpr)
     expr.constant = 0.0
     empty!(expr.terms)
+
+    return nothing
 end
 
 function emptyExpr!(expr::AffQuadExpr)
     empty!(expr.aff.terms)
     empty!(expr.quad1.terms)
     empty!(expr.quad2.terms)
+
+    return nothing
 end

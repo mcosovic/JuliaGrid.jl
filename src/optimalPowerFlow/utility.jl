@@ -151,11 +151,22 @@ function adddual!(
     lower::FltIntMiss,
     upper::FltIntMiss,
     idx::Int64,
-    sub::Int64
+    sub::IntMiss
 )
     for type in keys(con[idx])
+        if ismissing(sub)
+            throw(ErrorException("Missing required keyword: subindex must be specified."))
+        end
+
+        if sub < 1 || sub > length(con[idx][type])
+            throw(ErrorException("The provided subindex does not match any existing constraint."))
+        end
+
         if !haskey(dul, idx)
-            dul[idx] = Dict(type => zeros(length(con[idx][type])))
+            dul[idx] = Dict{Symbol, Vector{Float64}}()
+        end
+        if !haskey(dul[idx], type)
+            dul[idx][type] = zeros(length(con[idx][type]))
         end
 
         if length(con[idx][type]) != length(dul[idx][type])
@@ -532,6 +543,31 @@ function unfix!(jump::JuMP.Model, moi::MOI.ModelLike, var::VariableRef, con::Con
 end
 
 ##### Remove Data #####
+function remove!(
+    ::JuMP.Model,
+    ::MOI.ModelLike,
+    var::OrderedDict{Int64, VariableRef},
+    dual::DualDict,
+    idx::Int64
+)
+    if haskey(var, idx)
+        if is_fixed(var[idx])
+            unfix(var[idx])
+        else
+            if has_lower_bound(var[idx])
+                delete_lower_bound(var[idx])
+            end
+            if has_upper_bound(var[idx])
+                delete_upper_bound(var[idx])
+            end
+        end
+    end
+
+    if haskey(dual, idx)
+        empty!(dual[idx])
+    end
+end
+
 function remove!(jump::JuMP.Model, moi::MOI.ModelLike, var::Dict{Int64, JuMP.VariableRef}, idx::Int64)
     if haskey(var, idx)
         if isvalid(jump, moi, var[idx])

@@ -71,6 +71,8 @@ function power!(analysis::DcPowerFlow)
     end
 
     allPowerBranch(analysis)
+
+    return nothing
 end
 
 function power!(analysis::DcOptimalPowerFlow)
@@ -97,6 +99,8 @@ function power!(analysis::DcOptimalPowerFlow)
     end
 
     allPowerBranch(analysis)
+
+    return nothing
 end
 
 function power!(analysis::DcStateEstimation)
@@ -121,6 +125,8 @@ function power!(analysis::DcStateEstimation)
     end
 
     allPowerBranch(analysis)
+
+    return nothing
 end
 
 """
@@ -363,6 +369,8 @@ function allPowerBranch(analysis::DC)
         from.active[k] = admittance[k] * (angle[i] - angle[j] - shiftAngle[k])
         to.active[k] = -from.active[k]
     end
+
+    return nothing
 end
 
 ######### Injection Power ##########

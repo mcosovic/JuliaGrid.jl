@@ -119,6 +119,52 @@ system14 = powerSystem(path * "case14optimal.m")
         @test analysis.power.generator.active == opf.power.generator.active
     end
 
+    @testset "PQ Capability Curve Constraint Selection" begin
+        system = powerSystem()
+        addBus!(system; label = "Bus 1", type = 3)
+        addGenerator!(
+            system;
+            label = "Generator 1",
+            bus = "Bus 1",
+            minActive = 0.0,
+            maxActive = 1.0,
+            minReactive = -0.5,
+            maxReactive = 10.0,
+            lowActive = 0.0,
+            upActive = 1.0,
+            minLowReactive = 0.0,
+            minUpReactive = 1.0,
+            maxLowReactive = 10.0,
+            maxUpReactive = 10.0
+        )
+
+        opf = acOptimalPowerFlow(system, Ipopt.Optimizer)
+        @test haskey(opf.method.constraint.capability.lower, 1)
+        @test !haskey(opf.method.constraint.capability.upper, 1)
+
+        system = powerSystem()
+        addBus!(system; label = "Bus 1", type = 3)
+        addGenerator!(
+            system;
+            label = "Generator 1",
+            bus = "Bus 1",
+            minActive = 0.0,
+            maxActive = 1.0,
+            minReactive = -10.0,
+            maxReactive = 2.0,
+            lowActive = 0.0,
+            upActive = 1.0,
+            minLowReactive = -10.0,
+            minUpReactive = -10.0,
+            maxLowReactive = 2.0,
+            maxUpReactive = 1.0
+        )
+
+        opf = acOptimalPowerFlow(system, Ipopt.Optimizer)
+        @test !haskey(opf.method.constraint.capability.lower, 1)
+        @test haskey(opf.method.constraint.capability.upper, 1)
+    end
+
     opf = acOptimalPowerFlow(system14, Ipopt.Optimizer)
 
     @testset "IEEE 14: Add Duals" begin
@@ -163,6 +209,11 @@ system14 = powerSystem(path * "case14optimal.m")
 
         addDual!(opf, :piecewise, :reactive; index = 5, subindex = 2, dual = 160.0)
         @test opf.method.dual.piecewise.reactive[5][:upper][2] == 160.0
+
+        @test_throws ErrorException addDual!(opf, :piecewise, :active; index = 5, dual = 1.0)
+        @test_throws ErrorException addDual!(
+            opf, :piecewise, :active; index = 5, subindex = 4, dual = 1.0
+        )
     end
 
     @testset "IEEE 14: Remove" begin
@@ -227,6 +278,14 @@ system14 = powerSystem(path * "case14optimal.m")
         @test opf.extended.dual.variable[1][:lower] == 3.0
         @test opf.extended.dual.variable[1][:upper] == 4.0
 
+        remove!(opf, :variable; index = 1)
+        @test is_valid(opf.method.jump, x)
+        @test is_valid(opf.method.jump, opf.extended.variable[1])
+        @test !has_lower_bound(x)
+        @test !has_upper_bound(x)
+        @test opf.extended.solution[1] == 2.0
+        @test isempty(opf.extended.dual.variable[1])
+
         @addVariable(opf, 0 <= y[i = 1:2] <= 1.0, primal = [2.1; 3.1], upper = [4.1; 5.1])
         @test is_valid(opf.method.jump, y[1])
         @test is_valid(opf.method.jump, y[2])
@@ -237,12 +296,33 @@ system14 = powerSystem(path * "case14optimal.m")
         @test opf.extended.dual.variable[2][:upper] == 4.1
         @test opf.extended.dual.variable[3][:upper] == 5.1
 
+        @addVariable(opf, z == 1.0, primal = 1.0)
+        addDual!(opf, :variable; index = 4, dual = 7.0)
+        @test is_fixed(z)
+        @test opf.extended.dual.variable[4][:equality] == 7.0
+
+        remove!(opf, :variable; index = 4)
+        @test is_valid(opf.method.jump, z)
+        @test is_valid(opf.method.jump, opf.extended.variable[4])
+        @test !is_fixed(z)
+        @test opf.extended.solution[4] == 1.0
+        @test isempty(opf.extended.dual.variable[4])
+
         @addConstraint(opf, con, x + y[1] <= 2.5, dual = 6.0)
         @test is_valid(opf.method.jump, con)
         @test is_valid(opf.method.jump, opf.extended.constraint[1])
         @test opf.extended.dual.constraint[1] == 6.0
 
+        @addConstraint(opf, con2, x + y[2] <= 3.5)
+        @test is_valid(opf.method.jump, con2)
+        @test is_valid(opf.method.jump, opf.extended.constraint[2])
+        @test !haskey(opf.extended.dual.constraint, 2)
+
         remove!(opf, :constraint; index = 1)
+        @test !haskey(opf.extended.constraint, 1)
+        @test !haskey(opf.extended.dual.constraint, 1)
+
+        remove!(opf, :constraint; index = 2)
         @test isempty(opf.extended.constraint) && isempty(opf.extended.dual.constraint)
     end
 end

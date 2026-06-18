@@ -78,6 +78,8 @@ addBranch!(system; from = "Bus 1", to = "Bus 2", reactance = 0.12, shiftAngle = 
 """
 function addBranch!(system::PowerSystem; from::IntStr, to::IntStr, kwargs...)
     addBranchMain!(system, from, to, BranchKey(; kwargs...))
+
+    return nothing
 end
 
 function addBranchMain!(system::PowerSystem, from::IntStr, to::IntStr, key::BranchKey)
@@ -158,6 +160,8 @@ function addBranchMain!(system::PowerSystem, from::IntStr, to::IntStr, key::Bran
     end
 
     topologyChanged!(system)
+
+    return nothing
 end
 
 """
@@ -179,6 +183,8 @@ function addBranch!(analysis::PowerFlow; from::IntStr, to::IntStr, kwargs...)
     addBranchMain!(analysis.system, from, to, BranchKey(; kwargs...))
     _addBranch!(analysis)
     syncTopology!(analysis)
+
+    return nothing
 end
 
 function _addBranch!(analysis::AcPowerFlow{<:Union{NewtonRaphson, GaussSeidel}})
@@ -290,6 +296,8 @@ updateBranch!(system; label = "Branch 1", reactance = 0.22, susceptance = 0.06)
 """
 function updateBranch!(system::PowerSystem; label::IntStr, kwargs...)
     updateBranchMain!(system, label, BranchKey(; kwargs...))
+
+    return nothing
 end
 
 function updateBranchMain!(system::PowerSystem, label::IntStr, key::BranchKey)
@@ -408,6 +416,8 @@ function updateBranchMain!(system::PowerSystem, label::IntStr, key::BranchKey)
         update!(branch.flow.minToBus, key.minToBus, pfxLive, baseInvTo, idx)
         update!(branch.flow.maxToBus, key.maxToBus, pfxLive, baseInvTo, idx)
     end
+
+    return nothing
 end
 
 """
@@ -434,6 +444,8 @@ function updateBranch!(analysis::PowerFlow; label::IntStr, kwargs...)
     updateBranchMain!(analysis.system, label, BranchKey(; kwargs...))
     _updateBranch!(analysis, getIndex(analysis.system.branch, label, "branch"))
     syncTopology!(analysis)
+
+    return nothing
 end
 
 function syncTopology!(analysis::Union{AcPowerFlow, DcPowerFlow})
@@ -622,6 +634,8 @@ function setBranchTemplate!(parameter::Symbol, value)
     else
         errorTemplateKeyword(parameter)
     end
+
+    return nothing
 end
 
 """

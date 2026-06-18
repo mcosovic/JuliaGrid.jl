@@ -126,6 +126,8 @@ function addWattmeter!(monitoring::Measurement; active::FltInt, kwargs...)
         push!(measure.status, statusNew)
         watt.number = idxMeter
     end
+
+    return nothing
 end
 
 """
@@ -256,6 +258,8 @@ function addVarmeter!(monitoring::Measurement; reactive::FltInt, kwargs...)
         push!(measure.status, statusNew)
         var.number = idxMeter
     end
+
+    return nothing
 end
 
 """
@@ -326,6 +330,8 @@ function addWattmeter!(monitoring::Measurement, analysis::AC; kwargs...)
         key.varianceBus, key.varianceFrom, key.varianceTo, key.statusBus, key.statusFrom,
         key.statusTo, key.noise
     )
+
+    return nothing
 end
 
 """
@@ -398,6 +404,8 @@ function addVarmeter!(monitoring::Measurement, analysis::AC; kwargs...)
         key.varianceBus, key.varianceFrom, key.varianceTo, key.statusBus, key.statusFrom,
         key.statusTo, key.noise
     )
+
+    return nothing
 end
 
 ######### Add Group of Wattmeters or Varmeters ##########
@@ -516,6 +524,8 @@ function addPowermeter!(
         end
         monitoring.layout.label = monitoring.number
     end
+
+    return nothing
 end
 
 """
@@ -550,6 +560,8 @@ updateWattmeter!(monitoring; label = "Wattmeter 1", active = 1.2, variance = 1e-
 """
 function updateWattmeter!(monitoring::Measurement; label::IntStr, kwargs...)
     updateWattmeterMain!(monitoring, label, WattmeterKey(; kwargs...))
+
+    return nothing
 end
 
 function updateWattmeterMain!(monitoring::Measurement, label::IntStr, key::WattmeterKey)
@@ -588,6 +600,8 @@ function updateWattmeterMain!(monitoring::Measurement, label::IntStr, key::Wattm
         idxBrch = watt.layout.index[idx]
         watt.active.status[idx] &= system.branch.layout.status[idxBrch]
     end
+
+    return nothing
 end
 
 """
@@ -619,6 +633,8 @@ function updateWattmeter!(
 )
     updateWattmeterMain!(analysis.monitoring, label, WattmeterKey(; kwargs...))
     _updateWattmeter!(analysis, getIndex(analysis.monitoring.wattmeter, label, "wattmeter"))
+
+    return nothing
 end
 
 function _updateWattmeter!(analysis::AcStateEstimation{<:GaussNewton}, idxWatt::Int64)
@@ -805,6 +821,8 @@ updateVarmeter!(monitoring; label = "Varmeter 1", reactive = 1.2, variance = 1e-
 """
 function updateVarmeter!(monitoring::Measurement; label::IntStr, kwargs...)
     updateVarmeterMain!(monitoring, label, VarmeterKey(; kwargs...))
+
+    return nothing
 end
 
 function updateVarmeterMain!(monitoring::Measurement, label::IntStr, key::VarmeterKey)
@@ -843,6 +861,8 @@ function updateVarmeterMain!(monitoring::Measurement, label::IntStr, key::Varmet
         idxBrch = var.layout.index[idx]
         var.reactive.status[idx] &= system.branch.layout.status[idxBrch]
     end
+
+    return nothing
 end
 
 """
@@ -870,6 +890,8 @@ updateVarmeter!(analysis; label = 4, reactive = 0.3, variance = 1e-3)
 function updateVarmeter!(analysis::AcStateEstimation; label::IntStr, kwargs...)
     updateVarmeterMain!(analysis.monitoring, label, VarmeterKey(; kwargs...))
     _updateVarmeter!(analysis, getIndex(analysis.monitoring.varmeter, label, "varmeter"))
+
+    return nothing
 end
 
 function _updateVarmeter!(analysis::AcStateEstimation{<:GaussNewton}, idxVar::Int64)
@@ -950,6 +972,8 @@ function setWattmeterTemplate!(parameter::Symbol, value)
     else
         errorTemplateKeyword(parameter)
     end
+
+    return nothing
 end
 
 """
@@ -1028,6 +1052,8 @@ function setVarmeterTemplate!(parameter::Symbol, value)
     else
         errorTemplateKeyword(parameter)
     end
+
+    return nothing
 end
 
 """

@@ -6,10 +6,10 @@ To perform the DC optimal power flow, we first need to have the `PowerSystem` ty
 
 ---
 
-To solve the DC optimal power flow problem and acquire generator active power outputs and bus voltage angles, users can use of the following function:
+To solve the DC optimal power flow problem and acquire generator active power outputs and bus voltage angles, users can use the following function:
 * [`solve!`](@ref solve!(::DcOptimalPowerFlow)).
 
-After solving the DC optimal power flow, JuliaGrid provides function for computing powers:
+After solving the DC optimal power flow, JuliaGrid provides a function for computing powers:
 * [`power!`](@ref power!(::DcPowerFlow)).
 
 Alternatively, instead of using functions responsible for solving optimal power flow and computing powers, users can use the wrapper function:
@@ -57,7 +57,7 @@ nothing # hide
 
 !!! note "Info"
     All non-box two-sided constraints are modeled as intervals by default. However, users can choose to represent them as two separate constraints, one for the lower bound and one for the upper bound, by setting:
-    ```julia DCPowerFlowSolution
+    ```julia DCOptimalPowerFlowInterval
     analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; interval = false)
     ```
     Although this approach may be less efficient in terms of model creation and could lead to longer execution times depending on the solver, it allows for precise definition of the starting dual values.
@@ -107,7 +107,7 @@ JuMP.is_valid(analysis.method.jump, analysis.method.variable.power.active[4])
 ---
 
 ## [Constraint Functions](@id DCConstraintFunctionsManual)
-JuliGrid keeps track of all the references to internally formed constraints in the `constraint` field of the `DcOptimalPowerFlow` type. These constraints are divided into six fields:
+JuliaGrid keeps track of all the references to internally formed constraints in the `constraint` field of the `DcOptimalPowerFlow` type. These constraints are divided into six fields:
 ```@repl dcopf
 fieldnames(typeof(analysis.method.constraint))
 ```
@@ -226,7 +226,7 @@ print(system.branch.label, analysis.method.constraint.flow.active)
 ```
 
 !!! note "Info"
-    If the branch flow limits are set to `minFromBus = 0.0` and `maxFromBus = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
+    If the branch flow limits are set to `minFromBus = 0.0` and `maxFromBus = 0.0` for the corresponding branch, JuliaGrid will omit the corresponding inequality constraint.
 
 By employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these specific constraints, for example:
 ```@example dcopf
@@ -244,7 +244,7 @@ print(system.branch.label, analysis.method.constraint.flow.active)
 
 
 ##### Active Power Piecewise Constraints
-In the context of active power modelling, the `piecewise` field serves as a reference to the inequality constraints related to linear piecewise cost functions. These constraints are created using the [`cost!`](@ref cost!) function with `active = 1` specified when dealing with piecewise linear cost functions comprising multiple segments. JuliaGrid takes care of establishing the appropriate inequality constraints for each segment of the piecewise linear cost:
+In the context of active power modeling, the `piecewise` field serves as a reference to the inequality constraints related to linear piecewise cost functions. These constraints are created using the [`cost!`](@ref cost!) function with `active = 1` specified when dealing with piecewise linear cost functions comprising multiple segments. JuliaGrid takes care of establishing the appropriate inequality constraints for each segment of the piecewise linear cost:
 ```@repl dcopf
 print(system.generator.label, analysis.method.constraint.piecewise.active)
 ```
@@ -304,7 +304,7 @@ In the provided example, the objective function that needs to be minimized to ob
 JuMP.objective_function(analysis.method.jump)
 ```
 
-Additionally, JuliaGrid stores the objective function in a separate variable, allowing users to access it by referencing the variable `analysis.objective`.
+Additionally, JuliaGrid stores the objective function in a separate variable, allowing users to access it by referencing the variable `analysis.method.objective`.
 
 ---
 
@@ -312,6 +312,7 @@ Additionally, JuliaGrid stores the objective function in a separate variable, al
 By utilizing the [`cost!`](@ref cost!) functions, users have the flexibility to modify the objective function by adjusting polynomial or piecewise linear cost coefficients or by changing the type of polynomial or piecewise linear function employed. For instance, consider `Generator 3`, which incorporates a piecewise cost structure with two segments. Now, we can define a polynomial function for this generator and activate it by specifying the keyword `active = 2` as shown:
 ```@example dcopf
 cost!(analysis; generator = "Generator 3", active = 2, polynomial = [853.4; 257; 40])
+nothing # hide
 ```
 
 This results in the updated objective function, which can be observed as follows:
@@ -423,7 +424,7 @@ printBusConstraint(analysis)
 nothing # hide
 ```
 
-Next, users can easily customize the print results for specific constraint, for example:
+Next, users can easily customize the print results for a specific constraint, for example:
 ```julia
 printBusConstraint(analysis; label = "Bus 1", header = true)
 printBusConstraint(analysis; label = "Bus 2", footer = true)
@@ -497,7 +498,7 @@ print(system.bus.label, analysis.voltage.angle)
 ---
 
 ##### Reset Primal and Dual Values
-Users retain the flexibility to reset these initial primal values to their default configurations at any juncture. This can be accomplished by utilizing the active power outputs of the generators and the initial bus voltage angles extracted from the `PowerSystem` type, employing the [`setInitialPoint!`](@ref setInitialPoint!(::DcOptimalPowerFlow)) function:
+Users retain the flexibility to reset these initial primal values to their default configurations at any time. This can be done using the active power outputs of the generators and the initial bus voltage angles extracted from the `PowerSystem` type with the [`setInitialPoint!`](@ref setInitialPoint!(::DcOptimalPowerFlow)) function:
 ```@example dcopf
 setInitialPoint!(analysis)
 nothing # hide
@@ -638,7 +639,7 @@ print(system.branch.label, analysis.power.from.active)
 ---
 
 ##### Print Results in the REPL
-Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, to create a bus data with the desired units, users can use the following function:
+Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, to create bus data with the desired units, users can use the following function:
 ```@example dcopfpower
 @voltage(pu, deg)
 @power(MW, MVAr)
@@ -650,7 +651,7 @@ nothing # hide
 ---
 
 ##### Active Power Injection
-To calculate active power injection associated with a specific bus, the function can be used:
+To calculate active power injection associated with a specific bus, use:
 ```@repl dcopfpower
 active = injectionPower(analysis; label = "Bus 2")
 ```
@@ -658,7 +659,7 @@ active = injectionPower(analysis; label = "Bus 2")
 ---
 
 ##### Active Power Injection from Generators
-To calculate active power injection from the generators at a specific bus, the function can be used:
+To calculate active power injection from the generators at a specific bus, use:
 ```@repl dcopfpower
 active = supplyPower(analysis; label = "Bus 2")
 ```
@@ -666,7 +667,7 @@ active = supplyPower(analysis; label = "Bus 2")
 ---
 
 ##### Active Power Flow
-Similarly, we can compute the active power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
+Similarly, to compute the active power flow at both the from-bus and to-bus ends of the specific branch, use:
 ```@repl dcopfpower
 active = fromPower(analysis; label = "Branch 2")
 active = toPower(analysis; label = "Branch 2")

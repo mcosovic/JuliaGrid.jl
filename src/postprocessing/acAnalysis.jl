@@ -164,6 +164,8 @@ function power!(analysis::AcPowerFlow)
             end
         end
     end
+
+    return nothing
 end
 
 function power!(analysis::AcOptimalPowerFlow)
@@ -212,6 +214,8 @@ function power!(analysis::AcOptimalPowerFlow)
         supply.active[idxBus] += generator.active[i]
         supply.reactive[idxBus] += generator.reactive[i]
     end
+
+    return nothing
 end
 
 function power!(analysis::Union{PmuStateEstimation, AcStateEstimation})
@@ -253,6 +257,8 @@ function power!(analysis::Union{PmuStateEstimation, AcStateEstimation})
             charging.active[k], charging.reactive[k] = PcQc(branch, voltg, k)
         end
     end
+
+    return nothing
 end
 
 """
@@ -693,6 +699,8 @@ function current!(analysis::AC)
             series.magnitude[k], series.angle[k] = IsΨs(ac, Vij, k)
         end
     end
+
+    return nothing
 end
 
 """
@@ -944,4 +952,6 @@ function initialize!(power::Union{AcPower, AcCurrent, DcPower}, n::Int64, fields
             end
         end
     end
+
+    return nothing
 end

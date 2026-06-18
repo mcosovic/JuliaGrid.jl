@@ -123,6 +123,8 @@ function addBus!(system::PowerSystem; kwargs...)
     end
 
     topologyChanged!(system)
+
+    return nothing
 end
 
 function addBus!(
@@ -162,6 +164,8 @@ updateBus!(system; label = "Bus 1", active = 0.15, susceptance = 0.15)
 """
 function updateBus!(system::PowerSystem; label::IntStr, kwargs...)
     updateBusMain!(system, label, BusKey(; kwargs...))
+
+    return nothing
 end
 
 function updateBusMain!(system::PowerSystem, label::IntStr, key::BusKey)
@@ -249,6 +253,8 @@ function updateBusMain!(system::PowerSystem, label::IntStr, key::BusKey)
 
     update!(bus.layout.area, key.area, idx)
     update!(bus.layout.lossZone, key.lossZone, idx)
+
+    return nothing
 end
 
 """
@@ -273,6 +279,8 @@ updateBus!(analysis; label = "Bus 2 HV", active = 0.15, susceptance = 0.15)
 function updateBus!(analysis::PowerFlow; label::IntStr, kwargs...)
     updateBusMain!(analysis.system, label, BusKey(; kwargs...))
     _updateBus!(analysis, getIndex(analysis.system.bus, label, "bus"))
+
+    return nothing
 end
 
 function updateBus!(analysis::AcPowerFlow; label::IntStr, kwargs...)
@@ -285,6 +293,8 @@ function updateBus!(analysis::AcPowerFlow; label::IntStr, kwargs...)
 
     updateBusMain!(analysis.system, label, key)
     _updateBus!(analysis, idx)
+
+    return nothing
 end
 
 function updateBus!(analysis::DcPowerFlow; label::IntStr, kwargs...)
@@ -297,6 +307,8 @@ function updateBus!(analysis::DcPowerFlow; label::IntStr, kwargs...)
 
     updateBusMain!(analysis.system, label, key)
     _updateBus!(analysis, idx)
+
+    return nothing
 end
 
 function _updateBus!(analysis::AcPowerFlow{<:NewtonRaphson}, idx::Int64)
@@ -452,6 +464,8 @@ function setBusTemplate!(parameter::Symbol, value)
     else
         errorTemplateKeyword(parameter)
     end
+
+    return nothing
 end
 
 """

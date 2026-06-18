@@ -364,6 +364,8 @@ function solve!(analysis::DcOptimalPowerFlow)
     end
 
     printExit(analysis.method.jump, jump.ext[:verbose])
+
+    return nothing
 end
 
 """
@@ -405,6 +407,8 @@ function setInitialPoint!(analysis::DcOptimalPowerFlow)
     empty!(analysis.method.dual.voltage.angle)
     empty!(analysis.method.dual.flow.active)
     empty!(analysis.method.dual.piecewise.active)
+
+    return nothing
 end
 
 """
@@ -466,6 +470,8 @@ function setInitialPoint!(target::DcOptimalPowerFlow, source::DC)
             )
         end
     end
+
+    return nothing
 end
 
 function setInitialPoint!(target::DcOptimalPowerFlow, source::AC)
@@ -496,6 +502,8 @@ function setInitialPoint!(target::DcOptimalPowerFlow, source::AC)
             )
         end
     end
+
+    return nothing
 end
 
 """

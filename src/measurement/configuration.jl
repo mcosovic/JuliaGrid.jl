@@ -54,6 +54,8 @@ function status!(
     elseif isset(redundancy)
         redundancyAll(monitoring, monitoring.system.bus.number, redundancy)
     end
+
+    return nothing
 end
 
 """
@@ -98,6 +100,8 @@ function statusVoltmeter!(
     elseif isset(redundancy)
         redundancyAll(status, monitoring.voltmeter.number, monitoring.system.bus.number, redundancy)
     end
+
+    return nothing
 end
 
 """
@@ -176,6 +180,8 @@ function statusAmmeter!(
             redundancyLocation(status, to, monitoring.system.bus.number, redundancyTo)
         end
     end
+
+    return nothing
 end
 
 """
@@ -269,6 +275,8 @@ function statusWattmeter!(
             redundancyLocation(status, to, monitoring.system.bus.number, redundancyTo)
         end
     end
+
+    return nothing
 end
 
 """
@@ -363,6 +371,8 @@ function statusVarmeter!(
             redundancyLocation(status, to, monitoring.system.bus.number, redundancyTo)
         end
     end
+
+    return nothing
 end
 
 """
@@ -454,6 +464,8 @@ function statusPmu!(
             redundancyLocation(pmu, pmu.layout.to, monitoring.system.bus.number, redundancyTo)
         end
     end
+
+    return nothing
 end
 
 function statusAll(
@@ -473,6 +485,8 @@ function statusAll(
     @inbounds for k = 1:service
         status[indices[k]] = final
     end
+
+    return nothing
 end
 
 function statusAll(pmu::PMU, service::IntMiss; initial::Int64, final::Int64)
@@ -492,6 +506,8 @@ function statusAll(pmu::PMU, service::IntMiss; initial::Int64, final::Int64)
         pmu.magnitude.status[idx] = final
         pmu.angle.status[idx] = final
     end
+
+    return nothing
 end
 
 function statusAll(monitoring::Measurement, service::IntMiss; initial::Int64, final::Int64)
@@ -535,6 +551,8 @@ function statusAll(monitoring::Measurement, service::IntMiss; initial::Int64, fi
             pmu.angle.status[idxPmu] = final
         end
     end
+
+    return nothing
 end
 
 function statusLocation(
@@ -558,6 +576,8 @@ function statusLocation(
     @inbounds for k = 1:service
         status[indices[k]] = final
     end
+
+    return nothing
 end
 
 function statusLocation(
@@ -584,6 +604,8 @@ function statusLocation(
         pmu.magnitude.status[idx] = final
         pmu.angle.status[idx] = final
     end
+
+    return nothing
 end
 
 function redundancyAll(
@@ -606,6 +628,8 @@ function redundancyAll(
     @inbounds for k = 1:service
         status[indices[k]] = 1
     end
+
+    return nothing
 end
 
 function redundancyAll(pmu::PMU, busNumber::Int64, redundancy::FltIntMiss)
@@ -627,6 +651,8 @@ function redundancyAll(pmu::PMU, busNumber::Int64, redundancy::FltIntMiss)
         pmu.magnitude.status[idx] = 1
         pmu.angle.status[idx] = 1
     end
+
+    return nothing
 end
 
 function redundancyAll(monitoring::Measurement, busNumber::Int64, redundancy::FltIntMiss)
@@ -673,6 +699,8 @@ function redundancyAll(monitoring::Measurement, busNumber::Int64, redundancy::Fl
             pmu.angle.status[idxPmu] = 1
         end
     end
+
+    return nothing
 end
 
 function redundancyLocation(
@@ -699,6 +727,8 @@ function redundancyLocation(
     @inbounds for k = 1:service
         status[indices[k]] = 1
     end
+
+    return nothing
 end
 
 function redundancyLocation(
@@ -728,4 +758,6 @@ function redundancyLocation(
         pmu.magnitude.status[idx] = 1
         pmu.angle.status[idx] = 1
     end
+
+    return nothing
 end

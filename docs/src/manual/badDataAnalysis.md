@@ -6,7 +6,7 @@ After computing the weighted least-squares (WLS) estimator, users can perform ba
 ---
 
 ## [Chi-Squared Test](@id ChiTestManual)
-The Chi-squared test is the method used to detect the presence of bad data or outliers in the measurement set. If the Chi-squared test indicates the presence of bad data, users can proceed with the largest normalized residual test, which will identify and remove outlier from the measurement set.
+The Chi-squared test is the method used to detect the presence of bad data or outliers in the measurement set. If the Chi-squared test indicates the presence of bad data, users can proceed with the largest normalized residual test, which will identify and remove the outlier from the measurement set.
 
 !!! note "Info"
     Readers can refer to the [Chi-Squared Test](@ref ChiTestTutorials) tutorial for implementation insights.
@@ -53,7 +53,7 @@ chi = chiTest(analysis)
 nothing # hide
 ```
 
-We obtained the detection flag for bad data:
+The detection flag for bad data is:
 ```@repl ACSEWLS
 chi.detect
 nothing # hide
@@ -64,7 +64,7 @@ It indicates the presence of outliers in the measurement set. At this point, it 
 ---
 
 ## [Largest Normalized Residual Test](@id ResidualTestManual)
-The largest normalized residual test identifies bad data based on a predefined threshold. Specifically, if the largest normalized residual exceeds the threshold, the corresponding measurement is flagged as bad data, marked as out of service within the `Measurement` type, and removed from the state estimation model. This allows users to solve the state estimation problem immediately without rebuilding the state estimation model.
+The largest normalized residual test identifies bad data based on a predefined threshold. Specifically, if the largest normalized residual exceeds the threshold, the corresponding measurement is flagged as bad data, marked as out-of-service within the `Measurement` type, and removed from the state estimation model. This allows users to solve the state estimation problem immediately without rebuilding the state estimation model.
 
 When computing the residual covariance diagonal, JuliaGrid reuses the factorization from the WLS estimator when possible. In particular, `LU` and `LL` reuse the existing sparse LU or Cholesky factorization, respectively. For other WLS factorization choices, JuliaGrid attempts a local Cholesky factorization of the gain matrix and falls back to sparse LU if needed.
 
@@ -95,7 +95,7 @@ analysis.method.jacobian
 analysis.method.mean
 ```
 
-After removing bad data, a new estimate can be computed without considering the specific measurement, allowing direct continuation to the iteration loop. In this case, the Gauss-Newton method would take the initial point using voltages obtained with outlier presence, which could significantly impede algorithm convergence. To avoid this undesirable outcome, the user should first establish a new initial point and then commence the iteration procedure:
+After removing bad data, a new estimate can be computed without considering the specific measurement, allowing direct continuation to the iteration loop. In this case, the Gauss-Newton method would take the initial point using voltages obtained while the outlier was present, which could significantly impede algorithm convergence. To avoid this undesirable outcome, the user should first establish a new initial point and then start the iteration procedure:
 ```@example ACSEWLS
 setInitialPoint!(analysis)
 stateEstimation!(analysis; verbose = 1)

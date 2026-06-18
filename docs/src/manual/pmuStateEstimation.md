@@ -48,7 +48,7 @@ nothing # hide
 
 ---
 
-##### Optimal PMU Placment
+##### Optimal PMU Placement
 After defining the `PowerSystem` type, the next step is to define the `Measurement` type:
 ```@example PMUOptimalPlacement
 monitoring = measurement(system)
@@ -92,12 +92,12 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    Here, the user triggers LU factorization as the default method for solving the PMU state estimation problem. The available factorization methods are `LL`, `LDLt`, `LU`, `KLU` and `QR`:
+    Here, the user triggers LU factorization as the default method for solving the PMU state estimation problem. The available factorization methods are `LL`, `LDLt`, `LU`, `KLU`, and `QR`:
     ```julia PMUOptimalPlacement
     analysis = pmuStateEstimation(monitoring, QR)
     ```
 
-To obtain the bus voltage magnitudes and angles, the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function can be invoked as shown:
+To obtain the bus voltage magnitudes and angles, use the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function as shown:
 ```@example PMUOptimalPlacement
 solve!(analysis)
 nothing # hide
@@ -124,12 +124,12 @@ nothing # hide
 ---
 
 ##### Correlated Measurement Errors
-In the above approach, we assume that measurement errors from a single PMU are uncorrelated. This assumption leads to the covariance matrix and its inverse matrix (i.e., precision matrix) maintaining a diagonal form:
+In the above approach, we assume that measurement errors from a single PMU are uncorrelated. This assumption leads to the covariance matrix and its inverse matrix (i.e., precision matrix) remaining diagonal:
 ```@repl PMUOptimalPlacement
 analysis.method.precision
 ```
 
-While this approach is suitable for many scenarios, linear PMU state estimation relies on transforming from polar to rectangular coordinate systems. Consequently, measurement errors from a single PMU become correlated due to this transformation. This correlation results in the covariance matrix, and hence the precision matrix, no longer maintaining a diagonal form but instead becoming a block diagonal matrix.
+While this approach is suitable for many scenarios, linear PMU state estimation relies on transforming from polar to rectangular coordinate systems. Consequently, measurement errors from a single PMU become correlated due to this transformation. This correlation results in the covariance matrix, and hence the precision matrix, no longer remaining diagonal but instead becoming a block diagonal matrix.
 
 To accommodate this, users have the option to consider correlation when adding each PMU to the `Measurement` type. For instance, let us add a new PMU while considering correlation:
 ```@example PMUOptimalPlacement
@@ -143,7 +143,7 @@ analysis = pmuStateEstimation(monitoring)
 nothing # hide
 ```
 
-Upon inspection, it becomes evident that the precision matrix no longer maintains a diagonal structure:
+Upon inspection, it becomes evident that the precision matrix is no longer diagonal:
 ```@repl PMUOptimalPlacement
 analysis.method.precision
 ```
@@ -198,7 +198,7 @@ nothing # hide
 ---
 
 ##### Orthogonal Method
-One such alternative is the orthogonal method [aburbook; Sec. 3.2](@cite), which offers increased numerical robustness, especially when measurement variances differ significantly. This method solves the WLS problem using QR factorisation applied to a rectangular matrix formed by multiplying the square root of the precision matrix with the coefficient matrix. To enable this method, specify the `Orthogonal` argument in the [`pmuStateEstimation`](@ref pmuStateEstimation) function:
+One such alternative is the orthogonal method [aburbook; Sec. 3.2](@cite), which offers increased numerical robustness, especially when measurement variances differ significantly. This method solves the WLS problem using QR factorization applied to a rectangular matrix formed by multiplying the square root of the precision matrix with the coefficient matrix. To enable this method, specify the `Orthogonal` argument in the [`pmuStateEstimation`](@ref pmuStateEstimation) function:
 ```@example PMUOptimalPlacement
 analysis = pmuStateEstimation(monitoring, Orthogonal)
 stateEstimation!(analysis)
@@ -208,7 +208,7 @@ nothing # hide
 ---
 
 ##### Peters and Wilkinson Method
-Another option is the Peters and Wilkinson method [aburbook; Sec. 3.4](@cite), which applies LU factorisation to the same rectangular matrix, constructed using the square root of the precision matrix and the coefficient matrix. This method can be selected by passing the `PetersWilkinson` argument to the [`pmuStateEstimation`](@ref pmuStateEstimation) function:
+Another option is the Peters and Wilkinson method [aburbook; Sec. 3.4](@cite), which applies LU factorization to the same rectangular matrix, constructed using the square root of the precision matrix and the coefficient matrix. This method can be selected by passing the `PetersWilkinson` argument to the [`pmuStateEstimation`](@ref pmuStateEstimation) function:
 ```@example PMUOptimalPlacement
 analysis = pmuStateEstimation(monitoring, PetersWilkinson)
 stateEstimation!(analysis)
@@ -217,7 +217,7 @@ nothing # hide
 
 ---
 
-## [Least Absolute Value Estimator](@id PMULAVtateEstimationSolutionManual)
+## [Least Absolute Value Estimator](@id PMULAVStateEstimationSolutionManual)
 The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data analysis procedures [aburbook; Ch. 6](@cite). However, it is important to note that achieving robustness typically involves increased computational complexity.
 
 To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the Ipopt solver proves sufficient to obtain a solution:
@@ -272,7 +272,7 @@ nothing # hide
 ---
 
 ## [Measurement Set Update](@id PMUMeasurementsAlterationManual)
-We begin by creating the `PowerSystem` and `Measurement` types with the [`ems`](@ref ems) function. The AC model is then configured using [`acModel!`](@ref acModel!) function. After that, we initialize the `PmuStateEstimation` type through the [`pmuStateEstimation`](@ref pmuStateEstimation) function and solve the resulting state estimation problem:
+We begin by creating the `PowerSystem` and `Measurement` types with the [`ems`](@ref ems) function. The AC model is then configured using the [`acModel!`](@ref acModel!) function. After that, we initialize the `PmuStateEstimation` type through the [`pmuStateEstimation`](@ref pmuStateEstimation) function and solve the resulting state estimation problem:
 ```@example WLSPMUStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -366,7 +366,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This concept removes the need to rebuild both the `Measurement` and the `PmuStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of LL, LDLt and LU, provided that the nonzero pattern of the gain matrix remains unchanged.
+    This concept removes the need to rebuild both the `Measurement` and the `PmuStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, and `LU`, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 
@@ -439,7 +439,7 @@ CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ---
 
 ##### Active and Reactive Power Injection
-To calculate the active and reactive power injection associated with a specific bus, the function can be used:
+To calculate the active and reactive power injection associated with a specific bus, use:
 ```@repl PMUStateEstimationSolution
 active, reactive = injectionPower(analysis; label = "Bus 1")
 ```
@@ -447,7 +447,7 @@ active, reactive = injectionPower(analysis; label = "Bus 1")
 ---
 
 ##### Active and Reactive Power Injection from Generators
-To calculate the active and reactive power injection from the generators at a specific bus, the function can be used:
+To calculate the active and reactive power injection from generators at a specific bus, use:
 ```@repl PMUStateEstimationSolution
 active, reactive = supplyPower(analysis; label = "Bus 1")
 ```
@@ -455,7 +455,7 @@ active, reactive = supplyPower(analysis; label = "Bus 1")
 ---
 
 ##### Active and Reactive Power at Shunt Element
-To calculate the active and reactive power associated with shunt element at a specific bus, the function can be used:
+To calculate the active and reactive power associated with the shunt element at a specific bus, use:
 ```@repl PMUStateEstimationSolution
 active, reactive = shuntPower(analysis; label = "Bus 1")
 ```
@@ -463,7 +463,7 @@ active, reactive = shuntPower(analysis; label = "Bus 1")
 ---
 
 ##### Active and Reactive Power Flow
-Similarly, we can compute the active and reactive power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
+Similarly, to compute the active and reactive power flow at both the from-bus and to-bus ends of a specific branch, use:
 ```@repl PMUStateEstimationSolution
 active, reactive = fromPower(analysis; label = "Branch 2")
 active, reactive = toPower(analysis; label = "Branch 2")
@@ -472,17 +472,17 @@ active, reactive = toPower(analysis; label = "Branch 2")
 ---
 
 ##### Active and Reactive Power at Charging Admittances
-To calculate the active and reactive power linked with branch charging admittances of the particular branch, the function can be used:
+To calculate the active and reactive power associated with the branch charging admittances of a particular branch, use:
 ```@repl PMUStateEstimationSolution
 active, reactive = chargingPower(analysis; label = "Branch 1")
 ```
 
-Active powers indicate active losses within the branch's charging admittances. Moreover, charging admittances injected reactive powers into the power system due to their capacitive nature, as denoted by a negative sign.
+Active powers indicate active losses within the branch's charging admittances. Moreover, charging admittances inject reactive power into the power system due to their capacitive nature, as denoted by a negative sign.
 
 ---
 
 ##### Active and Reactive Power at Series Impedance
-To calculate the active and reactive power across the series impedance of the branch, the function can be used:
+To calculate the active and reactive power across the series impedance of the branch, use:
 ```@repl PMUStateEstimationSolution
 active, reactive = seriesPower(analysis; label = "Branch 2")
 ```
@@ -492,7 +492,7 @@ The active power also considers active losses originating from the series resist
 ---
 
 ##### Current Injection
-To calculate the current injection associated with a specific bus, the function can be used:
+To calculate the current injection associated with a specific bus, use:
 ```@repl PMUStateEstimationSolution
 magnitude, angle = injectionCurrent(analysis; label = "Bus 1")
 ```
@@ -500,7 +500,7 @@ magnitude, angle = injectionCurrent(analysis; label = "Bus 1")
 ---
 
 ##### Current Flow
-We can compute the current flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
+To compute the current flow at both the from-bus and to-bus ends of a specific branch, use:
 ```@repl PMUStateEstimationSolution
 magnitude, angle = fromCurrent(analysis; label = "Branch 2")
 magnitude, angle = toCurrent(analysis; label = "Branch 2")

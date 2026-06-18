@@ -76,6 +76,8 @@ function addVoltmeter!(monitoring::Measurement; bus::IntStr, magnitude::FltInt, 
     push!(volt.magnitude.mean, measure)
     push!(volt.magnitude.status, status)
     volt.number = idx
+
+    return nothing
 end
 
 """
@@ -157,6 +159,8 @@ function addVoltmeter!(monitoring::Measurement, analysis::AC; kwargs...)
 
         volt.layout.label = system.bus.number
     end
+
+    return nothing
 end
 
 """
@@ -189,6 +193,8 @@ updateVoltmeter!(monitoring; label = "Voltmeter 1", magnitude = 0.9)
 """
 function updateVoltmeter!(monitoring::Measurement; label::IntStr, kwargs...)
     updateVoltmeterMain!(monitoring, label, VoltmeterKey(; kwargs...))
+
+    return nothing
 end
 
 function updateVoltmeterMain!(monitoring::Measurement, label::IntStr, key::VoltmeterKey)
@@ -223,6 +229,8 @@ function updateVoltmeterMain!(monitoring::Measurement, label::IntStr, key::Voltm
     voltmeter.magnitude.variance[idx] = varianceNew
     voltmeter.magnitude.mean[idx] = meanNew
     voltmeter.magnitude.status[idx] = statusNew
+
+    return nothing
 end
 
 """
@@ -250,6 +258,8 @@ updateVoltmeter!(analysis; label = 2, magnitude = 0.9)
 function updateVoltmeter!(analysis::AcStateEstimation; label::IntStr, kwargs...)
     updateVoltmeterMain!(analysis.monitoring, label, VoltmeterKey(; kwargs...))
     _updateVoltmeter!(analysis, getIndex(analysis.monitoring.voltmeter, label, "voltmeter"))
+
+    return nothing
 end
 
 function _updateVoltmeter!(analysis::AcStateEstimation{<:GaussNewton}, idx::Int64)
@@ -297,6 +307,8 @@ function setVoltmeterTemplate!(parameter::Symbol, value)
     else
         errorTemplateKeyword(parameter)
     end
+
+    return nothing
 end
 
 """

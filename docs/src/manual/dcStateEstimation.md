@@ -8,7 +8,7 @@ To perform the DC state estimation, we first need to have the `PowerSystem` type
 To obtain bus voltage angles and solve the DC state estimation problem, users can use the wrapper function:
 * [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})).
 
-After solving the DC state estimation, JuliaGrid provides function for computing powers:
+After solving the DC state estimation, JuliaGrid provides a function for computing powers:
 * [`power!`](@ref power!(::DcStateEstimation)).
 
 Alternatively, instead of using functions responsible for solving state estimation and computing powers, users can use the wrapper function:
@@ -50,12 +50,12 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    Here, the user triggers LU factorization as the default method for solving the DC state estimation problem. The available factorization methods are `LL`, `LDLt`, `LU`, `KLU` and `QR`:
+    Here, the user triggers LU factorization as the default method for solving the DC state estimation problem. The available factorization methods are `LL`, `LDLt`, `LU`, `KLU`, and `QR`:
     ```julia WLSDCStateEstimationSolution
     analysis = dcStateEstimation(monitoring, LDLt)
     ```
 
-To obtain the bus voltage angles, the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function can be invoked as shown:
+To obtain the bus voltage angles, use the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function as shown:
 ```@example WLSDCStateEstimationSolution
 solve!(analysis)
 nothing # hide
@@ -119,7 +119,7 @@ The conventional approach to solving the WLS state estimation problem generally 
 ---
 
 ##### Orthogonal Method
-One such alternative is the orthogonal method [aburbook; Sec. 3.2](@cite), which offers increased numerical robustness, particularly in cases where measurement variances differ significantly. By specifying the `Orthogonal` argument in the [`dcStateEstimation`](@ref dcStateEstimation) function, users can solve the WLS problem via QR factorisation applied to a rectangular matrix formed by multiplying the square root of the precision matrix with the coefficient matrix:
+One such alternative is the orthogonal method [aburbook; Sec. 3.2](@cite), which offers increased numerical robustness, particularly in cases where measurement variances differ significantly. By specifying the `Orthogonal` argument in the [`dcStateEstimation`](@ref dcStateEstimation) function, users can solve the WLS problem via QR factorization applied to a rectangular matrix formed by multiplying the square root of the precision matrix with the coefficient matrix:
 ```@example WLSDCStateEstimationSolution
 analysis = dcStateEstimation(monitoring, Orthogonal)
 stateEstimation!(analysis)
@@ -129,7 +129,7 @@ nothing # hide
 ---
 
 ##### Peters and Wilkinson Method
-Another option is the Peters and Wilkinson method [aburbook; Sec. 3.4](@cite), which applies LU factorisation to the same rectangular matrix, constructed using the square root of the precision matrix and the coefficient matrix. This method can be selected by passing the `PetersWilkinson` argument to the [`dcStateEstimation`](@ref dcStateEstimation) function:
+Another option is the Peters and Wilkinson method [aburbook; Sec. 3.4](@cite), which applies LU factorization to the same rectangular matrix, constructed using the square root of the precision matrix and the coefficient matrix. This method can be selected by passing the `PetersWilkinson` argument to the [`dcStateEstimation`](@ref dcStateEstimation) function:
 ```@example WLSDCStateEstimationSolution
 analysis = dcStateEstimation(monitoring, PetersWilkinson)
 stateEstimation!(analysis)
@@ -138,7 +138,7 @@ nothing # hide
 
 ---
 
-## [Least Absolute Value Estimator](@id DCLAVtateEstimationSolutionManual)
+## [Least Absolute Value Estimator](@id DCLAVStateEstimationSolutionManual)
 The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data analysis procedures [aburbook; Ch. 6](@cite). However, it is important to note that achieving robustness typically involves increased computational complexity.
 
 To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the Ipopt solver proves sufficient to obtain a solution:
@@ -158,7 +158,7 @@ In JuliaGrid, the assignment of initial primal values for optimization variables
 print(system.bus.label, analysis.voltage.angle)
 ```
 
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function. One practical approach is to obtaine WLS estimator and then apply the resulting solution as the starting point for state estimation:
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function. One practical approach is to obtain the WLS estimator and then apply the resulting solution as the starting point for state estimation:
 ```@example WLSDCStateEstimationSolution
 wls = dcStateEstimation(monitoring)
 stateEstimation!(wls)
@@ -193,7 +193,7 @@ nothing # hide
 ---
 
 ## [Measurement Set Update](@id DCMeasurementsAlterationManual)
-We begin by creating the `PowerSystem` and `Measurement` types with the [`ems`](@ref ems) function. The DC model is then configured using [`dcModel!`](@ref dcModel!) function. After that, we initialize the `DcStateEstimation` type through the [`dcStateEstimation`](@ref dcStateEstimation) function and solve the resulting state estimation problem:
+We begin by creating the `PowerSystem` and `Measurement` types with the [`ems`](@ref ems) function. The DC model is then configured using the [`dcModel!`](@ref dcModel!) function. After that, we initialize the `DcStateEstimation` type through the [`dcStateEstimation`](@ref dcStateEstimation) function and solve the resulting state estimation problem:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -278,7 +278,7 @@ nothing # hide
 
 
 !!! note "Info"
-    This concept removes the need to rebuild both the `Measurement` and the `DcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of LL, LDLt and LU, provided that the nonzero pattern of the gain matrix remains unchanged.
+    This concept removes the need to rebuild both the `Measurement` and the `DcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, and `LU`, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 
@@ -301,7 +301,7 @@ nothing # hide
 ---
 
 ## [Power Analysis](@id DCSEPowerAnalysisManual)
-After obtaining the solution from the DC state estimation, calculating powers related to buses and branches is facilitated by using the [`power!`](@ref power!(::DcStateEstimation)) function. For instance, let us consider the model for which we obtained the DC state estimation solution:
+After obtaining the solution from the DC state estimation, use the [`power!`](@ref power!(::DcStateEstimation)) function to calculate powers related to buses and branches. For instance, let us consider the model for which we obtained the DC state estimation solution:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -339,7 +339,7 @@ print(system.bus.label, analysis.power.injection.active)
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses, and branches that are calculated by the [`power!`](@ref power!(::DcStateEstimation)) function, we suggest referring to the tutorials on.
+    To better understand the powers associated with buses and branches that are calculated by the [`power!`](@ref power!(::DcStateEstimation)) function, we suggest referring to the [DC State Estimation](@ref DCSEModelTutorials) tutorial.
 
 ---
 
@@ -366,7 +366,7 @@ CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ---
 
 ##### Active Power Injection
-To calculate active power injection associated with a specific bus, the function can be used:
+To calculate the active power injection associated with a specific bus, use:
 ```@repl WLSDCStateEstimationSolution
 active = injectionPower(analysis; label = "Bus 1")
 ```
@@ -374,7 +374,7 @@ active = injectionPower(analysis; label = "Bus 1")
 ---
 
 ##### Active Power Injection from Generators
-To calculate active power injection from the generators at a specific bus, the function can be used:
+To calculate the active power injection from generators at a specific bus, use:
 ```@repl WLSDCStateEstimationSolution
 active = supplyPower(analysis; label = "Bus 1")
 ```
@@ -382,7 +382,7 @@ active = supplyPower(analysis; label = "Bus 1")
 ---
 
 ##### Active Power Flow
-Similarly, we can compute the active power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
+Similarly, to compute the active power flow at both the from-bus and to-bus ends of a specific branch, use:
 ```@repl WLSDCStateEstimationSolution
 active = fromPower(analysis; label = "Branch 1")
 active = toPower(analysis; label = "Branch 1")

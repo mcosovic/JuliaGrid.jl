@@ -125,6 +125,8 @@ function solve!(analysis::DcPowerFlow{T}) where T
     solution!(analysis.voltage.angle, pf.factorization, pf.rhs)
 
     addSlackAngle!(system, analysis)
+
+    return nothing
 end
 
 """
@@ -167,4 +169,6 @@ function powerFlow!(
     if power
         power!(analysis)
     end
+
+    return nothing
 end

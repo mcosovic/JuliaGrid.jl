@@ -264,6 +264,8 @@ function setConfigTemplate!(parameter::Symbol, value)
     elseif parameter == :verbose
         setfield!(template.config, :verbose, Int64(value))
     end
+
+    return nothing
 end
 
 """
@@ -352,6 +354,8 @@ function resetPowerUnit!()
     unitList.activePowerLive = "pu"
     unitList.reactivePowerLive = "pu"
     unitList.apparentPowerLive = "pu"
+
+    return nothing
 end
 
 function resetVoltageUnit!()
@@ -361,6 +365,8 @@ function resetVoltageUnit!()
     unitList.voltageMagnitudeLive = "pu"
     unitList.voltageAngleLive = "rad"
     unitList.voltageBaseLive = "V"
+
+    return nothing
 end
 
 function resetCurrentUnit!()
@@ -368,6 +374,8 @@ function resetCurrentUnit!()
     pfx.currentAngle = 0.0
     unitList.currentMagnitudeLive = "pu"
     unitList.currentAngleLive = "rad"
+
+    return nothing
 end
 
 function resetParameterUnit!()
@@ -375,11 +383,15 @@ function resetParameterUnit!()
     pfx.admittance = 0.0
     unitList.impedanceLive = "pu"
     unitList.admittanceLive = "pu"
+
+    return nothing
 end
 
 function copyTemplate!(dst::ContainerTemplate, src::ContainerTemplate)
     dst.value = src.value
     dst.pu = src.pu
+
+    return nothing
 end
 
 function copyTemplate!(dst, src)
@@ -393,42 +405,62 @@ function copyTemplate!(dst, src)
             setfield!(dst, field, srcValue)
         end
     end
+
+    return nothing
 end
 
 function resetBusTemplate!()
     copyTemplate!(template.bus, BusTemplate(; area = 1, lossZone = 1))
+
+    return nothing
 end
 
 function resetBranchTemplate!()
     copyTemplate!(template.branch, BranchTemplate())
+
+    return nothing
 end
 
 function resetGeneratorTemplate!()
     copyTemplate!(template.generator, GeneratorTemplate())
+
+    return nothing
 end
 
 function resetVoltmeterTemplate!()
     copyTemplate!(template.voltmeter, VoltmeterTemplate())
+
+    return nothing
 end
 
 function resetAmmeterTemplate!()
     copyTemplate!(template.ammeter, AmmeterTemplate())
+
+    return nothing
 end
 
 function resetWattmeterTemplate!()
     copyTemplate!(template.wattmeter, WattmeterTemplate())
+
+    return nothing
 end
 
 function resetVarmeterTemplate!()
     copyTemplate!(template.varmeter, VarmeterTemplate())
+
+    return nothing
 end
 
 function resetPmuTemplate!()
     copyTemplate!(template.pmu, PmuTemplate())
+
+    return nothing
 end
 
 function resetConfigTemplate!()
     copyTemplate!(template.config, ConfigTemplate())
+
+    return nothing
 end
 
 """

@@ -120,8 +120,8 @@ nothing # hide
 ```
 
 !!! tip "Tip"
-    Here, the user triggers LU factorization as the default method for solving the system of linear equations within each iteration of the Gauss-Newton method. The available factorization methods are `LL`, `LDLt`, `LU`, `KLU` and `QR`:
-    ```julia ACSEObservabilityAnalysis
+    Here, the user triggers LU factorization as the default method for solving the system of linear equations within each iteration of the Gauss-Newton method. The available factorization methods are `LL`, `LDLt`, `LU`, `KLU`, and `QR`:
+    ```julia ACSEFactorization
     analysis = gaussNewton(monitoring, LDLt)
     ```
 
@@ -155,7 +155,7 @@ for iteration = 1:20
 end
 nothing # hide
 ```
-The [`increment!`](@ref increment!) function returns the maximum absolute values of the state variable increment, which are commonly used as a convergence criterion in the iterative Gauss-Newton algorithm.
+The [`increment!`](@ref increment!) function returns the maximum absolute value of the state variable increment, which is commonly used as a convergence criterion in the iterative Gauss-Newton algorithm.
 
 !!! note "Info"
     Readers can refer to the [AC State Estimation](@ref ACStateEstimationTutorials) tutorial for implementation insights.
@@ -188,7 +188,7 @@ nothing # hide
 
 In the case of the rectangular system, inclusion resolves ill-conditioned problems arising in polar coordinates due to small values of current magnitudes. However, this approach's main disadvantage is related to measurement errors, as measurement errors correspond to polar coordinates. Therefore, the covariance matrix must be transformed from polar to rectangular coordinates [zhou2006alternative](@cite). As a result, measurement errors of a single PMU are correlated, and the covariance matrix does not have a diagonal form. Despite that, the measurement error covariance matrix is usually considered as a diagonal matrix, affecting the accuracy of the state estimation.
 
-In the example above, we specifically include PMUs where measurement error correlations are disregarded. This is evident through the precision matrix, which maintains a diagonal form:
+In the example above, we specifically include PMUs where measurement error correlations are disregarded. This is evident through the precision matrix, which remains diagonal:
 ```@repl ACSEWLS
 analysis = gaussNewton(monitoring);
 analysis.method.precision
@@ -200,7 +200,7 @@ addPmu!(monitoring; bus = "Bus 3", magnitude = 0.846, angle = -0.1712, correlate
 nothing # hide
 ```
 
-Now, we can observe the precision matrix that does not hold a diagonal form:
+Now, we can observe the precision matrix, which is no longer diagonal:
 ```@repl ACSEWLS
 analysis = gaussNewton(monitoring);
 analysis.method.precision
@@ -267,7 +267,7 @@ nothing # hide
 ---
 
 ##### Orthogonal Method
-One alternative is the orthogonal method [aburbook; Sec. 3.2](@cite), which provides increased numerical robustness, especially with widely varying measurement variances. It solves the WLS problem using QR factorisation on a rectangular matrix formed by multiplying the square root of the precision matrix with the Jacobian in each Gauss-Newton iteration. Enable it by passing the `Orthogonal` argument to the [`gaussNewton`](@ref gaussNewton) function:
+One alternative is the orthogonal method [aburbook; Sec. 3.2](@cite), which provides increased numerical robustness, especially with widely varying measurement variances. It solves the WLS problem using QR factorization on a rectangular matrix formed by multiplying the square root of the precision matrix with the Jacobian in each Gauss-Newton iteration. Enable it by passing the `Orthogonal` argument to the [`gaussNewton`](@ref gaussNewton) function:
 ```@example ACSEWLS
 analysis = gaussNewton(monitoring, Orthogonal)
 stateEstimation!(analysis)
@@ -277,7 +277,7 @@ nothing # hide
 ---
 
 ##### Peters and Wilkinson Method
-Another option is the Peters and Wilkinson method [aburbook; Sec. 3.4](@cite), which uses LU factorisation on the same rectangular matrix built from the square root of the precision matrix and the Jacobian in each Gauss-Newton iteration. It can be selected by passing the `PetersWilkinson` argument to the [`gaussNewton`](@ref gaussNewton) function:
+Another option is the Peters and Wilkinson method [aburbook; Sec. 3.4](@cite), which uses LU factorization on the same rectangular matrix built from the square root of the precision matrix and the Jacobian in each Gauss-Newton iteration. It can be selected by passing the `PetersWilkinson` argument to the [`gaussNewton`](@ref gaussNewton) function:
 ```@example ACSEWLS
 analysis = gaussNewton(monitoring, PetersWilkinson)
 stateEstimation!(analysis)
@@ -286,7 +286,7 @@ nothing # hide
 
 ---
 
-## [Least Absolute Value Estimator](@id PMULAVtateEstimationSolutionManual)
+## [Least Absolute Value Estimator](@id ACLAVStateEstimationSolutionManual)
 The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data analysis procedures [aburbook; Ch. 6](@cite). However, it is important to note that achieving robustness typically involves increased computational complexity.
 
 To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the `Ipopt` solver proves sufficient to obtain a solution:
@@ -316,7 +316,7 @@ nothing # hide
 ---
 
 ## [Measurement Set Update](@id ACMeasurementsAlterationManual)
-We begin by creating the `PowerSystem` and `Measurement` types with the [`ems`](@ref ems) function. The AC model is then configured using [`acModel!`](@ref acModel!) function. After that, we initialize the `AcStateEstimation` type through the [`gaussNewton`](@ref gaussNewton) function and solve the resulting state estimation problem:
+We begin by creating the `PowerSystem` and `Measurement` types with the [`ems`](@ref ems) function. The AC model is then configured using the [`acModel!`](@ref acModel!) function. After that, we initialize the `AcStateEstimation` type through the [`gaussNewton`](@ref gaussNewton) function and solve the resulting state estimation problem:
 ```@example WLSACStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -411,7 +411,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This concept removes the need to rebuild both the `Measurement` and the `AcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of LL, LDLt and LU, provided that the nonzero pattern of the gain matrix remains unchanged.
+    This concept removes the need to rebuild both the `Measurement` and the `AcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, and `LU`, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 
@@ -487,7 +487,7 @@ CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ---
 
 ##### Active and Reactive Power Injection
-To calculate the active and reactive power injection associated with a specific bus, the function can be used:
+To calculate the active and reactive power injection associated with a specific bus, use:
 ```@repl WLSACStateEstimationSolution
 active, reactive = injectionPower(analysis; label = "Bus 1")
 ```
@@ -495,7 +495,7 @@ active, reactive = injectionPower(analysis; label = "Bus 1")
 ---
 
 ##### Active and Reactive Power Injection from Generators
-To calculate the active and reactive power injection from the generators at a specific bus, the function can be used:
+To calculate the active and reactive power injection from generators at a specific bus, use:
 ```@repl WLSACStateEstimationSolution
 active, reactive = supplyPower(analysis; label = "Bus 1")
 ```
@@ -503,7 +503,7 @@ active, reactive = supplyPower(analysis; label = "Bus 1")
 ---
 
 ##### Active and Reactive Power at Shunt Element
-To calculate the active and reactive power associated with shunt element at a specific bus, the function can be used:
+To calculate the active and reactive power associated with the shunt element at a specific bus, use:
 ```@repl WLSACStateEstimationSolution
 active, reactive = shuntPower(analysis; label = "Bus 1")
 ```
@@ -511,7 +511,7 @@ active, reactive = shuntPower(analysis; label = "Bus 1")
 ---
 
 ##### Active and Reactive Power Flow
-Similarly, we can compute the active and reactive power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
+Similarly, to compute the active and reactive power flow at both the from-bus and to-bus ends of a specific branch, use:
 ```@repl WLSACStateEstimationSolution
 active, reactive = fromPower(analysis; label = "Branch 2")
 active, reactive = toPower(analysis; label = "Branch 2")
@@ -520,17 +520,17 @@ active, reactive = toPower(analysis; label = "Branch 2")
 ---
 
 ##### Active and Reactive Power at Charging Admittances
-To calculate the active and reactive power linked with branch charging admittances of the particular branch, the function can be used:
+To calculate the active and reactive power associated with the branch charging admittances of a particular branch, use:
 ```@repl WLSACStateEstimationSolution
 active, reactive = chargingPower(analysis; label = "Branch 1")
 ```
 
-Active powers indicate active losses within the branch's charging admittances. Moreover, charging admittances injected reactive powers into the power system due to their capacitive nature, as denoted by a negative sign.
+Active powers indicate active losses within the branch's charging admittances. Moreover, charging admittances inject reactive power into the power system due to their capacitive nature, as denoted by a negative sign.
 
 ---
 
 ##### Active and Reactive Power at Series Impedance
-To calculate the active and reactive power across the series impedance of the branch, the function can be used:
+To calculate the active and reactive power across the series impedance of the branch, use:
 ```@repl WLSACStateEstimationSolution
 active, reactive = seriesPower(analysis; label = "Branch 2")
 ```
@@ -540,7 +540,7 @@ The active power also considers active losses originating from the series resist
 ---
 
 ##### Current Injection
-To calculate the current injection associated with a specific bus, the function can be used:
+To calculate the current injection associated with a specific bus, use:
 ```@repl WLSACStateEstimationSolution
 magnitude, angle = injectionCurrent(analysis; label = "Bus 1")
 ```
@@ -548,7 +548,7 @@ magnitude, angle = injectionCurrent(analysis; label = "Bus 1")
 ---
 
 ##### Current Flow
-We can compute the current flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
+To compute the current flow at both the from-bus and to-bus ends of a specific branch, use:
 ```@repl WLSACStateEstimationSolution
 magnitude, angle = fromCurrent(analysis; label = "Branch 2")
 magnitude, angle = toCurrent(analysis; label = "Branch 2")

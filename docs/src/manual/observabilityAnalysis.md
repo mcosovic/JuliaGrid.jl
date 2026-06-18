@@ -1,7 +1,7 @@
 # [Observability Analysis](@id ObservabilityAnalysisManual)
 Observability analysis can typically be performed prior to executing the state estimation algorithm, and its primary task is to ensure the existence of a unique state estimator. In other words, the system of equations used in the state estimation algorithm should be solvable.
 
-Traditionally, observability analysis, which involves identifying observable islands and restoring observability using set of pseudo-measurements, can be performed before both AC and DC state estimation. In this context, users can detect two types of observable islands: flow islands and maximal islands:
+Traditionally, observability analysis, which involves identifying observable islands and restoring observability using a set of pseudo-measurements, can be performed before both AC and DC state estimation. In this context, users can detect two types of observable islands: flow islands and maximal islands:
 * [`islandTopologicalFlow`](@ref islandTopologicalFlow(::Measurement)),
 * [`islandTopological`](@ref islandTopological(::Measurement)).
 
@@ -83,7 +83,7 @@ nothing # hide
 ---
 
 ##### Maximal-Observable Islands
-Following that, we will instruct the user on obtaining maximal-observable islands:
+Next, we identify maximal-observable islands:
 ```@example ACSEObservabilityAnalysis
 islands = islandTopological(monitoring)
 nothing # hide
@@ -99,13 +99,13 @@ It is evident that upon comparing this result with the flow-observable islands, 
 ---
 
 ## Observability Restoration
-Before commencing the restoration of observability in the context of the linear decoupled measurement model and observability analysis, it is imperative to ensure that the system possesses one bus voltage magnitude measurement. This necessity arises from the fact that observable islands are identified based on wattmeters, where wattmeters are tasked with estimating voltage angles. Since one voltage angle is already known from the slack bus, the same principle should be applied to bus voltage magnitudes. Therefore, to address this requirement, we add:
+Before restoring observability in the linear decoupled measurement model, the system must include at least one bus voltage magnitude measurement. This necessity arises from the fact that observable islands are identified based on wattmeters, where wattmeter measurements estimate voltage angles. Since the voltage angle reference is already known from the slack bus, the same principle should be applied to bus voltage magnitudes. Therefore, to address this requirement, we add:
 ```@example ACSEObservabilityAnalysis
 addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 1.0)
 nothing # hide
 ```
 
-Subsequently, the user needs to establish a set of pseudo-measurements, where measurements must come in pairs as well. Let us create that set:
+Next, define a set of pseudo-measurements, where measurements must come in pairs as well. Let us create that set:
 ```@example ACSEObservabilityAnalysis
 pseudo = measurement(system)
 
@@ -120,13 +120,13 @@ nothing # hide
 !!! note "Info"
     The labels for specific pseudo-measurements must differ from those defined in the measurements stored in the `monitoring` set. This is necessary because the next step involves adding pseudo-measurements to the `monitoring` set.
 
-Subsequently, the user can execute the [`restorationGram!`](@ref restorationGram!(::Measurement, ::Measurement, ::Island)) function:
+Next, call the [`restorationGram!`](@ref restorationGram!(::Measurement, ::Measurement, ::Island)) function:
 ```@example ACSEObservabilityAnalysis
 restorationGram!(monitoring, pseudo, islands)
 nothing # hide
 ```
 
-This function attempts to restore observability using pseudo-measurements. As a result, the inclusion of measurements from `Pseudo-Wattmeter 2` and `Pseudo-Varmeter 2` facilitates observability restoration, and these measurements are subsequently added to the `monitoring` variable:
+This function attempts to restore observability using pseudo-measurements. As a result, the inclusion of measurements from `Pseudo-Wattmeter 2` and `Pseudo-Varmeter 2` restores observability, and these measurements are added to the `monitoring` variable:
 ```@repl ACSEObservabilityAnalysis
 monitoring.wattmeter.label
 monitoring.varmeter.label
@@ -142,7 +142,7 @@ It is also important to note that restoration may face challenges if an inapprop
 ---
 
 ## Optimal PMU Placement
-JuliGrid supports two modes for determining optimal PMU placement to make the system observable:
+JuliaGrid supports two modes for determining optimal PMU placement to make the system observable:
 * without legacy measurements,
 * with legacy measurements.
 

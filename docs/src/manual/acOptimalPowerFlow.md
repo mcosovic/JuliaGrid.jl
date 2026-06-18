@@ -59,7 +59,7 @@ nothing # hide
 
 !!! note "Info"
     All non-box two-sided constraints are modeled as intervals by default. However, users can choose to represent them as two separate constraints, one for the lower bound and one for the upper bound, by setting:
-    ```julia DCPowerFlowSolution
+    ```julia ACOptimalPowerFlowInterval
     analysis = acOptimalPowerFlow(system, Ipopt.Optimizer; interval = false)
     ```
     Although this approach may be less efficient in terms of model creation and could lead to longer execution times depending on the solver, it allows for precise definition of the starting dual values.
@@ -99,7 +99,7 @@ Once the `AcOptimalPowerFlow` type is established, users can add new variables r
 addGenerator!(analysis; label = "Generator 3", bus = "Bus 1", maxActive = 0.2, status = 1)
 nothing # hide
 ```
-This command adds both a new variables and the corresponding box constraints to the optimization model.
+This command adds both new variables and the corresponding box constraints to the optimization model.
 
 To confirm that the variable has been successfully added, you can use the following function:
 ```@repl acopf
@@ -134,7 +134,7 @@ The `magnitude` field of the `voltage` constraints defines bounds on bus voltage
 ##### Non-Box Constraints
 The `balance` constraints correspond to the active and reactive power balance equations defined at each bus and are modeled as `equality` constraints.
 
-The `angle` field of the `voltage` constraints are associated with the minimum and maximum voltage angle difference between the from-bus and to-bus ends of each branch and are modeled as `interval` constraints by default. If the bounds are equal, an `equality` constraint is used instead.
+The `angle` field of the `voltage` constraints is associated with the minimum and maximum voltage angle difference between the from-bus and to-bus ends of each branch and is modeled as an `interval` constraint by default. If the bounds are equal, an `equality` constraint is used instead.
 
 The `flow` constraints, which refer to branch flow limits at both ends of each branch, are also modeled as `interval` constraints by default. If the bounds are equal, an `equality` constraint is used.
 
@@ -205,7 +205,7 @@ print(system.branch.label, analysis.method.constraint.voltage.angle)
 ```
 
 !!! note "Info"
-    Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint.
+    Please note that if the limit constraints are set to `minDiffAngle = -2π` and `maxDiffAngle = 2π` for the corresponding branch, JuliaGrid will omit the corresponding inequality constraint.
 
 By employing the [`updateBus!`](@ref updateBus!) and [`updateBranch!`](@ref updateBranch!) functions, users have the ability to modify these constraints:
 ```@example acopf
@@ -233,7 +233,7 @@ The `flow` field refers to inequality constraints that enforce limits on the app
 !!! tip "Tip"
     Squared versions of constraints typically make the optimization problem numerically more robust. However, they often result in slower convergence compared to their non-squared counterparts used in the constraints.
 
-These limits are specified using the `minFromBus`, `maxFromBus`, `minToBus` and `maxToBus` keywords within the [`addBranch!`](@ref addBranch!) function. By default, these limit keywords are associated with apparent power (`type = 3`).
+These limits are specified using the `minFromBus`, `maxFromBus`, `minToBus`, and `maxToBus` keywords within the [`addBranch!`](@ref addBranch!) function. By default, these limit keywords are associated with apparent power (`type = 3`).
 
 However, in the example, we configured it to use active power flow by setting `type = 1`. To access the flow constraints of branches at the from-bus end, we can utilize the following code snippet:
 ```@repl acopf
@@ -241,7 +241,7 @@ print(system.branch.label, analysis.method.constraint.flow.from)
 ```
 
 !!! note "Info"
-    If the branch flow limits are set to `minFromBus = 0.0` and `maxFromBus = 0.0` for the corresponding branch, JuliGrid will omit the corresponding inequality constraint at the from-bus end of the branch. The same applies to the to-bus end if `minToBus = 0.0` and `maxToBus = 0.0` are set.
+    If the branch flow limits are set to `minFromBus = 0.0` and `maxFromBus = 0.0` for the corresponding branch, JuliaGrid will omit the corresponding inequality constraint at the from-bus end of the branch. The same applies to the to-bus end if `minToBus = 0.0` and `maxToBus = 0.0` are set.
 
 Additionally, by employing the [`updateBranch!`](@ref updateBranch!) function, we have the ability to modify these specific constraints:
 ```@example acopf
@@ -287,7 +287,7 @@ print(system.generator.label, analysis.method.constraint.capability.reactive)
 ```
 
 !!! note "Info"
-    This representation may not fully capture the generator's power output behavior due to the tradeoff between active and reactive power outputs. JuliaGrid can incorporate this tradeoff in its optimization model. For more information, see the tutorial on [Power Capability Constraints](@ref ACPowerCapabilityConstraintsTutorials).
+    This representation may not fully capture the generator's power output behavior due to the trade-off between active and reactive power outputs. JuliaGrid can incorporate this trade-off in its optimization model. For more information, see the tutorial on [Power Capability Constraints](@ref ACPowerCapabilityConstraintsTutorials).
 
 ---
 
@@ -320,7 +320,7 @@ This will affect all constraints related to branches, but it will also update ba
 print(system.branch.label, analysis.method.constraint.voltage.angle)
 ```
 
-Similarly, the [`addGenerator!`](@ref addGenerator!) function adds both new variables and its associated box constraints.
+Similarly, the [`addGenerator!`](@ref addGenerator!) function adds both new variables and their associated box constraints.
 
 ---
 
@@ -362,7 +362,7 @@ In the provided example, the objective function to be minimized in order to obta
 JuMP.objective_function(analysis.method.jump)
 ```
 
-The objective function is stored in the variable `analysis.objective`, where it is organized to separate its quadratic and nonlinear components.
+The objective function is stored in `analysis.method.objective`, where it is organized to separate its quadratic and nonlinear components.
 
 ---
 
@@ -434,7 +434,7 @@ nothing # hide
 ---
 
 ## [Optimal Power Flow Solution](@id AcOptimalPowerFlowSolutionManual)
-To establish the AC optimal power flow problem, we utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, we can use the [`solve!`](@ref solve!(::AcOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes angles:
+To establish the AC optimal power flow problem, we utilize the [`acOptimalPowerFlow`](@ref acOptimalPowerFlow) function. After setting up the problem, we can use the [`solve!`](@ref solve!(::AcOptimalPowerFlow)) function to compute the optimal values for the active and reactive power outputs of the generators and the bus voltage magnitudes and angles:
 ```@example acopf
 solve!(analysis)
 ```
@@ -483,7 +483,7 @@ printBusConstraint(analysis; show)
 nothing # hide
 ```
 
-Next, users can easily customize the print results for specific constraint, for example:
+Next, users can easily customize the print results for a specific constraint, for example:
 ```julia
 printBusConstraint(analysis; label = "Bus 1", header = true)
 printBusConstraint(analysis; label = "Bus 2", footer = true)
@@ -577,7 +577,7 @@ Beyond this approach, JuliaGrid also provides a way to extend the standard AC op
 ---
 
 ##### Add Variable
-User-defined variables can be added to the DC optimal power flow model using the [`@addVariable`](@ref @addVariable) macro. It also allows immediate assignment of initial primal and dual values. For example:
+User-defined variables can be added to the AC optimal power flow model using the [`@addVariable`](@ref @addVariable) macro. It also allows immediate assignment of initial primal and dual values. For example:
 ```@example acopf
 @addVariable(analysis, 0.0 <= y <= 0.2, primal = 0.1, lower = 10.0, upper = 0.0)
 nothing # hide
@@ -592,7 +592,7 @@ nothing # hide
 ---
 
 ##### Add Constraints
-Custom constraints can be added to the DC optimal power flow model using the [`@addConstraint`](@ref @addConstraint) macro. These constraints are not limited to user-defined variables; any optimization variable defined up to that point can be used. Let us focus on the voltage angle variables:
+Custom constraints can be added to the AC optimal power flow model using the [`@addConstraint`](@ref @addConstraint) macro. These constraints are not limited to user-defined variables; any optimization variable defined up to that point can be used. Let us focus on the voltage angle variables:
 ```@example acopf
 θ = analysis.method.variable.voltage.angle
 nothing # hide
@@ -622,7 +622,7 @@ nothing # hide
 ---
 
 ##### Objective Function
-Users can modify the objective function using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_objective_function) function from the JuMP package. In JuliaGrid, the original objective is stored in the `objective` field of the `AcOptimalPowerFlow` type, which can be accessed and customized as needed. This makes it possible to simultaneously remove nonlinear components and adjust the quadratic part of the objective function:
+Users can modify the objective function using the [`set_objective_function`](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.set_objective_function) function from the JuMP package. In JuliaGrid, the original objective is stored in `analysis.method.objective`, which can be accessed and customized as needed. This makes it possible to simultaneously remove nonlinear components and adjust the quadratic part of the objective function:
 ```@example acopf
 expr = 50 * x[1] - x[2]^2 + y + 123
 JuMP.set_objective_function(analysis.method.jump, analysis.method.objective.quadratic - expr)
@@ -700,12 +700,12 @@ print(system.branch.label, analysis.current.from.magnitude)
 ```
 
 !!! note "Info"
-    To better understand the powers and current associated with buses and branches that are calculated by the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AC)) functions, we suggest referring to the tutorials on [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials).
+    To better understand the powers and currents associated with buses and branches that are calculated by the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AC)) functions, we suggest referring to the tutorials on [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials).
 
 ---
 
 ##### Print Results in the REPL
-Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, to create a bus data with the desired units, users can use the following function:
+Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, to create bus data with the desired units, users can use the following function:
 ```@example acopfpower
 @voltage(pu, deg)
 @power(MW, MVAr)
@@ -718,7 +718,7 @@ nothing # hide
 ---
 
 ##### Active and Reactive Power Injection
-To calculate the active and reactive power injection associated with a specific bus, the function can be used:
+To calculate the active and reactive power injection associated with a specific bus, use:
 ```@repl acopfpower
 active, reactive = injectionPower(analysis; label = "Bus 1")
 ```
@@ -726,7 +726,7 @@ active, reactive = injectionPower(analysis; label = "Bus 1")
 ---
 
 ##### Active and Reactive Power Injection from Generators
-To calculate the active and reactive power injection from the generators at a specific bus, the function can be used:
+To calculate the active and reactive power injection from generators at a specific bus, use:
 ```@repl acopfpower
 active, reactive = supplyPower(analysis; label = "Bus 2")
 ```
@@ -734,7 +734,7 @@ active, reactive = supplyPower(analysis; label = "Bus 2")
 ---
 
 ##### Active and Reactive Power at Shunt Element
-To calculate the active and reactive power associated with shunt element at a specific bus, the function can be used:
+To calculate the active and reactive power associated with the shunt element at a specific bus, use:
 ```@repl acopfpower
 active, reactive = shuntPower(analysis; label = "Bus 2")
 ```
@@ -742,7 +742,7 @@ active, reactive = shuntPower(analysis; label = "Bus 2")
 ---
 
 ##### Active and Reactive Power Flow
-Similarly, we can compute the active and reactive power flow at both the from-bus and to-bus ends of the specific branch by utilizing the provided functions below:
+Similarly, to compute the active and reactive power flow at both the from-bus and to-bus ends of a specific branch, use:
 ```@repl acopfpower
 active, reactive = fromPower(analysis; label = "Branch 2")
 active, reactive = toPower(analysis; label = "Branch 2")
@@ -751,17 +751,17 @@ active, reactive = toPower(analysis; label = "Branch 2")
 ---
 
 ##### Active and Reactive Power at Charging Admittances
-To calculate the total active and reactive power linked with branch charging admittances of the particular branch, the function can be used:
+To calculate the total active and reactive power associated with the branch charging admittances of a particular branch, use:
 ```@repl acopfpower
 active, reactive = chargingPower(analysis; label = "Branch 1")
 ```
 
-Active powers indicate active losses within the branch's charging admittances. Moreover, charging admittances injected reactive powers into the power system due to their capacitive nature, as denoted by a negative sign.
+Active powers indicate active losses within the branch's charging admittances. Moreover, charging admittances inject reactive power into the power system due to their capacitive nature, as denoted by a negative sign.
 
 ---
 
 ##### Active and Reactive Power at Series Impedance
-To calculate the active and reactive power across the series impedance of the branch, the function can be used:
+To calculate the active and reactive power across the series impedance of the branch, use:
 ```@repl acopfpower
 active, reactive = seriesPower(analysis; label = "Branch 2")
 ```
@@ -771,7 +771,7 @@ The active power also considers active losses originating from the series resist
 ---
 
 ##### Current Injection
-To calculate the current injection associated with a specific bus, the function can be used:
+To calculate the current injection associated with a specific bus, use:
 ```@repl acopfpower
 magnitude, angle = injectionCurrent(analysis; label = "Bus 1")
 ```

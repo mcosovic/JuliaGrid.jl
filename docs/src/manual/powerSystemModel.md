@@ -419,7 +419,7 @@ As we have shown, JuliaGrid mandates a distinctive label for every bus, branch, 
 
 !!! tip "Tip"
     String labels improve readability, but in larger models, the overhead from using strings can become substantial. To reduce memory usage, users can configure ordered dictionaries to accept and store integers as labels:
-    ```julia DCPowerFlowSolution
+    ```julia PowerSystemIntegerLabels
     @config(label = Integer)
     ```
 

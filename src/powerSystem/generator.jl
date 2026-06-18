@@ -72,6 +72,8 @@ addGenerator!(system; bus = "Bus 1", active = 50, magnitude = 145.2)
 """
 function addGenerator!(system::PowerSystem; bus::IntStr, kwargs...)
     addGeneratorMain!(system, bus, GeneratorKey(; kwargs...))
+
+    return nothing
 end
 
 function addGeneratorMain!(system::PowerSystem, bus::IntStr, key::GeneratorKey)
@@ -125,6 +127,8 @@ function addGeneratorMain!(system::PowerSystem, bus::IntStr, key::GeneratorKey)
 
     gen.number = idx
     topologyChanged!(system)
+
+    return nothing
 end
 
 """
@@ -146,6 +150,8 @@ function addGenerator!(analysis::PowerFlow; bus::IntStr, kwargs...)
     addGeneratorMain!(analysis.system, bus, GeneratorKey(; kwargs...))
     _addGenerator!(analysis)
     syncTopology!(analysis)
+
+    return nothing
 end
 
 function _addGenerator!(analysis::AcPowerFlow)
@@ -255,6 +261,8 @@ updateGenerator!(system; label = "Generator 1", active = 0.6, reactive = 0.2)
 """
 function updateGenerator!(system::PowerSystem; label::IntStr, kwargs...)
     updateGeneratorMain!(system, label, GeneratorKey(; kwargs...))
+
+    return nothing
 end
 
 function updateGeneratorMain!(system::PowerSystem, label::IntStr, key::GeneratorKey)
@@ -347,6 +355,8 @@ function updateGeneratorMain!(system::PowerSystem, label::IntStr, key::Generator
 
     baseInv = sqrt(3) / (system.base.voltage.value[idxBus] * system.base.voltage.prefix)
     update!(gen.voltage.magnitude, key.magnitude, pfx.voltageMagnitude, baseInv, idx)
+
+    return nothing
 end
 
 """
@@ -373,6 +383,8 @@ function updateGenerator!(analysis::PowerFlow; label::IntStr, kwargs...)
     updateGeneratorMain!(analysis.system, label, GeneratorKey(; kwargs...))
     _updateGenerator!(analysis, getIndex(analysis.system.generator, label, "generator"))
     syncTopology!(analysis)
+
+    return nothing
 end
 
 function _updateGenerator!(analysis::AcPowerFlow{<:Union{NewtonRaphson, FastNewtonRaphson}}, idx::Int64)
@@ -579,6 +591,8 @@ function setGeneratorTemplate!(parameter::Symbol, value)
     else
         errorTemplateKeyword(parameter)
     end
+
+    return nothing
 end
 
 """
@@ -696,6 +710,8 @@ function cost!(system::PowerSystem; generator::IntStr, kwargs...)
     if system.bus.layout.optimal
         costMain!(system, generator, CostKey(; kwargs...))
     end
+
+    return nothing
 end
 
 function costMain!(system::PowerSystem, generator::IntStr, key::CostKey)
@@ -766,6 +782,8 @@ function costMain!(system::PowerSystem, generator::IntStr, key::CostKey)
         end
         container.piecewise[idx] = piecewise
     end
+
+    return nothing
 end
 
 """
@@ -792,6 +810,8 @@ cost!(analysis; generator = 2, active = 2, polynomial = [1100.0; 500.0; 150.0])
 function cost!(analysis::OptimalPowerFlow; generator::IntStr, kwargs...)
     costMain!(analysis.system, generator, CostKey(; kwargs...))
     _cost!(analysis, getIndex(analysis.system.generator, generator, "generator"))
+
+    return nothing
 end
 
 function _cost!(analysis::AcOptimalPowerFlow, idx::Int64)

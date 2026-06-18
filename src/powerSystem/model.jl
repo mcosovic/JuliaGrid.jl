@@ -78,6 +78,8 @@ function acModel!(system::PowerSystem)
 
     ac.nodalMatrix = sparse(row, col, val, system.bus.number, system.bus.number)
     ac.nodalMatrixTranspose = copy(transpose(ac.nodalMatrix))
+
+    return nothing
 end
 
 ##### Update AC Nodal Matrix #####
@@ -108,6 +110,8 @@ function acNodalUpdate!(system::PowerSystem, idx::Int64)
     else
         acModelChanged!(system)
     end
+
+    return nothing
 end
 
 ##### Update AC Parameters #####
@@ -128,6 +132,8 @@ function acParameterUpdate!(system::PowerSystem, idx::Int64)
     ac.nodalFromFrom[idx] = turnsRatioInv^2 * nodalToTo
     ac.nodalFromTo[idx] = -conj(transformerRatio) * admittance
     ac.nodalToFrom[idx] = -transformerRatio * admittance
+
+    return nothing
 end
 
 ##### Check AC Model #####
@@ -135,6 +141,8 @@ function model!(system::PowerSystem, model::AcModel)
     if isempty(model.nodalMatrix)
         acModel!(system)
     end
+
+    return nothing
 end
 
 """
@@ -205,6 +213,8 @@ function dcModel!(system::PowerSystem)
     end
 
     dc.nodalMatrix = sparse(row, col, val, system.bus.number, system.bus.number)
+
+    return nothing
 end
 
 ##### Update DC Nodal Matrix #####
@@ -227,6 +237,8 @@ function dcNodalUpdate!(system::PowerSystem, idx::Int64)
     else
         dcModelChanged!(system)
     end
+
+    return nothing
 end
 
 ##### Update DC Shift Power #####
@@ -237,6 +249,8 @@ function dcShiftUpdate!(system::PowerSystem, idx::Int64)
     dc.shiftPower[system.branch.layout.from[idx]] -= shift
     dc.shiftPower[system.branch.layout.to[idx]] += shift
     dcModelChanged!(system)
+
+    return nothing
 end
 
 ##### Update DC Admittance #####
@@ -249,6 +263,8 @@ end
     else
         dc.admittance[idx] = 1 / (param.turnsRatio[idx] * param.reactance[idx])
     end
+
+    return nothing
 end
 
 ##### Check AC and DC Model #####
@@ -256,6 +272,8 @@ function model!(system::PowerSystem, model::DcModel)
     if isempty(model.nodalMatrix)
         dcModel!(system)
     end
+
+    return nothing
 end
 
 ##### Expelling Elements from the AC or DC Model #####
@@ -265,6 +283,8 @@ function acPushZeros!(ac::AcModel)
     push!(ac.nodalFromFrom, 0.0 + 0.0im)
     push!(ac.nodalFromTo, 0.0 + 0.0im)
     push!(ac.nodalToFrom, 0.0 + 0.0im)
+
+    return nothing
 end
 
 @inline function acSubtractAdmittances!(ac::AcModel, idx::Int64)
@@ -273,6 +293,8 @@ end
     ac.nodalToTo[idx] = -ac.nodalToTo[idx]
     ac.nodalToFrom[idx] = -ac.nodalToFrom[idx]
     ac.admittance[idx] = -ac.admittance[idx]
+
+    return nothing
 end
 
 @inline function acSetZeros!(ac::AcModel, idx::Int64)
@@ -281,6 +303,8 @@ end
     ac.nodalToTo[idx] = 0.0 + 0.0im
     ac.nodalToFrom[idx] = 0.0 + 0.0im
     ac.admittance[idx] = 0.0 + 0.0im
+
+    return nothing
 end
 
 function acModelEmpty!(system::PowerSystem)
@@ -294,6 +318,8 @@ function acModelEmpty!(system::PowerSystem)
     ac.nodalFromTo = ComplexF64[]
     ac.nodalToFrom = ComplexF64[]
     ac.admittance = ComplexF64[]
+
+    return nothing
 end
 
 function dcModelEmpty!(system::PowerSystem)
@@ -303,6 +329,8 @@ function dcModelEmpty!(system::PowerSystem)
     dc.nodalMatrix = spzeros(0, 0)
     dc.admittance = Float64[]
     dc.shiftPower = Float64[]
+
+    return nothing
 end
 
 ##### Drop Zeros #####
@@ -313,6 +341,8 @@ function dropZeros!(system::PowerSystem, dc::DcModel)
     if filledElements != nnz(dc.nodalMatrix)
         dcPatternChanged!(system)
     end
+
+    return nothing
 end
 
 function dropZeros!(system::PowerSystem, ac::AcModel)
@@ -323,6 +353,8 @@ function dropZeros!(system::PowerSystem, ac::AcModel)
     if filledElements != nnz(ac.nodalMatrix)
         acPatternChanged!(system)
     end
+
+    return nothing
 end
 
 """

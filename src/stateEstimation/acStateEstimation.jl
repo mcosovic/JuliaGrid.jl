@@ -1014,6 +1014,8 @@ function solve!(analysis::AcStateEstimation{<:GaussNewton})
         volt.magnitude[i] = volt.magnitude[i] + analysis.method.increment[i + bus.number]
     end
     analysis.method.iteration += 1
+
+    return nothing
 end
 
 function solve!(analysis::AcStateEstimation{LAV})
@@ -1038,6 +1040,8 @@ function solve!(analysis::AcStateEstimation{LAV})
     end
 
     printExit(lav.jump, verbose)
+
+    return nothing
 end
 
 """
@@ -1070,6 +1074,8 @@ function setInitialPoint!(analysis::AcStateEstimation)
         analysis.voltage.magnitude[i] = analysis.system.bus.voltage.magnitude[i]
         analysis.voltage.angle[i] = analysis.system.bus.voltage.angle[i]
     end
+
+    return nothing
 end
 
 """
@@ -1105,6 +1111,8 @@ function setInitialPoint!(target::AcStateEstimation, source::AC)
         target.voltage.magnitude[i] = source.voltage.magnitude[i]
         target.voltage.angle[i] = source.voltage.angle[i]
     end
+
+    return nothing
 end
 
 function setInitialPoint!(target::AcStateEstimation, source::DC)
@@ -1113,6 +1121,8 @@ function setInitialPoint!(target::AcStateEstimation, source::DC)
     @inbounds for i = 1:length(source.voltage.angle)
         target.voltage.angle[i] = source.voltage.angle[i]
     end
+
+    return nothing
 end
 
 function oneIndices!(
@@ -1312,6 +1322,8 @@ function stateEstimation!(
     if current
         current!(analysis)
     end
+
+    return nothing
 end
 
 function stateEstimation!(
@@ -1338,4 +1350,6 @@ function stateEstimation!(
     end
 
     analysis.method.jump.ext[:verbose] = masterVerbose
+
+    return nothing
 end

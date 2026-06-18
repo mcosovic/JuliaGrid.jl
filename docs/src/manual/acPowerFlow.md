@@ -285,7 +285,7 @@ CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ---
 
 ## [Power System Update](@id ACPowerSystemAlterationManual)
-We begin by creating the `PowerSystem` type with the [`powerSystem`](@ref powerSystem) function. The AC model is then configured using [`acModel!`](@ref acModel!) function. After that, we initialize the `AcPowerFlow` type through the [`newtonRaphson`](@ref newtonRaphson) function and solve the resulting power flow problem:
+We begin by creating the `PowerSystem` type with the [`powerSystem`](@ref powerSystem) function. The AC model is then configured using the [`acModel!`](@ref acModel!) function. After that, we initialize the `AcPowerFlow` type through the [`newtonRaphson`](@ref newtonRaphson) function and solve the resulting power flow problem:
 ```@example ACPowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -495,7 +495,7 @@ nothing # hide
 ---
 
 ##### Active and Reactive Power Injection
-To calculate the active and reactive power injection associated with a specific bus, the function can be used:
+To calculate the active and reactive power injection associated with a specific bus, use:
 ```@repl ComputationPowersCurrentsLosses
 active, reactive = injectionPower(analysis; label = "Bus 1")
 ```
@@ -503,7 +503,7 @@ active, reactive = injectionPower(analysis; label = "Bus 1")
 ---
 
 ##### Active and Reactive Power Injection from Generators
-To calculate the active and reactive power injection from the generators at a specific bus, the function can be used:
+To calculate the active and reactive power injection from the generators at a specific bus, use:
 ```@repl ComputationPowersCurrentsLosses
 active, reactive = supplyPower(analysis; label = "Bus 1")
 ```
@@ -511,7 +511,7 @@ active, reactive = supplyPower(analysis; label = "Bus 1")
 ---
 
 ##### Active and Reactive Power at Shunt Element
-To calculate the active and reactive power associated with the shunt element at a specific bus, the function can be used:
+To calculate the active and reactive power associated with the shunt element at a specific bus, use:
 ```@repl ComputationPowersCurrentsLosses
 active, reactive = shuntPower(analysis; label = "Bus 3")
 ```
@@ -528,7 +528,7 @@ active, reactive = toPower(analysis; label = "Branch 2")
 ---
 
 ##### Active and Reactive Power at Charging Admittances
-To calculate the active and reactive power associated with the branch charging admittances of a particular branch, the function can be used:
+To calculate the active and reactive power associated with the branch charging admittances of a particular branch, use:
 ```@repl ComputationPowersCurrentsLosses
 active, reactive = chargingPower(analysis; label = "Branch 1")
 ```
@@ -538,7 +538,7 @@ Active powers indicate active losses within the branch's charging admittances. M
 ---
 
 ##### Active and Reactive Power at Series Impedance
-To calculate the active and reactive power across the series impedance of the branch, the function can be used:
+To calculate the active and reactive power across the series impedance of the branch, use:
 ```@repl ComputationPowersCurrentsLosses
 active, reactive = seriesPower(analysis; label = "Branch 2")
 ```
@@ -556,7 +556,7 @@ active, reactive = generatorPower(analysis; label = "Generator 1")
 ---
 
 ##### Current Injection
-To calculate the current injection associated with a specific bus, the function can be used:
+To calculate the current injection associated with a specific bus, use:
 ```@repl ComputationPowersCurrentsLosses
 magnitude, angle = injectionCurrent(analysis; label = "Bus 1")
 ```
