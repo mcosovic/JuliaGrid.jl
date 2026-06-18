@@ -2,7 +2,7 @@
 
 ## Version 0.6.1
 
-Release Date: June 18, 2026
+Release Date:
 
 #### Fixed
   * Corrected AC optimal power flow PQ capability curve constraint selection for upper and lower reactive power limits.
