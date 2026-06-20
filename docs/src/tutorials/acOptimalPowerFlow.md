@@ -60,7 +60,7 @@ The AC optimal power flow problem can be formulated as follows:
         & \theta_i - \theta_\mathrm{s} = 0
     \end{aligned}
     \phantom{\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;}
-    \right\} i \in \mathcal{N_\mathrm{sb}} \\[-1pt]
+    \right\} i \in \mathcal{N}_\mathrm{sb} \\[-1pt]
     & & & \left.
     \begin{aligned}
         & h_{P_i}(\mathbf P_\mathrm{g}, \mathbf V, \bm \Theta) = 0  \\
@@ -88,7 +88,7 @@ The AC optimal power flow problem can be formulated as follows:
 ```
 
 
-In essence, the AC optimal power flow aims to minimize the objective function associated with the costs of generator's active and reactive power output while ensuring the fulfillment of all constraints. This optimization task plays a pivotal role in effectively managing electrical power systems. By striking a balance between cost reduction and constraint adherence, the AC optimal power flow contributes to efficient and reliable electricity supply in complex grid environments.
+In essence, the AC optimal power flow aims to minimize the objective function associated with the costs of active and reactive power outputs of generators while ensuring the fulfillment of all constraints. This optimization task plays a pivotal role in effectively managing electrical power systems. By striking a balance between cost reduction and constraint adherence, the AC optimal power flow contributes to efficient and reliable electricity supply in complex grid environments.
 
 ---
 
@@ -121,7 +121,7 @@ The variables within this model encompass the active and reactive power outputs 
 ---
 
 ## Objective Function
-The objective function represents the sum of the active and reactive power cost functions ``f_i(P_{\mathrm{g}i})`` and ``f_i(Q_{\mathrm{g}i})``, where ``i \in \mathcal S``, for each generator, where these cost functions can be polynomial or piecewise linear. Typically, the AC optimal power flow focuses on minimizing the cost of active power outputs only, but for comprehensive analysis, we also consider the costs associated with reactive power outputs.
+The objective function represents the sum of the active and reactive power cost functions ``f_i(P_{\mathrm{g}i})`` and ``f_i(Q_{\mathrm{g}i})``, where ``i \in \mathcal S``, for each generator. These cost functions can be polynomial or piecewise linear. Typically, the AC optimal power flow focuses on minimizing the cost of active power outputs only, but for comprehensive analysis, we also consider the costs associated with reactive power outputs.
 
 ---
 
@@ -240,9 +240,9 @@ In the following section, we will examine the various constraints defined within
 ##### Slack Bus Constraint
 The first equality constraint is linked to the slack bus, where the bus voltage angle denoted as ``\theta_i`` is fixed to a constant value ``\theta_\mathrm{s}``. It can be expressed as follows:
 ```math
-\theta_i - \theta_\mathrm{s} = 0,\;\;\; i \in \mathcal{N_{\mathrm{sb}}},
+\theta_i - \theta_\mathrm{s} = 0,\;\;\; i \in \mathcal{N}_\mathrm{sb},
 ```
-where the set ``\mathcal{N}_{\mathrm{sb}}`` contains the index of the slack bus. To access the equality constraint from the model, we can utilize the variable:
+where the set ``\mathcal{N}_\mathrm{sb}`` contains the index of the slack bus. To access the equality constraint from the model, we can utilize the variable:
 ```@repl acopf
 print(analysis.method.constraint.slack.angle)
 ```
@@ -348,7 +348,7 @@ These constraints are mathematically expressed through the equations ``h_{ij}(\m
 \end{aligned}
 ```
 
-The branch flow limits at the from-bus and to-bus ends of the branch ``(i,j) \in \mathcal{E}``, denoted as ``\mathbf{F}_{\mathrm{f}} = [F_{ij}^\mathrm{min}, F_{ij}^\mathrm{max}]`` and ``\mathbf{F}_{\mathrm{t}} = [F_{ji}^\mathrm{min}, F_{ji}^\mathrm{max}]``, can be retrieved as follows:
+The branch flow limits at the from-bus and to-bus ends for all branches ``(i,j) \in \mathcal{E}``, denoted as ``\mathbf{F}_{\mathrm{f}} = [F_{ij}^\mathrm{min}, F_{ij}^\mathrm{max}]`` and ``\mathbf{F}_{\mathrm{t}} = [F_{ji}^\mathrm{min}, F_{ji}^\mathrm{max}]``, can be retrieved as follows:
 ```@repl acopf
 𝐅ₒ = [system.branch.flow.minFromBus system.branch.flow.maxFromBus]
 𝐅ₜ = [system.branch.flow.minToBus system.branch.flow.maxToBus]
@@ -386,10 +386,10 @@ The second option applies constraints to the apparent power flow (`type = 2`). T
 where:
 ```math
   \begin{gathered}
-    A_{ij} = \cfrac{(g_{ij} + g_{\mathrm{s}i})^2 + (b_{ij} + b_{\mathrm{s}i})^2}{\tau_{ij}^4}, \;\;\;
+    A_{ij} = \cfrac{(g_{ij} + g_{\mathrm{s}ij})^2 + (b_{ij} + b_{\mathrm{s}ij})^2}{\tau_{ij}^4}, \;\;\;
     B_{ij} = \cfrac{g_{ij}^2 + b_{ij}^2}{\tau_{ij}^2} \\
-    C_{ij} = \cfrac{g_{ij}(g_{ij} + g_{\mathrm{s}i}) + b_{ij}(b_{ij} + b_{\mathrm{s}i})}{\tau_{ij}^3}, \;\;\;
-    D_{ij} = \cfrac{g_{ij}b_{\mathrm{s}i} - b_{ij}g_{\mathrm{s}i}}{\tau_{ij}^3}.
+    C_{ij} = \cfrac{g_{ij}(g_{ij} + g_{\mathrm{s}ij}) + b_{ij}(b_{ij} + b_{\mathrm{s}ij})}{\tau_{ij}^3}, \;\;\;
+    D_{ij} = \cfrac{g_{ij}b_{\mathrm{s}ij} - b_{ij}g_{\mathrm{s}ij}}{\tau_{ij}^3}.
   \end{gathered}
 ```
 
@@ -401,10 +401,10 @@ Furthermore, this constraint at the to-bus is specified as:
 where:
 ```math
   \begin{gathered}
-    A_{ji} = (g_{ij} + g_{\mathrm{s}i})^2 + (b_{ij} + b_{\mathrm{s}i})^2, \;\;\;
+    A_{ji} = (g_{ij} + g_{\mathrm{s}ij})^2 + (b_{ij} + b_{\mathrm{s}ij})^2, \;\;\;
     B_{ji} = \cfrac{g_{ij}^2 + b_{ij}^2}{\tau_{ij}^2} \\
-    C_{ji} = \cfrac{g_{ij}(g_{ij} + g_{\mathrm{s}i}) + b_{ij}(b_{ij} + b_{\mathrm{s}i})}{\tau_{ij}}, \;\;\;
-    D_{ji} = \cfrac{g_{ij}b_{\mathrm{s}i} - b_{ij}g_{\mathrm{s}i}}{\tau_{ij}}.
+    C_{ji} = \cfrac{g_{ij}(g_{ij} + g_{\mathrm{s}ij}) + b_{ij}(b_{ij} + b_{\mathrm{s}ij})}{\tau_{ij}}, \;\;\;
+    D_{ji} = \cfrac{g_{ij}b_{\mathrm{s}ij} - b_{ij}g_{\mathrm{s}ij}}{\tau_{ij}}.
   \end{gathered}
 ```
 
@@ -502,7 +502,7 @@ When using these points, JuliaGrid constructs two additional capability constrai
 \end{aligned}
 ```
 
-To ensure numerical stability, these constraints are normalized by introducing two scaling factors:
+To ensure numerical stability, these constraints are normalized by dividing by the following scaling factors:
 ```math
 \begin{aligned}
     s_1 = \sqrt{(Q_{\mathrm{g}i,\mathrm{low}}^\mathrm{max} - Q_{\mathrm{g}i,\mathrm{up}}^\mathrm{max})^2 +
@@ -548,13 +548,13 @@ By accessing these vectors, you can analyze and utilize the optimal power flow s
 ---
 
 ## [Power Analysis](@id ACOptimalPowerAnalysisTutorials)
-Once the computation of voltage magnitudes and angles at each bus is completed, various electrical quantities can be determined. JuliaGrid offers the [`power!`](@ref power!(::AcPowerFlow)) function, which enables the calculation of powers associated with buses and branches. Here is an example code snippet demonstrating its usage:
+Once the computation of voltage magnitudes and angles at each bus is completed, various electrical quantities can be determined. JuliaGrid offers the [`power!`](@ref power!(::AcPowerFlow)) function, which enables the calculation of powers associated with buses, branches, and generators. Here is an example code snippet demonstrating its usage:
 ```@example acopf
 power!(analysis)
 nothing # hide
 ```
 
-The function stores the computed powers in the rectangular coordinate system. It calculates the following powers related to buses and branches:
+The function stores the computed active and reactive powers. It calculates the following powers related to buses and branches:
 
 | Type   | Power                                                          | Active                                         | Reactive                                       |
 |:-------|:---------------------------------------------------------------|:-----------------------------------------------|:-----------------------------------------------|
@@ -644,7 +644,7 @@ Similarly, the vectors of [active and reactive power flows](@ref BranchNetworkEq
 
 ---
 
-## Current Analysis
+## [Current Analysis](@id ACOptimalCurrentAnalysisTutorials)
 JuliaGrid offers the [`current!`](@ref current!(::AC)) function, which enables the calculation of currents associated with buses and branches. Here is an example code snippet demonstrating its usage:
 ```@example acopf
 current!(analysis)

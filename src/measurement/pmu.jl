@@ -657,7 +657,9 @@ function _updatePmu!(analysis::AcStateEstimation{<:GaussNewton}, idxPmu::Int64)
             wls.mean[idx] = v * pmu.magnitude.mean[idxPmu]^sq
             wls.mean[idq] = t * pmu.angle.mean[idxPmu]
 
-            wls.precision[idx, idx] = 1 / (sq * pmu.magnitude.variance[idxPmu])
+            wls.precision[idx, idx] = 1 / varianceSquare(
+                pmu.magnitude.mean[idxPmu], pmu.magnitude.variance[idxPmu], square
+            )
             wls.precision[idq, idq] = 1 / pmu.angle.variance[idxPmu]
 
             wls.residual[idx] *= v
@@ -960,7 +962,7 @@ The macro modifies global JuliaGrid settings that remain active until changed ag
 
 # Keywords
 To establish the PMU template, users can configure the pattern for labels using the `label` keyword,
-specify the type of `noise`, and indicate the `correlated, `polar`, and `square` system utilized for
+specify the type of `noise`, and indicate the `correlated`, `polar`, and `square` settings utilized for
 managing phasors during state estimation.
 
 Users have the option to set default values for magnitude and angle variances, as well as statuses.
@@ -976,7 +978,7 @@ For PMUs located at the to-bus ends of the branches, users can use the `variance
 # Units
 By default, the units for variances are per-units and radians. However, users have the option to
 switch to volts and degrees as the units for PMUs located at the buses by using the
-[`@voltage`](@ref @voltage) macro, or they can switch to amperes  and degrees as the units for PMUs
+[`@voltage`](@ref @voltage) macro, or they can switch to amperes and degrees as the units for PMUs
 located at the branches by using the [`@current`](@ref @current) macro.
 
 # Examples

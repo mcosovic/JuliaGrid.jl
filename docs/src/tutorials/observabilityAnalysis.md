@@ -52,15 +52,15 @@ addVarmeter!(monitoring; label = 3, bus = 3, reactive = 0.52)
 nothing # hide
 ```
 
-If the system lacks observability, the observability analysis needs to identify all potential observable islands that can be independently solved. An observable island is defined as follows: It is a segment of the power system where the flows across all branches within that island can be calculated solely from the available measurements. This independence holds regardless of the values chosen for the bus voltage angle at the slack bus [monticellibook; Sec. 7.1.1](@cite). Within this context, two types of observable islands are evident:
-* flow-observale islands,
+If the system lacks observability, the observability analysis needs to identify all potential observable islands that can be independently solved. An observable island is defined as follows: It is a segment of the power system where the flows across all branches within that island can be calculated solely from the available measurements. This independence holds regardless of the value chosen for the bus voltage angle at the slack bus [monticellibook; Sec. 7.1.1](@cite). Within this context, two types of observable islands are evident:
+* flow-observable islands,
 * maximal-observable islands.
 
-The selection between them relies on the power system's structure and the available measurements. Opting for detecting only flow observable islands simplifies the island detection function's complexity but increases the complexity in the restoration function compared to identifying maximal-observable islands.
+The selection between them relies on the power system's structure and the available measurements. Opting for detecting only flow-observable islands simplifies the island detection function's complexity but increases the complexity in the restoration function compared to identifying maximal-observable islands.
 
 ---
 
-##### Flow-Observale Islands
+##### Flow-Observable Islands
 To identify flow-observable islands, JuliaGrid employs a topological method outlined in [horisberger1985observability](@cite). The process begins with the examination of all active power flow measurements from wattmeters, aiming to determine the largest sets of connected buses within the network linked by branches with active power flow measurements. Subsequently, the analysis considers individual boundary or tie active power injection measurements, involving two islands that may potentially be merged into a single observable island. The user can initiate this process by calling the function:
 ```@example ACObservability
 islands = islandTopologicalFlow(monitoring)
@@ -77,11 +77,11 @@ Additionally, users can inspect the tie buses and branches resulting from the ob
 islands.tie.bus
 islands.tie.branch
 ```
-This tie data will be utilized throughout the restoration step, where we introduce pseudo-measurements to merge the observable flow islands obtained.
+This tie data will be utilized throughout the restoration step, where we introduce pseudo-measurements to merge the flow-observable islands obtained.
 
 ---
 
-##### Maximal-Observale Islands
+##### Maximal-Observable Islands
 To identify maximal-observable islands, we extend the analysis with an additional processing step. After processing individual injection tie measurements, we are left with a series of injection measurements that are not entirely contained within any observable zone. In this set of remaining tie injections, we now examine pairs involving three and only three previously determined observable zones (including individual buses). If we find such a pair, the three islands will be merged, and all injection measurements related exclusively to these three islands are no longer considered. The procedure then restarts at the stage where we process tie active power injection measurements involving two and only two islands. If no mergers are possible with pairs, we then consider sets of three injection measurements involving four islands, and so on [horisberger1985observability](@cite). The user can initiate this by calling the function:
 ```@example ACObservability
 islands = islandTopological(monitoring)
@@ -110,16 +110,16 @@ addVoltmeter!(monitoring; bus = 1, magnitude = 1.0)
 nothing # hide
 ```
 
-After determining the islands, the observability analysis merges these islands in a manner that protect previously determined observable states from being altered by the new set of equations defined by the additional measurements, called pseudo-measurements. In general, this can be achieved by ensuring that the set of new measurements forms a non-redundant set [monticellibook; Sec. 7.3.2](@cite), i.e., the set of equations must be linearly independent with respect to the global system. The goal of observability restoration is to find this non-redundant set.
+After determining the islands, the observability analysis merges these islands in a manner that protects previously determined observable states from being altered by the new set of equations defined by the additional measurements, called pseudo-measurements. In general, this can be achieved by ensuring that the set of new measurements forms a non-redundant set [monticellibook; Sec. 7.3.2](@cite), i.e., the set of equations must be linearly independent with respect to the global system. The goal of observability restoration is to find this non-redundant set.
 
 The outcome of the island detection step results in the power system being divided into ``m`` islands. Subsequently, we focus on the set of measurements ``\mathcal M_\mathrm{r} \subset \mathcal M``, which exclusively consists of:
 * active power injection measurements at tie buses,
 * bus voltage phasor measurements.
-These measurements are retained from the phase where we identify observable islands, and are crucial in determining whether we need additional pseudo-measurements to be included in the measurement set ``\mathcal M``. In this specific example, we do not have active power injection measurements at tie buses remaining after the identification of maximal-observable islands. However, if we proceed with flow-observable islands to the restoration step, we will have two injection measurements at buses `2` and `3`.
+These measurements are retained from the phase where we identify observable islands and are crucial in determining whether we need additional pseudo-measurements to be included in the measurement set ``\mathcal M``. In this specific example, we do not have active power injection measurements at tie buses remaining after the identification of maximal-observable islands. However, if we proceed with flow-observable islands to the restoration step, we will have two injection measurements at buses `2` and `3`.
 
-However, let us introduce the matrix ``\mathbf M_\mathrm{r} \in \mathbb{R}^{r \times m}``, where ``r = |\mathcal M_\mathrm{r}|``. This matrix can be conceptualized as the coefficient matrix of a reduced network, with ``m`` columns corresponding to islands and ``r`` rows associated with the set ``\mathcal M_\mathrm{r}``. More precisely, if we construct the coefficient matrix ``\mathbf H_\mathrm{r}`` linked to the set ``\mathcal M_\mathrm{r}`` in the DC framework, the matrix ``\mathbf M_\mathrm{r}`` can be constructed by summing the columns of ``\mathbf H_\mathrm{r}`` that belong to a specific island [manousakis2010observability](@cite).
+Next, let us introduce the matrix ``\mathbf M_\mathrm{r} \in \mathbb{R}^{r \times m}``, where ``r = |\mathcal M_\mathrm{r}|``. This matrix can be conceptualized as the coefficient matrix of a reduced network, with ``m`` columns corresponding to islands and ``r`` rows associated with the set ``\mathcal M_\mathrm{r}``. More precisely, if we construct the coefficient matrix ``\mathbf H_\mathrm{r}`` linked to the set ``\mathcal M_\mathrm{r}`` in the DC framework, the matrix ``\mathbf M_\mathrm{r}`` can be constructed by summing the columns of ``\mathbf H_\mathrm{r}`` that belong to a specific island [manousakis2010observability](@cite).
 
-Subsequently, the user needs to establish a set of pseudo-measurements, where measurements must come in pairs as well. Let us create that set:
+Subsequently, the user needs to establish a set of pseudo-measurements, where measurements must also come in pairs. Let us create that set:
 ```@example ACObservability
 pseudo = measurement(system)
 
@@ -148,7 +148,7 @@ nothing # hide
 
 The function constructs the reduced coefficient matrix as follows:
 ```math
-  \mathbf M = \begin{bmatrix} \mathbf M_{\text{r}} \\ \mathbf M_{\text{p}} \end{bmatrix},
+  \mathbf M = \begin{bmatrix} \mathbf M_{\mathrm{r}} \\ \mathbf M_{\mathrm{p}} \end{bmatrix},
 ```
 and forms the corresponding Gram matrix:
 ```math
@@ -159,15 +159,15 @@ The decomposition of ``\mathbf D`` into its ``\mathbf Q`` and ``\mathbf R`` fact
 ```math
     |R_{ii}| < \epsilon,
 ```
-JuliaGrid designates the corresponding measurement as redundant, where ``\epsilon`` represents a pre-determined zero pivot `threshold`, set to `1e-6` in this example. The minimal set of pseudo-measurements for observability restoration corresponds to the non-zero diagonal elements at positions associated with the candidate pseudo-measurements. It is essential to note that an inappropriate choice of the zero pivot threshold may adversely affect observability restoration. Additionally, there is a possibility that the set of pseudo-measurements ``\mathcal{M}_\text{p}`` may not be sufficient for achieving observability restoration.
+JuliaGrid designates the corresponding measurement as redundant, where ``\epsilon`` represents a predetermined zero pivot `threshold`, set to `1e-6` in this example. The minimal set of pseudo-measurements for observability restoration corresponds to the non-zero diagonal elements at positions associated with the candidate pseudo-measurements. It is essential to note that an inappropriate choice of the zero pivot threshold may adversely affect observability restoration. Additionally, there is a possibility that the set of pseudo-measurements ``\mathcal{M}_\mathrm{p}`` may not be sufficient for achieving observability restoration.
 
-Finally, the fifth wattmeter, and consequently the fifth varmeter successfully restore observability, and these measurements are added to the `monitoring` variable, which stores actual measurements:
+Finally, the fifth wattmeter, and consequently the fifth varmeter, successfully restore observability, and these measurements are added to the `monitoring` variable, which stores actual measurements:
 ```@repl ACObservability
 monitoring.wattmeter.label
 monitoring.varmeter.label
 ```
 
-Here, we can confirm that the new measurement set establishes the observable system formed by a single island:
+Here, we can confirm that the new measurement set establishes an observable system formed by a single island:
 ```@repl ACObservability
 islands = islandTopological(monitoring);
 
@@ -193,9 +193,9 @@ The optimal placement of PMUs without legacy measurements is formulated as an in
     \text{subject\;to}& \;\;\; \sum_{j=1}^n a_{ij}d_j \geq 1, \;\; \forall i \in \mathcal{N},
   \end{aligned}
 ```
-where ``d_i \in \mathbb{F} = \{0,1\}`` is the PMU placement decision variable associated with bus ``i \in \mathcal{N}``. The binary parameter ``a_{ij} \in \mathbb{F}`` indicates the connectivity of the power system network, where ``a_{ij}`` can be directly derived from the nodal admittance matrix by converting its entries into binary form [xu2004observability](@cite). This linear programming problem is implemented using JuMP package allowing compatibility with different type of optimization solvers.
+where ``d_i \in \mathbb{F} = \{0,1\}`` is the PMU placement decision variable associated with bus ``i \in \mathcal{N}``. The binary parameter ``a_{ij} \in \mathbb{F}`` indicates the connectivity of the power system network, where ``a_{ij}`` can be directly derived from the nodal admittance matrix by converting its entries into binary form [xu2004observability](@cite). This linear programming problem is implemented using the JuMP package, allowing compatibility with different types of optimization solvers.
 
-Consequently, we obtain the binary vector ``\mathbf d = [d_1,\dots,d_n]^T``, where ``d_i = 1``, ``i \in \mathcal{N}``, suggests that a PMU should be placed at bus ``i``. The primary aim of PMU placement in the power system is to determine a minimal set of PMUs such that the entire system is observable without relying on legacy measurements [gou2008optimal](@cite). Specifically, when we observe ``d_i = 1``, it indicates that the PMU is installed at bus ``i \in \mathcal{N}`` to measure bus voltage phasor as well as all current phasors across branches incident to bus ``i``.
+Consequently, we obtain the binary vector ``\mathbf d = [d_1,\dots,d_n]^T``, where ``d_i = 1`` for ``i \in \mathcal{N}`` indicates that a PMU should be placed at bus ``i``. The primary aim of PMU placement in the power system is to determine a minimal set of PMUs such that the entire system is observable without relying on legacy measurements [gou2008optimal](@cite). Specifically, when we observe ``d_i = 1``, it indicates that a PMU is installed at bus ``i \in \mathcal{N}`` to measure the bus voltage phasor as well as all current phasors across branches incident to bus ``i``.
 
 Now, we will determine the optimal PMU placement for our power system:
 ```@example ACObservability
@@ -206,12 +206,12 @@ placement = pmuPlacement(monitoring, HiGHS.Optimizer)
 nothing # hide
 ```
 
-The `placement` variable contains data regarding the optimal placement of measurements. It lists all buses ``i \in \mathcal{N}`` that satisfy ``d_i = 1``:
+The `placement` variable contains data regarding the optimal placement of PMUs. It lists all buses ``i \in \mathcal{N}`` that satisfy ``d_i = 1``:
 ```@repl ACObservability
 keys(placement.bus)
 ```
 
-The PMUs installed at buses `2` and `4` will measure the voltage phasors at these buses, along with all current phasors on the branches connected to them. These measurements are stored in the following variables:
+The PMUs installed at buses `2` and `4` will measure the voltage phasors at these buses, along with all current phasors on branches connected to them. These measurements are stored in the following variables:
 ```@repl ACObservability
 keys(placement.from)
 keys(placement.to)
@@ -221,7 +221,7 @@ Consequently, the PMUs will measure the current phasors at the from-bus ends of 
 ---
 
 ##### Optimal Solution With Legacy Measurements
-Beyond this scenario, JuliaGrid also includes an algorithm for identifying the minimal set of PMUs while considering legacy measurements, where legacy measurements refer to power flow and injection data only. In this case, the optimal PMU placement can be obtained by solving:
+Beyond this scenario, JuliaGrid also includes an algorithm for identifying the minimal set of PMUs while considering legacy measurements, where legacy measurements refer only to power flow and injection data. In this case, the optimal PMU placement can be obtained by solving:
 ```math
   \begin{aligned}
     \text{minimize}& \;\;\; \sum_{i=1}^n d_i\\
@@ -232,7 +232,7 @@ The binary coefficient ``c_{ij} \in \mathbb{F} = \{0,1\}`` indicates the inciden
 
 More precisely, three cases are distinguished. If a power flow measurement is installed at the ``i`` end of branch ``(i,j)``, then ``c_{ii} = c_{ij} = 1`` and ``b_i = 1``. The second case occurs when a power injection measurement is located at bus ``i``, which is incident to buses ``\mathcal{N}_i``. In this case, ``c_{ii} = c_{ik} = 1`` for ``k \in \mathcal{N}_i`` and ``b_i = |\mathcal{N}_i|``. Finally, if bus ``i`` is not incident to any measurement, then ``c_{ii} = 1`` and ``b_i = 1``. All other binary coefficients not explicitly specified are equal to zero.
 
-As in the case of optimal placement without legacy measurements, we obtain the binary vector ``\mathbf{d}``, where ``d_i = 1, i \in \mathcal{N}`` indicates that a PMU should be installed at bus ``i``.
+As in the case of optimal placement without legacy measurements, we obtain the binary vector ``\mathbf{d}``, where ``d_i = 1`` for ``i \in \mathcal{N}`` indicates that a PMU should be installed at bus ``i``.
 
 Now, we can determine the optimal PMU placement while taking legacy measurements into account:
 ```@example ACObservability
@@ -249,4 +249,4 @@ keys(placement.bus)
 keys(placement.from)
 keys(placement.to)
 ```
-As we can see, when determining the PMU placement to make the system observable while also taking legacy measurements into account, it is sufficient to install a PMU at bus `4`. This PMU will measure the voltage magnitude and angle at bus `4` as well as the current magnitudes and angles at the corresponding branches.
+As we can see, when determining the PMU placement to make the system observable while also taking legacy measurements into account, it is sufficient to install a PMU at bus `4`. This PMU will measure the voltage magnitude and angle at bus `4`, as well as the current magnitudes and angles at the corresponding branches.

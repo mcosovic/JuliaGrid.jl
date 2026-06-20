@@ -1,5 +1,5 @@
 # [Observability Analysis](@id ObservabilityAnalysisManual)
-Observability analysis can typically be performed prior to executing the state estimation algorithm, and its primary task is to ensure the existence of a unique state estimator. In other words, the system of equations used in the state estimation algorithm should be solvable.
+Observability analysis can typically be performed prior to executing the state estimation algorithm, and its primary task is to ensure the existence and uniqueness of the solution. In other words, the system of equations used in the state estimation algorithm should be solvable.
 
 Traditionally, observability analysis, which involves identifying observable islands and restoring observability using a set of pseudo-measurements, can be performed before both AC and DC state estimation. In this context, users can detect two types of observable islands: flow islands and maximal islands:
 * [`islandTopologicalFlow`](@ref islandTopologicalFlow(::Measurement)),
@@ -8,7 +8,7 @@ Traditionally, observability analysis, which involves identifying observable isl
 Once observable islands are identified, observability can be restored by applying:
 * [`restorationGram!`](@ref restorationGram!(::Measurement, ::Measurement, ::Island)).
 
-Additionally, the optimal PMU placement algorithm can also be viewed from the perspective of observability, as it determines the minimal set of PMUs required to make the system observable and guarantee a unique solution in AC and PMU state estimation, regardless of other measurements:
+Additionally, the optimal PMU placement algorithm can also be viewed from the perspective of observability, as it determines the minimal set of PMUs required to make the system observable and guarantee a unique solution for AC and PMU state estimation, regardless of other measurements:
 * [`pmuPlacement`](@ref pmuPlacement).
 
 ---

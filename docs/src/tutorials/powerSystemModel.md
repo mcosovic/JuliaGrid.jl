@@ -2,7 +2,7 @@
 Power system analyses commonly utilize the unified branch model that provides linear relationships between voltages and currents. However, as the focus is on power calculations rather than current calculations, the resulting equations become nonlinear, posing challenges in solving them [andersson2012power](@cite). Hence, to accurately analyze power systems without any approximations, we use the AC model, which is a crucial component of our framework. In contrast, to obtain a linear system of equations for various DC analyses, we introduce approximations in the unified branch model, resulting in the DC model.
 
 !!! note "Info"
-    In this section, we not only describe the AC and DC models derived from the unified branch model but also furnish the power and current equations utilized in all JuliaGrid analyses.
+    In this section, we describe the AC and DC models derived from the unified branch model and provide the power and current equations used in JuliaGrid analyses.
 
 A common way to describe the power system network topology is through the bus/branch model, which employs the two-port ``\pi``-model, which results in the unified branch model. The bus/branch model can be represented by a graph denoted by ``\mathcal G = (\mathcal N, \mathcal E)``, where the set of nodes ``\mathcal N = \{1, \dots, n\}`` corresponds to buses, and the set of edges ``\mathcal E \subseteq \mathcal N \times \mathcal N`` represents the branches of the power network.
 
@@ -97,7 +97,7 @@ The transformer complex ratio ``\alpha_{ij}`` is defined:
 ```math
   \alpha_{ij} = \cfrac{1}{\tau_{ij}} e^{-\mathrm{j}\phi_{ij}},
 ```
-where ``\tau_{ij} \neq 0`` is a transformer turns ratio, specifically the off-nominal turns ratio, while ``\phi_{ij}`` is a transformer phase shift angle, always located at the from-bus end of the branch. Note, if ``\tau_{ij} = 1`` and ``\phi_{ij} = 0`` the model describes the line. In-phase transformers are defined if ``\tau_{ij} \neq 1``, ``\phi_{ij} = 0``, and ``y_{\mathrm{s}ij} = 0``, while phase-shifting transformers are obtained if ``\tau_{ij} \neq 1``, ``\phi_{ij} \neq 0``, and ``y_{\mathrm{s}ij} = 0``.
+where ``\tau_{ij} \neq 0`` is a transformer turns ratio, specifically the off-nominal turns ratio, while ``\phi_{ij}`` is a transformer phase shift angle, always located at the from-bus end of the branch. If ``\tau_{ij} = 1`` and ``\phi_{ij} = 0``, the model describes a line. In-phase transformers are defined if ``\tau_{ij} \neq 1``, ``\phi_{ij} = 0``, and ``y_{\mathrm{s}ij} = 0``, while phase-shifting transformers are obtained if ``\tau_{ij} \neq 1``, ``\phi_{ij} \neq 0``, and ``y_{\mathrm{s}ij} = 0``.
 
 These transformer parameters are stored in the vectors ``\bm \tau = [\tau_{ij}]`` and ``\bm \phi = [\phi_{ij}]``, respectively:
 ```@repl ACDCModel
@@ -116,10 +116,10 @@ The currents flowing through shunt admittances denoted as ``y_{\mathrm{s}ij}`` a
   \end{aligned}
 ```
 
-With these specified currents in place, it becomes straightforward to compute both the total active and reactive power that branch shunt elements demand and inject concerning the power system:
+With these currents, we can compute the total active and reactive power exchanged by the branch shunt elements:
 ```math
   S_{\mathrm{s}ij} = P_{\mathrm{s}ij} + \mathrm{j} Q_{\mathrm{s}ij} = \alpha_{ij} \bar{V}_i \bar{I}_{\mathrm{s}i}^* + \bar{V}_j \bar{I}_{\mathrm{s}j}^* =
-  y_{\mathrm{s}ij}^* (\alpha_{ij}^2 V_i^2 + V_j^2), \;\;\; (i,j) \in \mathcal E.
+  y_{\mathrm{s}ij}^* (|\alpha_{ij}|^2 V_i^2 + V_j^2), \;\;\; (i,j) \in \mathcal E.
 ```
 
 For real branch sections, the reactive power is negative, ``Q_{\mathrm{s}ij} < 0``, signifying that the branch injects reactive power due to its capacitive nature. The negative sign implies that the power flow direction opposes the assumed direction set by the currents ``\bar{I}_{\mathrm{s}i}`` and ``\bar{I}_{\mathrm{s}j}``. The active power ``P_{\mathrm{s}ij}`` represents active losses within the branch shunt admittances.
@@ -129,7 +129,7 @@ For real branch sections, the reactive power is negative, ``Q_{\mathrm{s}ij} < 0
 ##### [Branch Series Element](@id BranchSeriesElementTutorials)
 The current flowing through a series admittance, denoted as ``y_{ij}``, is defined as follows:
 ```math
-  \bar{I}_{\mathrm{l}ij} = \alpha_{ij} y_{ij} \bar{V}_i - y_{ij} \bar{V}_i, \;\;\; (i,j) \in \mathcal E.
+  \bar{I}_{\mathrm{l}ij} = \alpha_{ij} y_{ij} \bar{V}_i - y_{ij} \bar{V}_j, \;\;\; (i,j) \in \mathcal E.
 ```
 
 Consequently, the active and reactive powers associated with the branch series element are as follows:
@@ -192,7 +192,7 @@ Let us consider an illustrative example from our case study, depicted in Figure 
 ```
 
 !!! note "Info"
-    The current ``\bar{I}_{\mathrm{sh}2}`` follows the convention of coming out from the bus in terms of its direction. When calculating powers related to shunt elements, this current direction is assumed. Therefore, in cases where power is positive, it signifies alignment with the assumed current direction, emerging away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus.
+    The current ``\bar{I}_{\mathrm{sh}2}`` follows the convention of flowing out from the bus. When calculating powers related to shunt elements, this current direction is assumed. Therefore, in cases where power is positive, it signifies alignment with the assumed current direction, emerging away from the bus. Conversely, when power is negative, the direction is reversed, indicating a flow towards the bus.
 
 According to the [Branch Network Equations](@ref BranchNetworkEquationsTutorials) each branch is described using the system of equations as follows:
 ```math
@@ -264,7 +264,7 @@ where ``\mathbf{\bar V} \in \mathbb{C}^{n}`` is the vector of bus complex voltag
       \end{aligned}
     ```
 
-When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is sparse (i.e., a small number of elements are non-zeros) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetrical, it is not a general case. For example, in the presence of phase shifting transformers the matrix ``\mathbf{Y}`` is not symmetric [john1994power; Sec. 9.6](@cite). JuliaGrid stores both the matrix ``\mathbf{Y}`` and its transpose ``\mathbf{Y}^T`` in the `ac` field of the `PowerSystem` type:
+When a branch is not incident (or adjacent) to a bus the corresponding element in the nodal admittance matrix ``\mathbf{Y}`` is equal to zero. The nodal admittance matrix ``\mathbf{Y}`` is sparse (i.e., a small number of elements are nonzero) for real-world power systems. Although it is often assumed that the matrix ``\mathbf{Y}`` is symmetric, this is not true in general. For example, in the presence of phase-shifting transformers, the matrix ``\mathbf{Y}`` is not symmetric [john1994power; Sec. 9.6](@cite). JuliaGrid stores both the matrix ``\mathbf{Y}`` and its transpose ``\mathbf{Y}^T`` in the `ac` field of the `PowerSystem` type:
 ```@repl ACDCModel
 𝐘 = system.model.ac.nodalMatrix
 𝐘ᵀ = system.model.ac.nodalMatrixTranspose
@@ -361,7 +361,7 @@ Furthermore, the computed branch admittances in the DC framework are stored in t
 𝐲 = system.model.dc.admittance
 ```
 
-We can conclude that ``P_{ij} = -P_{ji}`` holds. With the DC model, the linear network equations relate active powers to bus voltage angles, versus complex currents to complex bus voltages in the AC model [zimmerman2016matpower](@cite). Consequently, analogous to the [Branch Network Equations](@ref BranchNetworkEquationsTutorials) we can write:
+We can conclude that ``P_{ij} = -P_{ji}`` holds. In the DC model, the linear network equations relate active powers to bus voltage angles, whereas in the AC model they relate complex currents to complex bus voltages [zimmerman2016matpower](@cite). Consequently, analogous to the [Branch Network Equations](@ref BranchNetworkEquationsTutorials) we can write:
 ```math
   \begin{bmatrix}
     P_{ij} \\ P_{ji}
@@ -470,7 +470,7 @@ The vector ``\mathbf P \in \mathbb{R}^n`` contains active power injections at bu
 𝐏 = system.bus.supply.active - system.bus.demand.active
 ```
 
-The vector ``\mathbf{P}_\mathrm{tr} \in \mathbb{R}^n`` represents active powers related to the non-zero shift angle of transformers. This vector is stored in the `dc` field, and we can access it using:
+The vector ``\mathbf{P}_\mathrm{tr} \in \mathbb{R}^n`` represents active powers related to the nonzero shift angle of transformers. This vector is stored in the `dc` field, and we can access it using:
 ```@repl ACDCModel
 𝐏ₜᵣ = system.model.dc.shiftPower
 ```

@@ -386,7 +386,9 @@ function _updateAmmeter!(analysis::AcStateEstimation{<:GaussNewton}, idxAmp::Int
     busNumber = analysis.system.bus.number
 
     wls.mean[idx] = status * (amp.magnitude.mean[idxAmp]^sq)
-    wls.precision[idx, idx] = 1 / (sq * amp.magnitude.variance[idxAmp])
+    wls.precision[idx, idx] = 1 / varianceSquare(
+        amp.magnitude.mean[idxAmp], amp.magnitude.variance[idxAmp], square
+    )
     wls.residual[idx] = 0.0
 
     wls.jacobian[idx, i] = 0.0

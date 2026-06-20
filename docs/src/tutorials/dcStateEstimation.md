@@ -27,7 +27,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 ---
 
-Following that, we will introduce the `Measurement` type and incorporate a set of measurement devices ``\mathcal{M}`` into the graph ``\mathcal{G}``. In typical scenarios, the DC state estimation model relies solely on active power measurements  originating from the set of wattmeters ``\mathcal{P}``. However, we provide the option for users to include measurements from the set of PMUs ``\bar{\mathcal{P}}``. Specifically, we utilize only the PMUs installed at the buses ``\bar{\mathcal{P}}_\text{b} \subset \bar{\mathcal{P}}`` that measure bus voltage angles. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref DCSEModelTutorials) section. Currently, we are only initializing the `Measurement` type:
+Following that, we will introduce the `Measurement` type and incorporate a set of measurement devices ``\mathcal{M}`` into the graph ``\mathcal{G}``. In typical scenarios, the DC state estimation model relies solely on active power measurements originating from the set of wattmeters ``\mathcal{P}``. However, we provide the option for users to include measurements from the set of PMUs ``\bar{\mathcal{P}}``. Specifically, we utilize only the PMUs installed at the buses ``\bar{\mathcal{P}}_\mathrm{b} \subset \bar{\mathcal{P}}`` that measure bus voltage angles. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref DCSEModelTutorials) section. Currently, we are only initializing the `Measurement` type:
 ```@example DCSETutorial
 monitoring = measurement(system)
 nothing # hide
@@ -41,9 +41,9 @@ nothing # hide
 ---
 
 ## [State Estimation Model](@id DCSEModelTutorials)
-In accordance with the [DC Model](@ref DCModelTutorials), the DC state estimation is derived through the linearization of the non-linear model. In this linearized model, all bus voltage magnitudes are assumed to be ``V_i \approx 1``, ``i \in \mathcal{N}``. Additionally, shunt elements and branch resistances are neglected. This simplification implies that the DC model disregards reactive powers and transmission losses, focusing solely on active powers. Consequently, the DC state estimation considers only bus voltage angles, represented as ``\mathbf x \equiv \bm {\Theta}``, as the state variables. As a result, the total number of state variables is ``n-1``, with one voltage angle corresponding to the slack bus.
+In accordance with the [DC Model](@ref DCModelTutorials), the DC state estimation is derived through the linearization of the nonlinear model. In this linearized model, all bus voltage magnitudes are assumed to be ``V_i \approx 1``, ``i \in \mathcal{N}``. Additionally, shunt elements and branch resistances are neglected. This simplification implies that the DC model disregards reactive powers and transmission losses, focusing solely on active powers. Consequently, the DC state estimation considers only bus voltage angles, represented as ``\mathbf x \equiv \bm {\Theta}``, as the state variables. As a result, the total number of state variables is ``n-1``, with one voltage angle corresponding to the slack bus.
 
-Within the JuliaGrid framework for DC state estimation, the methodology encompasses both active power flow and injection measurements from the set ``\mathcal{P}``, along with bus voltage angle measurements represented by the set ``\bar{\mathcal{P}}_\text{b}``. These measurements contribute to the construction of a linear system of equations:
+Within the JuliaGrid framework for DC state estimation, the methodology encompasses both active power flow and injection measurements from the set ``\mathcal{P}``, along with bus voltage angle measurements represented by the set ``\bar{\mathcal{P}}_\mathrm{b}``. These measurements contribute to the construction of a linear system of equations:
 ```math
     \mathbf{z}=\mathbf{h}(\bm {\Theta})+\mathbf{u},
 ```
@@ -53,15 +53,15 @@ Therefore, the linear system of equations can be represented based on the specif
 ```math
     \begin{bmatrix}
       \mathbf{z}_\mathcal{P}\\[3pt]
-      \mathbf{z}_{\bar{\mathcal{P}}_\text{b}}
+      \mathbf{z}_{\bar{\mathcal{P}}_\mathrm{b}}
     \end{bmatrix} =
     \begin{bmatrix}
       \mathbf{h}_\mathcal{P}(\bm {\Theta})\\[3pt]
-      \mathbf{h}_{\bar{\mathcal{P}}_\text{b}}(\bm {\Theta})
+      \mathbf{h}_{\bar{\mathcal{P}}_\mathrm{b}}(\bm {\Theta})
     \end{bmatrix} +
     \begin{bmatrix}
       \mathbf{u}_\mathcal{P}\\[3pt]
-      \mathbf{u}_{\bar{\mathcal{P}}_\text{b}}.
+      \mathbf{u}_{\bar{\mathcal{P}}_\mathrm{b}}.
     \end{bmatrix}
 ```
 
@@ -70,7 +70,7 @@ In summary, upon user definition of the measurement devices, each ``i``-th measu
 ---
 
 ##### Active Power Injection Measurements
-When adding a wattmeter ``P_i \in \mathcal{P}`` at bus ``i \in \mathcal{N}``, users specify that the wattmeter measures active power injection and define measurement value, variance and measurement function of vectors:
+When adding a wattmeter ``P_i \in \mathcal{P}`` at bus ``i \in \mathcal{N}``, users specify that the wattmeter measures active power injection and define the measurement value, variance, and measurement function of vectors:
 ```math
     \mathbf{z}_\mathcal{P} = [z_{P_{i}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{i}}], \;\;\; \mathbf{h}_\mathcal{P}(\bm {\Theta}) = [h_{P_{i}}(\bm {\Theta})].
 ```
@@ -83,9 +83,9 @@ nothing # hide
 
 Here, utilizing the [DC Model](@ref DCNodalNetworkEquationsTutorials), we derive the function defining the active power injection as follows:
 ```math
-   h_{P_{i}}(\bm {\Theta}) = B_{ii}\theta_i + \sum_{j \in \mathcal{N}_i \setminus i} {B}_{ij} \theta_j + P_{\text{tr}i} + P_{\text{sh}i},
+   h_{P_{i}}(\bm {\Theta}) = B_{ii}\theta_i + \sum_{j \in \mathcal{N}_i \setminus \{i\}} {B}_{ij} \theta_j + P_{\mathrm{tr}i} + P_{\mathrm{sh}i},
 ```
-where ``\mathcal{N}_i \setminus i`` contains buses incident to bus ``i``, excluding bus ``i``, with the following coefficient expressions:
+where ``\mathcal{N}_i \setminus \{i\}`` contains buses incident to bus ``i``, excluding bus ``i``, with the following coefficient expressions:
 ```math
   \begin{aligned}
     \cfrac{\mathrm \partial{h_{P_{i}}(\bm {\Theta})}}{\mathrm \partial \theta_{i}} = B_{ii}, \;\;\;
@@ -96,7 +96,7 @@ where ``\mathcal{N}_i \setminus i`` contains buses incident to bus ``i``, exclud
 ---
 
 ##### From-Bus End Active Power Flow Measurements
-Additionally, when introducing a wattmeter at branch ``(i,j) \in \mathcal{E}``, users specify that the wattmeter measures active power flow. It can be positioned at the from-bus end, denoted as ``P_{ij} \in \mathcal{P}``, specifying the measurement value, variance and measurement function of vectors:
+Additionally, when introducing a wattmeter at branch ``(i,j) \in \mathcal{E}``, users specify that the wattmeter measures active power flow. It can be positioned at the from-bus end, denoted as ``P_{ij} \in \mathcal{P}``, specifying the measurement value, variance, and measurement function of vectors:
 ```math
     \mathbf{z}_\mathcal{P} = [z_{P_{ij}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{ij}}], \;\;\; \mathbf{h}_\mathcal{P}(\bm {\Theta}) = [h_{P_{ij}}(\bm {\Theta})].
 ```
@@ -122,7 +122,7 @@ with the following coefficient expressions:
 ---
 
 ##### To-Bus End Active Power Flow Measurements
-Similarly, a wattmeter can be placed at the to-bus end, denoted as ``P_{ji} \in \mathcal{P}``, specifying the measurement value, variance and measurement function of vectors:
+Similarly, a wattmeter can be placed at the to-bus end, denoted as ``P_{ji} \in \mathcal{P}``, specifying the measurement value, variance, and measurement function of vectors:
 ```math
     \mathbf{z}_\mathcal{P} = [z_{P_{ji}}], \;\;\; \mathbf{v}_\mathcal{P} = [v_{P_{ji}}], \;\;\; \mathbf{h}_\mathcal{P}(\bm {\Theta}) = [h_{P_{ji}}(\bm {\Theta})].
 ```
@@ -146,9 +146,9 @@ with the following coefficient expressions:
 ---
 
 ##### Bus Voltage Angle Measurements
-If the user opts to include phasor measurements that measure bus voltage angle at bus ``i \in \mathcal{N}``, denoted as ``\theta_i \in \bar{\mathcal{P}}_\text{b}``, the user will specify the measurement values, variances, and measurement functions of vectors:
+If the user opts to include phasor measurements that measure bus voltage angle at bus ``i \in \mathcal{N}``, denoted as ``\theta_i \in \bar{\mathcal{P}}_\mathrm{b}``, the user will specify the measurement values, variances, and measurement functions of vectors:
 ```math
-    \mathbf{z}_{\bar{\mathcal{P}}_\text{b}} = [z_{\theta_i}], \;\;\; \mathbf{v}_{\bar{\mathcal{P}}_\text{b}} = [v_{\theta_i}], \;\;\; \mathbf{h}_{\bar{\mathcal{P}}_\text{b}}(\bm {\Theta}) = [h_{\theta_{i}}(\bm {\Theta})].
+    \mathbf{z}_{\bar{\mathcal{P}}_\mathrm{b}} = [z_{\theta_i}], \;\;\; \mathbf{v}_{\bar{\mathcal{P}}_\mathrm{b}} = [v_{\theta_i}], \;\;\; \mathbf{h}_{\bar{\mathcal{P}}_\mathrm{b}}(\bm {\Theta}) = [h_{\theta_{i}}(\bm {\Theta})].
 ```
 
 For example:
@@ -177,7 +177,7 @@ The solution to the DC state estimation problem is determined by solving the lin
 	\mathbf H^{T} \bm \Sigma^{-1} \mathbf H \bm {\Theta} = \mathbf H^{T} \bm \Sigma^{-1} (\mathbf z - \mathbf{c}).
 ```
 
-Here, ``\mathbf z \in \mathbb {R}^{k}`` denotes the vector of measurement values, the vector ``\mathbf c \in \mathbb {R}^{k}`` holds constant terms, ``\mathbf {H} \in \mathbb {R}^{k \times (n-1)}`` represents the coefficient matrix, and ``\bm \Sigma \in \mathbb {R}^{k \times k}`` is the measurement error covariance matrix, where the diagonal elements hold measurement variances.
+Here, ``\mathbf z \in \mathbb{R}^{k}`` denotes the vector of measurement values, the vector ``\mathbf c \in \mathbb{R}^{k}`` holds constant terms, ``\mathbf {H} \in \mathbb{R}^{k \times (n-1)}`` represents the coefficient matrix, and ``\bm \Sigma \in \mathbb{R}^{k \times k}`` is the measurement error covariance matrix, where the diagonal elements hold measurement variances.
 
 The inclusion of the vector ``\mathbf{c}`` is necessary due to the fact that measurement functions associated with active power measurements may include constant terms, especially when there are non-zero shift angles of transformers or shunt elements in the system consuming active powers, as evident from the provided measurement functions.
 
@@ -197,7 +197,7 @@ Using the above-described equations, JuliaGrid forms the coefficient matrix ``\m
 ```@repl DCSETutorial
 𝐇 = analysis.method.coefficient
 ```
-Each row in the matrix corresponds to a specific measurement. The first ``|\mathcal{P}|`` rows correspond to wattmeters, ordered as users add wattmeters, while the last ``|{\bar{\mathcal{P}}_\text{b}}|`` rows correspond to PMUs, also in the order users add PMUs.
+Each row in the matrix corresponds to a specific measurement. The first ``|\mathcal{P}|`` rows correspond to wattmeters, ordered as users add wattmeters, while the last ``|{\bar{\mathcal{P}}_\mathrm{b}}|`` rows correspond to PMUs, also in the order users add PMUs.
 
 ---
 
@@ -224,7 +224,7 @@ Once the model is established, we solve the WLS equation to derive the estimate 
 	\hat{\bm {\Theta}} = [\mathbf H^{T} \bm \Sigma^{-1} \mathbf H]^{-1} \mathbf H^{T} \bm \Sigma^{-1} (\mathbf z - \mathbf{c}).
 ```
 
-This process is executed using the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function:
+This process is executed using the [`solve!`](@ref solve!(::DcStateEstimation{WLS{T}}) where T <: Normal) function:
 ```@example DCSETutorial
 solve!(analysis)
 ```
@@ -287,7 +287,7 @@ At this point, QR factorization is performed on the rectangular matrix:
   \bar{\mathbf{H}} = {\mathbf W^{1/2}} \mathbf H = \mathbf{Q}\mathbf{R}.
 ```
 
-Executing this procedure involves the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function:
+Executing this procedure involves the [`solve!`](@ref solve!(::DcStateEstimation{WLS{T}}) where T <: Normal) function:
 ```@example DCSETutorial
 solve!(analysis)
 nothing # hide
@@ -313,7 +313,7 @@ analysis = dcStateEstimation(monitoring, PetersWilkinson)
 nothing # hide
 ```
 
-This method applies LU factorisation to the rectangular matrix ``\bar{\mathbf{H}}``:
+This method applies LU factorization to the rectangular matrix ``\bar{\mathbf{H}}``:
 ```math
   \bar{\mathbf{H}} = {\mathbf W^{1/2}} \mathbf H = \mathbf{L}\mathbf{U}.
 ```
@@ -327,20 +327,20 @@ yields:
   \mathbf{U}^T \mathbf{L}^T \mathbf{L} \mathbf{U} \bm {\Theta} = \mathbf{U}^T \mathbf{L}^T \bar{\mathbf{z}}.
 ```
 
-By eliminating ``\mathbf{U}^T`` from both sides and introducing a new vector ``\mathbf{y} = \mathbf{U} \bm {\Theta}``,  we obtain:
+By eliminating ``\mathbf{U}^T`` from both sides and introducing a new vector ``\mathbf{y} = \mathbf{U} \bm {\Theta}``, we obtain:
 ```math
   \mathbf{L}^T \mathbf{L} \mathbf y = \mathbf{L}^T \bar{\mathbf{z}}.
 ```
 
 The Peters and Wilkinson method first solves this equation to compute ``\mathbf{y}``, and then obtains ``\bm{\Theta}`` by backward substitution using equation ``\mathbf{y} = \mathbf{U} \bm {\Theta}``. The main advantage of this approach is that ``\mathbf{L}^T \mathbf{L}`` is generally less ill-conditioned than ``\bar{\mathbf{H}}^{T} \bar{\mathbf{H}}``, which improves numerical stability.
 
-To execute this procedure, use the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function:
+To execute this procedure, use the [`solve!`](@ref solve!(::DcStateEstimation{WLS{T}}) where T <: Normal) function:
 ```@example DCSETutorial
 solve!(analysis)
 nothing # hide
 ```
 
-Access to the factorised matrices is available via:
+Access to the factorized matrices is available via:
 ```@repl DCSETutorial
 𝐋 = analysis.method.factorization.L
 𝐔 = analysis.method.factorization.U
@@ -354,7 +354,7 @@ Finally, the estimated state variables ``\hat{\bm{\Theta}} = [\hat{\theta}_i]``,
 ---
 
 ## [Least Absolute Value Estimation](@id DCSELAVTutorials)
-The least absolute value (LAV) method provides an alternative estimation approach that is considered more robust in comparison to the WLS method. The WLS state estimation problem relies on specific assumptions about measurement errors, whereas robust estimators aim to remain unbiased even in the presence of various types of measurement errors and outliers. This characteristic eliminates the need for bad data analysis, as discussed in [aburbook; Ch. 6](@cite). It is important to note that robustness often comes at the cost of increased computational complexity.
+The least absolute value (LAV) method provides an alternative estimation approach that is considered more robust in comparison to the WLS method. The WLS state estimation problem relies on specific assumptions about measurement errors, whereas robust estimators aim to reduce the influence of measurement errors and outliers. This characteristic can reduce the need for bad data analysis, as discussed in [aburbook; Ch. 6](@cite). It is important to note that robustness often comes at the cost of increased computational complexity.
 
 It can be demonstrated that the problem can be expressed as a linear programming problem. This section outlines the method as described in [aburbook; Sec. 6.5](@cite). To revisit, we consider the system of linear equations:
 ```math
@@ -379,7 +379,7 @@ To explicitly handle absolute values, we introduce two nonnegative variables ``u
   \end{aligned}
 ```
 
-To form the above optimization problem, the user can call the following function:
+To form the above optimization problem, the user can call the [`dcLavStateEstimation`](@ref dcLavStateEstimation) function:
 ```@example DCSETutorial
 using Ipopt
 using JuMP # hide
@@ -403,7 +403,7 @@ Users can retrieve the estimated bus voltage angles ``\hat{\bm {\Theta}} = [\hat
 ---
 
 ## [Power Analysis](@id DCSEPowerAnalysisTutorials)
-After obtaining the solution from the DC state estimation, we can calculate powers related to buses and branches using the [`power!`](@ref power!(::DC)) function:
+After obtaining the solution from the DC state estimation, we can calculate powers related to buses and branches using the [`power!`](@ref power!(::DcPowerFlow)) function:
 ```@example DCSETutorial
 power!(analysis)
 nothing # hide
@@ -423,11 +423,11 @@ nothing # hide
 ---
 
 ##### Generator Power Injections
-We can determine the active power supplied by generators to the buses by summing the active power injections and the active power demanded by consumers at each bus:
+We can determine the active power supplied to buses by summing the active power injections and the active power demanded by consumers at each bus:
 ```math
-    P_{\text{p}i} = P_i + P_{\text{d}i},\;\;\; i \in \mathcal{N}.
+    P_{\mathrm{p}i} = P_i + P_{\mathrm{d}i},\;\;\; i \in \mathcal{N}.
 ```
-The vector of active power injected by generators into the buses, denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]``, can be obtained using:
+The vector of active power supplied to buses, denoted by ``\mathbf{P}_\mathrm{p} = [P_{\mathrm{p}i}]``, can be obtained using:
 ```@repl DCSETutorial
 𝐏ₚ = analysis.power.supply.active
 ```
@@ -435,12 +435,12 @@ The vector of active power injected by generators into the buses, denoted by ``\
 ---
 
 ##### Power Flows
-The resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{i}} = [P_{ij}]``, which can be retrieved using:
+The resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_\mathrm{i} = [P_{ij}]``, which can be retrieved using:
 ```@repl DCSETutorial
 𝐏ᵢ = analysis.power.from.active
 ```
 
-Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_{\text{j}} = [P_{ji}]``, which can be retrieved using:
+Similarly, the resulting [active power flows](@ref DCBranchNetworkEquationsTutorials) are stored as the vector ``\mathbf{P}_\mathrm{j} = [P_{ji}]``, which can be retrieved using:
 ```@repl DCSETutorial
 𝐏ⱼ = analysis.power.to.active
 ```

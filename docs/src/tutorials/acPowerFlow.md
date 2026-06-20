@@ -179,7 +179,7 @@ Here, we utilize a "flat start" approach in our method. It is important to keep 
 ---
 
 ##### Iterative Process
-To implement the Newton-Raphson method, the iterative approach based on the Taylor series expansion, JuliaGrid provides the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) functions. These functions are utilized to carry out the Newton-Raphson method iteratively until a stopping criterion is reached, as demonstrated in the following code snippet:
+To implement the Newton-Raphson method using the iterative approach based on the Taylor series expansion, JuliaGrid provides the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) functions. These functions are utilized to carry out the Newton-Raphson method iteratively until a stopping criterion is reached, as demonstrated in the following code snippet:
 ```@example PowerFlowSolution
 for iteration = 0:20
     stopping = mismatch!(analysis)
@@ -214,12 +214,12 @@ In addition to computing the mismatches in active and reactive power injection, 
 
 Next, the function [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) computes the increments of bus voltage angle and magnitude at each iteration using:
 ```math
-  \mathbf \Delta \mathbf{x}^{(\nu)} = -\mathbf J (\mathbf{x}^{(\nu)})^{-1} \mathbf f (\mathbf{x}^{(\nu)}),
+  \mathbf \Delta \mathbf{x}^{(\nu)} = \mathbf J(\mathbf{x}^{(\nu)})^{-1} \mathbf f(\mathbf{x}^{(\nu)}),
 ```
 where ``\mathbf \Delta \mathbf x = [\mathbf \Delta \mathbf x_\mathrm{a}, \mathbf \Delta \mathbf x_\mathrm{m}]^T`` consists of the vector of bus voltage angle increments ``\mathbf \Delta \mathbf x_\mathrm{a} \in \mathbb{R}^{n-1}`` and bus voltage magnitude increments ``\mathbf \Delta \mathbf x_\mathrm{m} \in \mathbb{R}^{n_\mathrm{pq}}``, and ``\mathbf J (\mathbf{x}) \in \mathbb{R}^{n_\mathrm{u} \times n_\mathrm{u}}`` is the Jacobian matrix, ``n_\mathrm{u} = n + n_\mathrm{pq} - 1``.
 
 !!! tip "Tip"
-    By default, JuliaGrid uses LU factorization as the primary method for factorizing the Jacobian matrix ``\mathbf{J} = \mathbf{L}\mathbf{U}``, aiming to compute the increments. Nevertheless, users have the flexibility to opt for QR factorization as an alternative method.
+    By default, JuliaGrid uses LU factorization as the primary method for factorizing the Jacobian matrix ``\mathbf{J} = \mathbf{L}\mathbf{U}``, aiming to compute the increments. Nevertheless, users can opt for KLU or QR factorization as an alternative method.
 
 These values are stored in the `AcPowerFlow` type and can be accessed after each iteration:
 ```@repl PowerFlowSolution
@@ -235,9 +235,9 @@ The last ``n_\mathrm{pq}`` elements of the increment ``\mathbf \Delta  \mathbf x
 
 These specified orders dictate the row and column order of the Jacobian matrix ``\mathbf J(\mathbf x)``.
 
-Finally, the function [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) adds the computed increment term to the previous solution to obtain a new solution:
+Finally, the function [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) subtracts the computed increment term from the previous solution to obtain a new solution:
 ```math
-  \mathbf{x}^{(\nu + 1)} = \mathbf{x}^{(\nu)} + \mathbf \Delta \mathbf{x}^{(\nu)}.
+  \mathbf{x}^{(\nu + 1)} = \mathbf{x}^{(\nu)} - \mathbf \Delta \mathbf{x}^{(\nu)}.
 ```
 
 The bus voltage magnitudes ``\mathbf V = [V_i]`` and angles ``\bm \Theta = [\theta_i]`` are then updated based on the obtained solution ``\mathbf x``. It is important to note that only the voltage magnitudes related to demand buses and angles related to demand and generator buses are updated; not all values are updated. Therefore, the final solution obtained by JuliaGrid is stored in the following vectors:
@@ -340,7 +340,7 @@ In summary, the Newton-Raphson iterative algorithm for solving AC power flow fol
 | 4.        | Check for convergence                                           | ``f_{P\max}(\mathbf x^{(\nu)}) < \epsilon``, ``f_{Q\max}(\mathbf x^{(\nu)}) < \epsilon`` |
 | 5.        | If the convergence criteria are met, stop the process           |                                                                                          |
 | 6.        | Compute the voltage magnitude and angle increments              | ``\mathbf \Delta \mathbf{x}^{(\nu)}``                                                    |
-| 7.        | Update the voltage magnitude and angle values                   | ``\mathbf{x}^{(\nu + 1)} = \mathbf{x}^{(\nu)} + \mathbf \Delta \mathbf{x}^{(\nu)}``      |
+| 7.        | Update the voltage magnitude and angle values                   | ``\mathbf{x}^{(\nu + 1)} = \mathbf{x}^{(\nu)} - \mathbf \Delta \mathbf{x}^{(\nu)}``      |
 | 8.        | Increase the iteration index                                    | ``\nu := \nu + 1``                                                                       |
 | 9.        | Repeat from step 3.                                             |                                                                                          |
 |           |                                                                 |                                                                                          |
@@ -391,7 +391,7 @@ To examine the problem, it is helpful to express it as:
     \Delta \theta_n \cfrac{\mathrm \partial{f_{P_2}(\mathbf x)}}{\mathrm \partial \theta_n} \\
     & \vdots \\
     f_{P_n}(\mathbf x) &= -\Delta \theta_2 \cfrac{\mathrm \partial{f_{P_n}(\mathbf x)}} {\mathrm \partial \theta_2} - \cdots -
-    \Delta \theta_n \cfrac{\mathrm \partial{f_{P_i}(\mathbf x)}}{\mathrm \partial \theta_n}\\
+    \Delta \theta_n \cfrac{\mathrm \partial{f_{P_n}(\mathbf x)}}{\mathrm \partial \theta_n}\\
     f_{Q_2}(\mathbf x) &= - \Delta V_2 \cfrac{\mathrm \partial{f_{Q_2}(\mathbf x)}}{\mathrm \partial V_2} - \cdots -
     \Delta V_{m} \cfrac{\mathrm \partial{f_{Q_2}(\mathbf x)}}{\mathrm \partial V_m}\\
     & \vdots \\
@@ -586,8 +586,8 @@ Therefore, the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) fun
 
 The resulting vectors from these calculations are stored in the `AcPowerFlow` type and can be accessed by:
 ```@repl PowerFlowSolution
-𝐡ₚ = analysis.method.active.increment
-𝐡ₒ = analysis.method.reactive.increment
+𝐡ₚ = analysis.method.active.mismatch
+𝐡ₒ = analysis.method.reactive.mismatch
 ```
 
 In addition to computing the mismatches in active and reactive power injection, the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function also returns the maximum absolute values of these mismatches. These maximum values are used as termination criteria for the iteration loop if both are less than a predefined stopping criterion ``\epsilon``:
@@ -608,7 +608,7 @@ To obtain the voltage angle increments, JuliaGrid initially performs LU factoriz
 ```
 
 !!! tip "Tip"
-    By default, JuliaGrid uses LU factorization as the primary method for factorizing Jacobian matrix. Nevertheless, users have the flexibility to opt for QR factorization as an alternative method.
+    By default, JuliaGrid uses LU factorization as the primary method for factorizing the Jacobian matrix. Nevertheless, users can opt for KLU or QR factorization as an alternative method.
 
 The vector of increments that corresponds to the active power equations can be accessed using:
 ```@repl PowerFlowSolution
@@ -629,7 +629,7 @@ After calculating the update for voltage angles, to calculate the magnitude upda
   \mathbf \Delta \mathbf x_\mathrm{m}^{(\nu)} = \mathbf{B}_2^{-1} \mathbf{h}_\mathrm{Q}(\mathbf x^{(\nu)}).
 ```
 
-Similarly to the previous instance, JuliaGrid initially executes LU factorization on the Jacobian matrix ``\mathbf{B}_2 = \mathbf{L}_2\mathbf{U}_2``. However, it provides the flexibility for users to opt for QR factorization instead. This factorization occurs only once and is utilized in each iteration of the fast Newton-Raphson algorithm:
+Similarly to the previous instance, JuliaGrid initially executes LU factorization on the Jacobian matrix ``\mathbf{B}_2 = \mathbf{L}_2\mathbf{U}_2``. However, users can opt for KLU or QR factorization instead. This factorization occurs only once and is utilized in each iteration of the fast Newton-Raphson algorithm:
 ```@repl PowerFlowSolution
 𝐋₂ = analysis.method.reactive.factorization.L
 𝐔₂ = analysis.method.reactive.factorization.U
@@ -637,7 +637,7 @@ Similarly to the previous instance, JuliaGrid initially executes LU factorizatio
 
 The vector of increments that corresponds to the reactive power equations can be accessed using:
 ```@repl PowerFlowSolution
-𝚫𝐱ₘ = analysis.method.active.increment
+𝚫𝐱ₘ = analysis.method.reactive.increment
 ```
 
 Finally, the solution is updated as follows:
@@ -677,7 +677,7 @@ The main computational effort is in steps 6 and 8, where forward and backward su
 ## [Gauss-Seidel Method](@id GaussSeidelMethodTutorials)
 As elaborated in the [Nodal Network Equations](@ref FlowNodalNetworkEquationsTutorials) section of this manual, each bus is associated with the balance equation expressed as:
 ```math
-  \sum_{j = 1}^n Y_{ij} \bar{V}_j = \cfrac{P_i - \mathrm{j} Q_i}{\bar{V}_i}, \;\;\; \forall i \in \mathcal N.
+  \sum_{j = 1}^n Y_{ij} \bar{V}_j = \cfrac{P_i - \mathrm{j} Q_i}{\bar{V}_i^*}, \;\;\; \forall i \in \mathcal N.
 ```
 
 In its expanded form, this can be written as:
@@ -780,11 +780,11 @@ In summary, the Gauss-Seidel iterative algorithm for solving AC power flow follo
 | 1.        | Initialize the iteration index                                   | ``\nu = 0``                                                                              |
 | 2.        | Set the initial bus voltage magnitudes and angles                | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                             |
 | 3.        | Compute mismatches for active and reactive power injections      | ``f_{P_i}(\mathbf x^{(\nu)})``, ``f_{Q_i}(\mathbf x^{(\nu)})``                           |
-| 4.        | Check for convergence                                            | ``h_{P\max}(\mathbf x^{(\nu)}) < \epsilon``, ``h_{Q\max}(\mathbf x^{(\nu)}) < \epsilon`` |
+| 4.        | Check for convergence                                            | ``f_{P\max}(\mathbf x^{(\nu)}) < \epsilon``, ``f_{Q\max}(\mathbf x^{(\nu)}) < \epsilon`` |
 | 5.        | If the convergence criteria are met, stop the process            |                                                                                          |
-| 6.        | Compute voltages for demand buses                                | ``\bar{V}_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pv}``                     |
-| 7.        | Compute the reactive power injections for generator buses        | ``Q_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pq}``                           |
-| 8.        | Update and apply correction the bus voltages for generator buses | ``\bar{V}_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pq}``                     |
+| 6.        | Compute voltages for demand buses                                | ``\bar{V}_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pq}``                     |
+| 7.        | Compute the reactive power injections for generator buses        | ``Q_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pv}``                           |
+| 8.        | Update and apply correction the bus voltages for generator buses | ``\bar{V}_i^{(\nu + 1)}``, ``\forall i \in \mathcal{N}_\mathrm{pv}``                     |
 | 9.        | Increase the iteration index                                     | ``\nu := \nu + 1``                                                                       |
 | 10.       | Repeat from step 3.                                              |                                                                                          |
 |           |                                                                  |                                                                                          |
@@ -800,7 +800,7 @@ power!(analysis)
 nothing # hide
 ```
 
-The function stores the computed powers in the rectangular coordinate system. It calculates the following powers related to buses, branches, and generators:
+The function stores the computed active and reactive powers. It calculates the following powers related to buses, branches, and generators:
 
 | Type      | Power                                                       | Active                                         | Reactive                                       |
 |:----------|:------------------------------------------------------------|:-----------------------------------------------|:-----------------------------------------------|
@@ -892,20 +892,20 @@ The vectors of [active and reactive power flows](@ref BranchNetworkEquationsTuto
 ---
 
 ##### [Generator Power Outputs](@id GeneratorPowerOutputsManual)
-To obtain the output active powers of each generator connected to bus ``i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv}``, the given active power in the input data is utilized. For the generator connected to the slack bus, the output active power is determined using the equation:
+To obtain the output active powers of each generator connected to bus ``i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv}``, the given active power in the input data is utilized. At the slack bus, the total active power supplied by generators is determined using the equation:
 ```math
-  P_{\mathrm{g}i} = P_i + P_{\mathrm{d}i},\;\;\; i \in \mathcal{N}_\mathrm{sb}.
+  P_{\mathrm{p}i} = P_i + P_{\mathrm{d}i},\;\;\; i \in \mathcal{N}_\mathrm{sb}.
 ```
-In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\mathrm{g}i}``. Then, this amount of power is reduced by the output active power of the other generators.
+In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\mathrm{p}i}``. Then, this amount of power is reduced by the output active power of the other generators.
 
 To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_\mathrm{g} = [P_{\mathrm{g}i}]``, ``i \in \mathcal S``, where the set ``\mathcal S`` represents the set of generators, users can utilize the following command:
 ```@repl PowerFlowSolution
 𝐏ₒ = analysis.power.generator.active
 ```
 
-The output reactive powers of each generator located at the bus is obtained as:
+The total reactive power supplied by generators at each bus is obtained as:
 ```math
-  Q_{\mathrm{g}i} = Q_i + Q_{\mathrm{d}i},\;\;\; i \in \mathcal N.
+  Q_{\mathrm{p}i} = Q_i + Q_{\mathrm{d}i},\;\;\; i \in \mathcal N.
 ```
 If there are multiple generators at the same bus, the reactive power is allocated proportionally among the generators based on their reactive power capabilities.
 

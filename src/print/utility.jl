@@ -1,4 +1,4 @@
-mutable struct Print
+﻿mutable struct Print
     pfmt::Dict{String, Format}
     hfmt::Dict{String, Format}
     width::Dict{String, Int64}
@@ -189,7 +189,7 @@ function transfer!(
     if style
         @inbounds for (key, value) in width
             if haskey(_width, key)
-                _width[key] = max(value - 2, _width[key])
+                _width[key] = max(value - 2, _width[key], 0)
             end
         end
     end
@@ -208,7 +208,7 @@ function _fmt(_fmt::String; format::String = "%*.4f")
 end
 
 function _width(_width::Int64, span::Int64, style::Bool)
-    max(span, _width) * style
+    style ? max(span, _width) : 0
 end
 
 function _show(_show::Bool, value::Union{Vector{Float64}, ConDict, DualDict})
@@ -258,7 +258,7 @@ function _blank(
         for key in keys
             name = head[key]
             if show[name]
-                countTrue += show[name]
+                countTrue += 1
                 maxWidth += width[name]
             end
         end
@@ -318,13 +318,13 @@ function fmtwidth(show::OrderedDict{String, Bool})
 end
 
 function fmtRegex(fmt::String)
-    regexPattern = r"%([-]?)(\d*)\.?(\d+)?([a-zA-Z])"
+    regexPattern = r"^%([-]?)(\d*)\.?(\d+)?([a-zA-Z])$"
     mtch = match(regexPattern, fmt)
 
     if mtch !== nothing
         return mtch.captures[1], mtch.captures[2], mtch.captures[3], mtch.captures[4]
     else
-        throw(ErrorException("Invalid format string: $fmt"))
+        throw(ArgumentError("Invalid format string: $fmt"))
     end
 end
 
@@ -342,6 +342,10 @@ end
 
 ##### Print Header #####
 function header(io::IO, prt::Print)
+    if prt.repeat <= 0
+        throw(ArgumentError("The repeat keyword must be positive."))
+    end
+
     if (prt.cnt - 1) % prt.repeat == 0 || !prt.notprint
         if prt.header
             if prt.style
@@ -388,11 +392,11 @@ function printf(io::IO, heading::OrderedDict{String, Int64}, delimiter::String)
             print(
                 io,
                 format(fmt, floor(Int, (width - textwidth(title)) / 2), "", title,
-                ceil(Int, (width - textwidth(title)) / 2) , "")
+                ceil(Int, (width - textwidth(title)) / 2), "")
             )
         end
     end
-    @printf io "\n"
+    println(io)
 end
 
 function printf(io::IO, fmt::Format, heading::OrderedDict{String, Int64}, delimiter::String)
@@ -402,7 +406,7 @@ function printf(io::IO, fmt::Format, heading::OrderedDict{String, Int64}, delimi
             print(io, format(fmt, width, ""))
         end
     end
-    @printf io "\n"
+    println(io)
 end
 
 function printf(io::IO, prt::Print, dicts::Dict{String, String}...)
@@ -412,7 +416,7 @@ function printf(io::IO, prt::Print, dicts::Dict{String, String}...)
                 print(io, format(prt.hfmt[key], prt.width[key], data[key]))
             end
         end
-        @printf io "\n"
+        println(io)
     end
 
     if prt.style
@@ -422,7 +426,7 @@ function printf(io::IO, prt::Print, dicts::Dict{String, String}...)
                 print(io, format(prt.hfmt["Break"], "-" ^ prt.width[key]))
             end
         end
-        @printf io "\n"
+        println(io)
     end
 end
 
@@ -513,10 +517,10 @@ function printf(io::IO, prt::Print)
         print(io, prt.delimiter)
         for (key, value) in prt.show
             if value
-                print(io, format(prt.hfmt["Break"], "-" ^prt.width[key]))
+                print(io, format(prt.hfmt["Break"], "-" ^ prt.width[key]))
             end
         end
-        @printf io "\n"
+        println(io)
     end
 end
 
@@ -533,8 +537,8 @@ function fmax(
     label::OrderedDict{Int64, Int64},
     heading::String
 )
-    if show[heading]
-        minmax = extrema(collect(keys(label)))
+    if show[heading] && !isempty(label)
+        minmax = extrema(keys(label))
         width[heading] = max(maximum(textwidth, string.(minmax)), width[heading])
     end
 end
@@ -545,8 +549,8 @@ function fmax(
     label::OrderedDict{String, Int64},
     heading::String
 )
-    if show[heading]
-        width[heading] = max(maximum(textwidth, collect(keys(label))), width[heading])
+    if show[heading] && !isempty(label)
+        width[heading] = max(maximum(textwidth, keys(label)), width[heading])
     end
 end
 
@@ -571,9 +575,15 @@ function fmax(
     val::Vector{Float64},
     key::String
 )
-    if show[key]
-        maxVal = maximum(val)
-        width[key] = max(textwidth(format(Format(fmt[key]), 0, maxVal)), width[key])
+    if show[key] && !isempty(val)
+        minmax = extrema(val)
+        pfmt = Format(fmt[key])
+
+        width[key] = max(
+            textwidth(format(pfmt, 0, minmax[1])),
+            textwidth(format(pfmt, 0, minmax[2])),
+            width[key]
+        )
     end
 end
 
@@ -699,7 +709,7 @@ function fminmax(
     vector::Vector{Float64},
     key::String
 )
-    if show[key]
+    if show[key] && !isempty(vector)
         minmax = extrema(vector)
         pfmt = Format(fmt[key])
 
@@ -770,7 +780,7 @@ function fminmax(
     val::Vector{Float64},
     key::String
 )
-    if show[key]
+    if show[key] && !isempty(val)
         minmax = extrema(val)
         pfmt = Format(fmt[key])
 
@@ -804,9 +814,8 @@ function pickLabel(
     component::String
 )
     if isset(label)
-        dictIterator = OrderedDict(
-            getLabel(container, label, component) => labels[getLabel(container, label, component)]
-        )
+        labelPrint = getLabel(container, label, component)
+        dictIterator = OrderedDict(labelPrint => labels[labelPrint])
     else
         dictIterator = labels
     end
@@ -912,7 +921,7 @@ function anglediff(system::PowerSystem, analysis::OptimalPowerFlow, idx::Int64)
 end
 
 function flowFrom(system::PowerSystem, analysis::AcOptimalPowerFlow, label::IntStr, idx::Int64)
-    from, to = fromto(system, idx)
+    from = system.branch.layout.from[idx]
     Pij, Qij = fromPower(analysis; label)
 
     if system.branch.flow.type[idx] == 1
@@ -925,7 +934,7 @@ function flowFrom(system::PowerSystem, analysis::AcOptimalPowerFlow, label::IntS
 end
 
 function flowTo(system::PowerSystem, analysis::AcOptimalPowerFlow, label::IntStr, idx::Int64)
-    from, to = fromto(system, idx)
+    to = system.branch.layout.to[idx]
     Pji, Qji = toPower(analysis; label)
 
     if system.branch.flow.type[idx] == 1
@@ -936,3 +945,4 @@ function flowTo(system::PowerSystem, analysis::AcOptimalPowerFlow, label::IntStr
         return sqrt(Pji^2 + Qji^2) / analysis.voltage.magnitude[to]
     end
 end
+

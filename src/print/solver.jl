@@ -8,40 +8,43 @@ function printTop(system::PowerSystem, analysis::Union{AcPowerFlow, DcPowerFlow}
     brc = system.branch
     gen = system.generator
 
-    shunt = fill(0.0, 3)
+    shunt = 0
+    capacitor = 0
+    reactor = 0
     @inbounds for i = 1:system.bus.number
         if bus.shunt.susceptance[i] != 0.0 || bus.shunt.conductance[i] != 0.0
-            shunt[1] += 1
+            shunt += 1
             if bus.shunt.susceptance[i] > 0.0
-                shunt[2] += 1
+                capacitor += 1
             elseif bus.shunt.susceptance[i] < 0.0
-                shunt[3] += 1
+                reactor += 1
             end
         end
     end
 
-    tran = fill(0.0, 3)
+    transformer = 0
+    transformerInservice = 0
     @inbounds for i = 1:brc.number
         if brc.parameter.turnsRatio[i] != 1.0 || brc.parameter.shiftAngle[i] != 0.0
-            tran[1] += 1
+            transformer += 1
             if brc.layout.status[i] == 1
-                tran[2] += 1
+                transformerInservice += 1
             end
         end
     end
-    tran[3] = tran[1] - tran[2]
+    transformerOutservice = transformer - transformerInservice
 
     pq = npq(system, analysis)
 
     col1 = max(textwidth(string(bus.number)), textwidth(string(brc.number)))
-    col2 = max(textwidth(string(shunt[1])), textwidth(string(brc.number - tran[1])))
-    col3 = max(textwidth(string(gen.number)), textwidth(string(tran[1])))
+    col2 = max(textwidth(string(shunt)), textwidth(string(brc.number - transformer)))
+    col3 = max(textwidth(string(gen.number)), textwidth(string(transformer)))
 
     print("Number of buses:    ")
     print(format(Format("%*i"), col1, bus.number))
 
     print("   Number of shunts: ")
-    print(format(Format("%*i"), col2, shunt[1]))
+    print(format(Format("%*i"), col2, shunt))
 
     print("   Number of generators:   ")
     print(format(Format("%*i\n"), col3, gen.number))
@@ -50,7 +53,7 @@ function printTop(system::PowerSystem, analysis::Union{AcPowerFlow, DcPowerFlow}
     print(format(Format("%*i"), col1, pq))
 
     print("     Capacitor:      ")
-    print(format(Format("%*i"), col2, shunt[2]))
+    print(format(Format("%*i"), col2, capacitor))
 
     print("     In-service:           ")
     print(format(Format("%*i\n"), col3, gen.layout.inservice))
@@ -59,7 +62,7 @@ function printTop(system::PowerSystem, analysis::Union{AcPowerFlow, DcPowerFlow}
     print(format(Format("%*i"), col1, bus.number - 1 - pq))
 
     print("     Reactor:        ")
-    print(format(Format("%*i"), col2, shunt[3]))
+    print(format(Format("%*i"), col2, reactor))
 
     print("     Out-of-service:       ")
     print(format(Format("%*i\n\n"), col3, gen.number - gen.layout.inservice))
@@ -68,28 +71,28 @@ function printTop(system::PowerSystem, analysis::Union{AcPowerFlow, DcPowerFlow}
     print(format(Format("%*i"), col1, brc.number))
 
     print("   Number of lines:  ")
-    print(format(Format("%*i"), col2, brc.number - tran[1]))
+    print(format(Format("%*i"), col2, brc.number - transformer))
 
     print("   Number of transformers: ")
-    print(format(Format("%*i\n"), col3, tran[1]))
+    print(format(Format("%*i\n"), col3, transformer))
 
     print("  In-service:       ")
     print(format(Format("%*i"), col1, brc.layout.inservice))
 
     print("     In-service:     ")
-    print(format(Format("%*i"), col2, brc.layout.inservice - tran[2]))
+    print(format(Format("%*i"), col2, brc.layout.inservice - transformerInservice))
 
     print("     In-service:           ")
-    print(format(Format("%*i\n"), col3, tran[2]))
+    print(format(Format("%*i\n"), col3, transformerInservice))
 
     print("  Out-of-service:   ")
     print(format(Format("%*i"), col1, brc.number - brc.layout.inservice))
 
     print("     Out-of-service: ")
-    print(format(Format("%*i"), col2, brc.number - brc.layout.inservice - tran[3]))
+    print(format(Format("%*i"), col2, brc.number - brc.layout.inservice - transformerOutservice))
 
     print("     Out-of-service:       ")
-    print(format(Format("%*i\n\n"), col3, tran[3]))
+    print(format(Format("%*i\n\n"), col3, transformerOutservice))
 end
 
 function npq(system::PowerSystem, analysis::AcPowerFlow{<:NewtonRaphson})
@@ -124,11 +127,14 @@ function printTop(analysis::AcStateEstimation, verbose::Int64)
     ampo = count(x -> x == 0, mtg.ammeter.magnitude.status)
     wato = count(x -> x == 0, mtg.wattmeter.active.status)
     varo = count(x -> x == 0, mtg.varmeter.reactive.status)
-    pmuo = sum(t -> t[1] == 0 || t[2] == 0, zip(mtg.pmu.magnitude.status, mtg.pmu.angle.status); init = 0)
+    pmuo = count(
+        i -> mtg.pmu.magnitude.status[i] == 0 || mtg.pmu.angle.status[i] == 0,
+        1:mtg.pmu.number
+    )
 
     col1 = max(textwidth(string(mtg.wattmeter.number)), textwidth(string(mtg.ammeter.number)))
-    col2 = max(textwidth(string(mtg.varmeter.number)),textwidth(string(mtg.pmu.number)))
-    col3 = max(textwidth(string(mtg.voltmeter.number)),textwidth(string(dev)))
+    col2 = max(textwidth(string(mtg.varmeter.number)), textwidth(string(mtg.pmu.number)))
+    col3 = max(textwidth(string(mtg.voltmeter.number)), textwidth(string(dev)))
 
     print("Number of wattmeters: ")
     print(format(Format("%*i"), col1, mtg.wattmeter.number))
@@ -188,15 +194,15 @@ end
 ##### Model Statistics #####
 function printMiddle(analysis::AcPowerFlow{<:NewtonRaphson}, verbose::Int64)
     if verbose == 2 || verbose == 3
-        entri = nnz(analysis.method.jacobian)
+        entries = nnz(analysis.method.jacobian)
         state = lastindex(analysis.method.increment)
-        maxms = "Number of entries in the Jacobian:"
+        message = "Number of entries in the Jacobian:"
 
-        wd1 = textwidth(string(entri)) + 1
-        wd2 = textwidth(maxms)
+        wd1 = textwidth(string(entries)) + 1
+        wd2 = textwidth(message)
 
-        print(maxms)
-        print(format(Format("%*i\n"), wd1, entri))
+        print(message)
+        print(format(Format("%*i\n"), wd1, entries))
 
         print("Number of state variables:")
         print(format(Format("%*i\n\n"), wd1 + wd2 - 26, state))
@@ -207,23 +213,23 @@ function printMiddle(analysis::AcPowerFlow{<:FastNewtonRaphson}, verbose::Int64)
     if verbose == 2 || verbose == 3
         method = analysis.method
 
-        activ = nnz(method.active.jacobian)
-        react = nnz(method.reactive.jacobian)
-        entri = activ + react
+        active = nnz(method.active.jacobian)
+        reactive = nnz(method.reactive.jacobian)
+        entries = active + reactive
         state = lastindex(method.active.increment) + lastindex(method.reactive.increment)
-        maxms = "Number of entries in the Jacobians:"
+        message = "Number of entries in the Jacobians:"
 
-        wd1 = textwidth(string(entri)) + 1
-        wd2 = textwidth(maxms)
+        wd1 = textwidth(string(entries)) + 1
+        wd2 = textwidth(message)
 
-        print(maxms)
-        print(format(Format("%*i\n"), wd1, entri))
+        print(message)
+        print(format(Format("%*i\n"), wd1, entries))
 
         print("  Active Power:")
-        print(format(Format("%*i\n"), wd1 + wd2 - 15, activ))
+        print(format(Format("%*i\n"), wd1 + wd2 - 15, active))
 
         print("  Reactive Power:")
-        print(format(Format("%*i\n"), wd1 + wd2 - 17, react))
+        print(format(Format("%*i\n"), wd1 + wd2 - 17, reactive))
 
         print("Number of state variables:")
         print(format(Format("%*i\n\n"), wd1 + wd2 - 26, state))
@@ -232,31 +238,31 @@ end
 
 function printMiddle(analysis::AcPowerFlow{GaussSeidel}, verbose::Int64)
     if verbose == 2 || verbose == 3
-        stapq = lastindex(analysis.method.pq)
-        stapv = lastindex(analysis.method.pv)
-        state = stapq + stapv
-        maxms = "Number of complex state variables:"
+        pq = lastindex(analysis.method.pq)
+        pv = lastindex(analysis.method.pv)
+        state = pq + pv
+        message = "Number of complex state variables:"
 
         wd1 = textwidth(string(state)) + 1
-        wd2 = textwidth(maxms)
+        wd2 = textwidth(message)
 
         print("Number of complex state variables:")
         print(format(Format("%*i\n"), wd1, state))
 
         print("Number of complex equations:")
-        print(format(Format("%*i\n\n"), wd1 + wd2 - 28, stapq + 3 * stapv))
+        print(format(Format("%*i\n\n"), wd1 + wd2 - 28, pq + 3 * pv))
     end
 end
 
 function printMiddle(system::PowerSystem, ::DcPowerFlow, verbose::Int64)
     if verbose == 2 || verbose == 3
         entries = nnz(system.model.dc.nodalMatrix)
-        maxmess = "Number of entries in the nodal matrix:"
+        message = "Number of entries in the nodal matrix:"
 
         wd1 = textwidth(string(entries)) + 1
-        wd2 = textwidth(maxmess)
+        wd2 = textwidth(message)
 
-        print(maxmess)
+        print(message)
         print(format(Format("%*i\n"), wd1, entries))
 
         print("Number of state variables:")
@@ -266,12 +272,14 @@ end
 
 function printMiddle(system::PowerSystem, analysis::AcStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
-        wd = textwidth(string(nnz(analysis.method.jacobian))) + 1
-        mwd = textwidth("Number of entries in the Jacobian:")
+        entries = nnz(analysis.method.jacobian)
+        message = "Number of entries in the Jacobian:"
+        wd = textwidth(string(entries)) + 1
+        mwd = textwidth(message)
         tot = wd + mwd
 
-        print("Number of entries in the Jacobian:")
-        print(format(Format("%*i\n"), wd, nnz(analysis.method.jacobian)))
+        print(message)
+        print(format(Format("%*i\n"), wd, entries))
 
         print("Number of measurement functions:")
         print(format(Format("%*i\n"), tot - 32, lastindex(analysis.method.mean)))
@@ -290,12 +298,12 @@ end
 function printMiddle(system::PowerSystem, analysis::DcStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         entries = nnz(analysis.method.coefficient)
-        maxmess = "Number of entries in the coefficient matrix:"
+        message = "Number of entries in the coefficient matrix:"
 
         wd1 = textwidth(string(entries)) + 1
-        wd2 = textwidth(maxmess)
+        wd2 = textwidth(message)
 
-        print(maxmess)
+        print(message)
         print(format(Format("%*i\n"), wd1, entries))
 
         print("Number of measurement functions:")
@@ -309,12 +317,12 @@ end
 function printMiddle(system::PowerSystem, analysis::PmuStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
         entries = nnz(analysis.method.coefficient)
-        maxmess = "Number of entries in the coefficient matrix:"
+        message = "Number of entries in the coefficient matrix:"
 
         wd1 = textwidth(string(entries)) + 1
-        wd2 = textwidth(maxmess)
+        wd2 = textwidth(message)
 
-        print(maxmess)
+        print(message)
         print(format(Format("%*i\n"), wd1, entries))
 
         print("Number of measurement functions:")
@@ -329,9 +337,9 @@ end
 function printSolver(analysis::AcPowerFlow, delP::Float64, delQ::Float64, verbose::Int64)
     if verbose == 2 || verbose == 3
         if analysis.method.iteration % 10 == 0
-            print("-"^63 * "\n")
-            print("Iteration   Maximum Active Mismatch   Maximum Reactive Mismatch\n")
-            print("-"^63 * "\n")
+            println("-"^63)
+            println("Iteration   Maximum Active Mismatch   Maximum Reactive Mismatch")
+            println("-"^63)
         end
         print(format(Format("%*i "), 9, analysis.method.iteration))
         print(format(Format("%*.8e"), 25, delP))
@@ -348,7 +356,9 @@ function printSolver(
     if verbose == 2 || verbose == 3
         mag, ang = minmaxIncrement(system, analysis)
 
-        print("\n" * " "^23 * "Minimum Value   Maximum Value")
+        println()
+        print(" "^23)
+        print("Minimum Value   Maximum Value")
 
         print("\nMagnitude Increment:")
         print(format(Format("%*.4e"), 16, mag[1]))
@@ -362,13 +372,14 @@ end
 
 function printSolver(::PowerSystem, ::AcPowerFlow{GaussSeidel}, verbose::Int64)
     if verbose == 2 || verbose == 3
-        print("\n")
+        println()
     end
 end
 
 function minmaxIncrement(system::PowerSystem, analysis::AcPowerFlow{<:NewtonRaphson})
-    extrema(abs, analysis.method.increment[1:(system.bus.number - 1)]),
-    extrema(abs, analysis.method.increment[system.bus.number:end])
+    increment = analysis.method.increment
+    extrema(abs, @view increment[1:(system.bus.number - 1)]),
+    extrema(abs, @view increment[system.bus.number:end])
 end
 
 function minmaxIncrement(::PowerSystem, analysis::AcPowerFlow{<:FastNewtonRaphson})
@@ -392,12 +403,14 @@ end
 
 function printSolver(system::PowerSystem, analysis::AcStateEstimation, verbose::Int64)
     if verbose == 2 || verbose == 3
-        slack = copy(analysis.method.increment[system.bus.layout.slack])
+        residual = analysis.method.residual
+        precision = analysis.method.precision
+        maxres, idxres = findmax(abs, residual)
+        maxwrss, idxwrss = findmax(i -> residual[i]^2 * precision[i, i], eachindex(residual))
 
-        maxres, idxres = findmax(abs, analysis.method.residual)
-        maxwrss, idxwrss = findmax(analysis.method.residual.^2 .* diag(analysis.method.precision))
-
-        print("\n" * " "^20 * "Measurement   Maximum Value")
+        println()
+        print(" "^20)
+        print("Measurement   Maximum Value")
 
         print("\nAbsolute Residual:")
         print(format(Format("%*i"), 13, idxres))
@@ -414,15 +427,15 @@ function printExit(analysis::AC, maxExceeded::Bool, converged::Bool, verbose::In
     if verbose != 0
         method = printMethodName(analysis)
         if converged
-            print(
-                "EXIT: The solution was found using the " * method *
-                " method in $(analysis.method.iteration) iterations.\n"
+            println(
+                "EXIT: The solution was found using the ", method,
+                " method in ", analysis.method.iteration, " iterations."
             )
         else
             if maxExceeded
-                print("EXIT: The " * method * " method exceeded the maximum number of iterations.\n")
+                println("EXIT: The ", method, " method exceeded the maximum number of iterations.")
             else
-                print("EXIT: The " * method * " method failed to converge.\n")
+                println("EXIT: The ", method, " method failed to converge.")
             end
         end
     end
@@ -437,11 +450,11 @@ function printExit(jump::JuMP.Model, verbose::Int64)
             if status == MOI.ITERATION_LIMIT
                 println("EXIT: The maximum number of iterations exceeded.")
             elseif status == MOI.ALMOST_LOCALLY_SOLVED
-                println("EXIT: Solved To Acceptable Level.")
+                println("EXIT: Solved to acceptable level.")
             elseif status == MOI.LOCALLY_INFEASIBLE
                 println("EXIT: Converged to a point of local infeasibility. Problem may be infeasible.")
             elseif status == MOI.NUMERICAL_ERROR
-                println("EXIT: Restoration Failed!")
+                println("EXIT: Restoration failed.")
             else
                 println("EXIT: The optimal solution was not found.")
             end
@@ -451,7 +464,7 @@ end
 
 function printExit(::DcPowerFlow, verbose::Int64)
     if verbose != 0
-        print("EXIT: The solution of the DC power flow was found.\n")
+        println("EXIT: The solution of the DC power flow was found.")
     end
 end
 

@@ -5,7 +5,7 @@ To perform the DC power flow, we first need to have the `PowerSystem` type that 
 ---
 
 To solve the DC power flow problem and acquire bus voltage angles, users can use the following function:
-* [`solve!`](@ref solve!(::DcPowerFlow{T}) where T).
+* [`solve!`](@ref solve!(::DcPowerFlow)).
 
 Once the DC power flow solution is obtained, JuliaGrid provides a function for computing powers:
 * [`power!`](@ref power!(::DcPowerFlow)).
@@ -53,7 +53,7 @@ nothing # hide
     ```
     The `KLU` method, using the Gilbert-Peierls algorithm, can significantly speed up power flow computations [davisklu](@cite).
 
-To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!(::DcPowerFlow{T}) where T) function as follows:
+To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!(::DcPowerFlow)) function as follows:
 ```@example DCPowerFlowSolution
 solve!(analysis)
 nothing # hide
@@ -71,7 +71,7 @@ nothing # hide
 ---
 
 ##### Wrapper Function
-JuliaGrid provides a wrapper function for DC power flow analysis and also supports the computation of powers using the [powerFlow!](@ref powerFlow!(::DcPowerFlow)) function:
+JuliaGrid provides a wrapper function for DC power flow analysis and also supports the computation of powers using the [`powerFlow!`](@ref powerFlow!(::DcPowerFlow)) function:
 ```@example DCPowerFlowSolution
 analysis = dcPowerFlow(system)
 powerFlow!(analysis; verbose = 2)
@@ -202,7 +202,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This concept removes the need to restart and recreate both the `PowerSystem` within the `dc` field and the `DcPowerFlow` from the beginning when implementing changes to the existing power system. Additionally, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, and `LU` as long as the nonzero pattern of the nodal matrix remains consistent between power system configurations.
+    This concept removes the need to restart and recreate both the `PowerSystem` within the `dc` field and the `DcPowerFlow` from the beginning when implementing changes to the existing power system. Additionally, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, `LU`, and `KLU` as long as the nonzero pattern of the nodal matrix remains consistent between power system configurations.
 
 ---
 

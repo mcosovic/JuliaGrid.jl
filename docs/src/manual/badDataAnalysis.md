@@ -89,7 +89,7 @@ Hence, upon detecting bad data, the `detect` variable will be set to `true`. The
 print(monitoring.wattmeter.label, monitoring.wattmeter.active.status)
 ```
 
-Moreover, JuliaGrid resets the non-zero elements to zero in the Jacobian matrix and mean vector within the state estimation type for measurements now designated as out-of-service, effectively removing the impact of the corresponding measurement:
+Moreover, JuliaGrid resets the nonzero elements to zero in the Jacobian matrix and mean vector within the state estimation type for measurements now designated as out-of-service, effectively removing the impact of the corresponding measurement:
 ```@repl ACSEWLS
 analysis.method.jacobian
 analysis.method.mean
@@ -127,7 +127,7 @@ outlier.detect
 outlier.label
 ```
 
-As before, the identified measurement is set out-of-service within the `Measurement` type. This corresponds to resetting non-zero elements to zero in the coefficient matrix and mean vector, effectively removing its impact:
+As before, the identified measurement is set out-of-service within the `Measurement` type. This corresponds to resetting nonzero elements to zero in the coefficient matrix and mean vector, effectively removing its impact:
 ```@repl ACSEWLS
 analysis.method.mean
 analysis.method.coefficient

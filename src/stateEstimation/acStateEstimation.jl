@@ -2,8 +2,8 @@
     gaussNewton(monitoring::Measurement, [method = LU])
 
 The function sets up the Gauss-Newton method to solve the nonlinear or AC state estimation model,
-where the vector of state variables is given in polar coordinates. The Gauss-Newton method throughout
-iterations provided WLS estimator.
+where the vector of state variables is given in polar coordinates. The Gauss-Newton method
+iteratively computes the WLS estimator.
 
 # Arguments
 This function requires the `Measurement` type to establish the WLS state estimation framework.
@@ -144,11 +144,12 @@ function acWLS(system::PowerSystem, monitoring::Measurement)
     @inbounds for (i, k) in enumerate(amp.layout.index)
         status = amp.magnitude.status[i]
 
-        sq = if2exp(amp.layout.square[i])
+        square = amp.layout.square[i]
+        sq = if2exp(square)
         mean[jcb.idx] = status * (amp.magnitude.mean[i]^sq)
-        precision!(pcs, sq * amp.magnitude.variance[i])
+        precision!(pcs, varianceSquare(amp.magnitude.mean[i], amp.magnitude.variance[i], square))
 
-        if amp.layout.square[i]
+        if square
             fourIndices!(jcb, type, idx, status, amp.layout.from[i], system, k, 4, 5)
         else
             fourIndices!(jcb, type, idx, status, amp.layout.from[i], system, k, 2, 3)
@@ -189,9 +190,10 @@ function acWLS(system::PowerSystem, monitoring::Measurement)
         statusAng = pmu.angle.status[i]
 
         if pmu.layout.polar[i]
-            sq = if2exp(pmu.layout.square[i])
+            square = pmu.layout.square[i]
+            sq = if2exp(square)
             mean[jcb.idx] = statusMag * (pmu.magnitude.mean[i]^sq)
-            precision!(pcs, sq * pmu.magnitude.variance[i])
+            precision!(pcs, varianceSquare(pmu.magnitude.mean[i], pmu.magnitude.variance[i], square))
 
             mean[jcb.idx + 1] = statusAng * pmu.angle.mean[i]
             precision!(pcs, pmu.angle.variance[i])
@@ -200,7 +202,7 @@ function acWLS(system::PowerSystem, monitoring::Measurement)
                 oneIndices!(jcb, type, idx, statusMag, k + bus.number, k, 12)
                 oneIndices!(jcb, type, idx, statusAng, k, k, 13)
             else
-                if pmu.layout.square[i]
+                if square
                     fourIndices!(jcb, type, idx, statusMag, pmu.layout.from[i], system, k, 4, 5)
                 else
                     fourIndices!(jcb, type, idx, statusMag, pmu.layout.from[i], system, k, 2, 3)
@@ -856,10 +858,10 @@ end
 By solving the normal equation, this function computes the bus voltage magnitude and angle increments.
 
 # Updates
-The function updates the `residual`, `jacobian`, and `factorisation` variables within the
+The function updates the `residual`, `jacobian`, and `factorization` variables within the
 `AcStateEstimation` type. Using these results, it then computes and updates the `increment` variable
 within the same type. It should be used during the Gauss-Newton iteration loop before invoking the
-[`solve!`](@ref solve!(::AcStateEstimation)) function.
+`solve!` function.
 
 # Returns
 The function returns the maximum absolute increment value, which can be used to terminate the
@@ -1028,8 +1030,8 @@ function solve!(analysis::AcStateEstimation{LAV})
     silentJump(lav.jump, verbose)
 
     @inbounds for i = 1:bus.number
-        set_start_value(lav.variable.voltage.angle[i]::VariableRef, bus.voltage.angle[i])
-        set_start_value(lav.variable.voltage.magnitude[i]::VariableRef, bus.voltage.magnitude[i])
+        set_start_value(lav.variable.voltage.angle[i]::VariableRef, volt.angle[i])
+        set_start_value(lav.variable.voltage.magnitude[i]::VariableRef, volt.magnitude[i])
     end
 
     optimize!(lav.jump)
@@ -1240,7 +1242,7 @@ end
         iteration, tolerance, power, current, verbose)
 
 The function serves as a wrapper for solving AC state estimation and includes the functions:
-* [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{<:Normal}})),
+* [`solve!`](#JuliaGrid.solve!-Tuple{AcStateEstimation{<:GaussNewton}})
 * [`power!`](@ref power!(::AcPowerFlow)),
 * [`current!`](@ref current!(::AC)).
 

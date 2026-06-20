@@ -72,7 +72,7 @@ JuMP.all_variables(analysis.method.jump)
 
 It is important to highlight that when dealing with piecewise linear cost functions comprising multiple segments, as exemplified in the case of `Generator 3`, JuliaGrid automatically generates helper optimization variables, such as `actwise[3]`, and formulates a set of linear constraints to appropriately handle these cost functions.
 
-However, in instances where a piecewise linear cost function consists of only a single segment, as demonstrated by `Generator 2`, the function is modelled as a standard linear function, eliminating the necessity for additional helper optimization variables.
+However, in instances where a piecewise linear cost function consists of only a single segment, as demonstrated by `Generator 2`, the function is modeled as a standard linear function, eliminating the necessity for additional helper optimization variables.
 
 Please note that JuliaGrid keeps references to all variables categorized into three fields:
 ```@repl dcopf
@@ -164,7 +164,7 @@ The `capability` field contains references to the box inequality constraints ass
 print(system.generator.label, analysis.method.constraint.capability.active)
 ```
 
-Let us now set `Generator 2` out of service using the [`updateGenerator!`](@ref updateGenerator!) function:
+Let us now set `Generator 2` out-of-service using the [`updateGenerator!`](@ref updateGenerator!) function:
 ```@example dcopf
 updateGenerator!(analysis; label = "Generator 2", status = 0)
 nothing # hide
@@ -322,8 +322,8 @@ analysis.method.objective
 
 ---
 
-## [Setup Initial Values](@id SetupStartingPrimalValuesManual)
-In JuliaGrid, the assignment of initial primal and dual values for optimization variables takes place when the [`solve!`](@ref solve!(::DcOptimalPowerFlow)) function is executed.
+## [Setup Initial Values](@id DcSetupPrimalStartingValuesManual)
+In JuliaGrid, the assignment of initial primal and dual values for optimization variables and constraints takes place when the [`solve!`](@ref solve!(::DcOptimalPowerFlow)) function is executed.
 
 ---
 
@@ -406,7 +406,7 @@ print(system.bus.label, analysis.method.dual.balance.active)
 ---
 
 ##### Wrapper Function
-JuliaGrid provides a wrapper function for DC optimal power flow analysis and also supports the computation of powers using the [powerFlow!](@ref powerFlow!(::DcOptimalPowerFlow)) function:
+JuliaGrid provides a wrapper function for DC optimal power flow analysis and also supports the computation of powers using the [`powerFlow!`](@ref powerFlow!(::DcOptimalPowerFlow)) function:
 ```@example dcopf
 setInitialPoint!(analysis) # hide
 analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer)
@@ -454,7 +454,7 @@ CSV.write("constraint.csv", CSV.File(take!(io); delim = "|"))
 
 ---
 
-## Primal and Dual Warm Start
+## [Primal and Dual Warm Start](@id DcPrimalDualWarmStartManual)
 Utilizing the `DcOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a warm start. In this scenario, the initial primal and dual values for the subsequent solving step correspond to the solution obtained from the previous step.
 
 ---
@@ -498,7 +498,7 @@ print(system.bus.label, analysis.voltage.angle)
 ---
 
 ##### Reset Primal and Dual Values
-Users retain the flexibility to reset these initial primal values to their default configurations at any time. This can be done using the active power outputs of the generators and the initial bus voltage angles extracted from the `PowerSystem` type with the [`setInitialPoint!`](@ref setInitialPoint!(::DcOptimalPowerFlow)) function:
+Users retain the flexibility to reset initial primal and dual values to their default configurations at any time. This can be done using the active power outputs of the generators and the initial bus voltage angles extracted from the `PowerSystem` type with the [`setInitialPoint!`](@ref setInitialPoint!(::DcOptimalPowerFlow)) function:
 ```@example dcopf
 setInitialPoint!(analysis)
 nothing # hide
@@ -514,7 +514,7 @@ Beyond this approach, JuliaGrid also provides a way to extend the standard DC op
 
 ---
 
-#### Add Variable
+##### Add Variable
 User-defined variables can be added to the DC optimal power flow model using the [`@addVariable`](@ref @addVariable) macro. It also allows immediate assignment of initial primal and dual values. For example:
 ```@example dcopf
 @addVariable(analysis, 0.0 <= y <= 0.2, primal = 0.1, lower = 10.0, upper = 0.0)

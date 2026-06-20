@@ -1,5 +1,5 @@
 # [DC Optimal Power Flow](@id DCOptimalPowerFlowTutorials)
-To begin, let us generate the `PowerSystem`  type, as illustrated by the following example:
+To begin, let us generate the `PowerSystem` type, as illustrated by the following example:
 ```@example dcopf
 using JuliaGrid # hide
 using JuMP, HiGHS
@@ -24,7 +24,7 @@ addGenerator!(system; label = 1, bus = 1, active = 3.2, maxActive = 0.5)
 addGenerator!(system; label = 2, bus = 2, active = 0.2, maxActive = 0.3)
 
 cost!(system; generator = 1, active = 2, polynomial = [1100.2; 500; 80])
-cost!(system; generator = 2, active = 1, piecewise =  [10.85 12.3; 14.77 16.8; 18 18.1])
+cost!(system; generator = 2, active = 1, piecewise = [10.85 12.3; 14.77 16.8; 18 18.1])
 nothing # hide
 ```
 
@@ -34,7 +34,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 ℰ = [𝒩[system.branch.layout.from] 𝒩[system.branch.layout.to]]
 ```
 
-Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_\text{g}\}`` within the power system:
+Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_\mathrm{g}\}`` within the power system:
 ```@repl dcopf
 𝒮 = collect(keys(system.generator.label))
 ```
@@ -59,7 +59,7 @@ The DC optimal power flow model has the form:
         & \theta_i - \theta_\mathrm{s} = 0
     \end{aligned}
     \phantom{\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\,}
-    \right\} i \in \mathcal{N_\mathrm{sb}} \\[-1pt]
+    \right\} i \in \mathcal{N}_\mathrm{sb} \\[-1pt]
     & & & \left.
     \begin{aligned}
         & h_{P_i}(\mathbf P_\mathrm{g}, \bm \Theta) = 0
@@ -111,7 +111,7 @@ Hence, the variables in this model encompass the active power outputs of the gen
 ---
 
 ## Objective Function
-The objective function represents the sum of the active power cost functions ``f_i(P_{\mathrm{g}i})``, ``i \in \mathcal S``, for each generator, where these cost functions can be polynomial or piecewise linear functions. Only polynomial cost functions of up to the second degree are included in the objective. Specifically, if a higher-degree polynomial is provided, JuliaGrid will discard all terms beyond the second degree and still include the resulting truncated polynomial in the objective function.
+The objective function represents the sum of the active power cost functions ``f_i(P_{\mathrm{g}i})``, ``i \in \mathcal S``, for each generator, where these cost functions can be polynomial or piecewise linear functions. Only polynomial cost functions of up to the second degree are included in the objective. Specifically, if a higher-degree polynomial is provided, JuliaGrid uses only the quadratic, linear, and constant terms in the objective function.
 
 ---
 
@@ -233,11 +233,11 @@ h_{P_i}(\mathbf P_\mathrm{g}, \bm \Theta) = 0,\;\;\; i \in \mathcal N.
 
 As elaborated in the [Nodal Network Equations](@ref DCNodalNetworkEquationsTutorials) section, we can express the equation as follows:
 ```math
-h_{P_i}(\mathbf P_\mathrm{g}, \bm \Theta) = \sum_{k \in \mathcal S_i} P_{\mathrm{g}k} - \sum_{k = 1}^n B_{ik} \theta_k - P_{\mathrm{d}i} - P_{\mathrm{sh}i} - P_{\mathrm{tr}i}.
+h_{P_i}(\mathbf P_\mathrm{g}, \bm \Theta) = \sum_{k \in \mathcal S_i} P_{\mathrm{g}k} - \sum_{j = 1}^n B_{ij} \theta_j - P_{\mathrm{d}i} - P_{\mathrm{sh}i} - P_{\mathrm{tr}i}.
 ```
-In this equation, the set ``\mathcal{S}_i \subseteq \mathcal S`` encompasses all generators connected to bus ``i \in \mathcal N``, and ``P_{\mathrm{g}k}`` represents the active power output of the ``k``-th generator within the set ``\mathcal{S}_i``. More precisely, the variable ``P_{\mathrm{g}k}`` represents the optimization variable, as well as the bus voltage angle ``\theta_k``.
+In this equation, the set ``\mathcal{S}_i \subseteq \mathcal S`` encompasses all generators connected to bus ``i \in \mathcal N``, and ``P_{\mathrm{g}k}`` represents the active power output of the ``k``-th generator within the set ``\mathcal{S}_i``. The variables ``P_{\mathrm{g}k}`` and ``\theta_j`` are optimization variables.
 
-The constant terms in these equations are determined by the active power demand at bus ``P_{\mathrm{d}i}``, the active power demanded by the shunt element ``P_{\mathrm{sh}i}``, and power related to the shift angle of the phase transformers ``P_{\mathrm{tr}i}``. The values representing these constant terms ``\mathbf P_\mathrm{d} = [P_{\mathrm{d}i}]``, ``\mathbf P_\mathrm{sh} = [P_{\mathrm{sh}i}]``, and ``\mathbf P_\mathrm{tr} = [P_{\mathrm{tr}i}]``, ``i, \in \mathcal N``, can be accessed:
+The constant terms in these equations are determined by the active power demand at bus ``P_{\mathrm{d}i}``, the active power demanded by the shunt element ``P_{\mathrm{sh}i}``, and power related to the shift angle of the phase transformers ``P_{\mathrm{tr}i}``. The values representing these constant terms ``\mathbf P_\mathrm{d} = [P_{\mathrm{d}i}]``, ``\mathbf P_\mathrm{sh} = [P_{\mathrm{sh}i}]``, and ``\mathbf P_\mathrm{tr} = [P_{\mathrm{tr}i}]``, ``i \in \mathcal N``, can be accessed:
 ```@repl dcopf
 𝐏ₒ = system.bus.demand.active
 𝐏ₛₕ = system.bus.shunt.conductance
@@ -274,7 +274,7 @@ The inequality constraint related to active power flow is used to represent ther
 P_{ij}^{\mathrm{min}} \leq h_{P_{ij}}(\theta_i, \theta_j) \leq P_{ij}^{\mathrm{max}}, \;\;\; (i,j) \in \mathcal E.
 ```
 
-The branch flow limits at the from-bus, denoted as ``\mathbf P_\mathrm{f} = [P_{ij}^\mathrm{min}, P_{ij}^\mathrm{max}]`` , can be retrieved as follows:
+The branch flow limits at the from-bus, denoted as ``\mathbf P_\mathrm{f} = [P_{ij}^\mathrm{min}, P_{ij}^\mathrm{max}]``, can be retrieved as follows:
 ```@repl dcopf
 𝐏ₒ = [system.branch.flow.minFromBus system.branch.flow.maxFromBus]
 ```
@@ -294,7 +294,7 @@ print(analysis.method.constraint.flow.active)
 ##### Generator Active Power Capability Constraints
 The inequality constraints associated with the minimum and maximum active power outputs of the generators are defined as follows:
 ```math
-P_{\mathrm{g}i}^\mathrm{min} \leq P_{\mathrm{g}i} \leq P_{\mathrm{g}i}^\mathrm{max}, \;\;\;  i \in \mathcal{S}.
+P_{\mathrm{g}i}^\mathrm{min} \leq P_{\mathrm{g}i} \leq P_{\mathrm{g}i}^\mathrm{max}, \;\;\; i \in \mathcal{S}.
 ```
 
 In this representation, the lower and upper bounds are determined by the vector ``\mathbf P_\mathrm{m} = [P_{\mathrm{g}i}^\mathrm{min}, P_{\mathrm{g}i}^\mathrm{max}]``, ``i \in \mathcal{S}``. We can access these bounds using the following variable:
@@ -310,7 +310,7 @@ print(analysis.method.constraint.capability.active)
 ---
 
 ## [Optimal Power Flow Solution](@id DCOptimalPowerFlowSolutionTutorials)
-To acquire the output active power of generators and the bus voltage angles, the user must invoke the function:
+To acquire the output active power of generators and the bus voltage angles, the user must invoke the [`solve!`](@ref solve!(::DcOptimalPowerFlow)) function:
 ```@example dcopf
 JuMP.set_silent(analysis.method.jump) # hide
 solve!(analysis)
@@ -330,7 +330,7 @@ Further, the resulting bus voltage angles ``\bm \Theta = [\theta_i]``, ``i \in \
 ---
 
 ## [Power Analysis](@id DCOptimalPowerAnalysisTutorials)
-After obtaining the solution from the DC optimal power flow, we can calculate the powers related to buses and branches using the [`power!`](@ref power!(::DC)) function:
+After obtaining the solution from the DC optimal power flow, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::DcPowerFlow)) function:
 ```@example dcopf
 power!(analysis)
 nothing # hide
@@ -352,9 +352,9 @@ nothing # hide
 ##### Generator Power Injections
 The active power supplied by generators to the buses can be calculated by summing the active power outputs of the generators obtained from the optimal DC power flow. This can be expressed as:
 ```math
-    P_{\mathrm{p}i} = \sum_{k=1}^{n_{\mathrm{g}i}} P_{\mathrm{g}k},\;\;\; i \in \mathcal N.
+    P_{\mathrm{p}i} = \sum_{k \in \mathcal S_i} P_{\mathrm{g}k},\;\;\; i \in \mathcal N.
 ```
-Here, ``P_{\mathrm{g}k}`` represents the active power output of the ``k``-th generator connected to bus ``i \in \mathcal{N}``, and ``n_{\mathrm{g}i}`` denotes the total number of generators connected to the same bus. We can obtain the vector of active powers injected by generators into the buses, denoted as ``\mathbf P_\mathrm{p} = [P_{\mathrm{p}i}]``, using the following command:
+Here, ``P_{\mathrm{g}k}`` represents the active power output of the ``k``-th generator connected to bus ``i \in \mathcal N``, where ``k \in \mathcal S_i``. We can obtain the vector of active powers injected by generators into the buses, denoted as ``\mathbf P_\mathrm{p} = [P_{\mathrm{p}i}]``, using the following command:
 ```@repl dcopf
 𝐏ₚ = analysis.power.supply.active
 ```

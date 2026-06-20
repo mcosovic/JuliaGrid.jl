@@ -676,7 +676,7 @@ end
 The function employs the Newton-Raphson, fast Newton-Raphson, or Gauss-Seidel method to solve the AC
 power flow and calculate bus voltage magnitudes and angles.
 
-After the [`mismatch!`](@ref mismatch!) function is executed, the execution of this function will
+After the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function is executed, the execution of this function will
 perform a single iteration of one of the methods.
 
 # Updates
@@ -1240,7 +1240,7 @@ powers and currents.
 # Keywords
 Users can use the following keywords:
 * `iteration`: Specifies the maximum number of iterations (default: `20`).
-* `tolerance`: Defines the step size tolerance for the iteration stopping criterion (default: `1e-8`).
+* `tolerance`: Defines the mismatch tolerance for the iteration stopping criterion (default: `1e-8`).
 * `power`: Enables power computation upon convergence or reaching the iteration limit (default: `false`).
 * `current`: Enables current computation upon convergence or reaching the iteration limit (default: `false`).
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).

@@ -22,7 +22,7 @@ using JuliaGrid
 
 ###### DC Power Flow
 * [`dcPowerFlow`](@ref dcPowerFlow)
-* [`solve!`](@ref solve!(::DcPowerFlow{T}) where T)
+* [`solve!`](@ref solve!(::DcPowerFlow))
 * [`powerFlow!`](@ref powerFlow!(::DcPowerFlow))
 
 ---
@@ -47,6 +47,6 @@ powerFlow!(::AcPowerFlow)
 ## DC Power Flow
 ```@docs
 dcPowerFlow
-solve!(::DcPowerFlow{T}) where T
+solve!(::DcPowerFlow)
 powerFlow!(::DcPowerFlow)
 ```

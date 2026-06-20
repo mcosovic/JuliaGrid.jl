@@ -221,6 +221,10 @@ function busData(
         head[:Iang] => _show(show[head[:Iinj]], current.injection.angle)
     )
     transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
+    show[head[:lblB]] &= any(show[key] for key in (
+        head[:Vmag], head[:Vang], head[:Pgen], head[:Qgen], head[:Pdem], head[:Qdem],
+        head[:Pinj], head[:Qinj], head[:Pshu], head[:Qshu], head[:Imag], head[:Iang]
+    ))
 
     if style
         if isset(label)
@@ -406,11 +410,14 @@ function busData(
         head[:lblB] => _show(show[head[:labl]], true),
         head[:Vang] => _show(show[head[:Volt]], voltage.angle),
         head[:Pgen] => _show(show[head[:Gene]], power.supply.active),
-        head[:Pdem] => _show(show[head[:Demd]], power.injection.active),
+        head[:Pdem] => _show(show[head[:Demd]], system.bus.demand.active),
         head[:Pinj] => _show(show[head[:Injc]], power.injection.active)
     )
 
     transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
+    show[head[:lblB]] &= any(show[key] for key in (
+        head[:Vang], head[:Pgen], head[:Pdem], head[:Pinj]
+    ))
 
     if style
         if isset(label)
@@ -711,6 +718,14 @@ function branchData(
     )
 
     transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
+    dataVisible = any(show[key] for key in (
+        head[:Pij], head[:Qij], head[:Pji], head[:Qji], head[:Psh], head[:Qsh],
+        head[:Pse], head[:Qse], head[:Iij], head[:ψij], head[:Iji], head[:ψji],
+        head[:Ise], head[:ψse], head[:sts]
+    ))
+    show[head[:lbB]] &= dataVisible
+    show[head[:lbF]] &= dataVisible
+    show[head[:lbT]] &= dataVisible
 
     buses = getLabel(system.bus.label, label, show, head[:lbF], head[:lbT])
     if style
@@ -908,6 +923,10 @@ function branchData(
     )
 
     transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
+    dataVisible = any(show[key] for key in (head[:Pij], head[:Pji], head[:sts]))
+    show[head[:lbB]] &= dataVisible
+    show[head[:lbF]] &= dataVisible
+    show[head[:lbT]] &= dataVisible
 
     buses = getLabel(system.bus.label, label, show, head[:lbF], head[:lbT])
     if style
@@ -1098,6 +1117,9 @@ function genData(
         head[:sts] => true
     )
     transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
+    dataVisible = any(show[key] for key in (head[:Pge], head[:Qge], head[:sts]))
+    show[head[:lbG]] &= dataVisible
+    show[head[:lbB]] &= dataVisible
 
     buses = getLabel(system.bus.label, label, show, head[:lbB])
     if style
@@ -1227,6 +1249,9 @@ function genData(
         head[:sts] => true
     )
     transfer!(fmt, key.fmt, width, key.width, show, key.show, style)
+    dataVisible = any(show[key] for key in (head[:Pge], head[:sts]))
+    show[head[:lbG]] &= dataVisible
+    show[head[:lbB]] &= dataVisible
 
     buses = getLabel(system.bus.label, label, show, head[:lbB])
     if style
@@ -1549,7 +1574,7 @@ function printBranchSummary(
     smr = branchSummary(system, analysis, unitList, pfx, scale)
     prt = summaryData(smr, "Branch Summary"; kwargs...)
 
-    if prt.notprint && isempty(smr.type)
+    if prt.notprint
         return
     end
 
@@ -1823,7 +1848,7 @@ function printGeneratorSummary(analysis::Union{AC, DC}, io::IO = stdout; kwargs.
     smr = generatorSummary(system, analysis, unitList, scale)
     prt = summaryData(smr, "Generator Summary"; kwargs...)
 
-    if prt.notprint && isempty(smr.type)
+    if prt.notprint
         return
     end
 

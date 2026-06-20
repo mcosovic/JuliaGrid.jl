@@ -20,7 +20,7 @@ S_{3\phi(\text{pu})} = \cfrac{S_{3\phi(\text{si})}}{S_{3\phi(\text{b})}}.
 
 Now, let us examine the power of a single phase and convert it to the per-unit system:
 ```math
-S_{1\phi(\text{pu})}  = \cfrac{S_{1\phi(\text{si})}}{S_{1\phi(\text{b})}} = \cfrac{S_{3\phi(\text{si})}}{3} \cfrac{3}{S_{3\phi(\text{b})}} = \cfrac{S_{3\phi(\text{si})}}{S_{3\phi(\text{b})}} = S_{3\phi(\text{pu})}.
+S_{1\phi(\text{pu})} = \cfrac{S_{1\phi(\text{si})}}{S_{1\phi(\text{b})}} = \cfrac{S_{3\phi(\text{si})}}{3} \cfrac{3}{S_{3\phi(\text{b})}} = \cfrac{S_{3\phi(\text{si})}}{S_{3\phi(\text{b})}} = S_{3\phi(\text{pu})}.
 ```
 
 This indicates that in the per-unit system, there is no distinction between three-phase and single-phase powers. The type of power only becomes relevant when converting back from per-unit to SI units, and vice versa.
@@ -31,7 +31,7 @@ This indicates that in the per-unit system, there is no distinction between thre
 ---
 
 ## Voltages
-Format for input data that JuliaGrid uses required value for base voltage per each bus, and those values represent the line-to-line voltages. On the other hand, in all analyses we are working with line-to-neutral voltages. To convert a line-to-neutral voltage given in SI units ``V_{LN(\text{si})}`` to per-unit form ``V_{LN(\text{pu})}``, or vice versa, we use the formula:
+The input data format used by JuliaGrid requires a base voltage value for each bus, and these values represent line-to-line voltages. On the other hand, all analyses use line-to-neutral voltages. To convert a line-to-neutral voltage given in SI units ``V_{LN(\text{si})}`` to per-unit form ``V_{LN(\text{pu})}``, or vice versa, we use the formula:
 ```math
 V_{LN(\text{pu})} = \cfrac{\sqrt{3}V_{LN(\text{si})}}{V_{LL(\text{b})}}.
 ```
@@ -53,8 +53,7 @@ Z_{L(\text{pu})} = \cfrac{Z_{L(\text{si})}}{Z_{L(\text{b})}} = \cfrac{Z_{L(\text
 
 A common question that arises is which base voltage should be used for the line, considering the two ends of the line (from-bus and to-bus). The key assumption here is that the base voltages correspond to the nominal voltages of the transformers. Therefore, when the user defines base voltages, JuliaGrid assumes these voltages represent the nominal voltages of the transformers, implying that the base voltages on both the from-bus and to-bus ends of the line will be the same.
 
-Now, let us consider the transformer. The base voltages at the from-bus end (primary side) ``V_{LLF(\text{b})}``, and the to-bus end (secondary side) ``V_{LLT(\text{b})}``,
-will generally be different. This requires us to define a conversion method for impedance. Typically, when impedance is given in ohms, it refers to the primary side of the transformer, denoted as ``Z_{F(\text{si})}``,  while the impedance in our [unified branch model](@ref UnifiedBranchModelTutorials) refers to the secondary side, denoted as ``Z_{T(\text{si})}``. To convert the impedance from the from-bus end to the to-bus end, we use:
+Now, let us consider the transformer. The base voltages at the from-bus end (primary side) ``V_{LLF(\text{b})}`` and the to-bus end (secondary side) ``V_{LLT(\text{b})}`` will generally be different. This requires us to define a conversion method for impedance. Typically, when impedance is given in ohms, it refers to the primary side of the transformer, denoted as ``Z_{F(\text{si})}``, while the impedance in our [unified branch model](@ref UnifiedBranchModelTutorials) refers to the secondary side, denoted as ``Z_{T(\text{si})}``. To convert the impedance from the from-bus end to the to-bus end, we use:
 ```math
 Z_{T(\text{si})} = \cfrac{Z_{F(\text{si})}}{m^2},
 ```
@@ -62,7 +61,7 @@ where ``m`` is the effective turns ratio, calculated as:
 ```math
 m = \tau \cfrac{V_{LLF(\text{b})}}{V_{LLT(\text{b})}},
 ```
-with ``\tau`` is off-nominal turns ratio. This equation provides the impedance on the to-bus end of the branch or the secondary side of the transformer in ohms.
+where ``\tau`` is the off-nominal turns ratio. This equation provides the impedance on the to-bus end of the branch, or equivalently on the secondary side of the transformer, in ohms.
 
 To convert this impedance to the per-unit system, we use the base impedance for the secondary side:
 ```math
@@ -73,11 +72,11 @@ where:
 Z_{T(\text{b})} = \cfrac{V_{LLT(\text{b})}^2}{S_{3\phi(\text{b})}}.
 ```
 
-Substituting the previous expressions, we obtain the following formula for the impedance on the secondary side in per-unit system:
+Substituting the previous expressions, we obtain the following formula for the impedance on the secondary side in the per-unit system:
 ```math
 Z_{T(\text{pu})} = \cfrac{Z_{F(\text{si})} S_{3\phi(\text{b})}}{\tau^2 V_{LLF(\text{b})}^2}.
 ```
-This formula applies to both lines and transformers. For a line, where ``\tau = 1``, the formula simplifies and becomes the same as the impedance equation for a line.
+This formula applies to both lines and transformers. For a line, where ``\tau = 1``, the formula reduces to the impedance equation for a line.
 
 !!! note "Info"
     In the case of a transformer, if impedances or admittances are provided in SI units, they must be specified for the primary side (from-bus end).
@@ -90,7 +89,7 @@ Once the base power and base voltage values are set, we can calculate the base c
 I_{L(\text{b})} = \cfrac{S_{3\phi(\text{b})}}{\sqrt{3}V_{LL(\text{b})}}.
 ```
 
-When we transform currents that are given in SI unit to per-unit, or vice versa, we use the following formula:
+When we transform currents given in SI units to per-units, or vice versa, we use the following formula:
 ```math
 I_{L(\text{pu})} = \cfrac{I_{L(\text{si})}}{I_{L(\text{b})}} = \cfrac{\sqrt{3}I_{L(\text{si})}V_{LL(\text{b})}}{S_{3\phi(\text{b})}}.
 ```
@@ -98,7 +97,7 @@ I_{L(\text{pu})} = \cfrac{I_{L(\text{si})}}{I_{L(\text{b})}} = \cfrac{\sqrt{3}I_
 ---
 
 ## Per-Units to SI Units
-To create a comprehensive tutorial, let us start with an example where input data is defined in per-units, while the simulation results are outputted in SI units.
+Let us start with an example where input data is defined in per-units, while the simulation results are output in SI units.
 ```@example power
 using JuliaGrid # hide
 @default(template) # hide
@@ -127,7 +126,7 @@ addBus!(system; label = "Bus 3", type = 1, active = 1.2, reactive = 0.1, base = 
 nothing # hide
 ```
 
-The `base` keyword allows us to specify base line-to-line voltages ``V_{LL(\text{b})}`` for each bus in volts (V). However, these voltages are stored in kV, as specified by the [`@base`](@ref @base) macro:
+The `base` keyword allows us to specify the base line-to-line voltage ``V_{LL(\text{b})}`` for each bus in volts (V). However, these voltages are stored in kV, as specified by the [`@base`](@ref @base) macro:
 ```@repl power
 print(system.bus.label, system.base.voltage.value)
 ```
@@ -154,7 +153,7 @@ addBranch!(system; from = "Bus 2", to = "Bus 3", reactance = 0.1, susceptance = 
 nothing # hide
 ```
 
-The first branch represents a transformer, with its reactance given in per-units on the secondary side (to-bus end), and an off-nominal turns ratio of ``\tau = 0.98``. The second branch represents a transmission line, with parameters also specified in per-units:
+The first branch represents a transformer, with its reactance given in per-units on the secondary side (to-bus end) and an off-nominal turns ratio of ``\tau = 0.98``. The second branch represents a transmission line, with parameters also specified in per-units:
 ```@repl power
 prmt = system.branch.parameter;
 print(system.branch.label, prmt.reactance, prmt.susceptance, prmt.turnsRatio)
@@ -190,7 +189,7 @@ nothing # hide
 ---
 
 ##### Results
-Now, we can examine some results in SI units:
+Now, we examine some results in SI units:
 ```@example power
 @voltage(kV, deg)
 @power(MW, MVAr)
@@ -204,7 +203,7 @@ Here, the voltage magnitudes in kV represent line-to-neutral voltages for each b
 ---
 
 ## SI Units to Per-Units
-In this section, we will create the same power system as before, but using SI units:
+In this section, we create the same power system as before, but using SI units:
 ```@example power
 using JuliaGrid # hide
 @default(template) # hide
@@ -224,14 +223,14 @@ Note that even though we define parameters in SI units, JuliaGrid will automatic
 ##### Buses
 Next, we add the same three buses, this time using SI units:
 ```@example power
-addBus!(system; label = "Bus 1", type = 3, magnitude = 115 / sqrt(3) , base = 115.0)
+addBus!(system; label = "Bus 1", type = 3, magnitude = 115 / sqrt(3), base = 115.0)
 addBus!(system; label = "Bus 2", type = 1, magnitude = 253 / sqrt(3), base = 230.0)
 addBus!(system; label = "Bus 3", type = 1, active = 120, reactive = 100, base = 230.0)
 
 nothing # hide
 ```
 
-The `base` keyword specifies the base line-to-line voltages ``V_{LL(\text{b})}`` for each bus in kV, and these values are also stored in kV:
+The `base` keyword specifies the base line-to-line voltage ``V_{LL(\text{b})}`` for each bus in kV, and these values are also stored in kV:
 ```@repl power
 print(system.bus.label, system.base.voltage.value)
 ```
@@ -294,7 +293,7 @@ nothing # hide
 ---
 
 ##### Results
-Now, we will examine the results in per-units:
+Now, we examine the results in per-units:
 ```@example power
 @voltage(pu, rad)
 @power(pu, pu)

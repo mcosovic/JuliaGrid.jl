@@ -88,7 +88,7 @@ function printVolt(
     labels = pickLabel(volt, volt.label, label, "voltmeter")
     prt = voltData(system, voltg, volt, unitList, pfx, label, labels, repeat; kwargs...)
 
-    if isempty(volt.label) && prt.notprint
+    if prt.notprint
         return
     end
 
@@ -248,7 +248,7 @@ function printAmp(
     labels = pickLabel(amp, amp.label, label, "ammeter")
     prt = ampData(system, amp, current, unitList, pfx, label, labels, repeat; kwargs...)
 
-    if isempty(amp.label) && prt.notprint
+    if prt.notprint
         return
     end
 
@@ -417,7 +417,7 @@ function printWatt(
     labels = pickLabel(watt, watt.label, label, "wattmeter")
     prt = wattData(watt, pwr, unitList, scale, label, labels, repeat; kwargs...)
 
-    if isempty(watt.label) && prt.notprint
+    if prt.notprint
         return
     end
 
@@ -579,7 +579,7 @@ function printVar(
     labels = pickLabel(var, var.label, label, "varmeter")
     prt = varData(var, pwr, unitList, scale, label, labels, repeat; kwargs...)
 
-    if isempty(var.label) && prt.notprint
+    if prt.notprint
         return
     end
 
@@ -1070,6 +1070,9 @@ function layoutMeter(
         head[:stat] => _show(show[head[:metr]], monitoring)
     )
     transfer!(fmt, kfmt, width, kwidth, show, kshow, style)
+    show[head[:labl]] &= any(show[key] for key in (
+        head[:mean], head[:vari], head[:esti], head[:resi], head[:stat]
+    ))
 
     minv = [0; Inf; Inf; Inf; Inf; 0]
     maxv = [0; -Inf; -Inf; -Inf; -Inf; 0]

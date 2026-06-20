@@ -678,8 +678,8 @@ optimal PMU placement.
 
 # Fields
 - `bus::LabelDict`: Phasor measurement placement at buses.
-- `from::LabelDict`: Phasor measurement placement at from-buses.
-- `to::LabelDict`: Phasor measurement placement at to-buses.
+- `from::LabelDict`: Phasor measurement placement at branch from-bus ends.
+- `to::LabelDict`: Phasor measurement placement at branch to-bus ends.
 """
 struct PmuPlacement
     bus::LabelDict

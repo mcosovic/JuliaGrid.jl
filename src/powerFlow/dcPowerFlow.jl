@@ -86,7 +86,11 @@ analysis = dcPowerFlow(system)
 solve!(analysis)
 ```
 """
-function solve!(analysis::DcPowerFlow{T}) where T
+function solve!(analysis::DcPowerFlow)
+    _solve!(analysis)
+end
+
+function _solve!(analysis::DcPowerFlow{T}) where T
     system = analysis.system
     bus = system.bus
     dc = system.model.dc
@@ -133,7 +137,7 @@ end
     powerFlow!(analysis::DcPowerFlow; power, verbose)
 
 The function serves as a wrapper for solving DC power flow and includes the functions:
-* [`solve!`](@ref solve!(::DcPowerFlow{T}) where T),
+* [`solve!`](@ref solve!(::DcPowerFlow)),
 * [`power!`](@ref power!(::DcPowerFlow)).
 
 It computes bus voltage angles and optionally calculates power values.

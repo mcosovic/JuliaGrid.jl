@@ -5,13 +5,13 @@ To perform the DC state estimation, we first need to have the `PowerSystem` type
 
 ---
 
-To obtain bus voltage angles and solve the DC state estimation problem, users can use the wrapper function:
-* [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})).
+To obtain bus voltage angles and solve the DC state estimation problem, users can use:
+* [`solve!`](@ref solve!(::DcStateEstimation{WLS{T}}) where T <: Normal).
 
 After solving the DC state estimation, JuliaGrid provides a function for computing powers:
-* [`power!`](@ref power!(::DcStateEstimation)).
+* [`power!`](@ref power!(::DcPowerFlow)).
 
-Alternatively, instead of using functions responsible for solving state estimation and computing powers, users can use the wrapper function:
+Alternatively, users can call the wrapper function to solve the WLS or LAV model and, optionally, compute powers:
 * [`stateEstimation!`](@ref stateEstimation!(::DcStateEstimation{<:WLS})).
 
 Users can also access specialized functions for computing specific types of [powers](@ref DCPowerAnalysisAPI) for individual buses, branches, or generators within the power system.
@@ -55,7 +55,7 @@ nothing # hide
     analysis = dcStateEstimation(monitoring, LDLt)
     ```
 
-To obtain the bus voltage angles, use the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function as shown:
+To obtain the bus voltage angles, use the [`solve!`](@ref solve!(::DcStateEstimation{WLS{T}}) where T <: Normal) function as shown:
 ```@example WLSDCStateEstimationSolution
 solve!(analysis)
 nothing # hide
@@ -73,7 +73,7 @@ nothing # hide
 ---
 
 ##### Wrapper Function
-JuliaGrid provides a wrapper function for DC state estimation analysis and also supports the computation of powers using the [`stateEstimation!`](@ref stateEstimation!(::DcStateEstimation{<:WLS})) function:
+JuliaGrid provides the [`stateEstimation!`](@ref stateEstimation!(::DcStateEstimation{<:WLS})) wrapper function for DC state estimation. It solves the WLS or LAV model, and it can optionally compute powers:
 ```@example WLSDCStateEstimationSolution
 analysis = dcStateEstimation(monitoring)
 stateEstimation!(analysis; verbose = 2)
@@ -153,12 +153,12 @@ nothing # hide
 ---
 
 ##### Setup Initial Primal Values
-In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function is executed. These values are derived from the voltage angles stored in the `PowerSystem` type and are assigned to the corresponding `voltage` field within the `DcStateEstimation` type:
+In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::DcStateEstimation{WLS{T}}) where T <: Normal) function is executed. These values are derived from the voltage angles stored in the `PowerSystem` type and are assigned to the corresponding `voltage` field within the `DcStateEstimation` type:
 ```@repl WLSDCStateEstimationSolution
 print(system.bus.label, analysis.voltage.angle)
 ```
 
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function. One practical approach is to obtain the WLS estimator and then apply the resulting solution as the starting point for state estimation:
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::DcStateEstimation{WLS{T}}) where T <: Normal) function. One practical approach is to obtain the WLS estimator and then apply the resulting solution as the starting point for state estimation:
 ```@example WLSDCStateEstimationSolution
 wls = dcStateEstimation(monitoring)
 stateEstimation!(wls)
@@ -175,7 +175,7 @@ print(system.bus.label, analysis.voltage.angle)
 ---
 
 ##### Solution
-To solve the formulated LAV state estimation model, simply execute the following function:
+To solve the formulated LAV state estimation model, call the wrapper function:
 ```@example WLSDCStateEstimationSolution
 stateEstimation!(analysis)
 nothing # hide
@@ -236,7 +236,7 @@ nothing # hide
 ## [State Estimation Update](@id DCStateEstimationUpdateManual)
 An advanced methodology involves users establishing the `DcStateEstimation` type using [`dcStateEstimation`](@ref dcStateEstimation) or [`dcLavStateEstimation`](@ref dcLavStateEstimation) just once. After this initial setup, users can seamlessly modify existing measurement devices without the need to recreate the `DcStateEstimation` type.
 
-This advancement extends beyond the previous scenario where recreating the `Measurement` type was unnecessary, to now include the scenario where `DcStateEstimation` also does not need to be recreated. Such efficiency can be particularly advantageous in cases where JuliaGrid can reuse gain matrix factorization.
+This approach extends the previous workflow by also avoiding recreation of the `DcStateEstimation` object. This is particularly useful when JuliaGrid can reuse the gain matrix factorization.
 
 !!! tip "Tip"
     The addition of new measurements after the creation of `DcStateEstimation` is not practical in terms of reusing this type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
@@ -278,12 +278,12 @@ nothing # hide
 
 
 !!! note "Info"
-    This concept removes the need to rebuild both the `Measurement` and the `DcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, and `LU`, provided that the nonzero pattern of the gain matrix remains unchanged.
+    This concept removes the need to rebuild both the `Measurement` and the `DcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, `LU`, and `KLU`, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 
 ##### Reusing Weighted Least-Squares Matrix Factorization
-Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the measurement value of the `Wattmeter 2`. It is important to note that these adjustments do not impact the variance or status of the measurement device, which can affect the gain matrix. To resolve this updated system, users can simply execute the [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})) function:
+Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the measurement value of the `Wattmeter 2`. It is important to note that these adjustments do not impact the variance or status of the measurement device, which can affect the gain matrix. To resolve this updated system, users can call the [`stateEstimation!`](@ref stateEstimation!(::DcStateEstimation{<:WLS})) wrapper function:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -301,7 +301,7 @@ nothing # hide
 ---
 
 ## [Power Analysis](@id DCSEPowerAnalysisManual)
-After obtaining the solution from the DC state estimation, use the [`power!`](@ref power!(::DcStateEstimation)) function to calculate powers related to buses and branches. For instance, let us consider the model for which we obtained the DC state estimation solution:
+After obtaining the solution from the DC state estimation, use the [`power!`](@ref power!(::DcPowerFlow)) function to calculate powers related to buses and branches. For instance, let us consider the model for which we obtained the DC state estimation solution:
 ```@example WLSDCStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -339,7 +339,7 @@ print(system.bus.label, analysis.power.injection.active)
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses and branches that are calculated by the [`power!`](@ref power!(::DcStateEstimation)) function, we suggest referring to the [DC State Estimation](@ref DCSEModelTutorials) tutorial.
+    To better understand the powers associated with buses and branches that are calculated by the [`power!`](@ref power!(::DcPowerFlow)) function, we suggest referring to the [DC State Estimation](@ref DCSEModelTutorials) tutorial.
 
 ---
 
@@ -360,7 +360,7 @@ using CSV
 
 io = IOBuffer()
 printWattmeterData(analysis, io; style = false)
-CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
+CSV.write("wattmeter.csv", CSV.File(take!(io); delim = "|"))
 ```
 
 ---
@@ -374,7 +374,7 @@ active = injectionPower(analysis; label = "Bus 1")
 ---
 
 ##### Active Power Injection from Generators
-To calculate the active power injection from generators at a specific bus, use:
+To calculate the active power supply associated with a specific bus, use:
 ```@repl WLSDCStateEstimationSolution
 active = supplyPower(analysis; label = "Bus 1")
 ```

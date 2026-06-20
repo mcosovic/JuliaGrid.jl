@@ -21,7 +21,7 @@ addBranch!(system; from = 2, to = 3, reactance = 0.17, turnsRatio = 0.97)
 addGenerator!(system; bus = 1, active = 2.0)
 addGenerator!(system; bus = 1, active = 4.0)
 addGenerator!(system; bus = 3, active = 5.0)
-nothing #hide
+nothing # hide
 ```
 
 To review, we can conceptualize the bus/branch model as the graph denoted by ``\mathcal G = (\mathcal N, \mathcal E)``, where we have the set of buses ``\mathcal N = \{1, \dots, n\}``, and the set of branches ``\mathcal E \subseteq \mathcal N \times \mathcal N`` within the power system:
@@ -95,7 +95,7 @@ Finally, the resulting bus voltage angles are saved in the vector as follows:
 ---
 
 ## [Power Analysis](@id DCPowerAnalysisTutorials)
-After obtaining the solution from the DC power flow, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::DC)) function:
+After obtaining the solution from the DC power flow, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::DcPowerFlow)) function:
 ```@example PowerFlowSolutionDC
 power!(analysis)
 nothing # hide
@@ -139,12 +139,12 @@ Similarly, the resulting [to-bus active power flows](@ref DCBranchNetworkEquatio
 
 ---
 
-##### Generators Power Outputs
-The output active power of each generator located at bus ``i \in \mathcal{N}_\mathrm{pv} \cup \mathcal{N}_\mathrm{pq}`` is equal to the active power specified in the input data. If there are multiple generators, their output active powers are also equal to the active powers specified in the input data. However, the output active power of a generator located at the slack bus will be:
+##### Generator Power Outputs
+The output active power of each generator located at a non-slack bus is equal to the active power specified in the input data. If there are multiple generators, their output active powers are also equal to the active powers specified in the input data. However, the total active power supplied by generators at the slack bus will be:
 ```math
-    P_{\mathrm{g}i} = P_i + P_{\mathrm{d}i}, \;\;\; i \in \mathcal{N}_\mathrm{sb}.
+    P_{\mathrm{p}i} = P_i + P_{\mathrm{d}i}, \;\;\; i \in \mathcal{N}_\mathrm{sb}.
 ```
-In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\mathrm{g}i}``. Then, this amount of power is reduced by the output active power of the other generators.
+In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\mathrm{p}i}``. Then, this amount of power is reduced by the output active power of the other generators.
 
 To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_\mathrm{g} = [P_{\mathrm{g}i}]``, ``i \in \mathcal S``, where the set ``\mathcal S`` represents the set of generators, users can utilize the following command:
 ```@repl PowerFlowSolutionDC

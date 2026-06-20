@@ -21,7 +21,8 @@ Users can configure the following parameters:
 * `verbose`: Controls the output display, ranging from the default silent mode (`0`) to detailed output (`3`).
 
 Additionally, users can modify the variable names used for printing and writing by setting the
-keywords for the voltage variables `angle` and `active`, as well as the helper variable `actwise`.
+keywords for the voltage angle variable `angle` and the generator active power variable `active`,
+as well as the helper variable `actwise`.
 For example, users may set `angle = "θ"`, `active = "P"`, and `actwise = "H"` to display equations
 in a more readable format.
 

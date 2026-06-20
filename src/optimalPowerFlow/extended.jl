@@ -86,9 +86,9 @@ end
     @addConstraint(analysis::OptimalPowerFlow, expr, dual, args..., kwargs...)
 
 This macro wraps the JuMP [@constraint](https://jump.dev/JuMP.jl/stable/api/JuMP/#@constraint) macro,
-adding an constraint defined by `expr` to the model. In addition to creating the JuMP
+adding a constraint defined by `expr` to the model. In addition to creating the JuMP
 constraint, it also registers the constraint within the JuliaGrid framework and optionally sets
-initial dual value.
+an initial dual value.
 
 The positional arguments `args` and keyword arguments `kwargs` are consistent with those accepted by
 the [@constraint](https://jump.dev/JuMP.jl/stable/api/JuMP/#@constraint) macro in JuMP.

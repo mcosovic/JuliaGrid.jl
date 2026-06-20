@@ -560,7 +560,7 @@ end
     stateEstimation!(analysis::PmuStateEstimation; iteration, tolerance, power, verbose)
 
 The function serves as a wrapper for solving PMU state estimation and includes the functions:
-* [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})),
+* [`solve!`](@ref solve!(::PmuStateEstimation{WLS{T}}) where T <: Normal),
 * [`power!`](@ref power!(::AcPowerFlow)),
 * [`current!`](@ref current!(::AC)).
 

@@ -33,7 +33,7 @@ Moreover, it is feasible to modify the parameters of buses, branches, and genera
 ---
 
 ## [Build Model](@id BuildModelManual)
-The [`powerSystem`](@ref powerSystem) function generates the `PowerSystem` type and requires a string-formatted path to either Matpower cases or HDF5 files as input. Alternatively, the `PowerSystem` can be created without any initial data by initializing it as empty, allowing the user to construct the power system from scratch.
+The [`powerSystem`](@ref powerSystem) function generates the `PowerSystem` type and requires a string-formatted path to a Matpower case, PSSE file, or HDF5 file as input. Alternatively, the `PowerSystem` can be created without any initial data by initializing it as empty, allowing the user to construct the power system from scratch.
 
 !!! info "Info"
     While building the model, users can manage bus, branch, and generator labels in several ways. For more details, see the [Labels](@ref LabelsManual) section.
@@ -235,7 +235,7 @@ addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 2", reactance =
 nothing # hide
 ```
 
-Here, we created the branch from `Bus 1` to `Bus 2` with following parameter:
+Here, we created the branch from `Bus 1` to `Bus 2` with the following parameter:
 ```@repl addBranch
 system.branch.parameter.reactance
 ```
@@ -324,7 +324,7 @@ Regarding the [`addBus!`](@ref addBus!) function, the bus type is automatically 
 
 Transitioning to the [`addBranch!`](@ref addBranch!) function, the default operational status is `status = 1`, indicating that the branch is in-service. The off-nominal turns ratio for the transformer is specified as `turnsRatio = 1.0`, and the phase shift angle is set to `shiftAngle = 0.0`, collectively defining the line configuration with these standard settings. The flow rating is also configured as `type = 3`. Moreover, the minimum and maximum voltage angle differences between the from-bus and to-bus ends are set to `minDiffAngle = -2pi` and `maxDiffAngle = 2pi`, respectively.
 
-Similarly, the [`addGenerator!`](@ref addGenerator!) function designates an operational generator by employing `status = 1`, and it sets `magnitude = 1.0` per-unit, denoting the desired voltage magnitude setpoint. By default, the generator's output is constrained with limits: `minActive = 0.0`, `maxActive = 5 active`, `minReactive = -5 reactive`, and `maxReactive = 5 reactive`, where `active` and `reactive` refer to the generator’s output powers.
+Similarly, the [`addGenerator!`](@ref addGenerator!) function designates an operational generator by employing `status = 1`, and it sets `magnitude = 1.0` per-unit, denoting the desired voltage magnitude setpoint. By default, the generator's output is constrained with limits: `minActive = 0.0`, `maxActive = 5 * active`, `minReactive = -5 * reactive`, and `maxReactive = 5 * reactive`, where `active` and `reactive` refer to the specified generator output powers.
 
 The remaining parameters are initialized with default values of zero.
 
@@ -647,7 +647,7 @@ When saving the power system to an HDF5 file, the label type (strings or integer
 ---
 
 ## [AC and DC Model](@id ACDCModelManual)
-When we constructed the power system, we can create an AC and/or DC model, which include vectors and matrices related to the power system's topology and parameters. The following code snippet demonstrates this:
+After constructing the power system, we can create an AC and/or DC model, which includes vectors and matrices related to the power system's topology and parameters. The following code snippet demonstrates this:
 ```@example ACDCModel
 using JuliaGrid # hide
 @default(unit) # hide
@@ -803,7 +803,7 @@ nothing # hide
 ---
 
 ## [Update Generator](@id UpdateGeneratorManual)
-Finally, users can update all generator parameters defined within the [`addGenerator!`](@ref addGenerator!) function using the [`updateGenerator!`](@ref updateGenerator!) function. The execution of this function will affect all variables within the `PowerSystem` type.
+Finally, users can update all generator parameters defined within the [`addGenerator!`](@ref addGenerator!) function using the [`updateGenerator!`](@ref updateGenerator!) function. When generator parameters affect bus-level supply data, the corresponding fields in the `PowerSystem` type are updated as well.
 
 In short, in addition to the `generator` field, JuliaGrid also retains variables associated with generators within the `bus` field. As an example, let us examine one of these variables and its values derived from a previous example:
 ```@repl updateSystem
@@ -855,7 +855,7 @@ The default input units are in per-units, with coefficients of the cost function
 system.generator.cost.active.polynomial[1]
 ```
 
-By setting `active = 2` within the function, we express our intent to specify the active power cost using the `active` key. By using a value of `2`, we choose to use a polynomial cost model for the associated generator. This flexibility is necessary when we have previously defined a piecewise linear cost function for the same generator. In such cases, we can set `active = 1` to utilize the piecewise linear cost function to represent the cost of the corresponding generator. Thus, we can choose between these two cost functions according to the requirements of the simulation. Users can also define both piecewise and polynomial costs within a single function call.
+By setting `active = 2` within the function, we express our intent to specify the active power cost using the `active` key. By using a value of `2`, we choose to use a polynomial cost model for the associated generator. This flexibility is necessary when we have previously defined a piecewise linear cost function for the same generator. In such cases, we can set `active = 1` to utilize the piecewise linear cost function to represent the cost of the corresponding generator. Thus, we can choose between these two cost functions according to the requirements of the simulation. Users can also provide both `piecewise` and `polynomial` data in a single function call; the value assigned to `active` or `reactive` then selects which of the two cost models is currently used for that power type.
 
 ---
 

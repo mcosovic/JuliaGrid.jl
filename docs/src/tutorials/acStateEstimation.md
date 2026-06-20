@@ -42,7 +42,7 @@ nothing # hide
 ---
 
 ## [State Estimation Model](@id ACSEModelTutorials)
-In accordance with the [AC Model](@ref ACModelTutorials), the AC state estimation treats bus voltages as state variables, which we denoted by ``\mathbf x \equiv [\bm \Theta, \mathbf V]^T``. The state vector encompasses two components:
+In accordance with the [AC Model](@ref ACModelTutorials), the AC state estimation treats bus voltages as state variables, which we denote by ``\mathbf x \equiv [\bm \Theta, \mathbf V]^T``. The state vector encompasses two components:
 * ``\bm \Theta \in \mathbb{R}^{n-1}``, representing bus voltage angles,
 * ``\mathbf V \in \mathbb{R}^n``, representing bus voltage magnitudes.
 Consequently, the total number of state variables is ``s = 2n-1``, accounting for the fact that the voltage angle for the slack bus is known.
@@ -54,7 +54,7 @@ Within the JuliaGrid framework for AC state estimation, the methodology encompas
 
 Here, ``\mathbf h(\mathbf x)= [h_1(\mathbf x)``, ``\dots``, ``h_k(\mathbf x)]^T`` represents the vector of nonlinear measurement functions, where ``k`` is the number of measurements, ``\mathbf z = [z_1, \dots, z_k]^T`` denotes the vector of measurement values, and ``\mathbf u = [u_1, \dots, u_k]^T`` represents the vector of measurement errors. It is worth noting that the number of equations in the system is equal to ``k = |\mathcal V \cup \mathcal I \cup \mathcal P \cup \mathcal Q| + 2|\bar{\mathcal P}|``.
 
-These errors are assumed to follow a Gaussian distribution with a zero mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf v = [v_1, \dots, v_k]^T``, while the off-diagonal elements represent the covariances between the measurement errors ``\mathbf w = [w_1, \dots, w_k]^T``. These covariances exist only if PMUs are observed in rectangular coordinates and correlation is required.
+These errors are assumed to follow a Gaussian distribution with a zero mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf v = [v_1, \dots, v_k]^T``, while the off-diagonal elements represent the covariances between paired real and imaginary PMU measurement errors. These covariances exist only if PMUs are observed in rectangular coordinates and correlation is required.
 
 Hence, the nonlinear system of equations is structured according to the specific devices:
 ```math
@@ -81,9 +81,9 @@ Hence, the nonlinear system of equations is structured according to the specific
     \end{bmatrix}
 ```
 
-Please note that each error vector, denoted as ``\mathbf{u}_i``, where ``i \in \{\mathcal V, \mathcal I, \mathcal P, \mathcal Q\}``, is associated with the variance vector ``\mathbf{v}_i``.  However, for PMUs, the error vector ``\mathbf{u}_{\bar{\mathcal P}}``, along with its variance vector ``\mathbf{v}_{\bar{\mathcal P}}``, can also be associated with the covariance vector ``\mathbf{w}_{\bar{\mathcal P}}``.
+Please note that each error vector, denoted as ``\mathbf{u}_i``, where ``i \in \{\mathcal V, \mathcal I, \mathcal P, \mathcal Q\}``, is associated with the variance vector ``\mathbf{v}_i``. However, for PMUs, the error vector ``\mathbf{u}_{\bar{\mathcal P}}``, along with its variance vector ``\mathbf{v}_{\bar{\mathcal P}}``, can also be associated with off-diagonal covariances between paired real and imaginary measurement errors.
 
-In summary, upon user definition of the measurement devices, each ``i``-th legacy measurement device is linked to the measurement function ``h_i(\mathbf x)``, the corresponding measurement value ``z_i``, and the measurement variance ``v_i``. Meanwhile, each ``i``-th PMU is associated with two measurement functions ``h_{2i-1}(\mathbf x)``, ``h_{2i}(\mathbf x)``, along with their respective measurement values ``z_{2i-1}``, ``z_{2i}``, as well as their variances ``v_{2i-1}``, ``v_{2i}``, and possibly covariances ``w_{2i-1}``, ``w_{2i}``.
+In summary, upon user definition of the measurement devices, each ``i``-th legacy measurement device is linked to the measurement function ``h_i(\mathbf x)``, the corresponding measurement value ``z_i``, and the measurement variance ``v_i``. Meanwhile, each ``i``-th PMU is associated with two measurement functions ``h_{2i-1}(\mathbf x)``, ``h_{2i}(\mathbf x)``, along with their respective measurement values ``z_{2i-1}``, ``z_{2i}``, as well as their variances ``v_{2i-1}``, ``v_{2i}``, and possibly the covariance ``w_{2i-1,2i}``.
 
 Typically, the AC state estimator is obtained using the Gauss-Newton method or its variation, which involves constructing the Jacobian matrix. Therefore, in addition to the aforementioned elements, we also need Jacobian expressions corresponding to the measurement functions, which are also provided below.
 
@@ -132,10 +132,10 @@ Here, following the guidelines outlined in the [AC Model](@ref BranchNetworkEqua
 where:
 ```math
   \begin{gathered}
-    A_{I_{ij}} = \cfrac{(g_{ij} + g_{\mathrm{s}i})^2 + (b_{ij} + b_{\mathrm{s}i})^2}{\tau_{ij}^4}, \;\;\;
+    A_{I_{ij}} = \cfrac{(g_{ij} + g_{\mathrm{s}ij})^2 + (b_{ij} + b_{\mathrm{s}ij})^2}{\tau_{ij}^4}, \;\;\;
     B_{I_{ij}} = \cfrac{g_{ij}^2 + b_{ij}^2}{\tau_{ij}^2} \\
-    C_{I_{ij}} = \cfrac{g_{ij}(g_{ij} + g_{\mathrm{s}i}) + b_{ij}(b_{ij} + b_{\mathrm{s}i})}{\tau_{ij}^3}, \;\;\;
-    D_{I_{ij}} = \cfrac{g_{ij}b_{\mathrm{s}i} - b_{ij}g_{\mathrm{s}i}}{\tau_{ij}^3}.
+    C_{I_{ij}} = \cfrac{g_{ij}(g_{ij} + g_{\mathrm{s}ij}) + b_{ij}(b_{ij} + b_{\mathrm{s}ij})}{\tau_{ij}^3}, \;\;\;
+    D_{I_{ij}} = \cfrac{g_{ij}b_{\mathrm{s}ij} - b_{ij}g_{\mathrm{s}ij}}{\tau_{ij}^3}.
   \end{gathered}
 ```
 
@@ -152,9 +152,13 @@ Jacobian expressions corresponding to the measurement function ``h_{I_{ij}}(\mat
 	\end{aligned}
 ```
 
-The next option is to introduce this measurement in squared form. In this case, the measurement function and value will be squared, while the variance will be doubled:
+The next option is to introduce this measurement in squared form. In this case, the measurement function and value are squared:
 ```math
-    \mathbf{z}_\mathcal{I} = [z_{I_{ij}}^2], \;\;\; \mathbf{v}_\mathcal{I} = [2v_{I_{ij}}], \;\;\; \mathbf{h}_\mathcal{I}(\mathbf x) = [h_{I_{ij}}^2(\mathbf x)].
+    \mathbf{z}_\mathcal{I} = [z_{I_{ij}}^2], \;\;\; \mathbf{v}_\mathcal{I} = [v_{I_{ij}^2}], \;\;\; \mathbf{h}_\mathcal{I}(\mathbf x) = [h_{I_{ij}}^2(\mathbf x)].
+```
+The generic variance term is propagated using a first-order approximation:
+```math
+    v_{I_{ij}^2} \approx 4z_{I_{ij}}^2v_{I_{ij}}.
 ```
 
 For example:
@@ -189,9 +193,9 @@ where:
 ```math
   \begin{gathered}
     A_{I_{ji}} = \cfrac{g_{ij}^2 + b_{ij}^2}{\tau_{ij}^2}, \;\;\;
-    B_{I_{ji}} = (g_{ij} + g_{\mathrm{s}i})^2 + (b_{ij} + b_{\mathrm{s}i})^2 \\
-    C_{I_{ji}} = \cfrac{g_{ij}(g_{ij} + g_{\mathrm{s}i}) + b_{ij}(b_{ij} + b_{\mathrm{s}i})}{\tau_{ij}}, \;\;\;
-    D_{I_{ji}} = \cfrac{g_{ij}b_{\mathrm{s}i} - b_{ij}g_{\mathrm{s}i}}{\tau_{ij}}.
+    B_{I_{ji}} = (g_{ij} + g_{\mathrm{s}ij})^2 + (b_{ij} + b_{\mathrm{s}ij})^2 \\
+    C_{I_{ji}} = \cfrac{g_{ij}(g_{ij} + g_{\mathrm{s}ij}) + b_{ij}(b_{ij} + b_{\mathrm{s}ij})}{\tau_{ij}}, \;\;\;
+    D_{I_{ji}} = \cfrac{g_{ij}b_{\mathrm{s}ij} - b_{ij}g_{\mathrm{s}ij}}{\tau_{ij}}.
   \end{gathered}
 ```
 
@@ -208,9 +212,13 @@ Jacobian expressions corresponding to the measurement function ``h_{I_{ji}}(\mat
 	\end{aligned}
 ```
 
-As explained for the current magnitude measurement from the bus, we can also introduce this measurement in squared form:
+As explained for the current magnitude measurement at the from-bus end, we can also introduce this measurement in squared form:
 ```math
-    \mathbf{z}_\mathcal{I} = [z_{I_{ji}}^2], \;\;\; \mathbf{v}_\mathcal{I} = [2v_{I_{ji}}], \;\;\; \mathbf{h}_\mathcal{I}(\mathbf x) = [h_{I_{ji}}^2(\mathbf x)].
+    \mathbf{z}_\mathcal{I} = [z_{I_{ji}}^2], \;\;\; \mathbf{v}_\mathcal{I} = [v_{I_{ji}^2}], \;\;\; \mathbf{h}_\mathcal{I}(\mathbf x) = [h_{I_{ji}}^2(\mathbf x)].
+```
+The generic variance term is propagated using a first-order approximation:
+```math
+    v_{I_{ji}^2} \approx 4z_{I_{ji}}^2v_{I_{ji}}.
 ```
 
 For example:
@@ -271,7 +279,7 @@ nothing # hide
 
 Here, the function describing active power flow at the from-bus end is defined as follows:
 ```math
-    h_{P_{ij}}(\mathbf x) = \cfrac{g_{ij} + g_{\mathrm{s}i}}{\tau_{ij}^2} V_i^2 - \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right]V_iV_j,
+    h_{P_{ij}}(\mathbf x) = \cfrac{g_{ij} + g_{\mathrm{s}ij}}{\tau_{ij}^2} V_i^2 - \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right]V_iV_j,
 ```
 with the following Jacobian expressions:
 ```math
@@ -280,7 +288,7 @@ with the following Jacobian expressions:
     \cfrac{\mathrm \partial{h_{P_{ij}}(\mathbf x)}}{\mathrm \partial \theta_j} =
     \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) - b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_iV_j \\
     \cfrac{\mathrm \partial{h_{P_{ij}}(\mathbf x)}}{\mathrm \partial V_{i}} &=
-    2\cfrac{g_{ij} + g_{\mathrm{s}i}}{\tau_{ij}^2} V_i -
+    2\cfrac{g_{ij} + g_{\mathrm{s}ij}}{\tau_{ij}^2} V_i -
     \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_j \\
     \cfrac{\mathrm \partial{h_{P_{ij}}(\mathbf x)}}{\mathrm \partial V_j} &= -
     \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_i.
@@ -303,7 +311,7 @@ nothing # hide
 
 Thus, the function describing active power flow at the to-bus end is defined as follows:
 ```math
-    h_{P_{ji}}(\mathbf x) = (g_{ij} + g_{\mathrm{s}i}) V_j^2 - \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) - b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_iV_j,
+    h_{P_{ji}}(\mathbf x) = (g_{ij} + g_{\mathrm{s}ij}) V_j^2 - \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) - b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_iV_j,
 ```
 with the following Jacobian expressions:
 ```math
@@ -313,7 +321,7 @@ with the following Jacobian expressions:
     \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) + b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_iV_j \\
     \cfrac{\mathrm \partial{h_{P_{ji}}(\mathbf x)}}{\mathrm \partial V_{i}} &=  -
     \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) - b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_j \\
-    \cfrac{\mathrm \partial{h_{P_{ji}}(\mathbf x)}}{\mathrm \partial V_{j}} &= 2(g_{ij} + g_{\mathrm{s}i}) V_j -
+    \cfrac{\mathrm \partial{h_{P_{ji}}(\mathbf x)}}{\mathrm \partial V_{j}} &= 2(g_{ij} + g_{\mathrm{s}ij}) V_j -
     \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) - b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_i.
 	\end{aligned}
 ```
@@ -366,7 +374,7 @@ nothing # hide
 
 Here, the function describing reactive power flow at the from-bus end is defined as follows:
 ```math
-    h_{Q_{ij}}(\mathbf x) = -\cfrac{b_{ij} + b_{\mathrm{s}i}}{\tau_{ij}^2} V_i^2 - \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) - b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_iV_j,
+    h_{Q_{ij}}(\mathbf x) = -\cfrac{b_{ij} + b_{\mathrm{s}ij}}{\tau_{ij}^2} V_i^2 - \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) - b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_iV_j,
 ```
 with the following Jacobian expressions:
 ```math
@@ -375,7 +383,7 @@ with the following Jacobian expressions:
     \cfrac{\mathrm \partial{h_{Q_{ij}}(\mathbf x)}}{\mathrm \partial \theta_j} = -
     \cfrac{1}{\tau_{ij}} \left[g_{ij}\cos(\theta_{ij} - \phi_{ij}) + b_{ij}\sin(\theta_{ij} - \phi_{ij})\right] V_iV_j \\
     \cfrac{\mathrm \partial{h_{Q_{ij}}(\mathbf x)}}{\mathrm \partial V_i} &= -
-    2\cfrac{b_{ij} + b_{\mathrm{s}i}}{\tau_{ij}^2} V_i -
+    2\cfrac{b_{ij} + b_{\mathrm{s}ij}}{\tau_{ij}^2} V_i -
     \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) - b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_j\\
     \cfrac{\mathrm \partial{h_{Q_{ij}}(\mathbf x)}}{\mathrm \partial V_j} &= -
     \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) - b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_i.
@@ -398,7 +406,7 @@ nothing # hide
 
 Thus, the function describing reactive power flow at the to-bus end is defined as follows:
 ```math
-    h_{Q_{ji}}(\mathbf x) = -(b_{ij} + b_{\mathrm{s}i}) V_j^2 + \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) + b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_iV_j,
+    h_{Q_{ji}}(\mathbf x) = -(b_{ij} + b_{\mathrm{s}ij}) V_j^2 + \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) + b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_iV_j,
 ```
 with the following Jacobian expressions:
 ```math
@@ -409,7 +417,7 @@ with the following Jacobian expressions:
     \cfrac{\mathrm \partial{h_{Q_{ji}}(\mathbf x)}}{\mathrm \partial V_i} &=
     \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) + b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_j\\
     \cfrac{\mathrm \partial{h_{Q_{ji}}(\mathbf x)}}{\mathrm \partial V_j} &=
-    -2(b_{ij} + b_{\mathrm{s}i}) V_{j} +
+    -2(b_{ij} + b_{\mathrm{s}ij}) V_{j} +
     \cfrac{1}{\tau_{ij}} \left[g_{ij}\sin(\theta_{ij} - \phi_{ij}) + b_{ij}\cos(\theta_{ij} - \phi_{ij})\right] V_i.
 	\end{aligned}
 ```
@@ -511,10 +519,7 @@ while Jacobian expressions corresponding to the measurement function ``h_{\Im(\b
   \end{aligned}
 ```
 
-In the previous example, the user neglects the covariances between the real and imaginary parts of the measurement. However, if desired, the user can also include them in the state estimation model by specifying the covariances of the vector:
-```math
-    \mathbf{w}_{\bar{\mathcal P}} = [w_{\Re(\bar{V}_i)}, w_{\Im(\bar{V}_i)}].
-```
+In the previous example, the user neglects the covariance between the real and imaginary parts of the measurement. However, if desired, the user can also include it in the state estimation model as an off-diagonal covariance.
 ```@example ACSETutorial
 addPmu!(
   monitoring; label = "V₃, θ₃", bus = 3, magnitude = 0.9, angle = -0.2,
@@ -523,9 +528,9 @@ addPmu!(
 nothing # hide
 ```
 
-Then, the covariances are obtained as follows:
+The off-diagonal covariance is obtained as follows:
 ```math
-    w_{\Re(\bar{V}_i)} = w_{\Im(\bar{V}_i)} =
+    w_{\Re(\bar{V}_i),\Im(\bar{V}_i)} =
     v_{V_i} \cfrac{\mathrm \partial} {\mathrm \partial z_{V_i}} (z_{V_i} \cos z_{\theta_i})
     \cfrac{\mathrm \partial} {\mathrm \partial z_{V_i}} (z_{V_i} \sin z_{\theta_i})  +
     v_{\theta_i} \cfrac{\mathrm \partial} {\mathrm \partial z_{\theta_i}} (z_{V_i} \cos z_{\theta_i})
@@ -533,7 +538,7 @@ Then, the covariances are obtained as follows:
 ```
 which results in the solution:
 ```math
-    w_{\Re(\bar{V}_i)} = w_{\Im(\bar{V}_i)} = \cos z_{\theta_i} \sin z_{\theta_i}(v_{V_i} - v_{\theta_i} z_{V_i}^2).
+    w_{\Re(\bar{V}_i),\Im(\bar{V}_i)} = \cos z_{\theta_i} \sin z_{\theta_i}(v_{V_i} - v_{\theta_i} z_{V_i}^2).
 ```
 
 ---
@@ -555,7 +560,7 @@ addPmu!(
 nothing # hide
 ```
 
-Here, the function and corresponding Jacobian expressions associated with the branch current magnitude at the from-bus end remains identical to the one provided in [From-Bus Current Magnitude Measurements](@ref FromCurrentMagnitudeMeasurements). Additionally, by using `square = true`, the current magnitude measurement can also be incorporated in squared form into the state estimation model.
+Here, the function and corresponding Jacobian expressions associated with the branch current magnitude at the from-bus end remain identical to the one provided in [From-Bus Current Magnitude Measurements](@ref FromCurrentMagnitudeMeasurements). Additionally, by using `square = true`, the current magnitude measurement can also be incorporated in squared form into the state estimation model.
 
 However, the function defining the branch current angle measurement is expressed as:
 ```math
@@ -565,8 +570,8 @@ However, the function defining the branch current angle measurement is expressed
 ```
 where:
 ```math
-    A_{\psi_{ij}} = \cfrac{g_{ij} + g_{\mathrm{s}i}}{\tau_{ij}^2}, \;\;\;
-    B_{\psi_{ij}} = \cfrac{b_{ij}+b_{\mathrm{s}i}}{\tau_{ij}^2}, \;\;\;
+    A_{\psi_{ij}} = \cfrac{g_{ij} + g_{\mathrm{s}ij}}{\tau_{ij}^2}, \;\;\;
+    B_{\psi_{ij}} = \cfrac{b_{ij}+b_{\mathrm{s}ij}}{\tau_{ij}^2}, \;\;\;
     C_{\psi_{ij}} = \cfrac{g_{ij}}{\tau_{ij}}, \;\;\;
     D_{\psi_{ij}} = \cfrac{b_{ij}}{\tau_{ij}}.
 ```
@@ -657,10 +662,7 @@ while Jacobian expressions corresponding to the measurement function ``h_{\Im(\b
   \end{aligned}
 ```
 
-In the previous example, the user neglects the covariances between the real and imaginary parts of the measurement. However, if desired, the user can also include them in the state estimation model by specifying the covariances of the vector:
-```math
-    \mathbf{w}_{\bar{\mathcal{P}}} = [w_{\Re(\bar{I}_{ij})}, w_{\Im(\bar{I}_{ij})}].
-```
+In the previous example, the user neglects the covariance between the real and imaginary parts of the measurement. However, if desired, the user can also include it in the state estimation model as an off-diagonal covariance.
 ```@example ACSETutorial
 addPmu!(
   monitoring; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, angle = -0.5,
@@ -669,9 +671,9 @@ addPmu!(
 nothing # hide
 ```
 
-Then, the covariances are obtained as follows:
+The off-diagonal covariance is:
 ```math
-   w_{\Re(\bar{I}_{ij})} = w_{\Im(\bar{I}_{ij})} = \sin z_{\psi_{ij}} \cos z_{\psi_{ij}}(v_{I_{ij}}  - v_{\psi_{ij}} z_{I_{ij}}^2).
+   w_{\Re(\bar{I}_{ij}),\Im(\bar{I}_{ij})} = \sin z_{\psi_{ij}} \cos z_{\psi_{ij}}(v_{I_{ij}} - v_{\psi_{ij}} z_{I_{ij}}^2).
 ```
 
 ---
@@ -693,7 +695,7 @@ addPmu!(
 nothing # hide
 ```
 
-Here, the function and corresponding Jacobian expressions associated with the branch current magnitude at the to-bus end remains identical to the one provided in [To-Bus Current Magnitude Measurements](@ref ToCurrentMagnitudeMeasurements). Additionally, by using `square = true`, the current magnitude measurement can also be incorporated in squared form into the state estimation model.
+Here, the function and corresponding Jacobian expressions associated with the branch current magnitude at the to-bus end remain identical to the one provided in [To-Bus Current Magnitude Measurements](@ref ToCurrentMagnitudeMeasurements). Additionally, by using `square = true`, the current magnitude measurement can also be incorporated in squared form into the state estimation model.
 
 However, the function defining the branch current angle measurement is expressed as:
 ```math
@@ -703,8 +705,8 @@ However, the function defining the branch current angle measurement is expressed
 ```
 where:
 ```math
-    A_{\psi_{ji}} = g_{ij} + g_{\mathrm{s}i}, \;\;\;
-    B_{\psi_{ji}} = b_{ij} + b_{\mathrm{s}i}, \;\;\;
+    A_{\psi_{ji}} = g_{ij} + g_{\mathrm{s}ij}, \;\;\;
+    B_{\psi_{ji}} = b_{ij} + b_{\mathrm{s}ij}, \;\;\;
     C_{\psi_{ji}} = \cfrac{g_{ij}}{\tau_{ij}}, \;\;\;
     D_{\psi_{ji}} = \cfrac{b_{ij}}{\tau_{ij}}.
 ```
@@ -793,10 +795,7 @@ while Jacobian expressions corresponding to the measurement function ``h_{\Im(\b
   \end{aligned}
 ```
 
-As before, we are neglecting the covariances between the real and imaginary parts of the measurement. If desired, we can include them in the state estimation model by specifying the covariances of the vector:
-```math
-    \mathbf{w}_{\bar{\mathcal{P}}} = [w_{\Re(\bar{I}_{ji})}, w_{\Im(\bar{I}_{ji})}].
-```
+As before, we are neglecting the covariance between the real and imaginary parts of the measurement. If desired, we can include it in the state estimation model as an off-diagonal covariance.
 ```@example ACSETutorial
 addPmu!(
   monitoring; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, angle = 2.5,
@@ -805,9 +804,9 @@ addPmu!(
 nothing # hide
 ```
 
-Then, the covariances are obtained as follows:
+The off-diagonal covariance is:
 ```math
-   w_{\Re(\bar{I}_{ji})} = w_{\Im(\bar{I}_{ji})} = \sin z_{\psi_{ji}} \cos z_{\psi_{ji}}(v_{I_{ji}} - v_{\psi_{ji}} z_{I_{ji}}^2).
+   w_{\Re(\bar{I}_{ji}),\Im(\bar{I}_{ji})} = \sin z_{\psi_{ji}} \cos z_{\psi_{ji}}(v_{I_{ji}} - v_{\psi_{ji}} z_{I_{ji}}^2).
 ```
 
 ---
@@ -821,7 +820,7 @@ Given the available set of measurements ``\mathcal M``, the weighted least-squar
     \mathbf x^{(\nu+1)} = \mathbf x^{(\nu)} + \mathbf \Delta \mathbf x^{(\nu)},
 \end{gathered}
 ```
-where ``\nu = \{0,1,2,\dots\} `` is the iteration index, ``\mathbf \Delta \mathbf x \in \mathbb {R}^s`` is the vector of increments of the state variables, ``\mathbf J (\mathbf x)\in \mathbb {R}^{k \times s}`` is the Jacobian matrix of measurement functions ``\mathbf h (\mathbf x)`` at ``\mathbf x = \mathbf x^{(\nu)}``, ``\bm \Sigma \in \mathbb {R}^{k \times k}`` is a measurement error covariance matrix, and ``\mathbf r (\mathbf x) = \mathbf{z} - \mathbf h (\mathbf x)`` is the vector of residuals [monticellibook; Ch. 10](@cite). It is worth noting that assuming uncorrelated measurement errors leads to a diagonal covariance matrix ``\bm \Sigma`` corresponding to measurement variances. However, when incorporating PMUs in a rectangular coordinate system and aiming to observe error correlation, this matrix loses its diagonal form.
+where ``\nu \in \{0,1,2,\dots\}`` is the iteration index, ``\mathbf \Delta \mathbf x \in \mathbb{R}^s`` is the vector of increments of the state variables, ``\mathbf J(\mathbf x) \in \mathbb{R}^{k \times s}`` is the Jacobian matrix of measurement functions ``\mathbf h (\mathbf x)`` at ``\mathbf x = \mathbf x^{(\nu)}``, ``\bm \Sigma \in \mathbb{R}^{k \times k}`` is a measurement error covariance matrix, and ``\mathbf r (\mathbf x) = \mathbf{z} - \mathbf h (\mathbf x)`` is the vector of residuals [monticellibook; Ch. 10](@cite). It is worth noting that assuming uncorrelated measurement errors leads to a diagonal covariance matrix ``\bm \Sigma`` corresponding to measurement variances. However, when incorporating PMUs in a rectangular coordinate system and aiming to observe error correlation, this matrix loses its diagonal form.
 
 The nonlinear or AC state estimation represents a non-convex problem arising from the nonlinear measurement functions [weng2012semidefinite](@cite). Due to the fact that the values of state variables usually fluctuate in narrow boundaries, the model represents the mildly nonlinear problem, where solutions are in a reasonable-sized neighborhood which enables the use of the Gauss-Newton method. The Gauss-Newton method can produce different rates of convergence, which can be anywhere from linear to quadratic [hansen2013least; Sec. 9.2](@cite). The convergence rate in regard to power system state estimation depends on the topology and measurements, and if parameters are consistent (e.g., free bad data measurement set), the method shows near quadratic convergence rate [monticellibook; Sec. 11.2](@cite).
 
@@ -873,7 +872,7 @@ Here, we utilize a "flat start" approach in our method. It is important to keep 
 ---
 
 ##### Iterative Process
-To apply the Gauss-Newton method, JuliaGrid provides the [`solve!`](@ref solve!(::AcStateEstimation{GaussNewton{<:Normal}})) function. This function is utilized iteratively until a stopping criterion is met, as demonstrated in the following code snippet:
+To apply the Gauss-Newton method, JuliaGrid provides the [`solve!`](../api/stateEstimation.html#JuliaGrid.solve!-Tuple{AcStateEstimation{<:GaussNewton}}) function. This function is utilized iteratively until a stopping criterion is met, as demonstrated in the following code snippet:
 ```@example ACSETutorial
 for iteration = 0:20
     stopping = increment!(analysis)
@@ -884,7 +883,7 @@ for iteration = 0:20
 end
 ```
 
-The function [`increment!`](@ref increment!) calculates the vector of residuals at each iteration using the equation:
+The function [`increment!`](@ref increment!(::AcStateEstimation)) calculates the vector of residuals at each iteration using the equation:
 ```math
   \mathbf r (\mathbf x^{(\nu)}) = \mathbf{z} - \mathbf h (\mathbf x^{(\nu)}).
 ```
@@ -907,7 +906,7 @@ The Jacobian matrix and factorized gain matrix are stored in the `AcStateEstimat
 𝐔 = analysis.method.factorization.U
 ```
 
-Then finally, the function computes the vector of state variable increments using the equation:
+Finally, the function computes the vector of state variable increments using the equation:
 ```math
 		\mathbf \Delta \mathbf x^{(\nu)} = \mathbf G (\mathbf x^{(\nu)})^{-1} \mathbf J (\mathbf x^{(\nu)})^{T} \bm \Sigma^{-1} \mathbf r (\mathbf x^{(\nu)})
 ```
@@ -922,15 +921,15 @@ Increment values are stored in the `AcStateEstimation` type and can be accessed 
 
 Here again, the JuliaGrid implementation of the AC state estimation follows a specific order to store the increment vector and Jacobian matrix. The vector of increments first contains ``n`` increments of bus voltage angles ``\mathbf \Delta \bm{\Theta}``, followed by ``n`` increments of bus voltage magnitudes ``\mathbf \Delta \mathbf{V}``. This order also corresponds to the columns of the Jacobian matrix, while the order of rows of the Jacobian is defined according to the order of the residual vector.
 
-Note that the increment vector and Jacobian matrix hold the slack bus with a known voltage angle. An element of the increment vector and a column of the Jacobian matrix are not deleted, and the presence on the slack bus is handled internally by JuliaGrid, which is evident from the factorization of the gain matrix.
+Note that the increment vector and Jacobian matrix include the slack bus with a known voltage angle. The corresponding element of the increment vector and column of the Jacobian matrix are not removed; the slack bus is handled internally by JuliaGrid, which is evident from the factorization of the gain matrix.
 
-Next, the [`increment!`](@ref increment!) function provides the maximum absolute value of state variable increments, typically employed as the termination criterion for the iteration loop. Specifically, if it falls below a predefined stopping criterion ``\epsilon``, the algorithm converges:
+Next, the [`increment!`](@ref increment!(::AcStateEstimation)) function provides the maximum absolute value of state variable increments, typically employed as the termination criterion for the iteration loop. Specifically, if it falls below a predefined stopping criterion ``\epsilon``, the algorithm converges:
 ```math
   \max \{|\Delta x_i|,\; \forall i \} < \epsilon.
 ```
 
 
-Finally the function [`solve!`](@ref solve!(::AcStateEstimation{<:GaussNewton})) adds the computed increment term to the previous solution to obtain a new solution:
+Finally, the function [`solve!`](../api/stateEstimation.html#JuliaGrid.solve!-Tuple{AcStateEstimation{<:GaussNewton}}) adds the computed increment term to the previous solution to obtain a new solution:
 ```math
   \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)}.
 ```
@@ -970,7 +969,7 @@ In summary, the Gauss-Newton iterative algorithm for solving AC state estimation
 | Step      | Description                                           | Expression                                                                          |
 |:----------|:------------------------------------------------------|:------------------------------------------------------------------------------------|
 | 1.        | Initialize the iteration index                        | ``\nu = 0``                                                                         |
-| 2.        | Set the initial state variable values                 | ``\mathbf{x}^{(0)} = [\mathbf{V}^{(0)}, \bm{\Theta}^{(0)}]``                        |
+| 2.        | Set the initial state variable values                 | ``\mathbf{x}^{(0)} = [\bm{\Theta}^{(0)}, \mathbf{V}^{(0)}]``                        |
 | 3.        | Compute the measurement residuals                     | ``\mathbf r (\mathbf x^{(\nu)})``                                                   |
 | 4.        | Compute the gain matrix                               | ``\mathbf G (\mathbf x^{(\nu)})``                                                   |
 | 5.        | Compute the state variable increments                 | ``\mathbf \Delta \mathbf x^{(\nu)}``                                                |
@@ -1068,7 +1067,7 @@ end
 nothing # hide
 ```
 
-This method applies LU factorisation to the rectangular matrix ``\bar{\mathbf J}``:
+This method applies LU factorization to the rectangular matrix ``\bar{\mathbf J}``:
 ```math
   \bar{\mathbf J} (\mathbf x) = {\mathbf W^{1/2}} \mathbf J (\mathbf x) = \mathbf{L}(\mathbf x)\mathbf{U}(\mathbf x).
 ```
@@ -1129,7 +1128,7 @@ To explicitly handle absolute values, we introduce two nonnegative variables ``u
   \end{aligned}
 ```
 
-To form the above optimization problem, the user can call the following function:
+To form the above optimization problem, the user can call the [`acLavStateEstimation`](@ref acLavStateEstimation) function:
 ```@example ACSETutorial
 using Ipopt
 using JuMP # hide
@@ -1160,7 +1159,7 @@ power!(analysis)
 nothing # hide
 ```
 
-The function stores the computed powers in the rectangular coordinate system. It calculates the following powers related to buses and branches:
+The function stores the computed active and reactive powers. It calculates the following powers related to buses and branches:
 
 | Type   | Power                                                         | Active                                           | Reactive                                         |
 |:-------|:--------------------------------------------------------------|:-------------------------------------------------|:-------------------------------------------------|
@@ -1246,7 +1245,7 @@ The vectors of [active and reactive power flows](@ref BranchNetworkEquationsTuto
 
 ---
 
-## [Current Analysis](@id PMUCurrentAnalysisTutorials)
+## [Current Analysis](@id ACCurrentAnalysisTutorials)
 JuliaGrid offers the [`current!`](@ref current!(::AcPowerFlow)) function, which enables the calculation of currents associated with buses and branches. Here is an example code snippet demonstrating its usage:
 ```@example ACSETutorial
 current!(analysis)
@@ -1284,7 +1283,7 @@ To obtain the vectors of magnitudes ``\mathbf{I}_\mathrm{i} = [I_{ij}]`` and ang
 𝛙ᵢ = analysis.current.from.angle
 ```
 
-Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_mathrm{j} = [I_{ji}]`` and angles ``\bm{\psi}_\mathrm{j} = [\psi_{ji}]`` of the resulting [complex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
+Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_\mathrm{j} = [I_{ji}]`` and angles ``\bm{\psi}_\mathrm{j} = [\psi_{ji}]`` of the resulting [complex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
 ```@repl ACSETutorial
 𝐈ⱼ = analysis.current.to.magnitude
 𝛙ⱼ = analysis.current.to.angle

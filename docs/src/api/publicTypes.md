@@ -11,23 +11,23 @@ using JuliaGrid
 ###### Power System Model
 * [`PowerSystem`](@ref PowerSystem)
 * [`Component`](@ref Component)
-* [`Bus`](@ref Bus)
-* [`Branch`](@ref Branch)
-* [`Generator`](@ref Generator)
+* [`Bus`](@ref JuliaGrid.Bus)
+* [`Branch`](@ref JuliaGrid.Branch)
+* [`Generator`](@ref JuliaGrid.Generator)
 * [`BaseData`](@ref BaseData)
 * [`Model`](@ref JuliaGrid.Model)
 
 ###### Measurement Model
 * [`Measurement`](@ref Measurement)
 * [`Meter`](@ref Meter)
-* [`Voltmeter`](@ref Voltmeter)
-* [`Ammeter`](@ref Ammeter)
-* [`Wattmeter`](@ref Wattmeter)
-* [`Varmeter`](@ref Varmeter)
-* [`PMU`](@ref PMU)
+* [`Voltmeter`](@ref JuliaGrid.Voltmeter)
+* [`Ammeter`](@ref JuliaGrid.Ammeter)
+* [`Wattmeter`](@ref JuliaGrid.Wattmeter)
+* [`Varmeter`](@ref JuliaGrid.Varmeter)
+* [`PMU`](@ref JuliaGrid.PMU)
 
 ###### Analysis
-* [`Analysis`](@ref Analysis)
+* [`Analysis`](@ref JuliaGrid.Analysis)
 * [`AC`](@ref AC)
 * [`DC`](@ref DC)
 * [`PowerFlow`](@ref PowerFlow)

@@ -57,9 +57,9 @@ Hence, the model includes real and imaginary parts of bus voltage and current ph
 
 Here, ``\mathbf h(\mathbf x)= [h_1(\mathbf x)``, ``\dots``, ``h_k(\mathbf x)]^T`` represents the vector of linear measurement functions, ``\mathbf z = [z_1, \dots, z_k]^T`` denotes the vector of measurement values, and ``\mathbf u = [u_1, \dots, u_k]^T`` represents the vector of measurement errors,  where ``k = 2|\bar{\mathcal P}|``.
 
-These errors are assumed to follow a Gaussian distribution with a zero mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf v = [v_1, \dots, v_k]^T``, while the off-diagonal elements represent the covariances between the measurement errors ``\mathbf w = [w_1, \dots, w_k]^T``.
+These errors are assumed to follow a Gaussian distribution with a zero mean and covariance matrix ``\bm \Sigma``. The diagonal elements of ``\bm \Sigma`` correspond to the measurement variances ``\mathbf v = [v_1, \dots, v_k]^T``, while the off-diagonal elements represent the covariances between paired real and imaginary measurement errors.
 
-In summary, upon defining the PMU, each ``i``-th PMU is associated with two measurement functions ``h_{2i-1}(\mathbf x)``, ``h_{2i}(\mathbf x)``, along with their respective measurement values ``z_{2i-1}``, ``z_{2i}``, as well as their variances ``v_{2i-1}``, ``v_{2i}``, and possibly covariances ``w_{2i-1}``, ``w_{2i}``.
+In summary, upon defining the PMU, each ``i``-th PMU is associated with two measurement functions ``h_{2i-1}(\mathbf x)``, ``h_{2i}(\mathbf x)``, along with their respective measurement values ``z_{2i-1}``, ``z_{2i}``, as well as their variances ``v_{2i-1}``, ``v_{2i}``, and possibly the covariance ``w_{2i-1,2i}``.
 
 ---
 
@@ -116,10 +116,7 @@ The coefficient expressions for measurement functions are as follows:
   \cfrac{\mathrm \partial{h_{\Im(\bar{V}_i)}(\mathbf x)}}{\mathrm \partial \Im(\bar{V}_i)} = 1.\;\;\;
 ```
 
-In the previous example, the user neglected the covariances between the real and imaginary parts of the measurement. However, if desired, the user can also include them in the state estimation model by specifying the covariances of the vector:
-```math
-  \mathbf w = [w_{\Re(\bar{V}_i)}, w_{\Im(\bar{V}_i)}].
-```
+In the previous example, the user neglects the covariance between the real and imaginary parts of the measurement. However, if desired, the user can also include it in the state estimation model as an off-diagonal covariance.
 ```@example PMUSETutorial
 addPmu!(
   monitoring; label = "V₃, θ₃", bus = 3, magnitude = 0.9, angle = -0.2,
@@ -128,9 +125,9 @@ addPmu!(
 nothing # hide
 ```
 
-Then, the covariances are obtained as follows:
+The off-diagonal covariance is obtained as follows:
 ```math
-  w_{\Re(\bar{V}_{i})} = w_{\Im(\bar{V}_{i})} =
+  w_{\Re(\bar{V}_i),\Im(\bar{V}_i)} =
   v_{V_i} \cfrac{\mathrm \partial} {\mathrm \partial z_{V_i}} (z_{V_i} \cos z_{\theta_i})
   \cfrac{\mathrm \partial} {\mathrm \partial z_{V_i}} (z_{V_i} \sin z_{\theta_i})  +
   v_{\theta_i} \cfrac{\mathrm \partial} {\mathrm \partial z_{\theta_i}} (z_{V_i} \cos z_{\theta_i})
@@ -138,7 +135,7 @@ Then, the covariances are obtained as follows:
 ```
 which results in the solution:
 ```math
-  w_{\Re(\bar{V}_{i})} = w_{\Im(\bar{V}_{i})} = \cos z_{\theta_i} \sin z_{\theta_i}(v_{V_i} - v_{\theta_i} z_{V_i}^2).
+  w_{\Re(\bar{V}_i),\Im(\bar{V}_i)} = \cos z_{\theta_i} \sin z_{\theta_i}(v_{V_i} - v_{\theta_i} z_{V_i}^2).
 ```
 
 ---
@@ -205,10 +202,7 @@ The coefficient expressions for measurement functions are as follows:
   \end{aligned}
 ```
 
-In the previous example, the user neglects the covariances between the real and imaginary parts of the measurement. However, if desired, the user can also include them in the state estimation model by specifying the covariances of the vector:
-```math
-  \mathbf w = [w_{\Re(\bar{I}_{ij})}, w_{\Im(\bar{I}_{ij})}].
-```
+In the previous example, the user neglects the covariance between the real and imaginary parts of the measurement. However, if desired, the user can also include it in the state estimation model as an off-diagonal covariance.
 ```@example PMUSETutorial
 addPmu!(
   monitoring; label = "I₁₃, ψ₁₃", from = 2, magnitude = 0.3, angle = -0.5,
@@ -217,9 +211,9 @@ addPmu!(
 nothing # hide
 ```
 
-Then, the covariances are obtained as follows:
+The off-diagonal covariance is:
 ```math
-   w_{\Re(\bar{I}_{ij})} = w_{\Im(\bar{I}_{ij})} = \sin z_{\psi_{ij}} \cos z_{\psi_{ij}}(v_{I_{ij}} - v_{\psi_{ij}} z_{I_{ij}}^2).
+   w_{\Re(\bar{I}_{ij}),\Im(\bar{I}_{ij})} = \sin z_{\psi_{ij}} \cos z_{\psi_{ij}}(v_{I_{ij}} - v_{\psi_{ij}} z_{I_{ij}}^2).
 ```
 
 ---
@@ -279,10 +273,7 @@ The coefficient expressions for measurement functions are as follows:
   \end{aligned}
 ```
 
-As before, we are neglecting the covariances between the real and imaginary parts of the measurement. If desired, we can include them in the state estimation model by specifying the covariances of the vector:
-```math
-    \mathbf w = [w_{\Re(\bar{I}_{ji})}, w_{\Im(\bar{I}_{ji})}].
-```
+As before, we are neglecting the covariance between the real and imaginary parts of the measurement. If desired, we can include it in the state estimation model as an off-diagonal covariance.
 ```@example PMUSETutorial
 addPmu!(
   monitoring; label = "I₃₁, ψ₃₁", to = 2, magnitude = 0.3, angle = 2.5,
@@ -291,9 +282,9 @@ addPmu!(
 nothing # hide
 ```
 
-Then, the covariances are obtained as follows:
+The off-diagonal covariance is:
 ```math
-   w_{\Re(\bar{I}_{ji})} = w_{\Im(\bar{I}_{ji})} = \sin z_{\psi_{ji}} \cos z_{\psi_{ji}}(v_{I_{ji}} - v_{\psi_{ji}} z_{I_{ji}}^2).
+   w_{\Re(\bar{I}_{ji}),\Im(\bar{I}_{ji})} = \sin z_{\psi_{ji}} \cos z_{\psi_{ji}}(v_{I_{ji}} - v_{\psi_{ji}} z_{I_{ji}}^2).
 ```
 
 ---
@@ -303,7 +294,7 @@ The solution to the PMU state estimation problem is determined by solving the li
 ```math
 	\mathbf H^T \bm \Sigma^{-1} \mathbf H \mathbf x = \mathbf H^T \bm \Sigma^{-1} \mathbf z.
 ```
-Here, ``\mathbf z \in \mathbb{R}^k`` denotes the vector of measurement values, ``\mathbf H \in \mathbb {R}^{k \times 2n}`` represents the coefficient matrix, and ``\bm \Sigma \in \mathbb {R}^{k \times k}`` is the measurement error covariance matrix.
+Here, ``\mathbf z \in \mathbb{R}^k`` denotes the vector of measurement values, ``\mathbf H \in \mathbb{R}^{k \times 2n}`` represents the coefficient matrix, and ``\bm \Sigma \in \mathbb{R}^{k \times k}`` is the measurement error covariance matrix.
 
 ---
 
@@ -372,7 +363,7 @@ Next, the WLS equation is solved to obtain the estimate of state variables:
 	\hat{\mathbf x} = [\mathbf H^T \bm \Sigma^{-1} \mathbf H]^{-1} \mathbf H^T \bm \Sigma^{-1} \mathbf z.
 ```
 
-This process is executed using the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function:
+This process is executed using the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{T}}) where T <: Normal) function:
 ```@example PMUSETutorial
 solve!(analysis)
 ```
@@ -439,7 +430,7 @@ At this point, QR factorization is performed on the rectangular matrix:
   \bar{\mathbf H} = {\mathbf W^{1/2}} \mathbf H = \mathbf Q \mathbf R.
 ```
 
-Executing this procedure involves the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function:
+Executing this procedure involves the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{T}}) where T <: Normal) function:
 ```@example PMUSETutorial
 solve!(analysis)
 nothing # hide
@@ -466,7 +457,7 @@ analysis = pmuStateEstimation(monitoring, PetersWilkinson)
 nothing # hide
 ```
 
-This method applies LU factorisation to the rectangular matrix ``\bar{\mathbf{H}}``:
+This method applies LU factorization to the rectangular matrix ``\bar{\mathbf{H}}``:
 ```math
   \bar{\mathbf{H}} = {\mathbf W^{1/2}} \mathbf H = \mathbf{L}\mathbf{U}.
 ```
@@ -487,7 +478,7 @@ By eliminating ``\mathbf{U}^T`` from both sides and introducing a new vector ``\
 
 The Peters and Wilkinson method first solves this equation to compute ``\mathbf{y}``, and then obtains ``\mathbf x`` by backward substitution using equation ``\mathbf{y} = \mathbf{U} \mathbf x``. The main advantage of this approach is that ``\mathbf{L}^T \mathbf{L}`` is generally less ill-conditioned than ``\bar{\mathbf{H}}^{T} \bar{\mathbf{H}}``, which improves numerical stability.
 
-To execute this procedure, use the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function:
+To execute this procedure, use the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{T}}) where T <: Normal) function:
 ```@example PMUSETutorial
 solve!(analysis)
 nothing # hide
@@ -512,7 +503,8 @@ The least absolute value (LAV) method provides an alternative estimation approac
 
 It can be demonstrated that the problem can be expressed as a linear programming problem. This section outlines the method as described in [aburbook; Sec. 6.5](@cite). To revisit, we consider the system of linear equations:
 ```math
-  \mathbf{z}=\mathbf{h}(\mathbf x)+\mathbf{u}+\mathbf{w}.
+  \mathbf{z}=\mathbf{h}(\mathbf x)+\mathbf{u}, \qquad
+  \mathbf u \sim \mathcal N(\mathbf 0, \bm \Sigma).
 ```
 
 The LAV state estimator is then formulated as the solution to the following optimization problem:
@@ -533,7 +525,7 @@ To explicitly handle absolute values, we introduce two nonnegative variables ``u
   \end{aligned}
 ```
 
-To form the above optimization problem, the user can call the following function:
+To form the above optimization problem, the user can call the [`pmuLavStateEstimation`](@ref pmuLavStateEstimation) function:
 ```@example PMUSETutorial
 using Ipopt
 using JuMP # hide
@@ -564,7 +556,7 @@ power!(analysis)
 nothing # hide
 ```
 
-The function stores the computed powers in the rectangular coordinate system. It calculates the following powers related to buses and branches:
+The function stores the computed active and reactive powers. It calculates the following powers related to buses and branches:
 
 | Type   | Power                                                          | Active                                           | Reactive                                         |
 |:-------|:---------------------------------------------------------------|:-------------------------------------------------|:-------------------------------------------------|
@@ -573,7 +565,7 @@ The function stores the computed powers in the rectangular coordinate system. It
 | Bus    | [Shunt elements](@ref BusShuntElementTutorials)                | ``\mathbf P_\mathrm{sh} = [{P}_{\mathrm{sh}i}]`` | ``\mathbf Q_\mathrm{sh} = [{Q}_{\mathrm{sh}i}]`` |
 | Branch | [From-bus end flows](@ref BranchNetworkEquationsTutorials)     | ``\mathbf P_\mathrm{i} = [P_{ij}]``              | ``\mathbf Q_\mathrm{i} = [Q_{ij}]``              |
 | Branch | [To-bus end flows](@ref BranchNetworkEquationsTutorials)       | ``\mathbf P_\mathrm{j} = [P_{ji}]``              | ``\mathbf Q_\mathrm{j} = [Q_{ji}]``              |
-| Branch | [Shunt elements](@ref BranchShuntElementsTutorials)            | ``\mathbf P_\mathrm{s} = [P_{\mathrm{s}ij}]``    | ``\mathbf Q_\mathrm{s} = [P_{\mathrm{s}ij}]``    |
+| Branch | [Shunt elements](@ref BranchShuntElementsTutorials)            | ``\mathbf P_\mathrm{s} = [P_{\mathrm{s}ij}]``    | ``\mathbf Q_\mathrm{s} = [Q_{\mathrm{s}ij}]``    |
 | Branch | [Series elements](@ref BranchSeriesElementTutorials)           | ``\mathbf P_\mathrm{l} = [P_{\mathrm{l}ij}]``    | ``\mathbf Q_\mathrm{l} = [Q_{\mathrm{l}ij}]``    |
 |        |                                                                |                                                  |                                                  |
 
@@ -595,12 +587,12 @@ The function stores the computed powers in the rectangular coordinate system. It
 We can calculate the active and reactive power injections supplied by generators at each bus ``i \in \mathcal{N}`` by summing the active and reactive power injections and the active and reactive power demanded by consumers at each bus:
 ```math
   \begin{aligned}
-    P_{\text{p}i} &= P_i + P_{\text{d}i}\\
-    Q_{\text{p}i} &= Q_i + Q_{\text{d}i}.
+    P_{\mathrm{p}i} &= P_i + P_{\mathrm{d}i}\\
+    Q_{\mathrm{p}i} &= Q_i + Q_{\mathrm{d}i}.
   \end{aligned}
 ```
 
-The active and reactive power injections from the generators at each bus are stored as vectors, denoted by ``\mathbf{P}_{\text{p}} = [P_{\text{p}i}]`` and ``\mathbf{Q}_{\text{p}} = [Q_{\text{p}i}]``, which can be obtained using:
+The active and reactive power injections from the generators at each bus are stored as vectors, denoted by ``\mathbf{P}_\mathrm{p} = [P_{\mathrm{p}i}]`` and ``\mathbf{Q}_\mathrm{p} = [Q_{\mathrm{p}i}]``, which can be obtained using:
 ```@repl PMUSETutorial
 𝐏ₚ = analysis.power.supply.active
 𝐐ₚ = analysis.power.supply.reactive
@@ -609,7 +601,7 @@ The active and reactive power injections from the generators at each bus are sto
 ---
 
 ##### Power at Bus Shunt Elements
-[Active and reactive powers](@ref BusShuntElementTutorials) associated with the shunt elements at each bus are represented by the vectors ``\mathbf{P}_{\text{sh}} = [{P}_{\text{sh}i}]`` and ``\mathbf{Q}_{\text{sh}} = [{Q}_{\text{sh}i}]``. To retrieve these powers in JuliaGrid, use the following commands:
+[Active and reactive powers](@ref BusShuntElementTutorials) associated with the shunt elements at each bus are represented by the vectors ``\mathbf{P}_\mathrm{sh} = [{P}_{\mathrm{sh}i}]`` and ``\mathbf{Q}_\mathrm{sh} = [{Q}_{\mathrm{sh}i}]``. To retrieve these powers in JuliaGrid, use the following commands:
 ```@repl PMUSETutorial
 𝐏ₛₕ = analysis.power.shunt.active
 𝐐ₛₕ = analysis.power.shunt.reactive
@@ -618,7 +610,7 @@ The active and reactive power injections from the generators at each bus are sto
 ---
 
 ##### Power Flows
-The resulting [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at each from-bus end are stored as the vectors ``\mathbf{P}_{\text{i}} = [P_{ij}]`` and ``\mathbf{Q}_{\text{i}} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
+The resulting [active and reactive power flows](@ref BranchNetworkEquationsTutorials) at each from-bus end are stored as the vectors ``\mathbf{P}_\mathrm{i} = [P_{ij}]`` and ``\mathbf{Q}_\mathrm{i} = [Q_{ij}],`` respectively, and can be retrieved using the following commands:
 ```@repl PMUSETutorial
 𝐏ᵢ = analysis.power.from.active
 𝐐ᵢ = analysis.power.from.reactive
@@ -633,7 +625,7 @@ The vectors of [active and reactive power flows](@ref BranchNetworkEquationsTuto
 ---
 
 ##### Power at Branch Shunt Elements
-[Active and reactive powers](@ref BranchShuntElementsTutorials) associated with the branch shunt elements at each branch are represented by the vectors ``\mathbf{P}_{\text{s}} = [P_{\text{s}ij}]`` and ``\mathbf{Q}_{\text{s}} = [Q_{\text{s}ij}]``. We can retrieve these values using the following code:
+[Active and reactive powers](@ref BranchShuntElementsTutorials) associated with the branch shunt elements at each branch are represented by the vectors ``\mathbf{P}_\mathrm{s} = [P_{\mathrm{s}ij}]`` and ``\mathbf{Q}_\mathrm{s} = [Q_{\mathrm{s}ij}]``. We can retrieve these values using the following code:
 ```@repl PMUSETutorial
 𝐏ₛ = analysis.power.charging.active
 𝐐ₛ = analysis.power.charging.reactive
@@ -642,7 +634,7 @@ The vectors of [active and reactive power flows](@ref BranchNetworkEquationsTuto
 ---
 
 ##### Power at Branch Series Elements
-[Active and reactive powers](@ref BranchSeriesElementTutorials) associated with the branch series element at each branch are represented by the vectors ``\mathbf{P}_{\text{l}} = [P_{\text{l}ij}]`` and ``\mathbf{Q}_{\text{l}} = [Q_{\text{l}ij}]``. We can retrieve these values using the following code:
+[Active and reactive powers](@ref BranchSeriesElementTutorials) associated with the branch series element at each branch are represented by the vectors ``\mathbf{P}_\mathrm{l} = [P_{\mathrm{l}ij}]`` and ``\mathbf{Q}_\mathrm{l} = [Q_{\mathrm{l}ij}]``. We can retrieve these values using the following code:
 ```@repl PMUSETutorial
 𝐏ₗ = analysis.power.series.active
 𝐐ₗ = analysis.power.series.reactive
@@ -682,13 +674,13 @@ In JuliaGrid, [complex current injections](@ref BusInjectionsTutorials) are stor
 ---
 
 ##### Current Flows
-To obtain the vectors of magnitudes ``\mathbf{I}_{\text{i}} = [I_{ij}]`` and angles ``\bm{\psi}_{\text{i}} = [\psi_{ij}]`` for the resulting [complex current flows](@ref BranchNetworkEquationsTutorials), you can use the following commands:
+To obtain the vectors of magnitudes ``\mathbf{I}_\mathrm{i} = [I_{ij}]`` and angles ``\bm{\psi}_\mathrm{i} = [\psi_{ij}]`` for the resulting [complex current flows](@ref BranchNetworkEquationsTutorials), you can use the following commands:
 ```@repl PMUSETutorial
 𝐈ᵢ = analysis.current.from.magnitude
 𝛙ᵢ = analysis.current.from.angle
 ```
 
-Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_{ji}]`` and angles ``\bm{\psi}_{\text{j}} = [\psi_{ji}]`` of the resulting [complex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
+Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_\mathrm{j} = [I_{ji}]`` and angles ``\bm{\psi}_\mathrm{j} = [\psi_{ji}]`` of the resulting [complex current flows](@ref BranchNetworkEquationsTutorials) using the following code:
 ```@repl PMUSETutorial
 𝐈ⱼ = analysis.current.to.magnitude
 𝛙ⱼ = analysis.current.to.angle
@@ -697,7 +689,7 @@ Similarly, we can obtain the vectors of magnitudes ``\mathbf{I}_{\text{j}} = [I_
 ---
 
 ##### Current at Branch Series Elements
-To obtain the vectors of magnitudes ``\mathbf{I}_{\text{l}} = [I_{\text{l}ij}]`` and angles ``\bm{\psi}_{\text{l}} = [\psi_{\text{l}ij}]`` of the resulting [complex current flows](@ref BranchSeriesElementTutorials), one can use the following code:
+To obtain the vectors of magnitudes ``\mathbf{I}_\mathrm{l} = [I_{\mathrm{l}ij}]`` and angles ``\bm{\psi}_\mathrm{l} = [\psi_{\mathrm{l}ij}]`` of the resulting [complex current flows](@ref BranchSeriesElementTutorials), one can use the following code:
 ```@repl PMUSETutorial
 𝐈ₗ = analysis.current.series.magnitude
 𝛙ₗ = analysis.current.series.angle

@@ -5,14 +5,14 @@ To perform linear state estimation solely based on PMU data, the initial require
 
 ---
 
-To obtain bus voltages and solve the PMU state estimation problem, users can use the wrapper function:
-* [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})).
+To obtain bus voltages and solve the PMU state estimation problem, users can use:
+* [`solve!`](@ref solve!(::PmuStateEstimation{WLS{T}}) where T <: Normal).
 
 After solving the PMU state estimation, JuliaGrid provides functions for computing powers and currents:
 * [`power!`](@ref power!(::AcPowerFlow)),
 * [`current!`](@ref current!(::AC)).
 
-Alternatively, instead of using functions responsible for solving state estimation and computing powers and currents, users can use the wrapper function:
+Alternatively, users can call the wrapper function to solve the WLS or LAV model and, optionally, compute powers and currents:
 * [`stateEstimation!`](@ref stateEstimation!(::PmuStateEstimation{<:WLS})).
 
 Users can also access specialized functions for computing specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators within the power system.
@@ -97,7 +97,7 @@ nothing # hide
     analysis = pmuStateEstimation(monitoring, QR)
     ```
 
-To obtain the bus voltage magnitudes and angles, use the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function as shown:
+To obtain the bus voltage magnitudes and angles, use the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{T}}) where T <: Normal) function as shown:
 ```@example PMUOptimalPlacement
 solve!(analysis)
 nothing # hide
@@ -114,7 +114,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ---
 
 ##### Wrapper Function
-JuliaGrid provides a wrapper function for PMU state estimation analysis and also supports the computation of powers and currents using the [`stateEstimation!`](@ref stateEstimation!(::PmuStateEstimation{<:WLS})) function:
+JuliaGrid provides the [`stateEstimation!`](@ref stateEstimation!(::PmuStateEstimation{<:WLS})) wrapper function for PMU state estimation. It solves the WLS or LAV model, and it can optionally compute powers and currents:
 ```@example PMUOptimalPlacement
 analysis = pmuStateEstimation(monitoring)
 stateEstimation!(analysis; verbose = 2)
@@ -232,12 +232,12 @@ nothing # hide
 ---
 
 ##### Setup Initial Primal Values
-In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function is executed. These values are derived from the voltage magnitudes and angles stored in the `PowerSystem` type and are assigned to the corresponding `voltage` field within the `PmuStateEstimation` type:
+In JuliaGrid, the assignment of initial primal values for optimization variables takes place when the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{T}}) where T <: Normal) function is executed. These values are derived from the voltage magnitudes and angles stored in the `PowerSystem` type and are assigned to the corresponding `voltage` field within the `PmuStateEstimation` type:
 ```@repl PMUOptimalPlacement
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{<:Normal}})) function. One practical approach is to perform an AC power flow analysis and then apply the resulting solution as the starting point for state estimation:
+Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{T}}) where T <: Normal) function. One practical approach is to perform an AC power flow analysis and then apply the resulting solution as the starting point for state estimation:
 ```@example PMUOptimalPlacement
 pf = newtonRaphson(system)
 powerFlow!(pf)
@@ -254,7 +254,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ---
 
 ##### Solution
-To solve the formulated LAV state estimation model, simply execute the following function:
+To solve the formulated LAV state estimation model, call the wrapper function:
 ```@example PMUOptimalPlacement
 stateEstimation!(analysis)
 nothing # hide
@@ -322,7 +322,7 @@ nothing # hide
 ## [State Estimation Update](@id PMUStateEstimationUpdateManual)
 An advanced methodology involves users establishing the `PmuStateEstimation` type using [`pmuStateEstimation`](@ref pmuStateEstimation) or [`pmuLavStateEstimation`](@ref pmuLavStateEstimation) just once. After this initial setup, users can seamlessly modify existing measurement devices without the need to recreate the `PmuStateEstimation` type.
 
-This advancement extends beyond the previous scenario where recreating the `Measurement` type was unnecessary, to now include the scenario where `PmuStateEstimation` also does not need to be recreated.
+This approach extends the previous workflow by also avoiding recreation of the `PmuStateEstimation` object.
 
 !!! tip "Tip"
     The addition of new measurements after the creation of `PmuStateEstimation` is not practical in terms of reusing the `PmuStateEstimation` type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
@@ -366,7 +366,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This concept removes the need to rebuild both the `Measurement` and the `PmuStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, and `LU`, provided that the nonzero pattern of the gain matrix remains unchanged.
+    This concept removes the need to rebuild both the `Measurement` and the `PmuStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, `LU`, and `KLU`, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 
@@ -433,7 +433,7 @@ using CSV
 
 io = IOBuffer()
 printPmuData(analysis, io; style = false)
-CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
+CSV.write("pmu.csv", CSV.File(take!(io); delim = "|"))
 ```
 
 ---
@@ -447,7 +447,7 @@ active, reactive = injectionPower(analysis; label = "Bus 1")
 ---
 
 ##### Active and Reactive Power Injection from Generators
-To calculate the active and reactive power injection from generators at a specific bus, use:
+To calculate the active and reactive power supply associated with a specific bus, use:
 ```@repl PMUStateEstimationSolution
 active, reactive = supplyPower(analysis; label = "Bus 1")
 ```

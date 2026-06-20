@@ -7,7 +7,7 @@ To perform nonlinear or AC state estimation, the initial requirement is to have 
 
 To obtain bus voltages and solve the state estimation problem, users need to implement the Gauss-Newton iterative process for the WLS model using:
 * [`increment!`](@ref increment!),
-* [`solve!`](@ref solve!(::AcStateEstimation{<:GaussNewton})).
+* [`solve!`](../api/stateEstimation.html#JuliaGrid.solve!-Tuple{AcStateEstimation{<:GaussNewton}}).
 
 Alternatively, to obtain the LAV estimator, simply execute the second function.
 
@@ -15,14 +15,14 @@ After solving the AC state estimation, JuliaGrid provides functions for computin
 * [`power!`](@ref power!(::AcPowerFlow)),
 * [`current!`](@ref current!(::AC)).
 
-Alternatively, instead of designing their own iteration process for the Gauss-Newton method or using the function responsible for solving the LAV model, and computing powers and currents, users can use the wrapper function:
+Alternatively, users can call the wrapper function to solve the WLS or LAV model and, optionally, compute powers and currents:
 * [`stateEstimation!`](@ref stateEstimation!(::AcStateEstimation{<:GaussNewton})).
 
 Users can also access specialized functions for computing specific types of [powers](@ref ACPowerAnalysisAPI) or [currents](@ref ACCurrentAnalysisAPI) for individual buses, branches, or generators within the power system.
 
 ---
 
-## Setup Initial Voltages
+## [Setup Initial Voltages](@id ACSESetupInitialVoltagesManual)
 Let us create the `PowerSystem` and `Measurement` type:
 ```@example ACSEWLS
 using JuliaGrid # hide
@@ -78,7 +78,7 @@ This approach enables the state estimation process to start from a realistic ope
 
 ---
 
-## [Weighted Least-Squares Estimator](@id ACLSStateEstimationSolutionManual)
+## [Weighted Least-Squares Estimator](@id ACWLSStateEstimationSolutionManual)
 To begin, we will define the `PowerSystem` and `Measurement` types:
 ```@example ACSEWLS
 using JuliaGrid # hide
@@ -125,7 +125,7 @@ nothing # hide
     analysis = gaussNewton(monitoring, LDLt)
     ```
 
-To conduct an iterative process using the Gauss-Newton method, it is essential to include the [`increment!`](@ref increment!) and [`solve!`](@ref solve!(::AcStateEstimation{<:GaussNewton})) functions inside the iteration loop. For example:
+To conduct an iterative process using the Gauss-Newton method, it is essential to include the [`increment!`](@ref increment!) and [`solve!`](../api/stateEstimation.html#JuliaGrid.solve!-Tuple{AcStateEstimation{<:GaussNewton}}) functions inside the iteration loop. For example:
 ```@example ACSEWLS
 for iteration = 1:20
     increment!(analysis)
@@ -163,7 +163,7 @@ The [`increment!`](@ref increment!) function returns the maximum absolute value 
 ---
 
 ##### Wrapper Function
-JuliaGrid provides a wrapper function for AC state estimation analysis that manages the iterative solution process and also supports the computation of powers and currents using the [`stateEstimation!`](@ref stateEstimation!) function. Hence, it offers a way to solve AC state estimation with reduced implementation effort:
+JuliaGrid provides the [`stateEstimation!`](@ref stateEstimation!) wrapper function for AC state estimation. It manages the WLS iteration process or solves the LAV model, and it can optionally compute powers and currents:
 ```@example ACSEWLS
 setInitialPoint!(analysis) # hide
 analysis = gaussNewton(monitoring)
@@ -186,7 +186,7 @@ addPmu!(monitoring; to = "Branch 1", magnitude = 0.7466, angle = 2.8011)
 nothing # hide
 ```
 
-In the case of the rectangular system, inclusion resolves ill-conditioned problems arising in polar coordinates due to small values of current magnitudes. However, this approach's main disadvantage is related to measurement errors, as measurement errors correspond to polar coordinates. Therefore, the covariance matrix must be transformed from polar to rectangular coordinates [zhou2006alternative](@cite). As a result, measurement errors of a single PMU are correlated, and the covariance matrix does not have a diagonal form. Despite that, the measurement error covariance matrix is usually considered as a diagonal matrix, affecting the accuracy of the state estimation.
+Including PMU measurements in the rectangular system resolves ill-conditioned problems arising in polar coordinates due to small current magnitudes. However, this approach's main disadvantage is related to measurement errors, as measurement errors correspond to polar coordinates. Therefore, the covariance matrix must be transformed from polar to rectangular coordinates [zhou2006alternative](@cite). As a result, measurement errors of a single PMU are correlated, and the covariance matrix does not have a diagonal form. Despite that, the measurement error covariance matrix is usually considered as a diagonal matrix, affecting the accuracy of the state estimation.
 
 In the example above, we specifically include PMUs where measurement error correlations are disregarded. This is evident through the precision matrix, which remains diagonal:
 ```@repl ACSEWLS
@@ -215,7 +215,7 @@ addPmu!(monitoring; from = "Branch 1", magnitude = 0.7379, angle = -0.2921, pola
 nothing # hide
 ```
 
-This inclusion of PMUs provides more accurate state estimates compared to rectangular inclusion, but demands longer computing time. PMUs are handled in the same manner as SCADA measurements. However, this approach is susceptible to ill-conditioned problems arising in polar coordinates due to small values of current magnitudes [korres2012state, zhou2006alternative](@cite).
+Including PMU measurements in the polar system provides more accurate state estimates compared to rectangular inclusion, but demands longer computing time. PMUs are handled in the same manner as SCADA measurements. However, this approach is susceptible to ill-conditioned problems arising in polar coordinates due to small values of current magnitudes [korres2012state, zhou2006alternative](@cite).
 
 !!! tip "Tip"
     It is important to note that with each individual phasor measurement, we can set the coordinate system, providing flexibility to include some in polar and some in rectangular systems. This flexibility is particularly valuable because bus voltage phasor measurements are preferably included in a polar coordinate system, while current phasor measurements are best suited to a rectangular coordinate system.
@@ -364,7 +364,7 @@ nothing # hide
 ## [State Estimation Update](@id ACStateEstimationUpdateManual)
 An advanced methodology involves users establishing the `AcStateEstimation` type using [`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation) just once. After this initial setup, users can seamlessly modify existing measurement devices without the need to recreate the `AcStateEstimation` type.
 
-This advancement extends beyond the previous scenario where recreating the `Measurement` type was unnecessary, to now include the scenario where `AcStateEstimation` also does not need to be recreated.
+This approach extends the previous workflow by also avoiding recreation of the `AcStateEstimation` object.
 
 !!! tip "Tip"
     The addition of new measurements after the creation of `AcStateEstimation` is not practical in terms of reusing this type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
@@ -411,7 +411,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This concept removes the need to rebuild both the `Measurement` and the `AcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, and `LU`, provided that the nonzero pattern of the gain matrix remains unchanged.
+    This concept removes the need to rebuild both the `Measurement` and the `AcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, `LU`, and `KLU`, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 
@@ -481,7 +481,7 @@ using CSV
 
 io = IOBuffer()
 printWattmeterData(analysis, io; style = false)
-CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
+CSV.write("wattmeter.csv", CSV.File(take!(io); delim = "|"))
 ```
 
 ---
@@ -495,7 +495,7 @@ active, reactive = injectionPower(analysis; label = "Bus 1")
 ---
 
 ##### Active and Reactive Power Injection from Generators
-To calculate the active and reactive power injection from generators at a specific bus, use:
+To calculate the active and reactive power supply associated with a specific bus, use:
 ```@repl WLSACStateEstimationSolution
 active, reactive = supplyPower(analysis; label = "Bus 1")
 ```

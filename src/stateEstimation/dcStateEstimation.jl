@@ -507,7 +507,7 @@ end
     stateEstimation!(analysis::DcStateEstimation; iteration, tolerance, power, verbose)
 
 The function serves as a wrapper for solving DC state estimation and includes the functions:
-* [`solve!`](@ref solve!(::DcStateEstimation{WLS{<:Normal}})),
+* [`solve!`](@ref solve!(::DcStateEstimation{WLS{T}}) where T <: Normal),
 * [`power!`](@ref power!(::DcPowerFlow)).
 
 It computes bus voltage angles using the WLS or LAV model with the option to compute powers.

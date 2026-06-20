@@ -211,7 +211,7 @@ The [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function retur
 ---
 
 ##### Wrapper Function
-JuliaGrid provides a wrapper function for AC power flow analysis that manages the iterative solution process and also supports the computation of powers and currents using the [powerFlow!](@ref powerFlow!(::AcPowerFlow)) function. Hence, it offers a way to solve AC power flow with reduced implementation effort:
+JuliaGrid provides a wrapper function for AC power flow analysis that manages the iterative solution process and also supports the computation of powers and currents using the [`powerFlow!`](@ref powerFlow!(::AcPowerFlow)) function. Hence, it offers a way to solve AC power flow with reduced implementation effort:
 ```@example ACPowerFlowSolution
 setInitialPoint!(analysis) # hide
 analysis = newtonRaphson(system)
@@ -617,7 +617,7 @@ The output reactive power of the observed generators is subject to limits which 
 [system.generator.capability.minReactive system.generator.capability.maxReactive]
 ```
 
-After obtaining the solution of the AC power flow analysis, the [`reactiveLimit!`](@ref reactiveLimit!) function is used to internally calculate the output powers of the generators and verify if these values exceed the defined limits. Consequently, the variable `violate` indicates whether there is a violation of limits.
+After obtaining the solution of the AC power flow analysis, the [`reactiveLimit!`](@ref reactiveLimit!) function is used to internally calculate the output powers of the generators and verify if these values exceed the defined limits. Consequently, the vector `violate` indicates the limit status for each generator, using `-1` for a minimum-limit violation, `1` for a maximum-limit violation, and `0` when no violation is detected.
 
 In the provided example, it can be observed that the `Generator 2` and `Generator 3` violate the maximum limit:
 ```@repl GeneratorReactivePowerLimits
@@ -679,7 +679,7 @@ powerFlow!(analysis)
 nothing # hide
 ```
 
-Upon checking the limits, we can observe that the slack bus has been converted by executing the following code:
+Upon checking the limits, we can observe that the original slack bus is converted to a demand bus and a new slack bus is selected:
 ```@repl NewSlackBus
 violate = reactiveLimit!(analysis)
 ```

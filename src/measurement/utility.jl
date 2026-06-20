@@ -120,6 +120,14 @@ end
     end
 end
 
+@inline function varianceSquare(mean::Float64, variance::Float64, square::Bool)
+    if square
+        return 4 * mean^2 * variance
+    else
+        return variance
+    end
+end
+
 @inline function if2type(square::Bool)
     if square
         return 2

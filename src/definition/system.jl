@@ -433,17 +433,17 @@ end
 """
     Component
 
-A type alias for power-system component containers. It groups [`Bus`](@ref Bus),
-[`Branch`](@ref Branch), and [`Generator`](@ref Generator).
+A type alias for power-system component containers. It groups [`Bus`](@ref JuliaGrid.Bus),
+[`Branch`](@ref JuliaGrid.Branch), and [`Generator`](@ref JuliaGrid.Generator).
 """
 const Component = Union{Bus, Branch, Generator}
 
 """
     Meter
 
-A type alias for measurement-device containers. It groups [`Voltmeter`](@ref Voltmeter),
-[`Ammeter`](@ref Ammeter), [`Wattmeter`](@ref Wattmeter), [`Varmeter`](@ref Varmeter), and
-[`PMU`](@ref PMU).
+A type alias for measurement-device containers. It groups [`Voltmeter`](@ref JuliaGrid.Voltmeter),
+[`Ammeter`](@ref JuliaGrid.Ammeter), [`Wattmeter`](@ref JuliaGrid.Wattmeter),
+[`Varmeter`](@ref JuliaGrid.Varmeter), and [`PMU`](@ref JuliaGrid.PMU).
 """
 const Meter = Union{Voltmeter, Ammeter, Wattmeter, Varmeter, PMU}
 const Templates = Union{

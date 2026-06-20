@@ -8,9 +8,13 @@ Release Date:
   * Corrected AC optimal power flow PQ capability curve constraint selection for upper and lower reactive power limits.
   * Fixed reactive piecewise cost helper naming in AC optimal power flow.
   * Removed duplicated AC optimal power flow branch-flow dual start and retrieval calls.
+  * Fixed various bugs in printing functions.
   * Fixed `@addConstraint` for scalar custom constraints without an initial `dual` value.
   * Improved `addDual!` error handling for piecewise constraints when `subindex` is missing or out of range.
   * Fixed `remove!(analysis, :variable; index)` to remove bound or fixed constraints on custom variables without deleting the variables.
+  * Fixed variance propagation for squared current magnitude measurements in AC state estimation.
+  * Fixed AC LAV state estimation initialization to use the analysis voltage state.
+  * Fixed `pmuPlacement!` to pass the PMU `square` setting when creating phasor measurements.
 
 #### Performance
   * Reduced unnecessary allocations in power system, measurement, model, and postprocessing update paths.
@@ -20,7 +24,7 @@ Release Date:
   * Standardized mutating helper and wrapper functions to return `nothing` when no result is intended.
 
 #### Documentation
-  * Polished manual wording, examples, references, and release-note organization for clarity and consistency.
+  * Polished manual and tutorial wording, examples, references, and release-note organization for clarity and consistency.
 
 ---
 
@@ -143,7 +147,7 @@ Release Date: March 10, 2025
   * Allowing macros to execute at the code line where they are called.
 
 #### Added
-  * Wrapper functions [`powerFlow!`](@ref powerFlow!) and [`stateEstimation!`](@ref stateEstimation!).
+  * Wrapper functions `powerFlow!` and `stateEstimation!`.
 
 #### Fixed
   * Conversions between SI units and per-unit system

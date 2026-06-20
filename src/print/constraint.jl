@@ -81,12 +81,18 @@ function printBusConstraint(
             continue
         end
 
-        P, Q = balance(bus, analysis, label, i)
+        voltageVisible = isValid(jump, cons.voltage.magnitude, i) &&
+            any(key -> prt.show[prt.head[key]], (:Vmin, :Vopt, :Vmax, :Vdul))
+        activeVisible = isValid(jump, cons.balance.active, i) &&
+            any(key -> prt.show[prt.head[key]], (:Popt, :Pdul))
+        reactiveVisible = isValid(jump, cons.balance.reactive, i) &&
+            any(key -> prt.show[prt.head[key]], (:Qopt, :Qdul))
+        P, Q = activeVisible || reactiveVisible ? balance(bus, analysis, label, i) : (0.0, 0.0)
 
         header(io, prt)
         printf(io, prt.pfmt, prt, label, :labl)
 
-        if isValid(jump, cons.voltage.magnitude, i)
+        if voltageVisible
             scaleV = scaleVoltage(pfx, system, i)
             printf(io, prt, i, scaleV, bus.voltage.minMagnitude, :Vmin)
             printf(io, prt, i, scaleV, analysis.voltage.magnitude, :Vopt)
@@ -96,14 +102,14 @@ function printBusConstraint(
             printf(io, prt.hfmt, prt, "", :Vmin, :Vopt, :Vmax, :Vdul)
         end
 
-        if isValid(jump, cons.balance.active, i)
+        if activeVisible
             printf(io, prt, scale[:P], P, :Popt)
             printf(io, prt, i, scale[:P], dual.balance.active, :Pdul)
         else
             printf(io, prt.hfmt, prt, "", :Popt, :Pdul)
         end
 
-        if isValid(jump, cons.balance.reactive, i)
+        if reactiveVisible
             printf(io, prt, scale[:Q], Q, :Qopt)
             printf(io, prt, i, scale[:Q], dual.balance.reactive, :Qdul)
         else
@@ -275,7 +281,7 @@ function busCons(
             if pfx.voltageMagnitude == 0.0
                 fmax(fmt, width, show, bus.voltage.minMagnitude, head[:Vmin])
                 fmax(fmt, width, show, voltg.magnitude, head[:Vopt])
-                fmax(fmt, width, show, bus.voltage.minMagnitude, head[:Vmax])
+                fmax(fmt, width, show, bus.voltage.maxMagnitude, head[:Vmax])
             else
                 fmax(fmt, width, show, Vmin, head[:Vmin])
                 fmax(fmt, width, show, Vopt, head[:Vopt])
@@ -520,26 +526,38 @@ function printBranchConstraint(
 
     scale = scalePrint(system, pfx)
     types, idxType = checkFlowType(system, analysis)
+    label = isset(label) ? getLabel(brch, label, "branch") : label
+    labelIdx = isset(label) ? brch.label[label] : 0
 
     for type in types
+        if isset(label) && idxType[labelIdx] != type
+            continue
+        end
+
         prt = branchCons(
             system, analysis, unitList, pfx, scale, type, idxType, label, repeat; kwargs...
         )
 
         if prt.notprint
-            break
+            continue
         end
-
 
         if type in (1, 2, 3)
             scaleFrom, scaleTo = flowScale(scale, type)
         end
 
-        title(io, prt, "Branch Constraint Data")
+        printed = false
 
         @inbounds for (label, i) in pickLabel(brch, brch.label, label, "branch")
             if idxType[i] == type
-                if notLine(jump, i, cons.voltage.angle, cons.flow.from, cons.flow.to)
+                angleVisible = isValid(jump, cons.voltage.angle, i) &&
+                    any(key -> prt.show[prt.head[key]], (:θijmin, :θijopt, :θijmax, :θijdul))
+                fromVisible = isValid(jump, cons.flow.from, i) &&
+                    any(key -> prt.show[prt.head[key]], (:Pijmin, :Pijopt, :Pijmax, :Pijdul))
+                toVisible = isValid(jump, cons.flow.to, i) &&
+                    any(key -> prt.show[prt.head[key]], (:Pjimin, :Pjiopt, :Pjimax, :Pjidul))
+
+                if !(angleVisible || fromVisible || toVisible)
                     continue
                 end
 
@@ -547,10 +565,14 @@ function printBranchConstraint(
                     scaleFrom, scaleTo = flowScale(system, pfx, i)
                 end
 
+                if !printed
+                    title(io, prt, "Branch Constraint Data")
+                end
+                printed = true
                 header(io, prt)
                 printf(io, prt.pfmt, prt, label, :labl)
 
-                if isValid(jump, cons.voltage.angle, i)
+                if angleVisible
                     printf(io, prt, i, scale[:θ], brch.voltage.minDiffAngle, :θijmin)
                     printf(io, prt, scale[:θ], anglediff(system, analysis, i), :θijopt)
                     printf(io, prt, i, scale[:θ], brch.voltage.maxDiffAngle, :θijmax)
@@ -559,7 +581,7 @@ function printBranchConstraint(
                     printf(io, prt.hfmt, prt, "", :θijmin, :θijopt, :θijmax, :θijdul)
                 end
 
-                if isValid(jump, cons.flow.from, i)
+                if fromVisible
                     Fij = flowFrom(system, analysis, label, i)
 
                     if brch.flow.minFromBus[i] < 0 && brch.flow.type[i] != 1
@@ -576,7 +598,7 @@ function printBranchConstraint(
                     printf(io, prt.hfmt, prt, "", :Pijmin, :Pijopt, :Pijmax, :Pijdul)
                 end
 
-                if isValid(jump, cons.flow.to, i)
+                if toVisible
                     Fji = flowTo(system, analysis, label, i)
 
                     if brch.flow.minToBus[i] < 0 && brch.flow.type[i] != 1
@@ -594,8 +616,10 @@ function printBranchConstraint(
                 @printf io "\n"
             end
         end
-        printf(io, prt.footer, prt)
-        prt.cnt = 1
+        if printed
+            printf(io, prt.footer, prt)
+            prt.cnt = 1
+        end
     end
 end
 
@@ -861,17 +885,26 @@ function printBranchConstraint(
         return
     end
 
-    title(io, prt, "Branch Constraint Data")
+    printed = false
 
     @inbounds for (label, i) in pickLabel(brch, brch.label, label, "branch")
-        if notLine(jump, i, cons.voltage.angle, cons.flow.active)
+        angleVisible = isValid(jump, cons.voltage.angle, i) &&
+            any(key -> prt.show[prt.head[key]], (:θijmin, :θijopt, :θijmax, :θijdul))
+        flowVisible = isValid(jump, cons.flow.active, i) &&
+            any(key -> prt.show[prt.head[key]], (:Pijmin, :Pijopt, :Pijmax, :Pijdul))
+
+        if !(angleVisible || flowVisible)
             continue
         end
 
+        if !printed
+            title(io, prt, "Branch Constraint Data")
+        end
+        printed = true
         header(io, prt)
         printf(io, prt.pfmt, prt, label, :labl)
 
-        if isValid(jump, cons.voltage.angle, i)
+        if angleVisible
             printf(io, prt, i, scale[:θ], brch.voltage.minDiffAngle, :θijmin)
             printf(io, prt, scale[:θ], anglediff(system, analysis, i), :θijopt)
             printf(io, prt, i, scale[:θ], brch.voltage.maxDiffAngle, :θijmax)
@@ -880,7 +913,7 @@ function printBranchConstraint(
             printf(io, prt.hfmt, prt, "", :θijmin, :θijopt, :θijmax, :θijdul)
         end
 
-        if isValid(jump, cons.flow.active, i)
+        if flowVisible
             printf(io, prt, i, scale[:P], brch.flow.minFromBus, :Pijmin)
             printf(io, prt, scale[:P], fromPower(analysis; label), :Pijopt)
             printf(io, prt, i, scale[:P], brch.flow.maxFromBus, :Pijmax)
@@ -891,7 +924,9 @@ function printBranchConstraint(
 
         @printf io "\n"
     end
-    printf(io, prt.footer, prt)
+    if printed
+        printf(io, prt.footer, prt)
+    end
 end
 
 function branchCons(
@@ -1063,7 +1098,7 @@ end
     printGeneratorConstraint(analysis::OptimalPowerFlow, [io::IO];
         label, fmt, width, show, delimiter, title, header, footer, repeat, style)
 
-The function prints constraint data related to generators. Optionally, an `IO` may be passed asn the
+The function prints constraint data related to generators. Optionally, an `IO` may be passed as the
 last argument to redirect the output.
 
 # Keywords
@@ -1304,7 +1339,7 @@ function genCons(
 
             fminmax(fmt, width, show, scale[:P], gen.capability.minActive, head[:Pmin])
             fminmax(fmt, width, show, Popt, head[:Popt])
-            fminmax(fmt, width, show, scale[:P], gen.capability.maxActive,head[:Pmax])
+            fminmax(fmt, width, show, scale[:P], gen.capability.maxActive, head[:Pmax])
             fminmax(fmt, width, show, Pdul, head[:Pdul])
 
             fminmax(fmt, width, show, scale[:Q], gen.capability.minReactive, head[:Qmin])
@@ -1470,7 +1505,7 @@ function genCons(
 
             fminmax(fmt, width, show, scale[:P], gen.capability.minActive, head[:Pmin])
             fminmax(fmt, width, show, Popt, head[:Popt])
-            fminmax(fmt, width, show, scale[:P], gen.capability.maxActive,head[:Pmax])
+            fminmax(fmt, width, show, scale[:P], gen.capability.maxActive, head[:Pmax])
             fminmax(fmt, width, show, Pdul, head[:Pdul])
         end
     end
@@ -1547,6 +1582,10 @@ function checkFlowType(system::PowerSystem, analysis::AcOptimalPowerFlow)
         angleFlag = haskey(angle, i) && any(key -> is_valid(jump, angle[i][key]), keys(angle[i]))
 
         if angleFlag && fromFlag && toFlag
+            if iszero(count[max_index])
+                max_index = type
+                count[max_index] += 1
+            end
             flowType[i] = max_index
         end
     end

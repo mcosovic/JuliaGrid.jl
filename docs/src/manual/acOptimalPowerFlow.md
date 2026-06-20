@@ -72,7 +72,7 @@ In the AC optimal power flow model, the active and reactive power outputs of the
 JuMP.all_variables(analysis.method.jump)
 ```
 
-It is important to note that this is not a comprehensive set of optimization variables. When the cost function is defined as a piecewise linear function comprising multiple segments, as illustrated in the case of the active power output cost for `Generator 2`, JuliaGrid automatically generates helper optimization variables named `actwise` and `reactwise`, and formulates a set of linear constraints to effectively address these cost functions. For the sake of simplicity, we initially assume that `Generator 2` is out-of-service. Consequently, the helper variable is not included in the set of optimization variables. However, as we progress through this manual, we will activate the generator, introducing the helper variable and additional constraints to the optimization model.
+It is important to note that this is not a comprehensive set of optimization variables. When the cost function is defined as a piecewise linear function comprising multiple segments, as illustrated in the case of the active power output cost for `Generator 2`, JuliaGrid automatically generates helper optimization variables named `actwise` or `reactwise`, and formulates a set of linear constraints to effectively address these cost functions. For the sake of simplicity, we initially assume that `Generator 2` is out-of-service. Consequently, the helper variable is not included in the set of optimization variables. However, as we progress through this manual, we will activate the generator, introducing the helper variable and additional constraints to the optimization model.
 
 It is worth emphasizing that in instances where a piecewise linear cost function consists of only a single segment, as demonstrated by the reactive power output cost of `Generator 2`, the function is modeled as a standard linear function, avoiding the need for additional helper optimization variables.
 
@@ -309,7 +309,7 @@ analysis.method.variable.power.actwise[2]
 ---
 
 ##### Add Constraints
-Users can effortlessly introduce additional constraints into the defined AC optimal power flow model by utilizing the [`addBranch!`](@ref addBranch!) functions. Specifically, if a user wishes to include a new branch or generator in an already defined `PowerSystem` and `AcOptimalPowerFlow` type:
+Users can introduce additional branch-related constraints into the AC optimal power flow model by adding a new branch with the [`addBranch!`](@ref addBranch!) function. For example, a user can include a new branch in an already defined `PowerSystem` and `AcOptimalPowerFlow` model:
 ```@example acopf
 addBranch!(analysis; label = "Branch 2", from = "Bus 1", to = "Bus 2", reactance = 1)
 nothing # hide
@@ -465,7 +465,7 @@ print(system.bus.label, analysis.method.dual.balance.active)
 ---
 
 ##### Wrapper Function
-JuliaGrid provides a wrapper function for AC optimal power flow analysis and also supports the computation of powers and currents using the [powerFlow!](@ref powerFlow!(::AcOptimalPowerFlow)) function:
+JuliaGrid provides a wrapper function for AC optimal power flow analysis and also supports the computation of powers and currents using the [`powerFlow!`](@ref powerFlow!(::AcOptimalPowerFlow)) function:
 ```@example acopf
 setInitialPoint!(analysis) # hide
 analysis = acOptimalPowerFlow(system, Ipopt.Optimizer)
@@ -513,7 +513,7 @@ CSV.write("constraint.csv", CSV.File(take!(io); delim = "|"))
 
 ---
 
-## Primal and Dual Warm Start
+## [Primal and Dual Warm Start](@id AcPrimalDualWarmStartManual)
 Utilizing the `AcOptimalPowerFlow` type and proceeding directly to the solver offers the advantage of a warm start. In this scenario, the initial primal and dual values for the subsequent solving step correspond to the solution obtained from the previous step, including any user-defined data previously integrated in JuliaGrid.
 
 ---
@@ -545,7 +545,7 @@ nothing # hide
 
 Next, we want to solve this modified optimal power flow problem. If we use [`solve!`](@ref solve!(::AcOptimalPowerFlow)) at this point, the primal and dual initial values will be set to the previously obtained values:
 ```@example acopf
-powerFlow!(analysis, verbose = 1)
+powerFlow!(analysis; verbose = 1)
 nothing # hide
 ```
 
@@ -655,7 +655,7 @@ analysis.extended.solution
 ---
 
 ## [Power and Current Analysis](@id ACOptimalPowerCurrentAnalysisManual)
-After obtaining the solution from the AC optimal power flow, we can calculate various electrical quantities related to buses and branches using the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AC)) functions. For instance, let us consider the power system for which we obtained the AC optimal power flow solution:
+After obtaining the solution from the AC optimal power flow, we can calculate various electrical quantities related to buses and branches using the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AcPowerFlow)) functions. For instance, let us consider the power system for which we obtained the AC optimal power flow solution:
 ```@example acopfpower
 using JuliaGrid, JuMP # hide
 using Ipopt
@@ -700,7 +700,7 @@ print(system.branch.label, analysis.current.from.magnitude)
 ```
 
 !!! note "Info"
-    To better understand the powers and currents associated with buses and branches that are calculated by the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AC)) functions, we suggest referring to the tutorials on [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials).
+    To better understand the powers and currents associated with buses and branches that are calculated by the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AcPowerFlow)) functions, we suggest referring to the tutorials on [AC Optimal Power Flow](@ref ACOptimalPowerFlowTutorials).
 
 ---
 

@@ -286,11 +286,11 @@ function mergeFlowIslands(
         incidentToIslands = fill(Int64[], length(observe.tie.injection), 1)
 
         for (k, idxBus) in enumerate(observe.tie.injection)
-            conection = rowval[colptr[idxBus]:(colptr[idxBus + 1] - 1)]
+            connection = rowval[colptr[idxBus]:(colptr[idxBus + 1] - 1)]
 
-            con[conection] .= true
+            con[connection] .= true
             incidentToIslands[k] = sort(unique(observe.bus[con]))
-            con[conection] .= false
+            con[connection] .= false
         end
 
         mergeIndex = decisionTree(incidentToIslands)
@@ -323,13 +323,13 @@ function mergeFlowIslands(
 
         removeInjection = Int64[]
         for idxBus in observe.tie.injection
-            conection = rowval[colptr[idxBus]:(colptr[idxBus + 1] - 1)]
+            connection = rowval[colptr[idxBus]:(colptr[idxBus + 1] - 1)]
 
-            con[conection] .= true
+            con[connection] .= true
             if length(Set(observe.bus[con])) == 1
                 push!(removeInjection, idxBus)
             end
-            con[conection] .= false
+            con[connection] .= false
         end
 
         for i in removeInjection
@@ -356,20 +356,20 @@ function mergeFlowIslands(
     return observe
 end
 
-function decisionTree(measurments::Matrix{Vector{Int64}})
+function decisionTree(measurements::Matrix{Vector{Int64}})
     totalIslands = 0
-    @inbounds for measurment in measurments
-        for island in measurment
+    @inbounds for measurement in measurements
+        for island in measurement
             totalIslands = max(totalIslands, island)
         end
     end
 
     appeared = zeros(Int64, totalIslands)
     marker = Ref(1)
-    @inbounds for t = 2:length(measurments)
+    @inbounds for t = 2:length(measurements)
         result = Vector{Int64}(undef, t)
         combination = searchCombination(
-            measurments, result, 1, 0, length(measurments) - t, t, appeared, marker
+            measurements, result, 1, 0, length(measurements) - t, t, appeared, marker
         )
         if combination != false
             return combination
@@ -380,7 +380,7 @@ function decisionTree(measurments::Matrix{Vector{Int64}})
 end
 
 function searchCombination(
-    measurments::Matrix{Vector{Int64}},
+    measurements::Matrix{Vector{Int64}},
     result::Vector{Int64},
     position::Int64,
     value::Int64,
@@ -393,12 +393,12 @@ function searchCombination(
         result[position] = position + i
         if position < k
             combination = searchCombination(
-                measurments, result, position + 1, i, maxN, k, appeared, marker
+                measurements, result, position + 1, i, maxN, k, appeared, marker
             )
             if combination != false
                 return combination
             end
-        elseif checkCombination(measurments, result, appeared, marker[], k + 1)
+        elseif checkCombination(measurements, result, appeared, marker[], k + 1)
             return copy(result)
         else
             marker[] += 1
@@ -409,15 +409,15 @@ function searchCombination(
 end
 
 function checkCombination(
-    measurments::Matrix{Vector{Int64}},
-    indicies::Vector{Int64},
+    measurements::Matrix{Vector{Int64}},
+    indices::Vector{Int64},
     appeared::Vector{Int64},
     marker::Int64,
     required::Int64
 )
     count = 0
-    @inbounds for index in indicies
-        for island in measurments[index]
+    @inbounds for index in indices
+        for island in measurements[index]
             if appeared[island] != marker
                 appeared[island] = marker
                 count += 1
@@ -441,7 +441,8 @@ different to enable the function to successfully incorporate measurements from `
 
 # Keyword
 The keyword `threshold` defines the zero pivot threshold value, with a default value of `1e-5`. More
-precisely, all computed pivots less than this value will be treated as zero pivots.
+precisely, computed pivots with absolute values less than or equal to this threshold are treated as
+zero pivots.
 
 # Updates
 The function updates the `monitoring` variable of the `Measurement` type.
@@ -610,9 +611,9 @@ function addTie(
     con::Vector{Bool}
 )
     island = islands.bus[idxBus]
-    conection = rowval[colptr[idxBus]:(colptr[idxBus + 1] - 1)]
+    connection = rowval[colptr[idxBus]:(colptr[idxBus + 1] - 1)]
 
-    con[conection] .= true
+    con[connection] .= true
     con[islands.island[island]] .= false
     incidentToIslands = islands.bus[con]
 
@@ -625,7 +626,7 @@ function addTie(
     push!(jcb.row, k)
     push!(jcb.col, island)
     push!(jcb.val, length(incidentToIslands))
-    con[conection] .= false
+    con[connection] .= false
 
     return jcb, con
 end
@@ -679,7 +680,7 @@ automatically initiates an update process.
 
 Additionally, the `optimizer` argument is a crucial component for formulating and solving the
 optimization problem. Typically, using the HiGHS or GLPK solver is sufficient. For more detailed
-information, please refer to the [JuMP documenatation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
+information, please refer to the [JuMP documentation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
 
 # Keywords
 The function accepts the following keywords:
@@ -697,7 +698,7 @@ The function returns an instance of the [`PmuPlacement`](@ref PmuPlacement) type
 
 Note that if a PMU is understood as a device that measures the bus voltage phasor and all branch
 current phasors incident to the bus, users only need the results stored in the `bus` variable.
-However, if a PMU is considered to measure individual phasor, then all required phasor measurements
+However, if a PMU is considered to measure an individual phasor, then all required phasor measurements
 can be found in the `bus`, `from`, and `to` variables.
 
 # Example
@@ -878,11 +879,11 @@ end
         varianceMagnitudeFrom, varianceAngleFrom,
         varianceMagnitudeTo, varianceAngleTo,
         noise, correlated, polar,
-        legacy, bridge, name, placement, verbose)
+        square, legacy, bridge, name, placement, verbose)
 
-The function finds the optimal PMU placement by executing [`pmuPlacement`](@ref pmuPlacement)
-function. Then, based on the results from the `AC` type, it generates phasor measurements and
-integrates them into the `Measurement` type. If current values are missing in the `AC` type, the
+The function finds the optimal PMU placement by executing the [`pmuPlacement`](@ref pmuPlacement)
+function. Then, based on the results from the `AC` analysis object, it generates phasor measurements and
+integrates them into the `Measurement` type. If current values are missing in the `AC` analysis object, the
 function calculates the associated currents required to form measurement values.
 
 # Keywords
@@ -906,6 +907,9 @@ Settings for handling phasor measurements include:
 * `polar`: Chooses the coordinate system for including phasor measurements in AC state estimation:
   * `polar = true`: adopts the polar coordinate system,
   * `polar = false`: adopts the rectangular coordinate system.
+* `square`: Specifies how current magnitudes are included in the model when using the polar system:
+  * `square = true`: included in squared form,
+  * `square = false`: included in its original form.
 Settings for the optimization solver include:
 * `bridge`: Controls the bridging mechanism (default: `false`).
 * `name`: Handles the creation of string names (default: `false`).
@@ -949,7 +953,8 @@ function pmuPlacement!(
     varianceAngleTo::FltIntMiss = missing,
     noise::Bool = template.pmu.noise,
     correlated::Bool = template.pmu.correlated,
-    polar::Bool = template.pmu.polar
+    polar::Bool = template.pmu.polar,
+    square::Bool = template.pmu.square
 )
     placement = pmuPlacement(monitoring, optimizerFactory; legacy, bridge, name, placement, verbose)
     errorVoltage(analysis.voltage.magnitude)
@@ -959,7 +964,7 @@ function pmuPlacement!(
         addPmu!(
             monitoring; bus = bus, magnitude = Vᵢ, angle = θᵢ,
             varianceMagnitude = varianceMagnitudeBus, varianceAngle = varianceAngleBus,
-            noise, correlated, polar
+            noise, correlated, polar, square
         )
     end
     for (branch, idx) in placement.from
@@ -971,7 +976,7 @@ function pmuPlacement!(
         addPmu!(
             monitoring; from = branch, magnitude = Iᵢⱼ, angle = ψᵢⱼ,
             varianceMagnitude = varianceMagnitudeFrom, varianceAngle = varianceAngleFrom,
-            noise, correlated, polar
+            noise, correlated, polar, square
         )
     end
     for (branch, idx) in placement.to
@@ -983,7 +988,7 @@ function pmuPlacement!(
         addPmu!(
             monitoring; to = branch, magnitude = Iⱼᵢ, angle = ψⱼᵢ,
             varianceMagnitude = varianceMagnitudeTo, varianceAngle = varianceAngleTo,
-            noise, correlated, polar
+            noise, correlated, polar, square
         )
     end
 

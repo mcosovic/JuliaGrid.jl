@@ -170,6 +170,35 @@
         testAcEstimation(monitoring, pf)
     end
 
+    @testset "IEEE 14: Squared Current Precision" begin
+        monitoring = measurement(system14)
+
+        addAmmeter!(monitoring; from = 1, magnitude = 0.5, variance = 0.01, square = true)
+        addPmu!(
+            monitoring; from = 1, magnitude = 0.5, angle = 0.1,
+            varianceMagnitude = 0.01, varianceAngle = 0.02, polar = true, square = true
+        )
+
+        analysis = gaussNewton(monitoring)
+        variance = 4 * 0.5^2 * 0.01
+
+        @test analysis.method.mean[1] == 0.5^2
+        @test analysis.method.precision[1, 1] ≈ 1 / variance
+        @test analysis.method.mean[2] == 0.5^2
+        @test analysis.method.precision[2, 2] ≈ 1 / variance
+        @test analysis.method.precision[3, 3] == 1 / 0.02
+
+        updateAmmeter!(analysis; label = "From 1", magnitude = 0.7, variance = 0.03)
+        variance = 4 * 0.7^2 * 0.03
+        @test analysis.method.mean[1] == 0.7^2
+        @test analysis.method.precision[1, 1] ≈ 1 / variance
+
+        updatePmu!(analysis; label = "From 1", magnitude = 0.6, varianceMagnitude = 0.02)
+        variance = 4 * 0.6^2 * 0.02
+        @test analysis.method.mean[2] == 0.6^2
+        @test analysis.method.precision[2, 2] ≈ 1 / variance
+    end
+
     monitoring = measurement(system14)
     @testset "IEEE 14: All Measurements" begin
         addVoltmeter!(monitoring, pf)

@@ -1057,7 +1057,7 @@ function setVarmeterTemplate!(parameter::Symbol, value)
 end
 
 """
-    @varmeter(label, varinaceBus, statusBus, varianceFrom, statusFrom,
+    @varmeter(label, varianceBus, statusBus, varianceFrom, statusFrom,
         varianceTo, statusTo, noise)
 
 The macro generates a template for a varmeter.
