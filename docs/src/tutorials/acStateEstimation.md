@@ -872,7 +872,7 @@ Here, we utilize a "flat start" approach in our method. It is important to keep 
 ---
 
 ##### Iterative Process
-To apply the Gauss-Newton method, JuliaGrid provides the [`solve!`](../api/stateEstimation.html#JuliaGrid.solve!-Tuple{AcStateEstimation{LAV}}) function. This function is utilized iteratively until a stopping criterion is met, as demonstrated in the following code snippet:
+To apply the Gauss-Newton method, JuliaGrid provides the [`solve!`](@ref solve!(::AcStateEstimation{LAV})) function. This function is utilized iteratively until a stopping criterion is met, as demonstrated in the following code snippet:
 ```@example ACSETutorial
 for iteration = 0:20
     stopping = increment!(analysis)
@@ -929,7 +929,7 @@ Next, the [`increment!`](@ref increment!(::AcStateEstimation)) function provides
 ```
 
 
-Finally, the function [`solve!`](../api/stateEstimation.html#JuliaGrid.solve!-Tuple{AcStateEstimation{LAV}}) adds the computed increment term to the previous solution to obtain a new solution:
+Finally, the function [`solve!`](@ref solve!(::AcStateEstimation{LAV})) adds the computed increment term to the previous solution to obtain a new solution:
 ```math
   \mathbf {x}^{(\nu + 1)} = \mathbf {x}^{(\nu)} + \mathbf \Delta \mathbf {x}^{(\nu)}.
 ```

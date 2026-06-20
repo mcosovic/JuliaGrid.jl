@@ -1242,7 +1242,7 @@ end
         iteration, tolerance, power, current, verbose)
 
 The function serves as a wrapper for solving AC state estimation and includes the functions:
-* [`solve!`](#JuliaGrid.solve!-Tuple{AcStateEstimation{LAV}})
+* [`solve!`](@ref solve!(::AcStateEstimation{LAV}))
 * [`power!`](@ref power!(::AcPowerFlow)),
 * [`current!`](@ref current!(::AC)).
 
