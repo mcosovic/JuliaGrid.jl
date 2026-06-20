@@ -7,7 +7,7 @@ To perform nonlinear or AC state estimation, the initial requirement is to have 
 
 To obtain bus voltages and solve the state estimation problem, users need to implement the Gauss-Newton iterative process for the WLS model using:
 * [`increment!`](@ref increment!),
-* [`solve!`](../api/stateEstimation.html#JuliaGrid.solve!-Tuple{AcStateEstimation{<:GaussNewton}}).
+* [`solve!`](../api/stateEstimation.html#JuliaGrid.solve!-Tuple{AcStateEstimation{LAV}}).
 
 Alternatively, to obtain the LAV estimator, simply execute the second function.
 
@@ -125,7 +125,7 @@ nothing # hide
     analysis = gaussNewton(monitoring, LDLt)
     ```
 
-To conduct an iterative process using the Gauss-Newton method, it is essential to include the [`increment!`](@ref increment!) and [`solve!`](../api/stateEstimation.html#JuliaGrid.solve!-Tuple{AcStateEstimation{<:GaussNewton}}) functions inside the iteration loop. For example:
+To conduct an iterative process using the Gauss-Newton method, it is essential to include the [`increment!`](@ref increment!) and [`solve!`](../api/stateEstimation.html#JuliaGrid.solve!-Tuple{AcStateEstimation{LAV}}) functions inside the iteration loop. For example:
 ```@example ACSEWLS
 for iteration = 1:20
     increment!(analysis)

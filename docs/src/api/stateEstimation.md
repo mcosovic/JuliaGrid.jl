@@ -19,7 +19,7 @@ using JuliaGrid, Ipopt, HiGHS
 * [`gaussNewton`](@ref gaussNewton)
 * [`acLavStateEstimation`](@ref acLavStateEstimation)
 * [`increment!`](@ref increment!)
-* [`solve!`](#JuliaGrid.solve!-Tuple{AcStateEstimation{<:GaussNewton}})
+* [`solve!`](#JuliaGrid.solve!-Tuple{AcStateEstimation{LAV}})
 * [`setInitialPoint!`](@ref setInitialPoint!(::AcStateEstimation))
 * [`stateEstimation!`](@ref stateEstimation!(::AcStateEstimation{<:GaussNewton}))
 
@@ -57,7 +57,7 @@ pmuPlacement!
 gaussNewton
 acLavStateEstimation
 increment!
-solve!(::AcStateEstimation{<:GaussNewton})
+solve!(::AcStateEstimation{LAV})
 setInitialPoint!(::AcStateEstimation)
 setInitialPoint!(::AcStateEstimation, ::AC)
 stateEstimation!(::AcStateEstimation{<:GaussNewton})

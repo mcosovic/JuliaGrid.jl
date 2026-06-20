@@ -1006,20 +1006,6 @@ analysis = acLavStateEstimation(monitoring, Ipopt.Optimizer; verbose = 1)
 solve!(analysis)
 ```
 """
-function solve!(analysis::AcStateEstimation{<:GaussNewton})
-    system = analysis.system
-    bus = system.bus
-    volt = analysis.voltage
-
-    @inbounds for i = 1:bus.number
-        volt.angle[i] = volt.angle[i] + analysis.method.increment[i]
-        volt.magnitude[i] = volt.magnitude[i] + analysis.method.increment[i + bus.number]
-    end
-    analysis.method.iteration += 1
-
-    return nothing
-end
-
 function solve!(analysis::AcStateEstimation{LAV})
     system = analysis.system
     bus = system.bus
@@ -1042,6 +1028,20 @@ function solve!(analysis::AcStateEstimation{LAV})
     end
 
     printExit(lav.jump, verbose)
+
+    return nothing
+end
+
+function solve!(analysis::AcStateEstimation{<:GaussNewton})
+    system = analysis.system
+    bus = system.bus
+    volt = analysis.voltage
+
+    @inbounds for i = 1:bus.number
+        volt.angle[i] = volt.angle[i] + analysis.method.increment[i]
+        volt.magnitude[i] = volt.magnitude[i] + analysis.method.increment[i + bus.number]
+    end
+    analysis.method.iteration += 1
 
     return nothing
 end
@@ -1242,7 +1242,7 @@ end
         iteration, tolerance, power, current, verbose)
 
 The function serves as a wrapper for solving AC state estimation and includes the functions:
-* [`solve!`](#JuliaGrid.solve!-Tuple{AcStateEstimation{<:GaussNewton}})
+* [`solve!`](#JuliaGrid.solve!-Tuple{AcStateEstimation{LAV}})
 * [`power!`](@ref power!(::AcPowerFlow)),
 * [`current!`](@ref current!(::AC)).
 

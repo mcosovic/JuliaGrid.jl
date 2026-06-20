@@ -188,12 +188,12 @@
         @test analysis.method.precision[2, 2] ≈ 1 / variance
         @test analysis.method.precision[3, 3] == 1 / 0.02
 
-        updateAmmeter!(analysis; label = "From 1", magnitude = 0.7, variance = 0.03)
+        updateAmmeter!(analysis; label = 1, magnitude = 0.7, variance = 0.03)
         variance = 4 * 0.7^2 * 0.03
         @test analysis.method.mean[1] == 0.7^2
         @test analysis.method.precision[1, 1] ≈ 1 / variance
 
-        updatePmu!(analysis; label = "From 1", magnitude = 0.6, varianceMagnitude = 0.02)
+        updatePmu!(analysis; label = 1, magnitude = 0.6, varianceMagnitude = 0.02)
         variance = 4 * 0.6^2 * 0.02
         @test analysis.method.mean[2] == 0.6^2
         @test analysis.method.precision[2, 2] ≈ 1 / variance
