@@ -1,5 +1,15 @@
 # [Release Notes](@id ReleaseNotes)
 
+## Version 0.6.2
+
+#### Performance
+  * Improved AC and DC nodal matrix construction by using a preallocated CSC builder instead of triplet assembly through `sparse`.
+
+#### Internal
+  * Added shared sparse matrix construction utilities for backend model-building routines.
+
+---
+
 ## Version 0.6.1
 
 Release Date: June 20, 2026

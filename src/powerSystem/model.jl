@@ -24,20 +24,29 @@ function acModel!(system::PowerSystem)
     ac = system.model.ac
     layout = system.branch.layout
     param = system.branch.parameter
+    busNumber = system.bus.number
+    branchNumber = system.branch.number
 
-    ac.admittance = zeros(ComplexF64, system.branch.number)
-    ac.nodalToTo = zeros(ComplexF64, system.branch.number)
-    ac.nodalFromFrom = zeros(ComplexF64, system.branch.number)
-    ac.nodalFromTo = zeros(ComplexF64, system.branch.number)
-    ac.nodalToFrom = zeros(ComplexF64, system.branch.number)
-    nodalDiagonals = complex.(system.bus.shunt.conductance, system.bus.shunt.susceptance)
+    ac.admittance = zeros(ComplexF64, branchNumber)
+    ac.nodalToTo = zeros(ComplexF64, branchNumber)
+    ac.nodalFromFrom = zeros(ComplexF64, branchNumber)
+    ac.nodalFromTo = zeros(ComplexF64, branchNumber)
+    ac.nodalToFrom = zeros(ComplexF64, branchNumber)
 
-    nnzModel = system.bus.number + 2 * system.branch.number
-    row = Vector{Int64}(undef, nnzModel)
-    col = Vector{Int64}(undef, nnzModel)
-    val = Vector{ComplexF64}(undef, nnzModel)
+    degree = fill(1, busNumber)
+    @inbounds for i = 1:branchNumber
+        degree[layout.from[i]] += 1
+        degree[layout.to[i]] += 1
+    end
 
-    @inbounds for i = 1:system.branch.number
+    builder = CscBuilder{ComplexF64}(degree)
+    diagonal = Vector{Int64}(undef, busNumber)
+    @inbounds for i = 1:busNumber
+        shunt = complex(system.bus.shunt.conductance[i], system.bus.shunt.susceptance[i])
+        diagonal[i] = addEntry!(builder, i, i, shunt)
+    end
+
+    @inbounds for i = 1:branchNumber
         from = layout.from[i]
         to = layout.to[i]
 
@@ -54,29 +63,15 @@ function acModel!(system::PowerSystem)
             ac.nodalFromTo[i] = -conj(transformerRatio) * ac.admittance[i]
             ac.nodalToFrom[i] = -transformerRatio * ac.admittance[i]
 
-            nodalDiagonals[from] += ac.nodalFromFrom[i]
-            nodalDiagonals[to] += ac.nodalToTo[i]
+            builder.nzval[diagonal[from]] += ac.nodalFromFrom[i]
+            builder.nzval[diagonal[to]] += ac.nodalToTo[i]
         end
 
-        fromToIdx = system.bus.number + i
-        toFromIdx = system.bus.number + system.branch.number + i
-
-        row[fromToIdx] = from
-        col[fromToIdx] = to
-        val[fromToIdx] = ac.nodalFromTo[i]
-
-        row[toFromIdx] = to
-        col[toFromIdx] = from
-        val[toFromIdx] = ac.nodalToFrom[i]
+        addEntry!(builder, from, to, ac.nodalFromTo[i])
+        addEntry!(builder, to, from, ac.nodalToFrom[i])
     end
 
-    @inbounds for i = 1:system.bus.number
-        row[i] = i
-        col[i] = i
-        val[i] = nodalDiagonals[i]
-    end
-
-    ac.nodalMatrix = sparse(row, col, val, system.bus.number, system.bus.number)
+    ac.nodalMatrix = sparseMatrix!(builder, busNumber)
     ac.nodalMatrixTranspose = copy(transpose(ac.nodalMatrix))
 
     return nothing
@@ -167,20 +162,18 @@ function dcModel!(system::PowerSystem)
     dc = system.model.dc
     branch = system.branch
     param = system.branch.parameter
+    busNumber = system.bus.number
+    branchNumber = branch.number
 
-    dc.shiftPower = fill(0.0, system.bus.number)
-    dc.admittance = fill(0.0, branch.number)
-    nodalDiagonals = fill(0.0, system.bus.number)
+    dc.shiftPower = fill(0.0, busNumber)
+    dc.admittance = fill(0.0, branchNumber)
 
-    nnzModel = system.bus.number + 2 * branch.number
-    row = Vector{Int64}(undef, nnzModel)
-    col = Vector{Int64}(undef, nnzModel)
-    val = Vector{Float64}(undef, nnzModel)
-
-    @inbounds for i = 1:branch.number
+    degree = fill(1, busNumber)
+    @inbounds for i = 1:branchNumber
         from = branch.layout.from[i]
         to = branch.layout.to[i]
-        admittance = 0.0
+        degree[from] += 1
+        degree[to] += 1
 
         if branch.layout.status[i] == 1
             admittance = 1 / (param.turnsRatio[i] * param.reactance[i])
@@ -189,30 +182,31 @@ function dcModel!(system::PowerSystem)
             shift = param.shiftAngle[i] * admittance
             dc.shiftPower[from] -= shift
             dc.shiftPower[to] += shift
+        end
+    end
 
-            nodalDiagonals[from] += admittance
-            nodalDiagonals[to] += admittance
+    builder = CscBuilder{Float64}(degree)
+    diagonal = Vector{Int64}(undef, busNumber)
+    @inbounds for i = 1:busNumber
+        diagonal[i] = addEntry!(builder, i, i, 0.0)
+    end
+
+    @inbounds for i = 1:branchNumber
+        from = branch.layout.from[i]
+        to = branch.layout.to[i]
+        admittance = 0.0
+
+        if branch.layout.status[i] == 1
+            admittance = dc.admittance[i]
+            builder.nzval[diagonal[from]] += admittance
+            builder.nzval[diagonal[to]] += admittance
         end
 
-        fromToIdx = system.bus.number + i
-        toFromIdx = system.bus.number + branch.number + i
-
-        row[fromToIdx] = from
-        col[fromToIdx] = to
-        val[fromToIdx] = -admittance
-
-        row[toFromIdx] = to
-        col[toFromIdx] = from
-        val[toFromIdx] = -admittance
+        addEntry!(builder, from, to, -admittance)
+        addEntry!(builder, to, from, -admittance)
     end
 
-    @inbounds for i = 1:system.bus.number
-        row[i] = i
-        col[i] = i
-        val[i] = nodalDiagonals[i]
-    end
-
-    dc.nodalMatrix = sparse(row, col, val, system.bus.number, system.bus.number)
+    dc.nodalMatrix = sparseMatrix!(builder, busNumber)
 
     return nothing
 end

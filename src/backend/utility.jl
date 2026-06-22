@@ -425,20 +425,6 @@ function update!(
     return nothing
 end
 
-##### Check if the Value is Stored #####
-function isstored(A::SparseMatrixCSC{Float64, Int64}, i::Int64, j::Int64)
-    startIdx = A.colptr[j]
-    endIdx = A.colptr[j + 1] - 1
-
-    @inbounds for k = startIdx:endIdx
-        if A.rowval[k] == i
-            return true
-        end
-    end
-
-    return false
-end
-
 ##### Check if Values are Provided #####
 function isset(key::Union{FltIntMiss, String, Bool})
     !ismissing(key)
@@ -597,68 +583,6 @@ end
 
 function solution!(x::Vector{Float64}, F::FactorSparse, b::Vector{Float64})
     x .= F \ b
-end
-
-##### Drop Stored Zeros #####
-function dropZeros!(A::SparseMatrixCSC{Float64, Int64}, pattern::Int64)
-    oldNnz = nnz(A)
-    dropzeros!(A)
-
-    if pattern == 0 && oldNnz != nnz(A)
-        return -1
-    else
-        return pattern
-    end
-end
-
-##### Set Zeros in the Row and Column #####
-function removeColumn(A::SparseMatrixCSC{Float64, Int64}, idx::Int64)
-    removeIdx = A.colptr[idx]:(A.colptr[idx + 1] - 1)
-    removeVal = A.nzval[removeIdx]
-    @inbounds for i in removeIdx
-        A.nzval[i] = 0.0
-    end
-
-    return removeIdx, removeVal
-end
-
-function removeRowColumn(A::SparseMatrixCSC{Float64, Int64}, idx::Int64)
-    removeIdx = A.colptr[idx]:(A.colptr[idx + 1] - 1)
-    removeVal = A.nzval[removeIdx]
-    @inbounds for i in removeIdx
-        A[A.rowval[i], idx] = 0.0
-        A[idx, A.rowval[i]] = 0.0
-    end
-
-    return removeIdx, removeVal
-end
-
-##### Restore Values in the Row and Column #####
-function restoreColumn!(
-    A::SparseMatrixCSC{Float64, Int64},
-    removeIdx::UnitRange{Int64},
-    removeVal::Vector{Float64},
-    idx::Int64
-)
-    @inbounds for (k, i) in enumerate(removeIdx)
-        A[A.rowval[i], idx] = removeVal[k]
-    end
-
-    return nothing
-end
-
-function restoreRowColumn!(
-    A::SparseMatrixCSC{Float64, Int64},
-    removeIdx::UnitRange{Int64},
-    removeVal::Vector{Float64},
-    idx::Int64
-)
-    @inbounds for (k, i) in enumerate(removeIdx)
-        A[A.rowval[i], idx] = removeVal[k]
-        A[idx, A.rowval[i]] = removeVal[k]
-    end
-
-    return nothing
 end
 
 ##### Check Slack Bus #####

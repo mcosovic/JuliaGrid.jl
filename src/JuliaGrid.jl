@@ -19,6 +19,7 @@ include("definition/system.jl")
 include("definition/analysis.jl")
 
 ######### Utility ##########
+include("backend/sparse.jl")
 include("backend/utility.jl")
 include("backend/internal.jl")
 include("backend/equations.jl")
