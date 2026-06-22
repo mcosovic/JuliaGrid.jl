@@ -38,74 +38,13 @@ analysis = newtonRaphson(system, KLU)
 """
 function newtonRaphson(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR, LU, KLU}}
     ac = system.model.ac
-    bus = system.bus
 
     checkSlackBus(system)
     model!(system, ac)
     voltMagnitude, voltAngle = initializeACPowerFlow(system)
 
-    pq = fill(0, bus.number)
-    pvpq = fill(0, bus.number)
-    nnzJcb = 0
-    pvpqNum = 0
-    pqNum = 0
-    @inbounds for i = 1:bus.number
-        if bus.layout.type[i] == 1
-            pqNum += 1
-            pq[i] = pqNum + bus.number - 1
-        end
-        if bus.layout.type[i] != 3
-            pvpqNum += 1
-            pvpq[i] = pvpqNum
-        end
-
-        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            typeRow = bus.layout.type[ac.nodalMatrix.rowval[j]]
-            if bus.layout.type[i] != 3 && typeRow != 3
-                nnzJcb += 1
-            end
-            if bus.layout.type[i] == 1 && typeRow != 3
-                nnzJcb += 2
-            end
-            if bus.layout.type[i] == 1 && typeRow == 1
-                nnzJcb += 1
-            end
-        end
-    end
-
-    cnt = 1
-    iIdx = fill(0, nnzJcb)
-    jIdx = similar(iIdx)
-    @inbounds for i = 1:bus.number
-        if i != bus.layout.slack
-            for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-                row = ac.nodalMatrix.rowval[j]
-                typeRow = bus.layout.type[row]
-
-                if typeRow != 3
-                    iIdx[cnt] = pvpq[row]
-                    jIdx[cnt] = pvpq[i]
-                    cnt += 1
-                end
-                if typeRow == 1
-                    iIdx[cnt] = pq[row]
-                    jIdx[cnt] = pvpq[i]
-                    cnt += 1
-                end
-                if bus.layout.type[i] == 1 && typeRow != 3
-                    iIdx[cnt] = pvpq[row]
-                    jIdx[cnt] = pq[i]
-                    cnt += 1
-                end
-                if bus.layout.type[i] == 1 && typeRow == 1
-                    iIdx[cnt] = pq[row]
-                    jIdx[cnt] = pq[i]
-                    cnt += 1
-                end
-            end
-        end
-    end
-    dimJcb = bus.number + pqNum - 1
+    jacobian, pq, pvpq, pcount = newtonJacobian(system)
+    dimJcb = size(jacobian, 1)
 
     AcPowerFlow(
         Polar(
@@ -129,12 +68,13 @@ function newtonRaphson(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR
             Polar(Float64[], Float64[])
         ),
         NewtonRaphson{T}(
-            sparse(iIdx, jIdx, fill(0.0, nnzJcb), dimJcb, dimJcb),
+            jacobian,
             fill(0.0, dimJcb),
             fill(0.0, dimJcb),
             selectFactorization(T),
             pq,
             pvpq,
+            pcount,
             NewtonRaphsonSignature(
                 copy(system.model.revision.topology),
                 -1,
@@ -144,6 +84,94 @@ function newtonRaphson(system::PowerSystem, ::Type{T} = LU) where {T <: Union{QR
         ),
         system
     )
+end
+
+function newtonJacobian(system::PowerSystem)
+    ac = system.model.ac
+    bus = system.bus
+
+    pq = fill(0, bus.number)
+    pvpq = fill(0, bus.number)
+    pvpqNum = 0
+    pqNum = 0
+    @inbounds for i = 1:bus.number
+        if bus.layout.type[i] == 1
+            pqNum += 1
+            pq[i] = pqNum + bus.number - 1
+        end
+        if bus.layout.type[i] != 3
+            pvpqNum += 1
+            pvpq[i] = pvpqNum
+        end
+    end
+
+    dimJcb = bus.number + pqNum - 1
+    colcount = fill(0, dimJcb)
+    pcount = fill(0, bus.number)
+    qcount = fill(0, bus.number)
+
+    @inbounds for i = 1:bus.number
+        i == bus.layout.slack && continue
+
+        for ptr in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+            typeRow = bus.layout.type[ac.nodalMatrix.rowval[ptr]]
+            if typeRow != 3
+                pcount[i] += 1
+            end
+            if typeRow == 1
+                qcount[i] += 1
+            end
+        end
+
+        colcount[pvpq[i]] = pcount[i] + qcount[i]
+        if bus.layout.type[i] == 1
+            colcount[pq[i]] = pcount[i] + qcount[i]
+        end
+    end
+
+    colptr = Vector{Int64}(undef, dimJcb + 1)
+    colptr[1] = 1
+    @inbounds for col = 1:dimJcb
+        colptr[col + 1] = colptr[col] + colcount[col]
+    end
+
+    nnzJcb = colptr[end] - 1
+    rowval = Vector{Int64}(undef, nnzJcb)
+    nzval = fill(0.0, nnzJcb)
+
+    @inbounds for i = 1:bus.number
+        i == bus.layout.slack && continue
+
+        isPQ = bus.layout.type[i] == 1
+        pAnglePos = colptr[pvpq[i]]
+        qAnglePos = pAnglePos + pcount[i]
+        pMagnitudePos = isPQ ? colptr[pq[i]] : 0
+        qMagnitudePos = isPQ ? pMagnitudePos + pcount[i] : 0
+
+        for ptr in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+            row = ac.nodalMatrix.rowval[ptr]
+            typeRow = bus.layout.type[row]
+
+            if typeRow != 3
+                rowval[pAnglePos] = pvpq[row]
+                pAnglePos += 1
+                if isPQ
+                    rowval[pMagnitudePos] = pvpq[row]
+                    pMagnitudePos += 1
+                end
+            end
+            if typeRow == 1
+                rowval[qAnglePos] = pq[row]
+                qAnglePos += 1
+                if isPQ
+                    rowval[qMagnitudePos] = pq[row]
+                    qMagnitudePos += 1
+                end
+            end
+        end
+    end
+
+    return SparseMatrixCSC(dimJcb, dimJcb, colptr, rowval, nzval), pq, pvpq, pcount
 end
 
 """
@@ -574,9 +602,9 @@ function mismatch!(analysis::AcPowerFlow{<:NewtonRaphson})
             row = ac.nodalMatrix.rowval[ptr]
             Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltg, i, row, ptr)
 
-            currentP += PiQiSum(voltg, Gij, cosθij, Bij, sinθij, row, +)
+            currentP += PiQiSumPlus(voltg, Gij, cosθij, Bij, sinθij, row)
             if isPQ
-                currentQ += PiQiSum(voltg, Gij, sinθij, Bij, cosθij, row, -)
+                currentQ += PiQiSumMinus(voltg, Gij, sinθij, Bij, cosθij, row)
             end
         end
 
@@ -618,9 +646,9 @@ function mismatch!(analysis::AcPowerFlow{<:FastNewtonRaphson})
             row = ac.nodalMatrix.rowval[ptr]
             Gij, Bij, sinθij, cosθij = GijBijθij(ac, volt, i, row, ptr)
 
-            currentP += PiQiSum(volt, Gij, cosθij, Bij, sinθij, row, +)
+            currentP += PiQiSumPlus(volt, Gij, cosθij, Bij, sinθij, row)
             if isPQ
-                currentQ += PiQiSum(volt, Gij, sinθij, Bij, cosθij, row, -)
+                currentQ += PiQiSumMinus(volt, Gij, sinθij, Bij, cosθij, row)
             end
         end
 
@@ -705,14 +733,36 @@ function solve!(analysis::AcPowerFlow{NewtonRaphson{T}}) where T
 
     pf = analysis.method
     volt = analysis.voltage
+
+    if revision.topology != pf.signature.topology || revision.type != pf.signature.type
+        errorTypeConversion()
+    end
+
+    patternChanged = revision.acPattern != pf.signature.acPattern
+    if patternChanged && pf.signature.acPattern != -1
+        pf.jacobian, pf.pq, pf.pvpq, pf.pcount = newtonJacobian(system)
+        resize!(pf.mismatch, size(pf.jacobian, 1))
+        resize!(pf.increment, size(pf.jacobian, 1))
+    end
+
     jcb = pf.jacobian
     pq = pf.pq
     pvpq = pf.pvpq
+    pcount = pf.pcount
+    nzval = jcb.nzval
+    jcolptr = jcb.colptr
 
     @inbounds for i = 1:bus.number
         if i == bus.layout.slack
             continue
         end
+
+        isPQ = bus.layout.type[i] == 1
+
+        pAnglePos = jcolptr[pvpq[i]]
+        qAnglePos = pAnglePos + pcount[i]
+        pMagnitudePos = isPQ ? jcolptr[pq[i]] : 0
+        qMagnitudePos = isPQ ? pMagnitudePos + pcount[i] : 0
 
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
             row = ac.nodalMatrix.rowval[j]
@@ -726,52 +776,57 @@ function solve!(analysis::AcPowerFlow{NewtonRaphson{T}}) where T
             if row != i
                 sinθij, cosθij = sincos(volt.angle[row] - volt.angle[i])
 
-                jcb[pvpq[row], pvpq[i]] = Piθj(volt, Gij, Bij, sinθij, cosθij, row, i)
+                nzval[pAnglePos] = Piθj(volt, Gij, Bij, sinθij, cosθij, row, i)
+                pAnglePos += 1
                 if type == 1
-                    jcb[pq[row], pvpq[i]] = Qiθj(volt, Gij, Bij, sinθij, cosθij, row, i)
+                    nzval[qAnglePos] = Qiθj(volt, Gij, Bij, sinθij, cosθij, row, i)
+                    qAnglePos += 1
                 end
-                if bus.layout.type[i] == 1
-                    jcb[pvpq[row], pq[i]] = PiVj(volt, Gij, Bij, sinθij, cosθij, row)
+                if isPQ
+                    nzval[pMagnitudePos] = PiVj(volt, Gij, Bij, sinθij, cosθij, row)
+                    pMagnitudePos += 1
                 end
-                if bus.layout.type[i] == 1 && type == 1
-                    jcb[pq[row], pq[i]] = QiVj(volt, Gij, Bij, sinθij, cosθij, row)
+                if isPQ && type == 1
+                    nzval[qMagnitudePos] = QiVj(volt, Gij, Bij, sinθij, cosθij, row)
+                    qMagnitudePos += 1
                 end
             else
                 currentθ = 0.0
                 currentV = 0.0
                 for ptr in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
                     q = ac.nodalMatrix.rowval[ptr]
-                    Gik, Bik, sinθik, cosθik = GijBijθij(ac, volt, row, q, ptr)
+                    Gik, Bik = reim(ac.nodalMatrixTranspose.nzval[ptr])
+                    sinθik, cosθik = sincos(volt.angle[i] - volt.angle[q])
 
-                    currentθ += PiQiSum(volt, Gik, sinθik, Bik, cosθik, q, -)
-                    if bus.layout.type[i] == 1 || type == 1
-                        currentV += PiQiSum(volt, Gik, cosθik, Bik, sinθik, q, +)
+                    currentθ += PiQiSumMinus(volt, Gik, sinθik, Bik, cosθik, q)
+                    if isPQ
+                        currentV += PiQiSumPlus(volt, Gik, cosθik, Bik, sinθik, q)
                     end
                 end
 
-                jcb[pvpq[row], pvpq[i]] = Piθi(volt, Bij, -currentθ, row)
-                if type == 1
-                    jcb[pq[row], pvpq[i]] = Qiθi(volt, Gij, currentV, row)
+                nzval[pAnglePos] = Piθi(volt, Bij, -currentθ, row)
+                pAnglePos += 1
+                if isPQ
+                    nzval[qAnglePos] = Qiθi(volt, Gij, currentV, row)
+                    qAnglePos += 1
                 end
-                if bus.layout.type[i] == 1
-                    jcb[pvpq[row], pq[i]] = PiVi(volt, Gij, currentV, row)
+                if isPQ
+                    nzval[pMagnitudePos] = PiVi(volt, Gij, currentV, row)
+                    pMagnitudePos += 1
                 end
-                if bus.layout.type[i] == 1 && type == 1
-                    jcb[pq[row], pq[i]] = QiVi(volt, Bij, currentθ, row)
+                if isPQ
+                    nzval[qMagnitudePos] = QiVi(volt, Bij, currentθ, row)
+                    qMagnitudePos += 1
                 end
             end
         end
     end
 
-    if revision.topology != pf.signature.topology || revision.type != pf.signature.type
-        errorTypeConversion()
-    end
-
-    if revision.acPattern == pf.signature.acPattern
-        pf.factorization = factorization!(jcb, pf.factorization, T)
-    else
+    if patternChanged
         pf.signature.acPattern = copy(revision.acPattern)
         pf.factorization = factorization(jcb, pf.factorization, T)
+    else
+        pf.factorization = factorization!(jcb, pf.factorization, T)
     end
 
     solution!(pf.increment, pf.factorization, pf.mismatch)
@@ -844,7 +899,7 @@ function solve!(analysis::AcPowerFlow{FastNewtonRaphson{T}}) where T
                 row = ac.nodalMatrix.rowval[ptr]
                 Gij, Bij, sinθij, cosθij = GijBijθij(ac, volt, i, row, ptr)
 
-                reactive.mismatch[pq[i]] += PiQiSum(volt, Gij, sinθij, Bij, cosθij, row, -)
+                reactive.mismatch[pq[i]] += PiQiSumMinus(volt, Gij, sinθij, Bij, cosθij, row)
             end
         end
     end

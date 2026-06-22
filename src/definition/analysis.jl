@@ -147,6 +147,7 @@ flow model, which will be solved using the Newton-Raphson method.
 - `factorization::Factorization`: Factorization of the Jacobian matrix.
 - `pq::Vector{Int64}`: Indices related to demand buses.
 - `pvpq::Vector{Int64}`: Indices related to demand and generator buses.
+- `pcount::Vector{Int64}`: Number of active-power rows in each Jacobian column block.
 - `signature::NewtonRaphsonSignature`: Tracks topology, AC matrix pattern, and bus type revisions.
 - `iteration::Int64`: The iteration counter.
 """
@@ -157,6 +158,7 @@ mutable struct NewtonRaphson{T <: Union{LU, KLU, QR}}
     factorization::FactorSparse
     pq::Vector{Int64}
     pvpq::Vector{Int64}
+    pcount::Vector{Int64}
     signature::NewtonRaphsonSignature
     iteration::Int64
 end

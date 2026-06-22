@@ -285,8 +285,8 @@ function normalEquation!(system::PowerSystem, analysis::AcStateEstimation)
                         j = ac.nodalMatrix.rowval[q]
 
                         Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltage, col, j, q)
-                        currentθ += PiQiSum(voltage, Gij, sinθij, Bij, cosθij, j, -)
-                        currentV += PiQiSum(voltage, Gij, cosθij, Bij, sinθij, j, +)
+                        currentθ += PiQiSumMinus(voltage, Gij, sinθij, Bij, cosθij, j)
+                        currentV += PiQiSumPlus(voltage, Gij, cosθij, Bij, sinθij, j)
                     end
                     se.residual[row] = se.mean[row] - Pi(voltage, currentV, col)
                     seobjective(analysis, row)
@@ -339,8 +339,8 @@ function normalEquation!(system::PowerSystem, analysis::AcStateEstimation)
                         j = ac.nodalMatrix.rowval[q]
 
                         Gij, Bij, sinθij, cosθij = GijBijθij(ac, voltage, col, j, q)
-                        currentθ += PiQiSum(voltage, Gij, cosθij, Bij, sinθij, j, +)
-                        currentV += PiQiSum(voltage, Gij, sinθij, Bij, cosθij, j, -)
+                        currentθ += PiQiSumPlus(voltage, Gij, cosθij, Bij, sinθij, j)
+                        currentV += PiQiSumMinus(voltage, Gij, sinθij, Bij, cosθij, j)
                     end
                     se.residual[row] = se.mean[row] - Pi(voltage, currentV, col)
                     seobjective(analysis, row)

@@ -4,9 +4,11 @@
 
 #### Performance
   * Improved AC and DC nodal matrix construction by using a preallocated CSC builder instead of triplet assembly through `sparse`.
+  * Reduced Newton-Raphson setup time and memory use by constructing the Jacobian pattern directly as a CSC matrix and filling Jacobian values through existing nonzero entries.
 
 #### Internal
   * Added shared sparse matrix construction utilities for backend model-building routines.
+  * Replaced the internal power-injection sum helper that accepted an operator argument with explicit plus and minus variants.
 
 ---
 
