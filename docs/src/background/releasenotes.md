@@ -5,6 +5,7 @@
 #### Performance
   * Improved AC and DC nodal matrix construction by using a preallocated CSC builder instead of triplet assembly through `sparse`.
   * Reduced Newton-Raphson setup time and memory use by constructing the Jacobian pattern directly as a CSC matrix and filling Jacobian values through existing nonzero entries.
+  * Improved Gauss-Seidel AC power flow iterations by avoiding repeated sparse diagonal lookups during voltage updates.
 
 #### Internal
   * Added shared sparse matrix construction utilities for backend model-building routines.

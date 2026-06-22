@@ -933,22 +933,34 @@ function solve!(analysis::AcPowerFlow{GaussSeidel})
         supply = bus.supply.active[i] - im * bus.supply.reactive[i]
         demand = bus.demand.active[i] - im * bus.demand.reactive[i]
         I = (supply - demand) / conj(volt[i])
+        Yii = 0.0 + 0.0im
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            I -= ac.nodalMatrixTranspose.nzval[j] * volt[ac.nodalMatrix.rowval[j]]
+            row = ac.nodalMatrix.rowval[j]
+            y = ac.nodalMatrixTranspose.nzval[j]
+            I -= y * volt[row]
+            if row == i
+                Yii = y
+            end
         end
-        volt[i] += I / ac.nodalMatrix[i, i]
+        volt[i] += I / Yii
 
         analysis.voltage.magnitude[i], analysis.voltage.angle[i] = absang(volt[i])
     end
 
     @inbounds for i in analysis.method.pv
         I = 0.0 + im * 0.0
+        Yii = 0.0 + 0.0im
         for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            I += ac.nodalMatrixTranspose.nzval[j] * volt[ac.nodalMatrix.rowval[j]]
+            row = ac.nodalMatrix.rowval[j]
+            y = ac.nodalMatrixTranspose.nzval[j]
+            I += y * volt[row]
+            if row == i
+                Yii = y
+            end
         end
         conjVolt = conj(volt[i])
         injection = bus.supply.active[i] - bus.demand.active[i] + im * imag(conjVolt * I)
-        volt[i] += ((injection / conjVolt) - I) / ac.nodalMatrix[i, i]
+        volt[i] += ((injection / conjVolt) - I) / Yii
     end
 
     @inbounds for i in analysis.method.pv
