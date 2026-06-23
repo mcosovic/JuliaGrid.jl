@@ -195,7 +195,17 @@ function _addBranch!(analysis::AcPowerFlow{<:FastNewtonRaphson})
     errorTypeConversion(analysis.system.model.revision.type, analysis.method.signature.type)
 
     if analysis.system.branch.layout.status[analysis.system.branch.number] == 1
-        jacobian(analysis.system, analysis, analysis.system.branch.number)
+        idx = analysis.system.branch.number
+        i, j = fromto(analysis.system, idx)
+        p, q = jacobianCoefficient(analysis.system, analysis.method, idx)
+
+        Pijθij(analysis.system, analysis.method, p, i, j)
+        Pijθi(analysis.system, analysis.method, p, i)
+        Pijθj(analysis.system, analysis.method, p, j)
+
+        QijVij(analysis.method, q, i, j)
+        QijVi(analysis.system, analysis.method, q, i)
+        QijVj(analysis.system, analysis.method, q, j)
     end
     analysis.method.signature.jacobian = analysis.system.model.revision.acModel
 end

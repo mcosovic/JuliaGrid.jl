@@ -267,58 +267,7 @@ function fastNewtonRaphsonModel(system::PowerSystem, ::Type{T}, bx::Bool) where 
     model!(system, ac)
     voltMagnitude, voltAngle = initializeACPowerFlow(system)
 
-    pq = fill(0, bus.number)
-    pvpq = fill(0, bus.number)
-    nnzP = 0
-    nnzQ = 0
-    pvpqNum = 0
-    pqNum = 0
-    @inbounds for i = 1:bus.number
-        if bus.layout.type[i] == 1
-            pqNum += 1
-            pq[i] = pqNum
-        end
-        if bus.layout.type[i] != 3
-            pvpqNum += 1
-            pvpq[i] = pvpqNum
-        end
-
-        for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-            typeRow = bus.layout.type[ac.nodalMatrix.rowval[j]]
-            if bus.layout.type[i] != 3 && typeRow != 3
-                nnzP += 1
-            end
-            if bus.layout.type[i] == 1 && typeRow == 1
-                nnzQ += 1
-            end
-        end
-    end
-
-    cntP = 1
-    cntQ = 1
-    iIdxP = fill(0, nnzP)
-    jIdxP = similar(iIdxP)
-    iIdxQ = fill(0, nnzQ)
-    jIdxQ = similar(iIdxQ)
-    @inbounds for i = 1:bus.number
-        if i != bus.layout.slack
-            for j in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
-                row = ac.nodalMatrix.rowval[j]
-                typeRow = bus.layout.type[row]
-
-                if typeRow != 3
-                    iIdxP[cntP] = pvpq[row]
-                    jIdxP[cntP] = pvpq[i]
-                    cntP += 1
-                end
-                if bus.layout.type[i] == 1 && typeRow == 1
-                    iIdxQ[cntQ] = pq[row]
-                    jIdxQ[cntQ] = pq[i]
-                    cntQ += 1
-                end
-            end
-        end
-    end
+    activeJacobian, reactiveJacobian, pq, pvpq = fastNewtonJacobian(system)
 
     analysis = AcPowerFlow(
         Polar(
@@ -343,15 +292,15 @@ function fastNewtonRaphsonModel(system::PowerSystem, ::Type{T}, bx::Bool) where 
         ),
         FastNewtonRaphson{T}(
             FastNewtonRaphsonModel{T}(
-                sparse(iIdxP, jIdxP, zeros(nnzP), bus.number - 1, bus.number - 1),
+                activeJacobian,
                 fill(0.0, bus.number - 1),
                 fill(0.0, bus.number - 1),
                 selectFactorization(T),
             ),
             FastNewtonRaphsonModel{T}(
-                sparse(iIdxQ, jIdxQ, zeros(nnzQ), pqNum, pqNum),
-                fill(0.0, pqNum),
-                fill(0.0, pqNum),
+                reactiveJacobian,
+                fill(0.0, size(reactiveJacobian, 1)),
+                fill(0.0, size(reactiveJacobian, 1)),
                 selectFactorization(T),
             ),
             pq,
@@ -372,14 +321,14 @@ function fastNewtonRaphsonModel(system::PowerSystem, ::Type{T}, bx::Bool) where 
 
     @inbounds for i = 1:branch.number
         if branch.layout.status[i] == 1
-            jacobian(system, analysis, i)
+            fastNewtonJacobian!(system, analysis, i)
         end
     end
 
     @inbounds for i = 1:bus.number
         if bus.layout.type[i] == 1 && bus.shunt.susceptance[i] != 0
             j = analysis.method.pq[i]
-            analysis.method.reactive.jacobian[j, j] += bus.shunt.susceptance[i]
+            addStored!(analysis.method.reactive.jacobian, j, j, bus.shunt.susceptance[i])
             analysis.method.signature.susceptance[i] = bus.shunt.susceptance[i]
         end
     end
@@ -387,17 +336,123 @@ function fastNewtonRaphsonModel(system::PowerSystem, ::Type{T}, bx::Bool) where 
     return analysis
 end
 
-function jacobian(system::PowerSystem, analysis::AcPowerFlow{<:FastNewtonRaphson}, idx::Int64)
+function fastNewtonJacobian(system::PowerSystem)
+    bus = system.bus
+    ac = system.model.ac
+
+    pq = fill(0, bus.number)
+    pvpq = fill(0, bus.number)
+    pvpqNum = 0
+    pqNum = 0
+    @inbounds for i = 1:bus.number
+        if bus.layout.type[i] == 1
+            pqNum += 1
+            pq[i] = pqNum
+        end
+        if bus.layout.type[i] != 3
+            pvpqNum += 1
+            pvpq[i] = pvpqNum
+        end
+    end
+
+    colcountP = fill(0, bus.number - 1)
+    colcountQ = fill(0, pqNum)
+    @inbounds for i = 1:bus.number
+        i == bus.layout.slack && continue
+
+        for ptr in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+            typeRow = bus.layout.type[ac.nodalMatrix.rowval[ptr]]
+            if typeRow != 3
+                colcountP[pvpq[i]] += 1
+            end
+            if bus.layout.type[i] == 1 && typeRow == 1
+                colcountQ[pq[i]] += 1
+            end
+        end
+    end
+
+    colptrP = Vector{Int64}(undef, bus.number)
+    colptrP[1] = 1
+    @inbounds for col = 1:(bus.number - 1)
+        colptrP[col + 1] = colptrP[col] + colcountP[col]
+    end
+
+    colptrQ = Vector{Int64}(undef, pqNum + 1)
+    colptrQ[1] = 1
+    @inbounds for col = 1:pqNum
+        colptrQ[col + 1] = colptrQ[col] + colcountQ[col]
+    end
+
+    rowvalP = Vector{Int64}(undef, colptrP[end] - 1)
+    rowvalQ = Vector{Int64}(undef, colptrQ[end] - 1)
+    @inbounds for i = 1:bus.number
+        i == bus.layout.slack && continue
+
+        ppos = colptrP[pvpq[i]]
+        qpos = bus.layout.type[i] == 1 ? colptrQ[pq[i]] : 0
+        for ptr in ac.nodalMatrix.colptr[i]:(ac.nodalMatrix.colptr[i + 1] - 1)
+            row = ac.nodalMatrix.rowval[ptr]
+            typeRow = bus.layout.type[row]
+
+            if typeRow != 3
+                rowvalP[ppos] = pvpq[row]
+                ppos += 1
+            end
+            if bus.layout.type[i] == 1 && typeRow == 1
+                rowvalQ[qpos] = pq[row]
+                qpos += 1
+            end
+        end
+    end
+
+    return (
+        SparseMatrixCSC(bus.number - 1, bus.number - 1, colptrP, rowvalP, zeros(colptrP[end] - 1)),
+        SparseMatrixCSC(pqNum, pqNum, colptrQ, rowvalQ, zeros(colptrQ[end] - 1)),
+        pq,
+        pvpq
+    )
+end
+
+function fastNewtonJacobian!(
+    system::PowerSystem,
+    analysis::AcPowerFlow{<:FastNewtonRaphson},
+    idx::Int64
+)
     i, j = fromto(system, idx)
     p, q = jacobianCoefficient(system, analysis.method, idx)
+    method = analysis.method
+    active = method.active.jacobian
+    reactive = method.reactive.jacobian
 
-    Pijθij(system, analysis.method, p, i, j)
-    Pijθi(system, analysis.method, p, i)
-    Pijθj(system, analysis.method, p, j)
+    m = method.pvpq[i]
+    n = method.pvpq[j]
+    rowi = method.pq[i]
+    rowj = method.pq[j]
 
-    QijVij(analysis.method, q, i, j)
-    QijVi(system, analysis.method, q, i)
-    QijVj(system, analysis.method, q, j)
+    if i != system.bus.layout.slack && j != system.bus.layout.slack
+        pij, pji = Pijθij(p)
+        addStored!(active, m, n, pij)
+        addStored!(active, n, m, pji)
+    end
+    if i != system.bus.layout.slack
+        addStored!(active, m, m, Pijθi(p))
+    end
+    if j != system.bus.layout.slack
+        addStored!(active, n, n, p.B)
+    end
+
+    if rowi != 0 && rowj != 0
+        addStored!(reactive, rowi, rowj, q.A)
+        addStored!(reactive, rowj, rowi, q.A)
+    end
+    if system.bus.layout.type[i] == 1
+        addStored!(reactive, rowi, rowi, q.B)
+    end
+    if system.bus.layout.type[j] == 1
+        addStored!(reactive, rowj, rowj, q.C)
+    end
+
+    return nothing
 end
 
 function jacobianCoefficient(system::PowerSystem, method::FastNewtonRaphson, idx::Int64)
@@ -427,19 +482,29 @@ function jacobianCoefficient(system::PowerSystem, method::FastNewtonRaphson, idx
     )
 end
 
+@inline function Pijθij(p::PiModel)
+    denominator = p.D^2 + p.C^2
+
+    return (-p.A * p.C - p.B * p.D) / denominator,
+        (p.A * p.C - p.B * p.D) / denominator
+end
+
 @inline function Pijθij(system::PowerSystem, mth::FastNewtonRaphson, p::PiModel, i::Int64, j::Int64)
     m = mth.pvpq[i]
     n = mth.pvpq[j]
 
     if i != system.bus.layout.slack && j != system.bus.layout.slack
-        mth.active.jacobian[m, n] += (-p.A * p.C - p.B * p.D) / (p.D^2 + p.C^2)
-        mth.active.jacobian[n, m] += (p.A * p.C - p.B * p.D) / (p.D^2 + p.C^2)
+        pij, pji = Pijθij(p)
+        mth.active.jacobian[m, n] += pij
+        mth.active.jacobian[n, m] += pji
     end
 end
 
+@inline Pijθi(p::PiModel) = p.B / (p.D^2 + p.C^2)
+
 @inline function Pijθi(system::PowerSystem, mth::FastNewtonRaphson, p::PiModel, i::Int64)
     if i != system.bus.layout.slack
-        mth.active.jacobian[mth.pvpq[i], mth.pvpq[i]] += p.B / (p.D^2 + p.C^2)
+        mth.active.jacobian[mth.pvpq[i], mth.pvpq[i]] += Pijθi(p)
     end
 end
 

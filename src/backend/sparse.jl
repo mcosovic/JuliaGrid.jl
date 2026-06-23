@@ -101,6 +101,25 @@ function sparseMatrix!(builder::CscBuilder{T}, nrow::Int64) where T
 end
 
 ##### Sparse Matrix Queries #####
+@inline function storedPosition(A::SparseMatrixCSC{T, Int64}, row::Int64, col::Int64) where T
+    lo = A.colptr[col]
+    hi = A.colptr[col + 1] - 1
+
+    @inbounds while lo <= hi
+        mid = (lo + hi) >>> 1
+        r = A.rowval[mid]
+        if r < row
+            lo = mid + 1
+        elseif r > row
+            hi = mid - 1
+        else
+            return mid
+        end
+    end
+
+    throw(ErrorException("The sparse matrix pattern does not contain the requested entry."))
+end
+
 function isstored(A::SparseMatrixCSC{Float64, Int64}, i::Int64, j::Int64)
     startIdx = A.colptr[j]
     endIdx = A.colptr[j + 1] - 1
@@ -112,6 +131,12 @@ function isstored(A::SparseMatrixCSC{Float64, Int64}, i::Int64, j::Int64)
     end
 
     return false
+end
+
+@inline function addStored!(A::SparseMatrixCSC{T, Int64}, row::Int64, col::Int64, value::T) where T
+    A.nzval[storedPosition(A, row, col)] += value
+
+    return nothing
 end
 
 ##### Drop Stored Zeros #####
