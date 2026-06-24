@@ -22,7 +22,7 @@ using JuliaGrid # hide
 nothing # hide
 ```
 
-Next, we define the bus parameters for AC power flow analysis This includes specifying the `type` of each bus, the connected `active` and `reactive` power loads, and shunt capacitor banks with `conductance` and `susceptance` values. The bus voltage `magnitude` and `angle` serve as initial values for the iterative power flow algorithm. Note that for the slack bus (`type = 3`), the angle is fixed to the specified value. With these definitions, we can start to build the power system model:
+Next, we define the bus parameters for AC power flow analysis. This includes specifying the `type` of each bus, the connected `active` and `reactive` power loads, and shunt capacitor banks with `conductance` and `susceptance` values. The bus voltage `magnitude` and `angle` serve as initial values for the iterative power flow algorithm. Note that for the slack bus (`type = 3`), the angle is fixed to the specified value. With these definitions, we can start to build the power system model:
 ```@example 4bus
 system = powerSystem()
 
@@ -45,7 +45,7 @@ addBranch!(system; from = "Bus 3", to = "Bus 4", turnsRatio = 0.98)
 nothing # hide
 ```
 
-Finally, we define the `active` and `reactive` power outputs of the generators and set the voltage `magnitude` setpoints. These setpoints fix the voltage magnitudes for the slack bus (`type = 3`) and generator buses (`type = 2`):
+Finally, we define the `active` and `reactive` power outputs of the generators and the voltage `magnitude` setpoints. These setpoints fix the voltage magnitudes for the slack bus (`type = 3`) and generator buses (`type = 2`):
 ```@example 4bus
 @generator(label = "Generator ?")
 addGenerator!(system; bus = "Bus 1", active = 60.1, reactive = 40.2,  magnitude = 0.98)
@@ -54,7 +54,7 @@ nothing # hide
 ```
 
 
-After defining the power system data, we generate an AC model that includes essential vectors and matrices for analysis, such as the nodal admittance matrix. This model is automatically updated with data changes and can be shared across different analyses:
+After defining the power system data, we generate an AC model with the vectors and matrices required for analysis, including the nodal admittance matrix. This model is automatically updated when the data changes and can be reused across analyses:
 ```@example 4bus
 acModel!(system)
 nothing # hide
@@ -63,13 +63,13 @@ nothing # hide
 ---
 
 ##### Display Data Settings
-Before running simulations, we set the `verbose` keyword from its default silent mode (`0`) to basic output (`1`):
+Before running simulations, we set `verbose` from silent mode (`0`) to basic output (`1`):
 ```@example 4bus
 @config(verbose = 1)
 nothing # hide
 ```
 
-However, if we need more detailed solver output, the `verbose` setting can be adjusted within the function responsible for performing the power flow. Next, we configure the data display settings, including the selection of displayed data elements and the numeric format for relevant power flow values.
+For more detailed solver output, `verbose` can also be set when calling the power flow solver. Next, we configure the data display settings, including the selection of displayed data elements and the numeric format for relevant power flow values.
 
 For bus-related data, we set:
 ```@example 4bus
@@ -88,29 +88,29 @@ nothing # hide
 ---
 
 ## Base Case Analysis
-At the start, we use the fast Newton-Raphson XB method to solve the AC power flow:
+At the start, we create a fast Newton-Raphson XB model:
 ```@example 4bus
 fnr = fastNewtonRaphsonXB(system)
 nothing # hide
 ```
 
-Then, we use the AC power flow wrapper to iteratively compute bus voltages as well as active and reactive powers:
+Then, we solve the AC power flow and compute bus voltages together with active and reactive powers:
 ```@example 4bus
 powerFlow!(fnr; power = true, verbose = 2)
 nothing # hide
 ```
 
-Once the AC power flow is solved, we can analyze the results related to the buses. For instance:
+Once the AC power flow is solved, we can inspect the bus results. For instance:
 ```@example 4bus
 printBusData(fnr; show = show1, fmt = fmt1)
 ```
 
-Similarly, the results for branches are:
+Similarly, we can inspect the branch results:
 ```@example 4bus
 printBranchData(fnr; show = show2, fmt = fmt2)
 ```
 
-Thus, using bus and branch data, we obtained the active and reactive power flows, as illustrated in Figure 2.
+The resulting active and reactive power flows are shown in Figure 2.
 ```@raw html
 <div class="image-container">
     <div class="image-item">
@@ -128,12 +128,12 @@ Thus, using bus and branch data, we obtained the active and reactive power flows
 &nbsp;
 ```
 
-Additionally, the branch data shows the series power losses, which result from the series resistance and reactance of each branch. Note that the active power at the from-bus and to-bus ends of a branch differs by the active power loss. However, this does not apply to reactive power, as branch susceptances provide partial compensation.
+The branch data also shows the series power losses caused by the series resistance and reactance of each branch. Note that the active power at the from-bus and to-bus ends of a branch differs by the active power loss. Reactive power does not follow the same pattern because branch susceptances provide partial compensation.
 
 ---
 
 ## Modifying Supplies and Demands
-We will modify the active and reactive power outputs of the generators, as well as the active and reactive powers demanded by consumers. Instead of creating a new power system model or just updating the existing one, we will update both the power system model and the fast Newton-Raphson model simultaneously:
+We now modify the active and reactive power outputs of the generators and the active and reactive demands. Rather than creating a new model, we update the power system and fast Newton-Raphson models simultaneously:
 ```@example 4bus
 updateBus!(fnr; label = "Bus 2", active = 25.5, reactive = 15.0)
 updateBus!(fnr; label = "Bus 4", active = 42.0, reactive = 20.0)
@@ -144,19 +144,19 @@ updateGenerator!(fnr; label = "Generator 2", active = 23.1, reactive = 20.0)
 nothing # hide
 ```
 
-Next, we run the AC power flow again to compute the new state of the power system, without having to recreate the fast Newton-Raphson model. Additionally, this step will start the fast Newton-Raphson method with a warm start, as the initial voltage magnitudes and angles will correspond to the solution from the base case analysis:
+Next, we run the AC power flow again without recreating the fast Newton-Raphson model. This call also warm-starts the fast Newton-Raphson method because the initial voltage magnitudes and angles come from the base-case solution:
 ```@example 4bus
 powerFlow!(fnr; power = true)
 nothing # hide
 ```
-Since no power system changes were introduced that affect the Jacobian matrices, JuliaGrid reuses the Jacobian matrix factorizations from the base case analysis, significantly reducing computational complexity.
+Since these changes do not affect the Jacobian matrices, JuliaGrid reuses the Jacobian factorizations from the base case and reduces the computational cost.
 
-Finally, we can display the relevant data:
+Finally, we display the updated branch data:
 ```@example 4bus
 printBranchData(fnr; show = show2, fmt = fmt2)
 ```
 
-Compared to the base case, the directions of active power flows remain unchanged, but their magnitudes differ. For reactive power, the values change, and the flow at `Branch 1` on the `Bus 1` side reverses, as shown in Figure 3.
+Compared with the base case, the active power flow directions remain unchanged, but their magnitudes differ. The reactive power values also change, and the flow at the `Bus 1` side of `Branch 1` reverses, as shown in Figure 3.
 ```@raw html
 <div class="image-container">
     <div class="image-item">
@@ -176,36 +176,36 @@ Compared to the base case, the directions of active power flows remain unchanged
 ---
 
 ## Modifying Network Topology
-Next, we will take `Branch 3` out of service. Although we could update the power system model and the fast Newton-Raphson method simultaneously, to demonstrate flexibility, we will solve this scenario using the Newton-Raphson method. As a result, we will only update the power system model:
+Next, we take `Branch 3` out-of-service. Although we could update the power system and fast Newton-Raphson models simultaneously, we use the Newton-Raphson method here to demonstrate flexibility. Therefore, we update only the power system model:
 ```@example 4bus
 updateBranch!(system; label = "Branch 3", status = 0)
 nothing # hide
 ```
 
-Now, let us define the Newton-Raphson model:
+Next, we create the Newton-Raphson model:
 ```@example 4bus
 nr = newtonRaphson(system)
 nothing # hide
 ```
 
-When the model is created, we also initialize the Newton-Raphson method, with the initial voltage magnitudes and angles corresponding to the values defined when the power system model was first created. If we want to use the results from the fast Newton-Raphson method and start the Newton-Raphson method with a warm start, we can transfer the voltage magnitudes and angles:
+When the model is created, the Newton-Raphson method is initialized with the voltage magnitudes and angles defined in the original power system model. To warm-start it from the fast Newton-Raphson solution, we transfer the voltage magnitudes and angles:
 ```@example 4bus
 setInitialPoint!(nr, fnr)
 nothing # hide
 ```
 
-Now, we can solve the AC power flow for this scenario:
+We can now solve the AC power flow for this scenario:
 ```@example 4bus
 powerFlow!(nr; power = true)
 nothing # hide
 ```
 
-To display how the power flows are distributed when one branch is out of service, we use the following:
+To inspect the power flow distribution after the outage, we print the branch data:
 ```@example 4bus
 printBranchData(nr; show = show2, fmt = fmt2)
 ```
 
-Compared to the previous cases, we observe that the reactive power flow at `Branch 1` on the `Bus 1` side reverses direction due to the outage of `Branch 3`, as shown in Figure 4.
+Compared with the previous cases, the reactive power flow at the `Bus 1` side of `Branch 1` reverses because of the `Branch 3` outage, as shown in Figure 4.
 ```@raw html
 <div class="image-container">
     <div class="image-item">

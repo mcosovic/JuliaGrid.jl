@@ -1,5 +1,5 @@
 # [DC State Estimation](@id DCStateEstimationTutorials)
-To initiate the process, let us construct the `PowerSystem` type and formulate the DC model:
+To begin, construct the `PowerSystem` type and formulate the DC model:
 ```@example DCSETutorial
 using JuliaGrid # hide
 @default(unit) # hide
@@ -27,7 +27,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 
 ---
 
-Following that, we will introduce the `Measurement` type and incorporate a set of measurement devices ``\mathcal{M}`` into the graph ``\mathcal{G}``. In typical scenarios, the DC state estimation model relies solely on active power measurements originating from the set of wattmeters ``\mathcal{P}``. However, we provide the option for users to include measurements from the set of PMUs ``\bar{\mathcal{P}}``. Specifically, we utilize only the PMUs installed at the buses ``\bar{\mathcal{P}}_\mathrm{b} \subset \bar{\mathcal{P}}`` that measure bus voltage angles. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref DCSEModelTutorials) section. Currently, we are only initializing the `Measurement` type:
+Following that, we will introduce the `Measurement` type and incorporate a set of measurement devices ``\mathcal{M}`` into the graph ``\mathcal{G}``. In typical scenarios, the DC state estimation model relies solely on active power measurements originating from the set of wattmeters ``\mathcal{P}``. However, we provide the option for users to include measurements from the set of PMUs ``\bar{\mathcal{P}}``. Specifically, we use only the PMUs installed at the buses ``\bar{\mathcal{P}}_\mathrm{b} \subset \bar{\mathcal{P}}`` that measure bus voltage angles. This process of adding measurement devices will be carried out in the [State Estimation Model](@ref DCSEModelTutorials) section. Currently, we are only initializing the `Measurement` type:
 ```@example DCSETutorial
 monitoring = measurement(system)
 nothing # hide
@@ -36,7 +36,7 @@ nothing # hide
 ---
 
 !!! ukw "Notation"
-    Here, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element related with bus ``i \in \mathcal{N}`` or measurement ``i \in \mathcal{M}``, while ``a_{ij}`` denotes the element related with branch ``(i,j) \in \mathcal{E}``.
+    Here, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element related to bus ``i \in \mathcal{N}`` or measurement ``i \in \mathcal{M}``, while ``a_{ij}`` denotes the element related to branch ``(i,j) \in \mathcal{E}``.
 
 ---
 
@@ -81,7 +81,7 @@ addWattmeter!(monitoring; label = "P₃", bus = 3, active = -1.30, variance = 1e
 nothing # hide
 ```
 
-Here, utilizing the [DC Model](@ref DCNodalNetworkEquationsTutorials), we derive the function defining the active power injection as follows:
+Using the [DC Model](@ref DCNodalNetworkEquationsTutorials), we derive the function defining the active power injection as follows:
 ```math
    h_{P_{i}}(\bm {\Theta}) = B_{ii}\theta_i + \sum_{j \in \mathcal{N}_i \setminus \{i\}} {B}_{ij} \theta_j + P_{\mathrm{tr}i} + P_{\mathrm{sh}i},
 ```
@@ -235,7 +235,7 @@ The initial step involves the LU factorization of the gain matrix:
 ```
 
 !!! tip "Tip"
-    By default, JuliaGrid utilizes LU factorization as the primary method to factorize the gain matrix. The available factorization methods are LL, LDLt, LU, KLU and QR.
+    By default, JuliaGrid uses LU factorization as the primary method to factorize the gain matrix. The available factorization methods are LL, LDLt, LU, KLU and QR.
 
 Access to the factorized gain matrix is available through:
 ```@repl DCSETutorial
@@ -268,7 +268,7 @@ To explain the method, we begin with the WLS equation:
 ```math
 	\mathbf H^{T} \mathbf W \mathbf H \bm {\Theta} = \mathbf H^{T} \mathbf W (\mathbf z - \mathbf{c}),
 ```
-where ``\mathbf W = \bm \Sigma^{-1}``. Subsequently, we can write:
+where ``\mathbf W = \bm \Sigma^{-1}``. Then we can write:
 ```math
   \left({\mathbf W^{1/2}} \mathbf H\right)^{T}  {\mathbf W^{1/2}} \mathbf H  \bm {\Theta} = \left({\mathbf W^{1/2}} \mathbf H\right)^{T} {\mathbf W^{1/2}} (\mathbf z - \mathbf{c}).
 ```

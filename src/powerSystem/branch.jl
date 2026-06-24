@@ -45,12 +45,12 @@ impact variables in the `ac` and `dc` fields, it automatically adjusts the field
 # Default Settings
 By default, certain keywords are assigned default values: `status = 1`, `turnsRatio = 1.0`,
 `type = 3`, `minDiffAngle = -2pi`, and `maxDiffAngle = 2pi`. The rest of the keywords are initialized
-with a value of zero. However, the user can modify these default settings by utilizing the
+with a value of zero. However, the user can modify these default settings using the
 [`@branch`](@ref @branch) macro.
 
 # Units
-The default units for the keyword parameters are per-units and radians. However, the user can choose
-to use other units besides per-units and radians by utilizing macros such as [`@power`](@ref @power),
+The default units for the keyword parameters are per-unit values and radians. However, the user can choose
+to use units other than per-unit values and radians using macros such as [`@power`](@ref @power),
 [`@voltage`](@ref @voltage), [`@current`](@ref @current), and [`@parameter`](@ref @parameter).
 
 # Examples
@@ -661,8 +661,8 @@ keywords specified within the [`addBranch!`](@ref addBranch!) function, along wi
 corresponding values.
 
 # Units
-The default units for the keyword parameters are per-units and radians. However, the user can choose
-to use other units besides per-units and radians by utilizing macros such as [`@power`](@ref @power),
+The default units for the keyword parameters are per-unit values and radians. However, the user can choose
+to use units other than per-unit values and radians using macros such as [`@power`](@ref @power),
 [`@voltage`](@ref @voltage), and [`@parameter`](@ref @parameter).
 
 # Examples

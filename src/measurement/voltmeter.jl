@@ -28,7 +28,7 @@ Default settings for certain keywords are as follows: `variance = 1e-4`, `noise 
 macro.
 
 # Units
-The default units for the `magnitude` and `variance` keywords are per-units. However, users can
+The default units for the `magnitude` and `variance` keywords are per-unit values. However, users can
 choose to use volts as the units by applying the [`@voltage`](@ref @voltage) macro.
 
 # Examples

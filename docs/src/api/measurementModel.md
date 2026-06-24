@@ -1,7 +1,7 @@
 # [Measurement Model](@id measurementModelAPI)
-For further information on this topic, please see the [Measurement Model](@ref MeasurementModelManual) section of the Manual. Below, we have provided a list of functions that can be used to create, save, and manipulate with measurement devices.
+For further information on this topic, please see the [Measurement Model](@ref MeasurementModelManual) section of the Manual. Below, we have provided a list of functions that can be used to create, save, and modify measurement devices.
 
-To load measurement model API functionalities into the current scope, utilize the following command:
+To load measurement model API functionalities into the current scope, use the following command:
 ```@example LoadApi
 using JuliaGrid
 ```

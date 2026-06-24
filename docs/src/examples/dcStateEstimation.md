@@ -22,7 +22,7 @@ using JuliaGrid, JuMP, Ipopt # hide
 nothing # hide
 ```
 
-Next, the power system is defined by specifying buses, branches, and generators with cost functions:
+Next, we define the power system by adding buses, branches, and generators with cost functions:
 ```@example dcStateEstimation
 system = powerSystem()
 
@@ -50,7 +50,7 @@ cost!(system; generator = "Generator 2", active = 2, polynomial = [1500.0; 700.0
 nothing # hide
 ```
 
-After defining the power system data, a DC model is generated, including key matrices and vectors for analysis:
+After defining the power system data, we generate the DC model, including the key matrices and vectors used in the analysis:
 ```@example dcStateEstimation
 dcModel!(system)
 nothing # hide
@@ -70,7 +70,7 @@ nothing # hide
 ---
 
 ##### DC Optimal Power Flow
-To obtain bus voltage angless, we solve the DC optimal power flow. Using these values, we compute the active power associated with buses and branches:
+To obtain bus voltage angles, we solve the DC optimal power flow. Using these values, we compute the active powers associated with buses and branches:
 ```@example dcStateEstimation
 powerFlow = dcOptimalPowerFlow(system, Ipopt.Optimizer)
 powerFlow!(powerFlow; power = true, verbose = 1)
@@ -79,12 +79,12 @@ powerFlow!(powerFlow; power = true, verbose = 1)
 ---
 
 ##### Active Power Injection Measurements
-Active power injection measurements will be obtained from the DC optimal power flow analysis:
+We obtain active power injection measurements from the DC optimal power flow analysis:
 ```@example dcStateEstimation
 printBusData(powerFlow)
 ```
 
-Next, these measurements are defined:
+Next, we define these measurements:
 ```@example dcStateEstimation
 @wattmeter(label = "Wattmeter ?")
 for (label, idx) in system.bus.label
@@ -93,33 +93,33 @@ for (label, idx) in system.bus.label
 end
 nothing # hide
 ```
-Enabling `noise = true` adds white Gaussian noise with a `variance` of `1e-4` to the exact values, generating the final measurement values.
+Setting `noise = true` adds white Gaussian noise with `variance = 1e-4` to the exact values, generating the final measurement values.
 
 ---
 
 ##### Active Power Flow Measurements
-Next, we will include a certain number of active power flow measurements using the results from the DC optimal power flow analysis:
+Next, we include selected active power flow measurements using the DC optimal power flow results:
 ```@example dcStateEstimation
 printBranchData(powerFlow)
 ```
 
-Thus, two active power flow measurements are added:
+We add two active power flow measurements:
 ```@example dcStateEstimation
 addWattmeter!(monitoring; from = "Branch 1", active = powerFlow.power.from.active[1])
 addWattmeter!(monitoring; from = "Branch 4", active = powerFlow.power.from.active[4])
 nothing # hide
 ```
-Here, `noise` is not set, keeping the measurement values exact.
+Here, `noise` is not set, so the measurement values remain exact.
 
 ---
 
 ##### Active Power Measurements
-Finally, the complete set of measurements is displayed:
+Finally, we display the complete measurement set:
 ```@example dcStateEstimation
 printWattmeterData(monitoring)
 ```
 
-Figure 2 illustrates this measurement configuration, which includes active power injection measurements at all buses and two active power flow measurements.
+Figure 2 shows the measurement configuration, including active power injection measurements at all buses and two active power flow measurements.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/examples/dcStateEstimation/6bus_wattmeter.svg" width="380" class="my-svg"/>
@@ -131,25 +131,25 @@ Figure 2 illustrates this measurement configuration, which includes active power
 ---
 
 ## Base Case Analysis
-After obtaining the measurements, the DC state estimation model is created:
+After obtaining the measurements, we create the DC state estimation model:
 ```@example dcStateEstimation
 analysis = dcStateEstimation(monitoring)
 nothing # hide
 ```
 
-Next, the model is solved to determine the WLS estimator for bus voltage angles, and the results are used to compute power values:
+Next, we solve the model to determine the WLS estimator for bus voltage angles, then use the results to compute power values:
 ```@example dcStateEstimation
 stateEstimation!(analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
-This allows users to observe the estimated bus voltages along with the corresponding power values:
+We can then inspect the estimated bus voltage angles and corresponding power values:
 ```@example dcStateEstimation
 printBusData(analysis)
 nothing # hide
 ```
 
-Additionally, data related to measurement monitorings can be examined:
+We can also inspect the measurement results:
 ```@example dcStateEstimation
 printWattmeterData(analysis)
 nothing # hide
@@ -158,59 +158,59 @@ nothing # hide
 ---
 
 ## Modifying Measurement Data
-Let us now modify the measurement values. Instead of recreating the measurement set and the DC state estimation model from scratch, both are updated simultaneously:
+We now modify the measurement values. Instead of recreating the measurement set and the DC state estimation model, we update both together:
 ```@example dcStateEstimation
 updateWattmeter!(analysis; label = "Wattmeter 7", active = 1.1)
 updateWattmeter!(analysis; label = "Wattmeter 8", active = 1.6)
 nothing # hide
 ```
-By changing these measurement values, two outliers are introduced into the dataset, which affects the estimates.
+Changing these measurement values introduces two outliers into the dataset, affecting the estimates.
 
-Next, the DC state estimation is solved again to compute the updated estimate:
+Next, we solve the DC state estimation problem again to compute the updated estimate:
 ```@example dcStateEstimation
 stateEstimation!(analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
-Bus-related data can now be examined:
+We can now inspect the bus data:
 ```@example dcStateEstimation
 printBusData(analysis)
 nothing # hide
 ```
-With the modified measurement values for `Wattmeter 7` and `Wattmeter 8`, the estimated results deviate more significantly from the exact values obtained through DC optimal power flow, as the altered measurements no longer align with their corresponding values.
+With the modified values for `Wattmeter 7` and `Wattmeter 8`, the estimates deviate more from the exact values computed by DC optimal power flow because the altered measurements no longer match their corresponding values.
 
-Now, instead of using the WLS estimator, we compute the LAV estimator:
+We then compute the LAV estimator instead of the WLS estimator:
 ```@example dcStateEstimation
 analysis = dcLavStateEstimation(monitoring, Ipopt.Optimizer)
 stateEstimation!(analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
-Bus-related data can be examined:
+We can inspect the bus data:
 ```@example dcStateEstimation
 printBusData(analysis)
 nothing # hide
 ```
-As observed, the estimates obtained using the LAV method are closer to the exact values from the DC optimal power flow, as LAV is more robust to outliers compared to WLS.
+The LAV estimates are closer to the exact DC optimal power flow values because LAV is more robust to outliers than WLS.
 
 ---
 
 ## Modifying Measurement Set
-Let us proceed with the LAV state estimation model and set two measurements to out-of-service:
+We continue with the LAV state estimation model and set two measurements out-of-service:
 ```@example dcStateEstimation
 updateWattmeter!(analysis; label = "Wattmeter 1", status = 0)
 updateWattmeter!(analysis; label = "Wattmeter 5", status = 0)
 nothing # hide
 ```
 
-Recompute the LAV estimator and active power values:
+We then recompute the LAV estimator and active power values:
 ```@example dcStateEstimation
 stateEstimation!(analysis; power = true, verbose = 1)
 nothing # hide
 ```
 
-Bus-related data can now be examined:
+We can now inspect the bus data:
 ```@example dcStateEstimation
 printBusData(analysis)
 ```
-As observed, while the LAV approach is more robust than WLS in handling outliers, the accuracy of the estimated values still depends on factors such as the magnitude of outliers, their number, and the positioning of meters within the power system. Removing two accurate measurements while keeping outliers in the system shows that even the LAV method cannot fully compensate for the loss of reliable data, leading to less accurate estimates.
+Although LAV is more robust than WLS when handling outliers, estimate accuracy still depends on factors such as outlier magnitude, outlier count, and meter placement within the power system. Removing two accurate measurements while keeping outliers in the system shows that even LAV cannot fully compensate for the loss of reliable data, leading to less accurate estimates.

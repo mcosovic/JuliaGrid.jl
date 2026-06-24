@@ -1,5 +1,5 @@
 # [DC Power Flow](@id DCPowerFlowManual)
-To perform the DC power flow, we first need to have the `PowerSystem` type that has been created with the DC model. Following that, we can construct the power flow model encapsulated within the `DcPowerFlow` type by employing the following function:
+Performing DC power flow first requires the `PowerSystem` type that has been created with the DC model. The power flow model encapsulated within the `DcPowerFlow` type can then be constructed using the following function:
 * [`dcPowerFlow`](@ref dcPowerFlow).
 
 ---
@@ -18,7 +18,7 @@ Users can also access specialized functions for computing specific types of [pow
 ---
 
 ## [Power Flow Solution](@id DCPowerFlowSolutionManual)
-To solve the DC power flow problem using JuliaGrid, we start by creating the `PowerSystem` type and defining the DC model with the [`dcModel!`](@ref dcModel!) function. Here is an example:
+To solve the DC power flow problem using JuliaGrid, start by creating the `PowerSystem` type and defining the DC model with the [`dcModel!`](@ref dcModel!) function. Here is an example:
 ```@example DCPowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -53,7 +53,7 @@ nothing # hide
     ```
     The `KLU` method, using the Gilbert-Peierls algorithm, can significantly speed up power flow computations [davisklu](@cite).
 
-To obtain the bus voltage angles, we can call the [`solve!`](@ref solve!(::DcPowerFlow)) function as follows:
+To obtain the bus voltage angles, call [`solve!`](@ref solve!(::DcPowerFlow)):
 ```@example DCPowerFlowSolution
 solve!(analysis)
 nothing # hide
@@ -66,7 +66,7 @@ nothing # hide
 ```
 
 !!! note "Info"
-    For implementation insights, we suggest referring to the tutorial on [DC Power Flow Analysis](@ref DCPowerFlowTutorials).
+    For implementation details, see the tutorial on [DC Power Flow Analysis](@ref DCPowerFlowTutorials).
 
 ---
 
@@ -81,14 +81,14 @@ nothing # hide
 ---
 
 ##### Print Results in the REPL
-Users have the option to print the results in the REPL using any units that have been configured, such as:
+Users can print the results in the REPL using any units that have been configured, such as:
 ```@example DCPowerFlowSolution
 @voltage(pu, deg)
 printBusData(analysis)
 nothing # hide
 ```
 
-Next, users can easily customize the print results for specific buses, for example:
+Next, users can customize the print results for specific buses, for example:
 ```julia
 printBusData(analysis; label = "Bus 1", header = true)
 printBusData(analysis; label = "Bus 2")
@@ -98,7 +98,7 @@ printBusData(analysis; label = "Bus 3", footer = true)
 ---
 
 ##### Save Results to a File
-Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
+Users can also redirect print output to a file. For example, data can be saved in a text file:
 ```julia
 open("bus.txt", "w") do file
     printBusData(analysis, file)
@@ -120,7 +120,7 @@ CSV.write("bus.csv", CSV.File(take!(io); delim = "|"))
 ---
 
 ## [Power System Update](@id DCPowerSystemAlterationManual)
-We begin by creating the `PowerSystem` type with the [`powerSystem`](@ref powerSystem) function. The DC model is then configured using the [`dcModel!`](@ref dcModel!) function. After that, we initialize the `DcPowerFlow` type through the [`dcPowerFlow`](@ref dcPowerFlow) function and solve the resulting power flow problem:
+Begin by creating the `PowerSystem` type with the [`powerSystem`](@ref powerSystem) function. The DC model is then configured using the [`dcModel!`](@ref dcModel!) function. After that, initialize the `DcPowerFlow` type through the [`dcPowerFlow`](@ref dcPowerFlow) function and solve the resulting power flow problem:
 ```@example DCPowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -142,7 +142,7 @@ powerFlow!(analysis)
 nothing # hide
 ```
 
-Next, we modify the existing `PowerSystem` type within the DC model using add and update functions. Then, we create a new `DcPowerFlow` type based on the modified system and solve the power flow problem:
+Next, modify the existing `PowerSystem` type within the DC model using add and update functions. Then, create a new `DcPowerFlow` type based on the modified system and solve the power flow problem:
 ```@example DCPowerFlowSolution
 updateBus!(system; label = "Bus 2", active = 0.4)
 
@@ -163,9 +163,9 @@ nothing # hide
 ---
 
 ## [Power Flow Update](@id DCPowerFlowUpdateManual)
-An advanced methodology involves users establishing the `DcPowerFlow` type just once. After this initial setup, users can integrate new branches and generators, and also have the capability to modify buses, branches, and generators, all without the need to recreate the `DcPowerFlow` type. This is particularly beneficial when the previously computed nodal matrix factorization can be reused.
+For advanced workflows, users can create the `DcPowerFlow` type once. They can then integrate new branches and generators and modify buses, branches, and generators without recreating the `DcPowerFlow` type. This is particularly beneficial when the previously computed nodal matrix factorization can be reused.
 
-Let us now revisit our defined `PowerSystem` and `DcPowerFlow` types:
+Now revisit the defined `PowerSystem` and `DcPowerFlow` types:
 ```@example DCPowerFlowSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -187,7 +187,7 @@ powerFlow!(analysis)
 nothing # hide
 ```
 
-Next, we modify the existing `PowerSystem` within the DC model as well as the `DcPowerFlow` type using add and update functions. We then immediately proceed to solve the power flow problem:
+Next, modify the existing `PowerSystem` within the DC model as well as the `DcPowerFlow` type using add and update functions. Then, immediately solve the power flow problem:
 ```@example DCPowerFlowSolution
 updateBus!(analysis; label = "Bus 2", active = 0.4)
 
@@ -207,7 +207,7 @@ nothing # hide
 ---
 
 ##### Reusing Matrix Factorization
-Drawing from the preceding example, our focus now shifts to finding a solution involving modifications that entail adjusting the active power demand at `Bus 2`, introducing a new generator at `Bus 2`, and fine-tuning the output power of `Generator 1`. It is important to note that these adjustments do not impact the branches, leaving the nodal matrix unchanged. To resolve this updated system, users can simply execute the [`powerFlow!`](@ref powerFlow!(::DcPowerFlow)) function:
+Continuing from the preceding example, consider modifications that adjust the active power demand at `Bus 2`, introduce a new generator at `Bus 2`, and fine-tune the output power of `Generator 1`. These adjustments do not impact the branches, leaving the nodal matrix unchanged. To resolve this updated system, users can execute the [`powerFlow!`](@ref powerFlow!(::DcPowerFlow)) function:
 ```@example DCPowerFlowSolution
 
 updateBus!(analysis; label = "Bus 2", active = 0.2)
@@ -218,12 +218,12 @@ powerFlow!(analysis)
 nothing # hide
 ```
 
-In this scenario, JuliaGrid will recognize instances where the user has not modified branch parameters affecting the nodal matrix. Consequently, JuliaGrid will leverage the previously performed nodal matrix factorization, resulting in a significantly faster solution compared to recomputing the factorization.
+Here, JuliaGrid recognizes when the user has not modified branch parameters affecting the nodal matrix. Consequently, JuliaGrid reuses the previously computed nodal matrix factorization, resulting in a significantly faster solution compared to recomputing the factorization.
 
 ---
 
 ##### Limitations
-Attempting to change the slack bus or leaving the existing slack bus without a connected generator, and then proceeding directly to the power flow calculation, is not feasible. In such cases, JuliaGrid will raise an error:
+Attempting to change the slack bus or leaving the existing slack bus without a connected generator and then running the power flow calculation is not feasible. In such cases, JuliaGrid will raise an error:
 ```@repl DCPowerFlowSolution
 updateGenerator!(analysis; label = "Generator 1", status = 0)
 ```
@@ -239,7 +239,7 @@ powerFlow!(analysis)
 ---
 
 ## [Power Analysis](@id DCPowerAnalysisManual)
-After obtaining the solution, we can calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::DcPowerFlow)) function. For example, let us consider the power system for which we obtained the DC power flow solution:
+After obtaining the solution, calculate powers related to buses, branches, and generators using the [`power!`](@ref power!(::DcPowerFlow)) function. For example, consider the power system used to obtain the DC power flow solution:
 ```@example ComputationDCPowers
 using JuliaGrid # hide
 @default(unit) # hide
@@ -262,13 +262,13 @@ powerFlow!(analysis)
 nothing # hide
 ```
 
-Now we can calculate the active powers using the following function:
+Now calculate the active powers using the following function:
 ```@example ComputationDCPowers
 power!(analysis)
 nothing # hide
 ```
 
-Next, let us convert the base power unit to megavolt-amperes (MVA):
+Next, convert the base power unit to megavolt-amperes (MVA):
 ```@example ComputationDCPowers
 @base(system, MVA, V)
 nothing # hide
@@ -281,12 +281,12 @@ print(system.branch.label, system.base.power.value * analysis.power.from.active)
 ```
 
 !!! note "Info"
-    To better understand the powers associated with buses, branches, and generators that are calculated by the [`power!`](@ref power!(::DcPowerFlow)) function, we suggest referring to the tutorials on [DC Power Flow Analysis](@ref DCPowerAnalysisTutorials).
+    To better understand the powers associated with buses, branches, and generators that are calculated by the [`power!`](@ref power!(::DcPowerFlow)) function, see the tutorials on [DC Power Flow Analysis](@ref DCPowerAnalysisTutorials).
 
 ---
 
 ##### Print Results in the REPL
-Users can utilize any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, users have the option to print the results in the REPL using any units that have been configured:
+Users can use any of the print functions outlined in the [Print Power System Data](@ref PrintPowerSystemDataAPI) or [Print Power System Summary](@ref PrintPowerSystemSummaryAPI). For example, users can print the results in the REPL using any units that have been configured:
 ```@example ComputationDCPowers
 @power(MW, pu)
 printBranchData(analysis)

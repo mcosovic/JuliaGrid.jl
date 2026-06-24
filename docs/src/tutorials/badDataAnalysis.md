@@ -3,7 +3,7 @@ One of the essential state estimation routines is the bad data analysis, which f
 
 Additionally, the Chi-squared test, which can precede the largest normalized residual test, serves to detect the presence of bad data and quickly determine if the largest normalized residual test should be performed [aburbook; Sec. 5.4](@cite).
 
-To initiate the process, let us construct the `PowerSystem` type and formulate the AC model:
+To begin, construct the `PowerSystem` type and formulate the AC model:
 ```@example BadData
 using JuliaGrid # hide
 @default(unit) # hide
@@ -87,14 +87,14 @@ chi.detect
 ---
 
 ## [Largest Normalized Residual Test](@id ResidualTestTutorials)
-As indicated by the Chi-squared test, bad data is present in the measurement set. We then perform the largest normalized residual test to identify the outlier and remove it from service:
+As indicated by the Chi-squared test, bad data is present in the measurement set. Then perform the largest normalized residual test to identify the outlier and remove it from service:
 ```@example BadData
 outlier = residualTest!(analysis; threshold = 4.0)
 
 nothing # hide
 ```
 
-In this step, we employ the largest normalized residual test following the analysis outlined in [aburbook; Sec. 5.7](@cite). More precisely, we compute all measurement residuals based on the obtained estimate of the state variables:
+In this step, we use the largest normalized residual test following the analysis outlined in [aburbook; Sec. 5.7](@cite). More precisely, we compute all measurement residuals based on the obtained estimate of the state variables:
 ```math
     r_i = z_i - h_i(\hat{\mathbf x}), \;\;\; i \in \mathcal M.
 ```
@@ -106,7 +106,7 @@ The normalized residuals for all measurements are computed as follows:
 
 In this equation, ``C_{ii}`` denotes the ``i``-th diagonal entry of the residual covariance matrix ``\mathbf C \in \mathbb{R}^{k \times k}``.
 
-The subsequent step involves selecting the largest normalized residual, and the ``j``-th measurement is then identified as bad data and potentially removed from service:
+Next, the largest normalized residual is selected, and the ``j``-th measurement is then identified as bad data and potentially removed from service:
 ```math
     \bar{r}_j = \max \{\bar{r}_i, \forall i \in \mathcal{M} \}.
 ```
@@ -120,7 +120,7 @@ If the largest normalized residual, denoted as ``\bar{r}_j``, satisfies the ineq
 ```math
     \bar{r}_j \ge \epsilon,
 ```
-the corresponding measurement is identified as bad data and subsequently removed from service. In this example, the bad data identification `threshold` is set to ``\epsilon = 4``. Users can verify the satisfaction of this inequality by inspecting:
+the corresponding measurement is identified as bad data and removed from service. In this example, the bad data identification `threshold` is set to ``\epsilon = 4``. Users can verify the satisfaction of this inequality by inspecting:
 ```@repl BadData
 outlier.detect
 ```
@@ -131,7 +131,7 @@ outlier.label
 ```
 is marked as out-of-service.
 
-Subsequently, we can solve the system again, but this time without the out-of-service measurement:
+Then we can solve the system again, but this time without the out-of-service measurement:
 ```@example BadData
 analysis = gaussNewton(monitoring)
 stateEstimation!(analysis)
@@ -166,6 +166,6 @@ while for DC state estimation and state estimation using only PMUs, it is comput
     \mathbf C = \mathbf S \bm \Sigma = \bm \Sigma - \mathbf H [\mathbf H^T \bm \Sigma^{-1} \mathbf H]^{-1} \mathbf H^T.
 ```
 
-It is important to note that only the diagonal entries of ``\mathbf C`` are required for the normalized residual test. The main computational challenge lies in computing the inverse on the right-hand side of the equations. The JuliaGrid package employs a computationally efficient sparse inverse method, obtaining only the necessary elements.
+It is important to note that only the diagonal entries of ``\mathbf C`` are required for the normalized residual test. The main computational challenge lies in computing the inverse on the right-hand side of the equations. The JuliaGrid package uses a computationally efficient sparse inverse method, obtaining only the necessary elements.
 
 Internally, JuliaGrid avoids forming the full inverse. If the WLS estimator was solved with `LU`, the sparse LU factorization is reused to compute the selected sparse inverse. If it was solved with `LL`, the Cholesky factorization is reused through a selected-inverse projection. For other WLS methods, JuliaGrid first attempts a local Cholesky factorization of the gain matrix and falls back to sparse LU when Cholesky is not applicable.

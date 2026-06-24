@@ -1,5 +1,5 @@
 # [PMU State Estimation](@id PMUStateEstimationTutorials)
-To initiate the process, let us construct the `PowerSystem` type and formulate the AC model:
+To begin, construct the `PowerSystem` type and formulate the AC model:
 ```@example PMUSETutorial
 using JuliaGrid # hide
 @default(unit) # hide
@@ -37,7 +37,7 @@ nothing # hide
 ---
 
 !!! ukw "Notation"
-    Here, when referring to a vector ``\mathbf a``, we use the notation ``\mathbf a = [a_i]`` or ``\mathbf a = [a_{ij}]``, where ``a_i`` represents the element related with bus ``i \in \mathcal N`` or measurement ``i \in \mathcal M``, while ``a_{ij}`` denotes the element related with branch ``(i,j) \in \mathcal E``.
+    Here, when referring to a vector ``\mathbf a``, we use the notation ``\mathbf a = [a_i]`` or ``\mathbf a = [a_{ij}]``, where ``a_i`` represents the element related to bus ``i \in \mathcal N`` or measurement ``i \in \mathcal M``, while ``a_{ij}`` denotes the element related to branch ``(i,j) \in \mathcal E``.
 
 ---
 
@@ -88,7 +88,7 @@ Here, measurement values are obtained according to:
   \end{aligned}
 ```
 
-Utilizing the classical theory of propagation of uncertainty [iso1993guide](@cite), the variances can be calculated as follows:
+Using the classical theory of propagation of uncertainty [iso1993guide](@cite), the variances can be calculated as follows:
 ```math
   \begin{aligned}
     v_{\Re(\bar{V}_i)} &=
@@ -165,7 +165,7 @@ Here, measurement values are obtained according to:
   \end{aligned}
 ```
 
-Utilizing the classical theory of propagation of uncertainty [iso1993guide](@cite), the variances can be calculated as follows:
+Using the classical theory of propagation of uncertainty [iso1993guide](@cite), the variances can be calculated as follows:
 ```math
   \begin{aligned}
     v_{\Re(\bar{I}_{ij})} & = v_{I_{ij}} (\cos z_{\psi_{ij}})^2 + v_{\psi_{ij}} (z_{I_{ij}} \sin z_{\psi_{ij}})^2 \\
@@ -349,7 +349,7 @@ Upon inspection, it becomes evident that the precision matrix maintains a diagon
 ---
 
 ##### Mean Vector
-To retrieve the vector ``\mathbf z``, containing the means of Gaussian distributions for each measurement, users can utilize:
+To retrieve the vector ``\mathbf z``, containing the means of Gaussian distributions for each measurement, use:
 ```@repl PMUSETutorial
 𝐳 = analysis.method.mean
 ```
@@ -374,7 +374,7 @@ The initial step involves the LU factorization of the gain matrix:
 ```
 
 !!! tip "Tip"
-    By default, JuliaGrid utilizes LU factorization as the primary method to factorize the gain matrix. The available factorization methods are LL, LDLt, LU, KLU and QR.
+    By default, JuliaGrid uses LU factorization as the primary method to factorize the gain matrix. The available factorization methods are LL, LDLt, LU, KLU and QR.
 
 Access to the factorized gain matrix is available through:
 ```@repl PMUSETutorial
@@ -411,7 +411,7 @@ To explain the method, we begin with the WLS equation:
 ```math
 	\mathbf H^T \mathbf W \mathbf H \mathbf x = \mathbf H^T \mathbf W \mathbf z,
 ```
-where ``\mathbf W = \bm \Sigma^{-1}``. Subsequently, we can write:
+where ``\mathbf W = \bm \Sigma^{-1}``. Then we can write:
 ```math
   \left({\mathbf W^{1/2}} \mathbf H\right)^T {\mathbf W^{1/2}} \mathbf H  \mathbf x = \left({\mathbf W^{1/2}} \mathbf H\right)^T {\mathbf W^{1/2}} \mathbf z.
 ```
@@ -484,7 +484,7 @@ solve!(analysis)
 nothing # hide
 ```
 
-Access to the factorised matrices is available via:
+Access to the factorized matrices is available via:
 ```@repl PMUSETutorial
 𝐋 = analysis.method.factorization.L
 𝐔 = analysis.method.factorization.U

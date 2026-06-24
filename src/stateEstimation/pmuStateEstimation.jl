@@ -8,7 +8,7 @@ the vector of state variables contains bus voltages, given in rectangular coordi
 This function requires the `Measurement` type to establish the WLS state estimation model.
 
 Moreover, the presence of the `method` parameter is not mandatory. To address the WLS state
-estimation method, users can opt to utilize factorization techniques to decompose the gain matrix,
+estimation method, users can use factorization techniques to decompose the gain matrix,
 such as `LL`, `LDLt`, `LU`, `KLU`, or `QR`. The `LDLt` and `LL` methods are intended for symmetric
 gain matrices, with `LL` requiring positive definiteness. For improved robustness
 in cases with ill-conditioned data or significant variance disparities, using the `Orthogonal` or
@@ -188,7 +188,7 @@ This function requires the `Measurement` type to establish the LAV state estimat
 method offers increased robustness compared to WLS, ensuring unbiasedness even in the presence of
 various measurement errors and outliers.
 
-Users can employ the LAV method to find an estimator by choosing one of the available
+Users can use the LAV method to find an estimator by choosing one of the available
 [optimization solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/). Typically, `Ipopt`
 suffices for most scenarios.
 

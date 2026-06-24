@@ -7,11 +7,11 @@ The function sets up the framework to solve the DC power flow.
 The function requires the `PowerSystem` type to establish the framework. Next, the `Factorization`
 argument, while optional, determines the method used to solve the linear system of equations. It can
 take one of the following values:
-- `LL`: Utilizes Cholesky factorization.
-- `LDLt`: Utilizes LDLt factorization.
-- `LU`: Utilizes LU factorization (default).
-- `KLU`: Utilizes KLU factorization.
-- `QR`: Utilizes QR factorization.
+- `LL`: Uses Cholesky factorization.
+- `LDLt`: Uses LDLt factorization.
+- `LU`: Uses LU factorization (default).
+- `KLU`: Uses KLU factorization.
+- `QR`: Uses QR factorization.
 
 # Updates
 If the DC model was not created, the function will automatically initiate an update of the `dc` field
@@ -23,7 +23,7 @@ in-service generator in the bus type list.
 The function returns an instance of the [`DcPowerFlow`](@ref DcPowerFlow) type.
 
 # Examples
-Set up the DC power flow utilizing LU factorization:
+Set up the DC power flow using LU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)
@@ -31,7 +31,7 @@ dcModel!(system)
 analysis = dcPowerFlow(system)
 ```
 
-Set up the DC power flow utilizing KLU factorization:
+Set up the DC power flow using KLU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 dcModel!(system)

@@ -33,7 +33,7 @@ ammeters positioned on either the from-bus or to-bus ends of branches using the
 [`@ammeter`](@ref @ammeter) macro.
 
 # Units
-The default units for the `magnitude` and `variance` keywords are per-units. However, users can
+The default units for the `magnitude` and `variance` keywords are per-unit values. However, users can
 choose to use amperes as the units by applying the [`@current`](@ref @current) macro.
 
 # Examples
@@ -151,7 +151,7 @@ Default settings for keywords are as follows: `varianceFrom = 1e-4`, `statusFrom
 default settings using the [`@ammeter`](@ref @ammeter) macro.
 
 # Units
-The default units for the `varianceFrom` and `varianceTo` keywords are per-units. However, users can
+The default units for the `varianceFrom` and `varianceTo` keywords are per-unit values. However, users can
 choose to use amperes as the units by applying the [`@current`](@ref @current) macro.
 
 # Example
@@ -460,7 +460,7 @@ and `varianceTo` and `statusTo` for the latter. Users can also configure label p
 the measurement in squared form for the state estimation model.
 
 # Units
-The default units for the `varianceFrom` and `varianceTo` keywords are per-units. However, users can
+The default units for the `varianceFrom` and `varianceTo` keywords are per-unit values. However, users can
 choose to use amperes as the units by applying the [`@current`](@ref @current) macro.
 
 # Examples

@@ -11,7 +11,7 @@ The Chi-squared test is the method used to detect the presence of bad data or ou
 !!! note "Info"
     Readers can refer to the [Chi-Squared Test](@ref ChiTestTutorials) tutorial for implementation insights.
 
-To begin, we will define the `PowerSystem` and `Measurement` types:
+To begin, define the `PowerSystem` and `Measurement` types:
 ```@example ACSEWLS
 using JuliaGrid # hide
 @default(unit) # hide
@@ -40,14 +40,14 @@ nothing # hide
 ```
 ---
 
-Now, let us create the state estimation model `AcStateEstimation` and compute the WLS estimator:
+Now create the state estimation model `AcStateEstimation` and compute the WLS estimator:
 ```@example ACSEWLS
 analysis = gaussNewton(monitoring)
 stateEstimation!(analysis; verbose = 1)
 nothing # hide
 ```
 
-Next, we aim to detect bad data in the measurement set using the Chi-squared test:
+Next, detect bad data in the measurement set using the Chi-squared test:
 ```@example ACSEWLS
 chi = chiTest(analysis)
 nothing # hide
@@ -71,13 +71,13 @@ When computing the residual covariance diagonal, JuliaGrid reuses the factorizat
 !!! note "Info"
     Readers can refer to the [Largest Normalized Residual Test](@ref ResidualTestTutorials) tutorial for implementation insights.
 
-After using the Chi-squared test to detect the presence of bad data in the measurement set, let us now identify outliers and remove them:
+After using the Chi-squared test to detect the presence of bad data in the measurement set, identify outliers and remove them:
 ```@example ACSEWLS
 outlier = residualTest!(analysis; threshold = 4.0)
 nothing # hide
 ```
 
-Bad data detection is determined by the `threshold` keyword. If the largest normalized residual value exceeds the `threshold`, the measurement will be identified as bad data and removed from the AC state estimation model. As a result, we have the following information:
+Bad data detection is determined by the `threshold` keyword. If the largest normalized residual value exceeds the `threshold`, the measurement will be identified as bad data and removed from the AC state estimation model. This produces the following information:
 ```@repl ACSEWLS
 outlier.detect
 outlier.maxNormalizedResidual
@@ -105,7 +105,7 @@ nothing # hide
 ---
 
 ##### PMU State Estimation
-In general, the procedures for AC state estimation also apply to PMU state estimation. Let us highlight some specific aspects of this estimation type. First, new phasor measurements are added to the system, and the WLS estimator is obtained using PMU data only:
+In general, the procedures for AC state estimation also apply to PMU state estimation. Highlight some specific aspects of this estimation type. First, new phasor measurements are added to the system, and the WLS estimator is obtained using PMU data only:
 ```@example ACSEWLS
 addPmu!(monitoring; label = "PMU 3", from = "Branch 1", magnitude = 0.73, angle = 0.35)
 addPmu!(monitoring; label = "PMU 4", bus = "Bus 1", magnitude = 1.0, angle = 0.01)
@@ -142,7 +142,7 @@ nothing # hide
 ---
 
 ##### DC State Estimation
-For DC state estimation, users can follow the same steps as previously described. To illustrate, let us restore `Wattmeter 2` and perform bad data analysis:
+For DC state estimation, users can follow the same steps as previously described. To illustrate, restore `Wattmeter 2` and perform bad data analysis:
 ```@example ACSEWLS
 updateWattmeter!(monitoring; label = "Wattmeter 2", status = 1)
 

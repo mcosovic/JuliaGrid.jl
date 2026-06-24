@@ -1,7 +1,7 @@
 # [Power System Datasets](@id PowerSystemDataExamples)
-The table below showcases a range of widely used power system datasets that users can leverage for analysis. These datasets vary in size and complexity, providing flexibility for different applications. For instructions on how to load these models into JuliaGrid, please refer to the [Build Model](@ref BuildModelManual) section of the manual.
+The table below lists widely used power system datasets available for analysis. They vary in size and complexity and support different analysis tasks. For instructions on how to load these models into JuliaGrid, see the [Build Model](@ref BuildModelManual) section of the manual.
 
-| Power System                              | Buses | Branches | Generators | Download Links
+| Power System                              | Buses | Branches | Generators | Downloads |
 |:------------------------------------------|:-----:|:--------:|:----------:|:------------------------------------------------:|
 | IEEE 14-bus test case                     | 14    | 20       | 5          | [[hdf5](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/cases/hdf5/case14.h5)] [[matpower](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/cases/matlab/case14.m)] [[built-in](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/cases/julia/case14.jl)]
 | IEEE 30-bus test case                     | 30    | 41       | 6          | [[hdf5](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/cases/hdf5/case_ieee30.h5)] [[matpower](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/cases/matlab/case_ieee30.m)] [[built-in](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/cases/julia/case_ieee30.jl)]
@@ -15,4 +15,4 @@ The table below showcases a range of widely used power system datasets that user
 | Synthetic US model                        | 82000 | 104121   | 13419      | [[hdf5](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/cases/hdf5/case_SyntheticUSA.h5)]
 
 
-Once users have established a power system model, they can proceed with the various types of analyses offered by JuliaGrid. While these power systems contain a comprehensive data structure for different analyses, only specific parameters are needed for certain types of analysis. For more information on power system parameters, refer to the [Power System Model](@ref powerSystemModelAPI) section in the API documentation.
+After building a power system model, users can run the analyses provided by JuliaGrid. Although each dataset stores a broad set of power system data, each analysis uses only the parameters it requires. For more information on power system parameters, see the [Power System Model](@ref powerSystemModelAPI) section in the API documentation.

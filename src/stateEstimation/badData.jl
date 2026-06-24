@@ -2,8 +2,8 @@
     residualTest!(analysis::StateEstimation; threshold)
 
 The function conducts bad data detection and identification using the largest normalized residual
-test, subsequently removing measurement outliers from the measurement set. It can be executed after
-obtaining WLS estimator.
+test and then removes measurement outliers from the measurement set. It can be executed after
+obtaining a WLS estimator.
 
 # Arguments
 The `StateEstimation` type alias can represent the following analysis types:
@@ -21,8 +21,8 @@ If bad data is detected, the function flags the corresponding measurement within
 type as out-of-service.
 
 Moreover, for `DcStateEstimation` and `PmuStateEstimation` types, the function removes the
-corresponding measurement from the coefficient matrix and mean vector. This facilitates direct
-progress to the function that solves the state estimation problem.
+corresponding measurement from the coefficient matrix and mean vector. This allows the solver to
+proceed directly to the state estimation problem.
 
 # Returns
 The function returns an instance of the [`ResidualTest`](@ref ResidualTest) type.

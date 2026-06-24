@@ -16,7 +16,7 @@ Additionally, the optimal PMU placement algorithm can also be viewed from the pe
 ## Identification of Observable Islands
 The first step in the process is to define observable islands. JuliaGrid offers two distinct options for identifying these islands: flow-observable islands and maximal-observable islands. The choice depends on the power system's structure and available measurements. Identifying only flow-observable islands simplifies the island detection process but makes the restoration function more complex.
 
-Let us begin by defining a power system with measurements at specific locations:
+Begin by defining a power system with measurements at specific locations:
 ```@example ACSEObservabilityAnalysis
 using JuliaGrid # hide
 @default(unit) # hide
@@ -60,15 +60,15 @@ nothing # hide
 
 Attempting to solve this system directly using AC or DC state estimation may not be feasible, as the gain matrix would be singular. To prevent this issue, users can first conduct an observability analysis.
 
-JuliaGrid employs standard observability analysis performed on the linear decoupled measurement model. Active power measurements from wattmeters are utilized to estimate bus voltage angles, while reactive power measurements from varmeters are used to estimate bus voltage magnitudes. This necessitates that measurements of active and reactive power come in pairs.
+JuliaGrid uses standard observability analysis performed on the linear decoupled measurement model. Active power measurements from wattmeters are used to estimate bus voltage angles, while reactive power measurements from varmeters are used to estimate bus voltage magnitudes. This necessitates that measurements of active and reactive power come in pairs.
 
 !!! note "Info"
-    We suggest that readers refer to the tutorial on [Observability Analysis](@ref ACObservabilityAnalysisTutorials) for insights into the implementation.
+    For implementation details, see the tutorial on [Observability Analysis](@ref ACObservabilityAnalysisTutorials).
 
 ---
 
 ##### Flow-Observable Islands
-Now, let us identify flow-observable islands:
+Now identify flow-observable islands:
 ```@example ACSEObservabilityAnalysis
 islands = islandTopologicalFlow(monitoring)
 nothing # hide
@@ -83,7 +83,7 @@ nothing # hide
 ---
 
 ##### Maximal-Observable Islands
-Next, we identify maximal-observable islands:
+Next, identify maximal-observable islands:
 ```@example ACSEObservabilityAnalysis
 islands = islandTopological(monitoring)
 nothing # hide
@@ -99,13 +99,13 @@ It is evident that upon comparing this result with the flow-observable islands, 
 ---
 
 ## Observability Restoration
-Before restoring observability in the linear decoupled measurement model, the system must include at least one bus voltage magnitude measurement. This necessity arises from the fact that observable islands are identified based on wattmeters, where wattmeter measurements estimate voltage angles. Since the voltage angle reference is already known from the slack bus, the same principle should be applied to bus voltage magnitudes. Therefore, to address this requirement, we add:
+Before restoring observability in the linear decoupled measurement model, the system must include at least one bus voltage magnitude measurement. This necessity arises from the fact that observable islands are identified based on wattmeters, where wattmeter measurements estimate voltage angles. Since the voltage angle reference is already known from the slack bus, the same principle should be applied to bus voltage magnitudes. Therefore, to address this requirement, add:
 ```@example ACSEObservabilityAnalysis
 addVoltmeter!(monitoring; bus = "Bus 1", magnitude = 1.0)
 nothing # hide
 ```
 
-Next, define a set of pseudo-measurements, where measurements must come in pairs as well. Let us create that set:
+Next, define a set of pseudo-measurements, where measurements must come in pairs as well. Create that set:
 ```@example ACSEObservabilityAnalysis
 pseudo = measurement(system)
 
@@ -146,10 +146,10 @@ JuliaGrid supports two modes for determining optimal PMU placement to make the s
 * without legacy measurements,
 * with legacy measurements.
 
-Here, legacy measurements refer only to power flow and injection data. When users choose to include legacy measurements for optimal PMU placement, we assume active and reactive power measurements always appear as pairs. The optimal PMU placement is then determined using only the active power measurements.
+Here, legacy measurements refer only to power flow and injection data. When users choose to include legacy measurements for optimal PMU placement, active and reactive power measurements are assumed to appear as pairs. The optimal PMU placement is then determined using only the active power measurements.
 
 !!! note "Info"
-    We suggest that readers refer to the tutorial on [Optimal PMU Placement](@ref optimalpmu) for insights into the implementation.
+    For implementation details, see the tutorial on [Optimal PMU Placement](@ref optimalpmu).
 
 First, create the power system together with the associated monitoring object that will contain the measurements:
 ```@example PMUOptimalPlacement
@@ -200,7 +200,7 @@ keys(placement.to)
 ---
 
 ##### Optimal Solution with Legacy Measurements
-Next, we determine the PMU placement that ensures observability while also including legacy measurements:
+Next, determine the PMU placement that ensures observability while also including legacy measurements:
 ```@example PMUOptimalPlacement
 placement = pmuPlacement(monitoring, GLPK.Optimizer; legacy = true, verbose = 1)
 nothing # hide

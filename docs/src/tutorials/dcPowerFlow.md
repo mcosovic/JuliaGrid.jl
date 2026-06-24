@@ -1,5 +1,5 @@
 # [DC Power Flow](@id DCPowerFlowTutorials)
-JuliaGrid employs standard network components and the [Unified Branch Model](@ref UnifiedBranchModelTutorials) to obtain the DC power flow solution. To begin, let us generate the `PowerSystem` type, as illustrated by the following example:
+JuliaGrid uses standard network components and the [Unified Branch Model](@ref UnifiedBranchModelTutorials) to obtain the DC power flow solution. To begin, let us generate the `PowerSystem` type, as illustrated by the following example:
 ```@example PowerFlowSolutionDC
 using JuliaGrid # hide
 @default(unit) # hide
@@ -70,14 +70,14 @@ analysis = dcPowerFlow(system)
 nothing # hide
 ```
 
-The subsequent step involves performing the LU factorization of the nodal matrix ``\mathbf B = \mathbf L \mathbf U`` and computing the bus voltage angles using:
+Next, we perform the LU factorization of the nodal matrix ``\mathbf B = \mathbf L \mathbf U`` and compute the bus voltage angles using:
 ```@example PowerFlowSolutionDC
 solve!(analysis)
 nothing # hide
 ```
 
 !!! tip "Tip"
-    By default, JuliaGrid utilizes LU factorization as the primary method to factorize the nodal matrix. The available factorization methods are LL, LDLt, LU, KLU and QR.
+    By default, JuliaGrid uses LU factorization as the primary method to factorize the nodal matrix. The available factorization methods are LL, LDLt, LU, KLU and QR.
 
 The factorization of the nodal matrix can be accessed using:
 ```@repl PowerFlowSolutionDC
@@ -146,7 +146,7 @@ The output active power of each generator located at a non-slack bus is equal to
 ```
 In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\mathrm{p}i}``. Then, this amount of power is reduced by the output active power of the other generators.
 
-To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_\mathrm{g} = [P_{\mathrm{g}i}]``, ``i \in \mathcal S``, where the set ``\mathcal S`` represents the set of generators, users can utilize the following command:
+To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_\mathrm{g} = [P_{\mathrm{g}i}]``, ``i \in \mathcal S``, where the set ``\mathcal S`` represents the set of generators, use the following command:
 ```@repl PowerFlowSolutionDC
 𝐏ₒ = analysis.power.generator.active
 ```

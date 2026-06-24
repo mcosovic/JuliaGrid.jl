@@ -1,5 +1,5 @@
 # [Measurement Model](@id MeasurementModelTutorials)
-Let us begin by examining a power system. To do that, we will construct one as shown below:
+Begin by examining a power system. To do that, construct one as shown below:
 ```@example measurementModelTutorials
 using JuliaGrid # hide
 @default(unit) # hide
@@ -29,7 +29,7 @@ Our goal is to monitor the power system, and this process involves collecting me
 ---
 
 ## Power System Monitoring
-Measurement data is obtained through two main technologies: SCADA (Supervisory Control and Data Acquisition) and WAMS (Wide Area Measurement System). These technologies enable the collection of a wide range of measurements distributed throughout the power system. This extensive dataset allows us to employ state estimation algorithms to obtain the present state of the power system, in contrast to power flow algorithms, which are typically used for offline analyses. To commence, we will represent the entire set of measurement devices as ``\mathcal M``.
+Measurement data is obtained through two main technologies: SCADA (Supervisory Control and Data Acquisition) and WAMS (Wide Area Measurement System). These technologies enable the collection of a wide range of measurements distributed throughout the power system. This extensive dataset allows us to use state estimation algorithms to obtain the present state of the power system, in contrast to power flow algorithms, which are typically used for offline analyses. To begin, represent the entire set of measurement devices as ``\mathcal M``.
 
 SCADA provides legacy measurements with low sampling rates, making them unsuitable for capturing real-time system dynamics. It provides a snapshot of the power system's state, with delays measured in seconds and minutes. These legacy measurement devices, subsets of the set ``\mathcal M``, include:
 * a set of voltmeters ``\mathcal V`` for measuring bus voltage magnitudes,
@@ -37,7 +37,7 @@ SCADA provides legacy measurements with low sampling rates, making them unsuitab
 * a set of wattmeters ``\mathcal P`` for active power injection and flow measurements,
 * a set of varmeters ``\mathcal Q`` for reactive power injection and flow measurements.
 
-In contrast, WAMS technology utilizes PMUs (Phasor Measurement Units) to provide data with high sampling rates, typically ranging between 10 and 20 ms, facilitating real-time monitoring of the system. Therefore, PMUs expand the set ``\mathcal M`` as follows:
+In contrast, WAMS technology uses PMUs (Phasor Measurement Units) to provide data with high sampling rates, typically ranging between 10 and 20 ms, facilitating real-time monitoring of the system. Therefore, PMUs expand the set ``\mathcal M`` as follows:
 * a set of PMUs ``\bar{\mathcal P}`` for bus voltage and branch current phasor measurements.
 
 ---
@@ -68,7 +68,7 @@ where ``v_i`` is the measurement variance defined by the measurement error ``u_i
 ---
 
 ##### Artificial Generation of Measurement Values
-When defining the system of equations, it is essential to have measurement values represented by ``\mathbf z``. In JuliaGrid, users have the option to either directly specify measurement values or artificially generate the vector ``\mathbf z``. The artificial generation process involves setting the keyword `noise = true`, which introduces white Gaussian noise with variances ``[v_1, \dots, v_k]`` added to the provided values ``[e_1, \dots, e_k]``, typically representing the exact values of the respective electrical quantities:
+When defining the system of equations, it is essential to have measurement values represented by ``\mathbf z``. In JuliaGrid, users can either directly specify measurement values or artificially generate the vector ``\mathbf z``. The artificial generation process involves setting the keyword `noise = true`, which introduces white Gaussian noise with variances ``[v_1, \dots, v_k]`` added to the provided values ``[e_1, \dots, e_k]``, typically representing the exact values of the respective electrical quantities:
 ```math
   \epsilon_i \sim \mathcal{N}(0, \, v_i) \\[5pt]
   z_i = e_i + \epsilon_i.
@@ -188,7 +188,7 @@ This set of varmeters defines vectors of measurement values denoted as ``\mathbf
 ---
 
 ## PMUs
-PMUs measure voltage and current phasors in the polar coordinate system, thus each PMU output is represented by magnitude and angle along with corresponding variances [phadkebook; Sec. 5.6](@cite). When installed on buses, they measure bus voltage phasors, while on branches, they measure current phasors.
+PMUs measure voltage and current phasors in the polar coordinate system, so each PMU output is represented by magnitude and angle along with corresponding variances [phadkebook; Sec. 5.6](@cite). When installed on buses, they measure bus voltage phasors, while on branches, they measure current phasors.
 
 A PMU ``(V_i, \theta_i) \in \bar{\mathcal P}`` measures the voltage phasor at bus ``i \in \mathcal N``. Let us integrate this type of PMU at the first bus:
 ```@example measurementModelTutorials
@@ -227,7 +227,7 @@ pmu = monitoring.pmu;
 ---
 
 ## State Estimation
-After establishing the measurement model, which includes specifying measurement values, variances, the locations of measurement devices, and known power system network parameters, the subsequent step involves the process of state estimation. State estimation is a component of energy management systems and typically encompasses network topology processing, observability analysis, state estimation algorithms, and bad data analysis.
+After establishing the measurement model, which includes specifying measurement values, variances, the locations of measurement devices, and known power system network parameters, the next step is state estimation. State estimation is a component of energy management systems and typically encompasses network topology processing, observability analysis, state estimation algorithms, and bad data analysis.
 
 The primary goal of state estimation algorithms is to determine state variables, often associated with bus voltages. Therefore, by representing the vector of state variables as ``\mathbf x`` and the vector of noisy measurement values as ``\mathbf z``, we can effectively describe the state estimation problem using the following conditional probability equation:
 ```math

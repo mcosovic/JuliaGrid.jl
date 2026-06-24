@@ -33,7 +33,7 @@ wattmeters positioned at the buses, from-bus ends, or to-bus ends of branches us
 [`@wattmeter`](@ref @wattmeter) macro.
 
 # Units
-The default units for the `active` and `variance` keywords are per-units. However, users can choose
+The default units for the `active` and `variance` keywords are per-unit values. However, users can choose
 to use watts as the units by applying the [`@power`](@ref @power) macro.
 
 # Examples
@@ -165,7 +165,7 @@ varmeters positioned at the buses, from-bus ends, or to-bus ends of branches usi
 [`@varmeter`](@ref @varmeter) macro.
 
 # Units
-The default units for the `reactive` and `variance` keywords are per-units. However, users can
+The default units for the `reactive` and `variance` keywords are per-unit values. However, users can
 choose to use volt-amperes reactive as the units by applying the [`@power`](@ref @power) macro.
 
 # Examples
@@ -303,7 +303,7 @@ Default settings for keywords are as follows: `varianceBus = 1e-4`, `statusBus =
 Users can change these default settings using the [`@wattmeter`](@ref @wattmeter) macro.
 
 # Units
-The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are per-units.
+The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are per-unit values.
 However, users can choose to use watts as the units by applying the [`@power`](@ref @power) macro.
 
 # Example
@@ -376,7 +376,7 @@ Default settings for keywords are as follows: `varianceBus = 1e-4`, `statusBus =
 Users can change these default settings using the [`@varmeter`](@ref @varmeter) macro.
 
 # Units
-The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are per-units.
+The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are per-unit values.
 However, users can choose to use volt-amperes reactive as the units by applying the
 [`@power`](@ref @power) macro.
 
@@ -991,7 +991,7 @@ using `varianceFrom` and `statusFrom` for the former and `varianceTo` and `statu
 Users can also configure label patterns with the `label` keyword, as well as specify the `noise` type.
 
 # Units
-The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are per-units.
+The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are per-unit values.
 However, users can choose to use watts as the units by applying the [`@power`](@ref @power) macro.
 
 # Examples
@@ -1071,7 +1071,7 @@ using `varianceFrom` and `statusFrom` for the former and `varianceTo` and `statu
 Users can also configure label patterns with the `label` keyword, as well as specify the `noise` type.
 
 # Units
-The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are per-units.
+The default units for the `varianceBus`, `varianceFrom`, and `varianceTo` keywords are per-unit values.
 However, users can choose to usevolt-amperes reactive as the units by applying the
 [`@power`](@ref @power) macro.
 

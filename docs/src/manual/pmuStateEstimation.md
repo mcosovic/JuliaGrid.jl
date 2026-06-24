@@ -1,5 +1,5 @@
 # [PMU State Estimation](@id PMUStateEstimationManual)
-To perform linear state estimation solely based on PMU data, the initial requirement is to have the `PowerSystem` type configured with the AC model, along with the `Measurement` type storing measurement data. Subsequently, we can formulate either the weighted least-squares (WLS) or the least absolute value (LAV) PMU state estimation model encapsulated within the type `PmuStateEstimation` using:
+To perform linear state estimation solely based on PMU data, the initial requirement is to have the `PowerSystem` type configured with the AC model, along with the `Measurement` type storing measurement data. Next, formulate either the weighted least-squares (WLS) or the least absolute value (LAV) PMU state estimation model encapsulated within the type `PmuStateEstimation` using:
 * [`pmuStateEstimation`](@ref pmuStateEstimation),
 * [`pmuLavStateEstimation`](@ref pmuLavStateEstimation).
 
@@ -20,7 +20,7 @@ Users can also access specialized functions for computing specific types of [pow
 ---
 
 ## [Phasor Measurements](@id PhasorMeasurementsManual)
-Let us define the `PowerSystem` type and perform the AC power flow analysis solely for generating data to artificially create measurement values:
+Define the `PowerSystem` type and perform the AC power flow analysis solely for generating data to artificially create measurement values:
 ```@example PMUOptimalPlacement
 using JuliaGrid # hide
 @default(unit) # hide
@@ -66,7 +66,7 @@ nothing # hide
 Note that users can also generate phasor measurements using results from AC optimal power flow.
 
 
-The `placement` variable contains data regarding the optimal placement of measurements. In this instance, installing a PMU at `Bus 2` renders the system observable:
+The `placement` variable contains data regarding the optimal placement of measurements. Here, installing a PMU at `Bus 2` renders the system observable:
 ```@repl PMUOptimalPlacement
 keys(placement.bus)
 ```
@@ -77,7 +77,7 @@ keys(placement.from)
 keys(placement.to)
 ```
 
-Finally, we can observe the obtained set of measurement values:
+Finally, observe the obtained set of measurement values:
 ```@repl PMUOptimalPlacement
 print(monitoring.pmu.label, monitoring.pmu.magnitude.mean, monitoring.pmu.angle.mean)
 ```
@@ -85,7 +85,7 @@ print(monitoring.pmu.label, monitoring.pmu.magnitude.mean, monitoring.pmu.angle.
 ---
 
 ## [Weighted Least-Squares Estimator](@id PMUWLSStateEstimationSolutionManual)
-Let us continue with the previous example, where we defined the `PowerSystem` and `Measurement` types. To establish the PMU state estimation model, we will use the [`pmuStateEstimation`](@ref pmuStateEstimation) function:
+Continue with the previous example, where the `PowerSystem` and `Measurement` types were defined. To establish the PMU state estimation model, use the [`pmuStateEstimation`](@ref pmuStateEstimation) function:
 ```@example PMUOptimalPlacement
 analysis = pmuStateEstimation(monitoring)
 nothing # hide
@@ -109,7 +109,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
 !!! note "Info"
-    We recommend that readers refer to the tutorial on [PMU State Estimation](@ref PMUStateEstimationTutorials) for insights into the implementation.
+    For implementation details, see the tutorial on [PMU State Estimation](@ref PMUStateEstimationTutorials).
 
 ---
 
@@ -124,20 +124,20 @@ nothing # hide
 ---
 
 ##### Correlated Measurement Errors
-In the above approach, we assume that measurement errors from a single PMU are uncorrelated. This assumption leads to the covariance matrix and its inverse matrix (i.e., precision matrix) remaining diagonal:
+The approach above assumes that measurement errors from a single PMU are uncorrelated. This assumption leads to the covariance matrix and its inverse matrix (i.e., precision matrix) remaining diagonal:
 ```@repl PMUOptimalPlacement
 analysis.method.precision
 ```
 
 While this approach is suitable for many scenarios, linear PMU state estimation relies on transforming from polar to rectangular coordinate systems. Consequently, measurement errors from a single PMU become correlated due to this transformation. This correlation results in the covariance matrix, and hence the precision matrix, no longer remaining diagonal but instead becoming a block diagonal matrix.
 
-To accommodate this, users have the option to consider correlation when adding each PMU to the `Measurement` type. For instance, let us add a new PMU while considering correlation:
+To accommodate this, users can consider correlation when adding each PMU to the `Measurement` type. For instance, add a new PMU while considering correlation:
 ```@example PMUOptimalPlacement
 addPmu!(monitoring; bus = "Bus 3", magnitude = 1.01, angle = -0.005, correlated = true)
 nothing # hide
 ```
 
-Following this, we recreate the WLS state estimation model:
+Following this, recreate the WLS state estimation model:
 ```@example PMUOptimalPlacement
 analysis = pmuStateEstimation(monitoring)
 nothing # hide
@@ -148,7 +148,7 @@ Upon inspection, it becomes evident that the precision matrix is no longer diago
 analysis.method.precision
 ```
 
-Subsequently, we can address this new scenario and observe the solution:
+Next, address this new scenario and observe the solution:
 ```@repl PMUOptimalPlacement
 stateEstimation!(analysis)
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
@@ -157,14 +157,14 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ---
 
 ##### Print Results in the REPL
-Users have the option to print the results in the REPL using any units that have been configured, such as:
+Users can print the results in the REPL using any units that have been configured, such as:
 ```@example PMUOptimalPlacement
 @voltage(pu, deg)
 printBusData(analysis)
 @default(unit) # hide
 ```
 
-Next, users can easily customize the print results for specific buses, for example:
+Next, users can customize the print results for specific buses, for example:
 ```julia
 printBusData(analysis; label = "Bus 1", header = true)
 printBusData(analysis; label = "Bus 2")
@@ -174,7 +174,7 @@ printBusData(analysis; label = "Bus 3", footer = true)
 ---
 
 ##### Save Results to a File
-Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
+Users can also redirect print output to a file. For example, data can be saved in a text file:
 ```julia
 open("bus.txt", "w") do file
     printBusData(analysis, file)
@@ -182,14 +182,14 @@ end
 ```
 
 !!! tip "Tip"
-    We also provide functions to print or save state estimation results, such as estimated values and residuals. For more details, users can consult the [Power and Current Analysis](@ref PMUSEPowerCurrentAnalysisManual) section of this manual.
+    JuliaGrid also provides functions to print or save state estimation results, such as estimated values and residuals. For more details, users can consult the [Power and Current Analysis](@ref PMUSEPowerCurrentAnalysisManual) section of this manual.
 
 ---
 
 ## Alternative Formulations
 The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such scenarios, users may choose to apply an alternative formulation of the WLS estimator.
 
-These alternative methods are applicable when measurement errors are uncorrelated and the precision matrix is diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
+These alternative methods are applicable when measurement errors are uncorrelated and the precision matrix is diagonal. Therefore, as a preliminary step, the correlation must be eliminated, as shown previously:
 ```@example PMUOptimalPlacement
 updatePmu!(monitoring; label = "PMU 5 (Bus 3)", correlated = false)
 nothing # hide
@@ -220,7 +220,7 @@ nothing # hide
 ## [Least Absolute Value Estimator](@id PMULAVStateEstimationSolutionManual)
 The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data analysis procedures [aburbook; Ch. 6](@cite). However, it is important to note that achieving robustness typically involves increased computational complexity.
 
-To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the Ipopt solver proves sufficient to obtain a solution:
+To obtain an LAV estimator, users need to use one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the Ipopt solver proves sufficient to obtain a solution:
 ```@example PMUOptimalPlacement
 using Ipopt
 using JuMP  # hide
@@ -237,7 +237,7 @@ In JuliaGrid, the assignment of initial primal values for optimization variables
 print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ```
 
-Users have the flexibility to customize these values according to their requirements, and they will be utilized as the initial primal values when executing the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{T}}) where T <: Normal) function. One practical approach is to perform an AC power flow analysis and then apply the resulting solution as the starting point for state estimation:
+Users can customize these values, which will be used as the initial primal values when executing the [`solve!`](@ref solve!(::PmuStateEstimation{WLS{T}}) where T <: Normal) function. One practical approach is to perform an AC power flow analysis and then apply the resulting solution as the starting point for state estimation:
 ```@example PMUOptimalPlacement
 pf = newtonRaphson(system)
 powerFlow!(pf)
@@ -272,7 +272,7 @@ nothing # hide
 ---
 
 ## [Measurement Set Update](@id PMUMeasurementsAlterationManual)
-We begin by creating the `PowerSystem` and `Measurement` types with the [`ems`](@ref ems) function. The AC model is then configured using the [`acModel!`](@ref acModel!) function. After that, we initialize the `PmuStateEstimation` type through the [`pmuStateEstimation`](@ref pmuStateEstimation) function and solve the resulting state estimation problem:
+Begin by creating the `PowerSystem` and `Measurement` types with the [`ems`](@ref ems) function. The AC model is then configured using the [`acModel!`](@ref acModel!) function. After that, initialize the `PmuStateEstimation` type through the [`pmuStateEstimation`](@ref pmuStateEstimation) function and solve the resulting state estimation problem:
 ```@example WLSPMUStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -299,7 +299,7 @@ stateEstimation!(analysis)
 nothing # hide
 ```
 
-Next, we modify the existing `Measurement` type using add and update functions. Then, we create the new `PmuStateEstimation` type based on the modified system and solve the state estimation problem:
+Next, modify the existing `Measurement` type using add and update functions. Then, create the new `PmuStateEstimation` type based on the modified system and solve the state estimation problem:
 ```@example WLSPMUStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -320,14 +320,14 @@ nothing # hide
 ---
 
 ## [State Estimation Update](@id PMUStateEstimationUpdateManual)
-An advanced methodology involves users establishing the `PmuStateEstimation` type using [`pmuStateEstimation`](@ref pmuStateEstimation) or [`pmuLavStateEstimation`](@ref pmuLavStateEstimation) just once. After this initial setup, users can seamlessly modify existing measurement devices without the need to recreate the `PmuStateEstimation` type.
+For advanced workflows, users can create the `PmuStateEstimation` type once using [`pmuStateEstimation`](@ref pmuStateEstimation) or [`pmuLavStateEstimation`](@ref pmuLavStateEstimation). They can then modify existing measurement devices without recreating the `PmuStateEstimation` type.
 
 This approach extends the previous workflow by also avoiding recreation of the `PmuStateEstimation` object.
 
 !!! tip "Tip"
-    The addition of new measurements after the creation of `PmuStateEstimation` is not practical in terms of reusing the `PmuStateEstimation` type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
+    The addition of new measurements after the creation of `PmuStateEstimation` is not practical in terms of reusing the `PmuStateEstimation` type. Instead, users should create a final set of measurements and then use update functions to manage devices, either setting them in-service or out-of-service throughout the process.
 
-Let us now revisit our defined `PowerSystem`, `Measurement` and `PmuStateEstimation` types:
+Now revisit the defined `PowerSystem`, `Measurement` and `PmuStateEstimation` types:
 ```@example WLSPMUStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -355,7 +355,7 @@ stateEstimation!(analysis)
 nothing # hide
 ```
 
-Next, we modify the existing `Measurement` type as well as the `PmuStateEstimation` type using add and update functions. We then immediately proceed to solve the state estimation problem:
+Next, modify the existing `Measurement` type as well as the `PmuStateEstimation` type using add and update functions. Then, immediately solve the state estimation problem:
 ```@example WLSPMUStateEstimationSolution
 updatePmu!(analysis; label = "PMU 1", varianceMagnitude = 1e-8)
 updatePmu!(analysis; label = "PMU 3", status = 0)
@@ -366,12 +366,12 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This concept removes the need to rebuild both the `Measurement` and the `PmuStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, `LU`, and `KLU`, provided that the nonzero pattern of the gain matrix remains unchanged.
+    This concept removes the need to rebuild both the `Measurement` and the `PmuStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of using the WLS model, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, `LU`, and `KLU`, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 
 ## [Power and Current Analysis](@id PMUSEPowerCurrentAnalysisManual)
-After obtaining the solution from the PMU state estimation, we can calculate various electrical quantities related to buses and branches using the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AC)) functions. For instance, let us consider the model for which we obtained the PMU state estimation solution:
+After obtaining the solution from the PMU state estimation, calculate various electrical quantities related to buses and branches using the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AC)) functions. For instance, consider the model used to obtain the PMU state estimation solution:
 ```@example PMUStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -397,26 +397,26 @@ analysis = pmuStateEstimation(monitoring)
 stateEstimation!(analysis)
 ```
 
-We can now utilize the provided functions to compute powers and currents:
+Now use the provided functions to compute powers and currents:
 ```@example PMUStateEstimationSolution
 power!(analysis)
 current!(analysis)
 nothing # hide
 ```
 
-For instance, if we want to show the active power injections and the from-bus current magnitudes, we can employ the following code:
+For instance, to show the active power injections and the from-bus current magnitudes, use the following code:
 ```@repl PMUStateEstimationSolution
 print(system.bus.label, analysis.power.injection.active)
 print(system.branch.label, analysis.current.from.magnitude)
 ```
 
 !!! note "Info"
-    To better understand the powers and currents associated with buses and branches that are calculated by the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AC)) functions, we suggest referring to the tutorials on [PMU State Estimation](@ref PMUPowerAnalysisTutorials).
+    To better understand the powers and currents associated with buses and branches that are calculated by the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AC)) functions, see the tutorials on [PMU State Estimation](@ref PMUPowerAnalysisTutorials).
 
 ---
 
 ##### Print Results in the REPL
-Users can utilize any of the print functions outlined in the [Print API](@ref setupPrintAPI). For example, to print state estimation data related to PMUs, we can use:
+Users can use any of the print functions outlined in the [Print API](@ref setupPrintAPI). For example, to print state estimation data related to PMUs, use:
 ```@example PMUStateEstimationSolution
 @voltage(pu, deg)
 show = Dict("Voltage Angle" => false, "Current Angle" => false)
@@ -509,7 +509,7 @@ magnitude, angle = toCurrent(analysis; label = "Branch 2")
 ---
 
 ##### Current Through Series Impedance
-To calculate the current passing through the series impedance of the branch in the direction from the from-bus end to the to-bus end, we can use the following function:
+To calculate the current passing through the series impedance of the branch in the direction from the from-bus end to the to-bus end, use the following function:
 ```@repl PMUStateEstimationSolution
 magnitude, angle = seriesCurrent(analysis; label = "Branch 2")
 ```

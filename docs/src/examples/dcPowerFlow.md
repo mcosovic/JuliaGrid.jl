@@ -1,5 +1,5 @@
-# [DC Power Flow](@id ACPowerFlowExamples)
-DC power flow provides an approximate solution compared to AC power flow. We use the same power system model as in the AC power flow analysis, shown in Figure 1, to perform several DC power flow simulations. These simulations represent quasi-steady-state conditions where the system undergoes parameter and topology changes.
+# [DC Power Flow](@id DCPowerFlowExamples)
+DC power flow provides an approximate solution relative to AC power flow. Using the same power system model as in the AC power flow example, shown in Figure 1, we perform several DC power flow simulations. The scenarios represent quasi-steady-state operation with parameter and topology changes.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/examples/acPowerFlow/4bus.svg" width="400" class="my-svg"/>
@@ -11,7 +11,7 @@ DC power flow provides an approximate solution compared to AC power flow. We use
 !!! note "Info"
     Users can download a Julia script containing the scenarios from this section using the following [link](https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/analyses/dcPowerFlow.jl).
 
-We begin by defining the unit system. For DC power flow, only active power and voltage angle units are relevant:
+We begin by defining the unit system. For DC power flow, only active power and voltage angle units are needed:
 ```@example 4bus
 using JuliaGrid # hide
 @default(template) # hide
@@ -22,7 +22,7 @@ using JuliaGrid # hide
 nothing # hide
 ```
 
-Next, we define the bus parameters for DC power flow analysis. This includes specifying the slack bus as `type = 3`, the connected `active` power loads, and shunt elements with `conductance` values. The voltage `angle` at the slack bus is fixed to the specified value. With these definitions, we can build the power system model:
+Next, we define the bus parameters for DC power flow analysis, including the slack bus (`type = 3`), connected `active` power loads, and shunt `conductance` values. The slack bus voltage `angle` is fixed to the specified value. With these definitions, we can build the power system model:
 ```@example 4bus
 system = powerSystem()
 
@@ -33,7 +33,7 @@ addBus!(system; label = "Bus 4", active = 50.8)
 nothing # hide
 ```
 
-Next, we define the transmission line parameters by specifying `reactance` values. For phase-shifting transformers, we include the shift angle using the `shiftAngle` keyword:
+Next, we define branch `reactance` values. For phase-shifting transformers, we use the `shiftAngle` keyword:
 ```@example 4bus
 @branch(reactance = 0.22)
 addBranch!(system; label = "Branch 1", from = "Bus 1", to = "Bus 3")
@@ -50,7 +50,7 @@ addGenerator!(system; label = "Generator 2", bus = "Bus 2", active = 18.2)
 nothing # hide
 ```
 
-Once the power system data is defined, we generate a DC model that includes key vectors and matrices for analysis, such as the nodal admittance matrix. This model is automatically updated when data changes and can be shared across different analyses:
+Once the power system data are defined, we generate a DC model with the vectors and matrices required for analysis, including the nodal admittance matrix. This model is automatically updated when the data changes and can be reused across analyses:
 ```@example 4bus
 dcModel!(system)
 nothing # hide
@@ -59,7 +59,7 @@ nothing # hide
 ---
 
 ##### Display Data Settings
-To follow the successful solving of the DC power flow, we set `verbose` to basic output (`1`):
+Before running simulations, we set `verbose` to basic output (`1`):
 ```@example 4bus
 @config(verbose = 1)
 nothing # hide
@@ -68,24 +68,24 @@ nothing # hide
 ---
 
 ## Base Case Analysis
-At the start, we create a DC power flow model, then compute bus voltage angles and active powers:
+At the start, we create a DC power flow model and compute bus voltage angles and active powers:
 ```@example 4bus
 analysis = dcPowerFlow(system)
 powerFlow!(analysis; power = true)
 nothing # hide
 ```
 
-Once the DC power flow is solved, we can analyze the bus-related results:
+Once the DC power flow is solved, we can inspect the bus results:
 ```@example 4bus
 printBusData(analysis)
 ```
 
-Similarly, the results for the branches are:
+Similarly, we can inspect the branch results:
 ```@example 4bus
 printBranchData(analysis)
 ```
 
-Thus, using bus and branch data, we obtained the active power flows, as illustrated in Figure 2.
+The resulting active power flows are shown in Figure 2.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/examples/dcPowerFlow/4bus_base.svg" width="450" class="my-svg"/>
@@ -94,12 +94,12 @@ Thus, using bus and branch data, we obtained the active power flows, as illustra
 &nbsp;
 ```
 
-Note that the active power at the from-bus and to-bus ends of a branch is the same because the DC power flow model neglects losses.
+Because the DC power flow model neglects losses, the active power at the from-bus and to-bus ends of each branch is the same.
 
 ---
 
 ## Modifying Supplies and Demands
-We will adjust the active power outputs of generators and the active power demands of consumers. Instead of creating a new power system model or simply updating the existing one, we update both the power system and DC power flow models simultaneously:
+We now modify the active power outputs of the generators and the active power demands. Rather than creating a new model, we update the power system and DC power flow models simultaneously:
 ```@example 4bus
 updateBus!(analysis; label = "Bus 2", active = 25.5)
 updateBus!(analysis; label = "Bus 4", active = 42.0)
@@ -109,19 +109,19 @@ updateGenerator!(analysis; label = "Generator 2", active = 23.0)
 nothing # hide
 ```
 
-Next, we solve the DC power flow again to compute the new state of the power system without recreating the DC power flow model:
+Next, we run the DC power flow again without recreating the DC power flow model:
 ```@example 4bus
 powerFlow!(analysis; power = true)
 nothing # hide
 ```
-Since no modifications were made that affect the nodal admittance matrix, JuliaGrid reuses its factorization from the base case analysis, significantly reducing computational complexity.
+Since these changes do not affect the nodal admittance matrix, JuliaGrid reuses its factorization from the base case and reduces the computational cost.
 
 Finally, we display the updated branch data:
 ```@example 4bus
 printBranchData(analysis)
 ```
 
-Compared to the base case, the directions of power flows remain unchanged, but the amounts of active power differ, as shown in Figure 3.
+Compared with the base case, the active power flow directions remain unchanged, but their magnitudes differ, as shown in Figure 3.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/examples/dcPowerFlow/4bus_power.svg" width="400" class="my-svg"/>
@@ -132,24 +132,24 @@ Compared to the base case, the directions of power flows remain unchanged, but t
 ---
 
 ## Modifying Network Topology
-Now, we take `Branch 3` out-of-service while updating both the power system and DC power flow models:
+Next, we take `Branch 3` out-of-service while updating both the power system and DC power flow models:
 ```@example 4bus
 updateBranch!(analysis; label = "Branch 3", status = 0)
 nothing # hide
 ```
 
-We then solve the DC power flow for this scenario:
+We then solve the DC power flow for the outage scenario:
 ```@example 4bus
 powerFlow!(analysis; power = true)
 nothing # hide
 ```
 
-To analyze how active power flows redistribute when a branch is out of service, we use:
+To inspect how active power flows redistribute after the outage, we print the branch data:
 ```@example 4bus
 printBranchData(analysis)
 ```
 
-Finally, Figure 4 illustrates the active power flows in the case of a `Branch 3` outage.
+Figure 4 shows the active power flows after the `Branch 3` outage.
 ```@raw html
 <div style="text-align: center;">
     <img src="../../assets/examples/dcPowerFlow/4bus_service.svg" width="400" class="my-svg"/>

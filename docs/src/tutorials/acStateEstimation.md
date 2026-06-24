@@ -1,5 +1,5 @@
 # [AC State Estimation](@id ACStateEstimationTutorials)
-To initiate the process, let us construct the `PowerSystem` type and formulate the AC model:
+To begin, construct the `PowerSystem` type and formulate the AC model:
 ```@example ACSETutorial
 using JuliaGrid # hide
 @default(unit) # hide
@@ -37,7 +37,7 @@ nothing # hide
 ---
 
 !!! ukw "Notation"
-    Here, when referring to a vector ``\mathbf a``, we use the notation ``\mathbf a = [a_i]`` or ``\mathbf a = [a_{ij}]``, where ``a_i`` represents the element related with bus ``i \in \mathcal N`` or measurement ``i \in \mathcal M``, while ``a_{ij}`` denotes the element related with branch ``(i,j) \in \mathcal E``.
+    Here, when referring to a vector ``\mathbf a``, we use the notation ``\mathbf a = [a_i]`` or ``\mathbf a = [a_{ij}]``, where ``a_i`` represents the element related to bus ``i \in \mathcal N`` or measurement ``i \in \mathcal M``, while ``a_{ij}`` denotes the element related to branch ``(i,j) \in \mathcal E``.
 
 ---
 
@@ -85,7 +85,7 @@ Please note that each error vector, denoted as ``\mathbf{u}_i``, where ``i \in \
 
 In summary, upon user definition of the measurement devices, each ``i``-th legacy measurement device is linked to the measurement function ``h_i(\mathbf x)``, the corresponding measurement value ``z_i``, and the measurement variance ``v_i``. Meanwhile, each ``i``-th PMU is associated with two measurement functions ``h_{2i-1}(\mathbf x)``, ``h_{2i}(\mathbf x)``, along with their respective measurement values ``z_{2i-1}``, ``z_{2i}``, as well as their variances ``v_{2i-1}``, ``v_{2i}``, and possibly the covariance ``w_{2i-1,2i}``.
 
-Typically, the AC state estimator is obtained using the Gauss-Newton method or its variation, which involves constructing the Jacobian matrix. Therefore, in addition to the aforementioned elements, we also need Jacobian expressions corresponding to the measurement functions, which are also provided below.
+Typically, the AC state estimator is obtained using the Gauss-Newton method or its variation, which involves constructing the Jacobian matrix. Therefore, in addition to these elements, Jacobian expressions corresponding to the measurement functions are also needed and are provided below.
 
 ---
 
@@ -245,7 +245,7 @@ addWattmeter!(monitoring; label = "P₃", bus = 3, active = -0.5, variance = 1e-
 nothing # hide
 ```
 
-Here, utilizing the [AC Model](@ref NodalNetworkEquationsTutorials), we derive the function defining the active power injection as follows:
+Using the [AC Model](@ref NodalNetworkEquationsTutorials), we derive the function defining the active power injection as follows:
 ```math
    h_{P_i}(\mathbf x) = V_i\sum\limits_{j \in \mathcal{N}_i} (G_{ij}\cos\theta_{ij} + B_{ij}\sin\theta_{ij}) V_j,
 ```
@@ -340,7 +340,7 @@ addVarmeter!(monitoring; label = "Q₃", bus = 3, reactive = 0, variance = 1e-3)
 nothing # hide
 ```
 
-Here, utilizing the [AC Model](@ref NodalNetworkEquationsTutorials), we derive the function defining the reactive power injection as follows:
+Using the [AC Model](@ref NodalNetworkEquationsTutorials), we derive the function defining the reactive power injection as follows:
 ```math
    h_{Q_i}(\mathbf x) = V_i\sum\limits_{j \in \mathcal{N}_i} (G_{ij}\sin\theta_{ij} - B_{ij}\cos\theta_{ij})V_j,
 ```
@@ -482,7 +482,7 @@ Here, measurement values are obtained according to:
   \end{aligned}
 ```
 
-Utilizing the classical theory of propagation of uncertainty [iso1993guide](@cite), the variances can be calculated as follows:
+Using the classical theory of propagation of uncertainty [iso1993guide](@cite), the variances can be calculated as follows:
 ```math
   \begin{aligned}
     v_{\Re(\bar{V}_i)} &=
@@ -619,7 +619,7 @@ Here, measurement values are obtained according to:
   \end{aligned}
 ```
 
-Utilizing the classical theory of propagation of uncertainty [iso1993guide](@cite), the variances can be calculated as follows:
+Using the classical theory of propagation of uncertainty [iso1993guide](@cite), the variances can be calculated as follows:
 ```math
   \begin{aligned}
     v_{\Re(\bar{I}_{ij})} & = v_{I_{ij}} (\cos z_{\psi_{ij}})^2 + v_{\psi_{ij}} (z_{I_{ij}} \sin z_{\psi_{ij}})^2 \\
@@ -867,12 +867,12 @@ Finally, using initial bus voltage magnitudes and angles from the `PowerSystem` 
 𝐕⁽⁰⁾ = analysis.voltage.magnitude
 𝚯⁽⁰⁾ = analysis.voltage.angle
 ```
-Here, we utilize a "flat start" approach in our method. It is important to keep in mind that when dealing with initial conditions in this manner, the Gauss-Newton method may encounter difficulties.
+Here, we use a "flat start" approach in our method. It is important to keep in mind that when dealing with initial conditions in this manner, the Gauss-Newton method may encounter difficulties.
 
 ---
 
 ##### Iterative Process
-To apply the Gauss-Newton method, JuliaGrid provides the [`solve!`](@ref solve!(::AcStateEstimation{LAV})) function. This function is utilized iteratively until a stopping criterion is met, as demonstrated in the following code snippet:
+To apply the Gauss-Newton method, JuliaGrid provides the [`solve!`](@ref solve!(::AcStateEstimation{LAV})) function. This function is used iteratively until a stopping criterion is met, as demonstrated in the following code snippet:
 ```@example ACSETutorial
 for iteration = 0:20
     stopping = increment!(analysis)
@@ -923,7 +923,7 @@ Here again, the JuliaGrid implementation of the AC state estimation follows a sp
 
 Note that the increment vector and Jacobian matrix include the slack bus with a known voltage angle. The corresponding element of the increment vector and column of the Jacobian matrix are not removed; the slack bus is handled internally by JuliaGrid, which is evident from the factorization of the gain matrix.
 
-Next, the [`increment!`](@ref increment!(::AcStateEstimation)) function provides the maximum absolute value of state variable increments, typically employed as the termination criterion for the iteration loop. Specifically, if it falls below a predefined stopping criterion ``\epsilon``, the algorithm converges:
+Next, the [`increment!`](@ref increment!(::AcStateEstimation)) function provides the maximum absolute value of state variable increments, typically used as the termination criterion for the iteration loop. Specifically, if it falls below a predefined stopping criterion ``\epsilon``, the algorithm converges:
 ```math
   \max \{|\Delta x_i|,\; \forall i \} < \epsilon.
 ```
@@ -943,7 +943,7 @@ Therefore, the bus voltage magnitudes ``\mathbf{V} = [V_i]`` and angles ``\bm{\T
 ---
 
 ##### Jacobian Matrix
-As a reminder, the Jacobian matrix consists of ``n`` columns representing bus voltage angles ``\bm \Theta``, followed by ``n`` columns representing bus voltage magnitudes ``\mathbf V``. The arrangement of rows is structured such that the first ``|\mathcal V|`` rows correspond to voltmeters, followed by ``|\mathcal I|`` rows corresponding to ammeters. Then, we have ``|\mathcal P|`` rows for wattmeters and ``|\mathcal Q|`` rows for varmeters. Finally, there are ``2|\bar{\mathcal P}|`` rows for PMUs. The elements are computed based on the provided Jacobian expressions.
+As a reminder, the Jacobian matrix consists of ``n`` columns representing bus voltage angles ``\bm \Theta``, followed by ``n`` columns representing bus voltage magnitudes ``\mathbf V``. The arrangement of rows is structured such that the first ``|\mathcal V|`` rows correspond to voltmeters, followed by ``|\mathcal I|`` rows corresponding to ammeters. Then, the matrix has ``|\mathcal P|`` rows for wattmeters and ``|\mathcal Q|`` rows for varmeters. Finally, there are ``2|\bar{\mathcal P}|`` rows for PMUs. The elements are computed based on the provided Jacobian expressions.
 
 ---
 
@@ -954,7 +954,7 @@ updatePmu!(analysis; label = "PMU 2", correlated = true)
 nothing # hide
 ```
 
-Subsequently, we can examine the updated precision matrix ``\mathbf W``:
+Then we can examine the updated precision matrix ``\mathbf W``:
 ```@repl ACSETutorial
 𝐖 = analysis.method.precision
 ```
@@ -1017,7 +1017,7 @@ To explain the method, we begin with the WLS equation:
 	  \Big[\mathbf J (\mathbf x)^T \mathbf W \mathbf J (\mathbf x)\Big] \mathbf \Delta \mathbf x =
 		\mathbf J (\mathbf x)^T \mathbf W \mathbf r (\mathbf x)
 ```
-where ``\mathbf W = \bm \Sigma^{-1}``. Subsequently, we can write:
+where ``\mathbf W = \bm \Sigma^{-1}``. Then we can write:
 ```math
   \left[{\mathbf W^{1/2}} \mathbf J (\mathbf x)\right]^T  {\mathbf W^{1/2}} \mathbf J (\mathbf x)  \Delta \mathbf x =
   \left[{\mathbf W^{1/2}} \mathbf J (\mathbf x)\right]^T {\mathbf W^{1/2}} \mathbf r (\mathbf x).
@@ -1152,7 +1152,7 @@ Users can retrieve the estimated bus voltage magnitudes ``\hat{\mathbf V} = [\ha
 
 ---
 
-## [Power Analysis](@id ACPowerAnalysisTutorials)
+## [Power Analysis](@id ACSEPowerAnalysisTutorials)
 Once the computation of voltage magnitudes and angles at each bus is completed, various electrical quantities can be determined. JuliaGrid offers the [`power!`](@ref power!(::AcPowerFlow)) function, which enables the calculation of powers associated with buses and branches. Here is an example code snippet demonstrating its usage:
 ```@example ACSETutorial
 power!(analysis)
@@ -1245,7 +1245,7 @@ The vectors of [active and reactive power flows](@ref BranchNetworkEquationsTuto
 
 ---
 
-## [Current Analysis](@id ACCurrentAnalysisTutorials)
+## [Current Analysis](@id ACSECurrentAnalysisTutorials)
 JuliaGrid offers the [`current!`](@ref current!(::AcPowerFlow)) function, which enables the calculation of currents associated with buses and branches. Here is an example code snippet demonstrating its usage:
 ```@example ACSETutorial
 current!(analysis)

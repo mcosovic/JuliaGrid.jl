@@ -43,7 +43,7 @@ Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_\ma
 ---
 
 !!! ukw "Notation"
-    Here, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element related with bus ``i \in \mathcal{N}`` or generator ``i \in \mathcal{S}``, while ``a_{ij}`` denotes the element related with branch ``(i,j) \in \mathcal{E}``.
+    Here, when referring to a vector ``\mathbf{a}``, we use the notation ``\mathbf{a} = [a_{i}]`` or ``\mathbf{a} = [a_{ij}]``, where ``a_i`` represents the element related to bus ``i \in \mathcal{N}`` or generator ``i \in \mathcal{S}``, while ``a_{ij}`` denotes the element related to branch ``(i,j) \in \mathcal{E}``.
 
 ---
 
@@ -169,7 +169,7 @@ When using the [`cost!`](@ref cost!) function in JuliaGrid and specifying the `p
   f_1(P_{\mathrm{g}1}) &= 900 P_{\mathrm{g}1}^3 + 500 P_{\mathrm{g}1}^2 + 80 P_{\mathrm{g}1} + 5.
 \end{aligned}
 ```
-To access these coefficients, users can utilize the variable:
+To access these coefficients, use the variable:
 ```@repl acopf
 f₁ = system.generator.cost.active.polynomial[1]
 ```
@@ -199,7 +199,7 @@ The second option for defining cost functions in the AC optimal power flow is to
 &nbsp;
 ```
 
-To define piecewise linear functions in JuliaGrid, users can utilize the [`cost!`](@ref cost!) function with the `piecewise` keyword. The piecewise linear function is constructed using a matrix where each row defines a single point. The first column holds the generator's active or reactive power output, while the second column corresponds to the associated cost value. For example, in the provided case study, a piecewise linear function is created and can be accessed as follows:
+To define piecewise linear functions in JuliaGrid, use the [`cost!`](@ref cost!) function with the `piecewise` keyword. The piecewise linear function is constructed using a matrix where each row defines a single point. The first column holds the generator's active or reactive power output, while the second column corresponds to the associated cost value. For example, in the provided case study, a piecewise linear function is created and can be accessed as follows:
 ```@repl acopf
 f₂ = system.generator.cost.active.piecewise[2]
 ```
@@ -210,7 +210,7 @@ Hence, for a piecewise cost function denoted as ``f_i(P_{\mathrm{g}i})`` with ``
 ```math
 \cfrac{f_i(P_{\mathrm{g}i,j+1}) - f_i(P_{\mathrm{g}i,j})}{P_{\mathrm{g}i,j+1} - P_{\mathrm{g}i,j}}(P_{\mathrm{g}i} - P_{\mathrm{g}i,j}) + f_i(P_{\mathrm{g}i,j}) \leq H_i, \;\;\; i \in \mathcal{S}, \;\;\; j = 1,\dots,k,
 ```
-where ``H_i`` represents the helper variable. To finalize this method, we simply need to include the helper variable ``H_i`` in the objective function. This approach efficiently handles piecewise linear cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
+where ``H_i`` represents the helper variable. To finalize this method, include the helper variable ``H_i`` in the objective function. This approach efficiently handles piecewise linear cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
 
 As an example, in the provided case study, the helper variable is defined as follows:
 ```@repl acopf
@@ -242,7 +242,7 @@ The first equality constraint is linked to the slack bus, where the bus voltage 
 ```math
 \theta_i - \theta_\mathrm{s} = 0,\;\;\; i \in \mathcal{N}_\mathrm{sb},
 ```
-where the set ``\mathcal{N}_\mathrm{sb}`` contains the index of the slack bus. To access the equality constraint from the model, we can utilize the variable:
+where the set ``\mathcal{N}_\mathrm{sb}`` contains the index of the slack bus. To access the equality constraint from the model, we can use the variable:
 ```@repl acopf
 print(analysis.method.constraint.slack.angle)
 ```
@@ -366,7 +366,7 @@ The first option is to define the limit keywords for active power flow constrain
   \end{aligned}
 ```
 
-In our example, we have chosen to utilize this type of flow constraints. To access the flow constraints of branches at the from-bus end, users can use the following code snippet:
+In our example, we have chosen to use this type of flow constraints. To access the flow constraints of branches at the from-bus end, users can use the following code snippet:
 ```@repl acopf
 print(analysis.method.constraint.flow.from)
 ```
@@ -435,7 +435,7 @@ In this representation, the lower and upper limits are determined by the vector 
 𝐏ₘ = [system.generator.capability.minActive, system.generator.capability.maxActive]
 ```
 
-To access these constraints, you can utilize the following snippet:
+To access these constraints, use the following snippet:
 ```@repl acopf
 print(analysis.method.constraint.capability.active)
 ```
@@ -477,7 +477,7 @@ However, this representation might not be the most accurate depiction of the gen
 &nbsp;
 ```
 
-If a user wishes to incorporate the tradeoff between active and reactive power outputs into the optimization model, they can define the points shown in Figure 4 within the [`addGenerator!`](@ref addGenerator!) function using the following keywords:
+To incorporate the tradeoff between active and reactive power outputs into the optimization model, define the points shown in Figure 4 within the [`addGenerator!`](@ref addGenerator!) function using the following keywords:
 
 | Keyword           | Coordinate                                    |
 |:------------------|:----------------------------------------------|
@@ -524,7 +524,7 @@ These additional capability constraints allow us to accurately represent the tra
 ---
 
 ## [Optimal Power Flow Solution](@id ACOptimalPowerFlowSolutionTutorials)
-To obtain the optimal values of active and reactive power outputs for generators and the bus voltage magnitudes and angles, the user needs to invoke the following function:
+To obtain the optimal values of active and reactive power outputs for generators and the bus voltage magnitudes and angles, invoke the following function:
 ```@example acopf
 JuMP.set_silent(analysis.method.jump) # hide
 solve!(analysis)
@@ -543,7 +543,7 @@ Similarly, the resulting bus voltage magnitudes and angles, represented by ``\ma
 𝚯 = analysis.voltage.angle
 ```
 
-By accessing these vectors, you can analyze and utilize the optimal power flow solution for further studies or operational decision-making in the power system.
+By accessing these vectors, you can analyze and use the optimal power flow solution for further studies or operational decision-making in the power system.
 
 ---
 

@@ -20,7 +20,7 @@ The PMU is defined with the following keywords:
 * `noise`: Specifies how to generate the measurement means:
   * `noise = true`: adds white Gaussian noises with variances to the `magnitude` and `angle`,
   * `noise = false`: uses the `magnitude` and `angle` values only.
-* `correlated`: Specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
+* `correlated`: Specifies error correlation for PMUs for algorithms using rectangular coordinates:
   * `correlated = true`: considers correlated errors,
   * `correlated = false`: disregards correlations between errors.
 * `polar`: Chooses the coordinate system for including phasor measurements in AC state estimation:
@@ -48,7 +48,7 @@ macro.
 
 # Units
 The default units for the `magnitude`, `varianceMagnitude`, and `angle`, `varianceAngle` keywords
-are per-units and radians. However, users have the option to switch to volts and degrees when the
+are per-unit values and radians. However, users can switch to volts and degrees when the
 PMU is located at a bus using the [`@voltage`](@ref @voltage) macro, or amperes and degrees when the
 PMU is located at a branch through the use of the [`@current`](@ref @current) macro.
 
@@ -214,7 +214,7 @@ Settings for generating measurements include:
   * `noise = true`: adds white Gaussian noise to the phasor values using defined variances,
   * `noise = false`: uses the exact phasor values without adding noise.
 Settings for handling phasor measurements include:
-* `correlated`: Specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
+* `correlated`: Specifies error correlation for PMUs for algorithms using rectangular coordinates:
   * `correlated = true`: considers correlated errors,
   * `correlated = false`: disregards correlations between errors.
 * `polar`: Chooses the coordinate system for including phasor measurements in AC state estimation:
@@ -233,7 +233,7 @@ Default settings for variance keywords are established at `1e-8`, with all statu
 default settings using the [`@pmu`](@ref @pmu) macro.
 
 # Units
-The default units for the variance keywords are in per-units and radians. However, users have the
+The default units for the variance keywords are per-unit values and radians. However, users have the
 option to switch to volts and degrees when the PMU is located at a bus using the
 [`@voltage`](@ref @voltage) macro, or amperes and degrees when the PMU is located at a branch through
 the use of the [`@current`](@ref @current) macro.
@@ -962,10 +962,10 @@ The macro modifies global JuliaGrid settings that remain active until changed ag
 
 # Keywords
 To establish the PMU template, users can configure the pattern for labels using the `label` keyword,
-specify the type of `noise`, and indicate the `correlated`, `polar`, and `square` settings utilized for
+specify the type of `noise`, and indicate the `correlated`, `polar`, and `square` settings used for
 managing phasors during state estimation.
 
-Users have the option to set default values for magnitude and angle variances, as well as statuses.
+Users can set default values for magnitude and angle variances, as well as statuses.
 This can be done for PMUs located at the buses using the `varianceMagnitudeBus`, `varianceAngleBus`,
 and `statusBus` keywords.
 
@@ -976,8 +976,8 @@ For PMUs located at the to-bus ends of the branches, users can use the `variance
 `varianceAngleTo`, and `statusTo` keywords.
 
 # Units
-By default, the units for variances are per-units and radians. However, users have the option to
-switch to volts and degrees as the units for PMUs located at the buses by using the
+By default, the units for variances are per-unit values and radians. However, users can switch to
+volts and degrees as the units for PMUs located at the buses by using the
 [`@voltage`](@ref @voltage) macro, or they can switch to amperes and degrees as the units for PMUs
 located at the branches by using the [`@current`](@ref @current) macro.
 

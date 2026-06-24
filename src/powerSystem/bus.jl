@@ -35,13 +35,13 @@ The function updates the `bus` field of the `PowerSystem` type.
 # Default Settings
 The default settings for certain keywords are as follows: `type = 1`, `magnitude = 1.0`,
 `minMagnitude = 0.9`, `maxMagnitude = 1.1`, and `base = 138e3`. The rest of the keywords are
-initialized with a value of zero. However, the user can modify these default settings by utilizing
+initialized with a value of zero. However, the user can modify these default settings using
 the [`@bus`](@ref @bus) macro.
 
 # Units
-By default, the keyword parameters use per-units and radians as units, with the exception of the
-`base` keyword argument, which is in volts. However, users have the option to use other units instead
-of per-units and radians, or to specify prefixes for base voltage by using the [`@power`](@ref @power)
+By default, the keyword parameters use per-unit values and radians, with the exception of the
+`base` keyword argument, which is in volts. However, users can use other units instead of per-unit
+values and radians, or specify prefixes for base voltage by using the [`@power`](@ref @power)
 and [`@voltage`](@ref @voltage) macros.
 
 # Examples
@@ -481,9 +481,9 @@ keywords specified within the [`addBus!`](@ref addBus!) function, along with the
 values.
 
 # Units
-By default, the keyword parameters use per-units and radians as units, with the exception of the
-`base` keyword argument, which is in volts. However, users have the option to use other units instead
-of per-units and radians, or to specify prefixes for base voltage by using the [`@power`](@ref @power)
+By default, the keyword parameters use per-unit values and radians, with the exception of the
+`base` keyword argument, which is in volts. However, users can use other units instead of per-unit
+values and radians, or specify prefixes for base voltage by using the [`@power`](@ref @power)
 and [`@voltage`](@ref @voltage) macros.
 
 # Examples

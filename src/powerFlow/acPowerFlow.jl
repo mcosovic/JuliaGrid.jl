@@ -7,9 +7,9 @@ The function sets up the Newton-Raphson method to solve the AC power flow.
 The function requires the `PowerSystem` type to establish the framework. Next, the `Factorization`
 argument, while optional, determines the method used to solve the linear system of equations within
 each iteration. It can take one of the following values:
-- `LU`: Utilizes LU factorization (default).
-- `KLU`: Utilizes KLU factorization.
-- `QR`: Utilizes QR factorization.
+- `LU`: Uses LU factorization (default).
+- `KLU`: Uses KLU factorization.
+- `QR`: Uses QR factorization.
 
 # Updates
 If the AC model has not been created, the function automatically initiates an update within the `ac`
@@ -20,7 +20,7 @@ present.
 The function returns an instance of the [`AcPowerFlow`](@ref AcPowerFlow) type.
 
 # Examples
-Set up the Newton-Raphson method utilizing LU factorization:
+Set up the Newton-Raphson method using LU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -28,7 +28,7 @@ acModel!(system)
 analysis = newtonRaphson(system)
 ```
 
-Set up the Newton-Raphson method utilizing KLU factorization:
+Set up the Newton-Raphson method using KLU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -183,9 +183,9 @@ The function sets up the fast Newton-Raphson method of version BX to solve the A
 The function requires the `PowerSystem` type to establish the framework. Next, the `Factorization`
 argument, while optional, determines the method used to solve the linear system of equations within
 each iteration. It can take one of the following values:
-- `LU`: Utilizes LU factorization (default).
-- `KLU`: Utilizes KLU factorization.
-- `QR`: Utilizes QR factorization.
+- `LU`: Uses LU factorization (default).
+- `KLU`: Uses KLU factorization.
+- `QR`: Uses QR factorization.
 
 # Updates
 If the AC model has not been created, the function automatically initiates an update within the `ac`
@@ -196,7 +196,7 @@ present.
 The function returns an instance of the [`AcPowerFlow`](@ref AcPowerFlow) type.
 
 # Examples
-Set up the fast Newton-Raphson method utilizing LU factorization:
+Set up the fast Newton-Raphson method using LU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -204,7 +204,7 @@ acModel!(system)
 analysis = fastNewtonRaphsonBX(system)
 ```
 
-Set up the fast Newton-Raphson method utilizing KLU factorization:
+Set up the fast Newton-Raphson method using KLU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -225,9 +225,9 @@ The function sets up the fast Newton-Raphson method of version XB to solve the A
 The function requires the `PowerSystem` type to establish the framework. Next, the `Factorization`
 argument, while optional, determines the method used to solve the linear system of equations within
 each iteration. It can take one of the following values:
-- `LU`: Utilizes LU factorization (default).
-- `KLU`: Utilizes KLU factorization.
-- `QR`: Utilizes QR factorization.
+- `LU`: Uses LU factorization (default).
+- `KLU`: Uses KLU factorization.
+- `QR`: Uses QR factorization.
 
 # Updates
 If the AC model has not been created, the function automatically initiates an update within the `ac`
@@ -238,7 +238,7 @@ present.
 The function returns an instance of the [`AcPowerFlow`](@ref AcPowerFlow) type.
 
 # Examples
-Set up the fast Newton-Raphson method utilizing LU factorization:
+Set up the fast Newton-Raphson method using LU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -246,7 +246,7 @@ acModel!(system)
 analysis = fastNewtonRaphsonXB(system)
 ```
 
-Set up the fast Newton-Raphson method utilizing KLU factorization:
+Set up the fast Newton-Raphson method using KLU factorization:
 ```jldoctest
 system = powerSystem("case14.h5")
 acModel!(system)
@@ -625,13 +625,13 @@ The function calculates both active and reactive power injection mismatches.
 
 # Updates
 This function updates the `mismatch` variables in the Newton-Raphson and fast Newton-Raphson methods.
-It should be employed during the iteration loop before invoking the
+It should be used during the iteration loop before invoking the
 [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) function.
 
 # Returns
 The function returns maximum absolute values of the active and reactive power injection mismatches,
-which can be utilized to terminate the iteration loop of the Newton-Raphson, fast Newton-Raphson, or
-Gauss-Seidel methods employed to solve the AC power flow problem.
+which can be used to terminate the iteration loop of the Newton-Raphson, fast Newton-Raphson, or
+Gauss-Seidel methods used to solve the AC power flow problem.
 
 # Example
 ```jldoctest
@@ -766,7 +766,7 @@ end
 """
     solve!(analysis::AcPowerFlow)
 
-The function employs the Newton-Raphson, fast Newton-Raphson, or Gauss-Seidel method to solve the AC
+The function uses the Newton-Raphson, fast Newton-Raphson, or Gauss-Seidel method to solve the AC
 power flow and calculate bus voltage magnitudes and angles.
 
 After the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) function is executed, the execution of this function will
@@ -1164,7 +1164,7 @@ by the `bus.layout.slack` field.
 For instance, if the reactive power of the generator exceeds the limit on the slack bus, the
 [`reactiveLimit!`](@ref reactiveLimit!) function will change that bus to the demand bus and designate
 the first generator bus in the sequence as the new slack bus. After obtaining the updated AC power
-flow solution based on the new slack bus, it is possible to adjust the voltage angles to align with
+flow solution based on the new slack bus, the voltage angles can be adjusted to align with
 the angle of the original slack bus.
 
 # Keyword

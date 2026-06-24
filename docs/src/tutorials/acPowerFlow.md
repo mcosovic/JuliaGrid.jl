@@ -174,12 +174,12 @@ This results in the creation of the initial vectors of bus voltage magnitudes ``
 𝚯⁽⁰⁾ = analysis.voltage.angle
 ```
 
-Here, we utilize a "flat start" approach in our method. It is important to keep in mind that when dealing with initial conditions in this manner, the Newton-Raphson method may encounter difficulties.
+Here, we use a "flat start" approach in our method. It is important to keep in mind that when dealing with initial conditions in this manner, the Newton-Raphson method may encounter difficulties.
 
 ---
 
 ##### Iterative Process
-To implement the Newton-Raphson method using the iterative approach based on the Taylor series expansion, JuliaGrid provides the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) functions. These functions are utilized to carry out the Newton-Raphson method iteratively until a stopping criterion is reached, as demonstrated in the following code snippet:
+To implement the Newton-Raphson method using the iterative approach based on the Taylor series expansion, JuliaGrid provides the [`mismatch!`](@ref mismatch!(::AcPowerFlow{<:NewtonRaphson})) and [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where T) functions. These functions carry out the Newton-Raphson method iteratively until a stopping criterion is reached, as demonstrated in the following code snippet:
 ```@example PowerFlowSolution
 for iteration = 0:20
     stopping = mismatch!(analysis)
@@ -514,7 +514,7 @@ One of the main advantages of this approach is that the Jacobian matrices ``\mat
 ##### XB Version
 The matrix ``\mathbf{B}_1`` is formed by neglecting the resistance ``r_{ij}``, shunt susceptance ``\Im \{ y_{\mathrm{sh}i} \}``, charging susceptance ``\Im \{ y_{\mathrm{s}ij} \}``, and transformer tap ratio magnitude ``\tau_{ij}``. The matrix ``\mathbf{B}_2`` is constructed by disregarding the transformer phase shift angle ``\phi_{ij}``. This approach corresponds to the standard fast Newton-Raphson method and is known to exhibit exceptional convergence properties in typical scenarios [van1989general](@cite).
 
-To initialize the XB version of the fast Newton-Raphson method, one can utilize the following code snippet:
+To initialize the XB version of the fast Newton-Raphson method, use the following code snippet:
 ```@example PowerFlowSolution
 acModel!(system)
 analysis = fastNewtonRaphsonXB(system)
@@ -601,7 +601,7 @@ Next, the function [`solve!`](@ref solve!(::AcPowerFlow{NewtonRaphson{T}}) where
   \mathbf \Delta \mathbf x_\mathrm{a}^{(\nu)} = \mathbf{B}_1^{-1} \mathbf{h}_\mathrm{P}(\mathbf x^{(\nu)}).
 ```
 
-To obtain the voltage angle increments, JuliaGrid initially performs LU factorization on the Jacobian matrix ``\mathbf{B}_1 = \mathbf{L}_1\mathbf{U}_1``. This factorization is executed only once and is utilized in each iteration of the algorithm:
+To obtain the voltage angle increments, JuliaGrid initially performs LU factorization on the Jacobian matrix ``\mathbf{B}_1 = \mathbf{L}_1\mathbf{U}_1``. This factorization is executed only once and is used in each iteration of the algorithm:
 ```@repl PowerFlowSolution
 𝐋₁ = analysis.method.active.factorization.L
 𝐔₁ = analysis.method.active.factorization.U
@@ -629,7 +629,7 @@ After calculating the update for voltage angles, to calculate the magnitude upda
   \mathbf \Delta \mathbf x_\mathrm{m}^{(\nu)} = \mathbf{B}_2^{-1} \mathbf{h}_\mathrm{Q}(\mathbf x^{(\nu)}).
 ```
 
-Similarly to the previous instance, JuliaGrid initially executes LU factorization on the Jacobian matrix ``\mathbf{B}_2 = \mathbf{L}_2\mathbf{U}_2``. However, users can opt for KLU or QR factorization instead. This factorization occurs only once and is utilized in each iteration of the fast Newton-Raphson algorithm:
+Similarly to the previous instance, JuliaGrid initially executes LU factorization on the Jacobian matrix ``\mathbf{B}_2 = \mathbf{L}_2\mathbf{U}_2``. However, users can opt for KLU or QR factorization instead. This factorization occurs only once and is used in each iteration of the fast Newton-Raphson algorithm:
 ```@repl PowerFlowSolution
 𝐋₂ = analysis.method.reactive.factorization.L
 𝐔₂ = analysis.method.reactive.factorization.U
@@ -689,14 +689,14 @@ In its expanded form, this can be written as:
 	\end{aligned}
 ```
 
-While the Gauss-Seidel method directly solves the system of equations, it suffers from very slow convergence, which increases almost linearly with the system size, necessitating numerous iterations to obtain the desired solution [chassin2006gauss](@cite). Moreover, the convergence time of the Gauss-Seidel method increases significantly for large-scale systems and can face convergence issues for systems with high active power transfers. Nevertheless, power flow programs utilize both the Gauss-Seidel and Newton-Raphson methods in a complementary manner. Specifically, the Gauss-Seidel method is employed to obtain a quick approximate solution from a "flat start", while the Newton-Raphson method is utilized to obtain the final accurate solution [zimmerman2016matpower](@cite).
+While the Gauss-Seidel method directly solves the system of equations, it suffers from very slow convergence, which increases almost linearly with the system size, necessitating numerous iterations to obtain the desired solution [chassin2006gauss](@cite). Moreover, the convergence time of the Gauss-Seidel method increases significantly for large-scale systems and can face convergence issues for systems with high active power transfers. Nevertheless, power flow programs use both the Gauss-Seidel and Newton-Raphson methods in a complementary manner. Specifically, the Gauss-Seidel method is used to obtain a quick approximate solution from a "flat start", while the Newton-Raphson method is used to obtain the final accurate solution [zimmerman2016matpower](@cite).
 
 The Gauss-Seidel method is usually applied to a system of ``n`` complex equations, where one represents the slack bus. Consequently, one equation can be eliminated, resulting in a power flow problem with ``n-1`` equations.
 
 ---
 
 ##### Initialization
-JuliaGrid provides a way to utilize the Gauss-Seidel method for solving the AC power flow problem and determining the magnitudes and angles of bus voltages. To use this method, we need to execute the [`acModel!`](@ref acModel!) function first to set up the system and then initialize the Gauss-Seidel method using the [`gaussSeidel`](@ref gaussSeidel) function. The code snippet below demonstrates this process:
+JuliaGrid provides a way to use the Gauss-Seidel method for solving the AC power flow problem and determining the magnitudes and angles of bus voltages. To use this method, we need to execute the [`acModel!`](@ref acModel!) function first to set up the system and then initialize the Gauss-Seidel method using the [`gaussSeidel`](@ref gaussSeidel) function. The code snippet below demonstrates this process:
 ```@example PowerFlowSolution
 acModel!(system)
 analysis = gaussSeidel(system)
@@ -838,7 +838,7 @@ where ``P_{\mathrm{d}i}`` represents the active power demanded by consumers at t
 𝐏ₚ = analysis.power.supply.active
 ```
 
-The calculation of reactive power injection from the generators at generator or slack buses can be achieved using the subsequent equation:
+The calculation of reactive power injection from the generators at generator or slack buses can be computed using the following equation:
 ```math
   Q_{\mathrm{p}i} = Q_i + Q_{\mathrm{d}i}, \;\;\; \forall i \in \mathcal{N}_\mathrm{pv} \cup \mathcal{N}_\mathrm{sb},
 ```
@@ -892,13 +892,13 @@ The vectors of [active and reactive power flows](@ref BranchNetworkEquationsTuto
 ---
 
 ##### [Generator Power Outputs](@id GeneratorPowerOutputsManual)
-To obtain the output active powers of each generator connected to bus ``i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv}``, the given active power in the input data is utilized. At the slack bus, the total active power supplied by generators is determined using the equation:
+To obtain the output active powers of each generator connected to bus ``i \in \mathcal{N}_\mathrm{pq} \cup \mathcal{N}_\mathrm{pv}``, the given active power in the input data is used. At the slack bus, the total active power supplied by generators is determined using the equation:
 ```math
   P_{\mathrm{p}i} = P_i + P_{\mathrm{d}i},\;\;\; i \in \mathcal{N}_\mathrm{sb}.
 ```
 In the case of multiple generators connected to the slack bus, the first generator in the input data is assigned the obtained value of ``P_{\mathrm{p}i}``. Then, this amount of power is reduced by the output active power of the other generators.
 
-To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_\mathrm{g} = [P_{\mathrm{g}i}]``, ``i \in \mathcal S``, where the set ``\mathcal S`` represents the set of generators, users can utilize the following command:
+To retrieve the vector of active power outputs of generators, denoted as ``\mathbf{P}_\mathrm{g} = [P_{\mathrm{g}i}]``, ``i \in \mathcal S``, where the set ``\mathcal S`` represents the set of generators, use the following command:
 ```@repl PowerFlowSolution
 𝐏ₒ = analysis.power.generator.active
 ```
@@ -909,7 +909,7 @@ The total reactive power supplied by generators at each bus is obtained as:
 ```
 If there are multiple generators at the same bus, the reactive power is allocated proportionally among the generators based on their reactive power capabilities.
 
-To retrieve the vector of reactive power outputs of generators, denoted as ``\mathbf{Q}_\mathrm{g} = [Q_{\mathrm{g}i}]``, ``i \in \mathcal S``, users can utilize:
+To retrieve the vector of reactive power outputs of generators, denoted as ``\mathbf{Q}_\mathrm{g} = [Q_{\mathrm{g}i}]``, ``i \in \mathcal S``, use:
 ```@repl PowerFlowSolution
 𝐐ₒ = analysis.power.generator.reactive
 ```

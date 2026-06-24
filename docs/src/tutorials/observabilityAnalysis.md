@@ -3,7 +3,7 @@ The state estimation algorithm aims to estimate the values of the state variable
 
 Typical observability analysis, in cases where a unique solution is not guaranteed, identifies observable islands and prescribes an additional set of equations (pseudo-measurements) to ensure a unique solution [cosovic2021observability](@cite). In addition, optimal PMU placement can also be considered from an observability perspective, determining the placement of PMUs to achieve system observability using only phasor measurements.
 
-To initiate the process, let us construct the `PowerSystem` type:
+To begin, construct the `PowerSystem` type:
 ```@example ACObservability
 using JuliaGrid # hide
 @default(unit) # hide
@@ -35,7 +35,7 @@ To review, we can conceptualize the bus/branch model as the graph denoted by ``\
 ---
 
 ## Identification of Observable Islands
-JuliaGrid employs standard observability analysis performed on the linear decoupled measurement model [monticellibook; Ch. 7](@cite). Active power measurements from wattmeters are utilized to estimate bus voltage angles, while reactive power measurements from varmeters are used to estimate bus voltage magnitudes. This necessitates that measurements of active and reactive power come in pairs.
+JuliaGrid uses standard observability analysis performed on the linear decoupled measurement model [monticellibook; Ch. 7](@cite). Active power measurements from wattmeters are used to estimate bus voltage angles, while reactive power measurements from varmeters are used to estimate bus voltage magnitudes. This necessitates that measurements of active and reactive power come in pairs.
 
 Let us illustrate this concept with the following example, where measurements form an unobservable system:
 ```@example ACObservability
@@ -61,7 +61,7 @@ The selection between them relies on the power system's structure and the availa
 ---
 
 ##### Flow-Observable Islands
-To identify flow-observable islands, JuliaGrid employs a topological method outlined in [horisberger1985observability](@cite). The process begins with the examination of all active power flow measurements from wattmeters, aiming to determine the largest sets of connected buses within the network linked by branches with active power flow measurements. Subsequently, the analysis considers individual boundary or tie active power injection measurements, involving two islands that may potentially be merged into a single observable island. The user can initiate this process by calling the function:
+To identify flow-observable islands, JuliaGrid uses a topological method outlined in [horisberger1985observability](@cite). The process begins with the examination of all active power flow measurements from wattmeters, aiming to determine the largest sets of connected buses within the network linked by branches with active power flow measurements. The analysis then considers individual boundary or tie active power injection measurements, involving two islands that may potentially be merged into a single observable island. The user can initiate this process by calling the function:
 ```@example ACObservability
 islands = islandTopologicalFlow(monitoring)
 nothing # hide
@@ -77,7 +77,7 @@ Additionally, users can inspect the tie buses and branches resulting from the ob
 islands.tie.bus
 islands.tie.branch
 ```
-This tie data will be utilized throughout the restoration step, where we introduce pseudo-measurements to merge the flow-observable islands obtained.
+This tie data will be used throughout the restoration step, where we introduce pseudo-measurements to merge the flow-observable islands obtained.
 
 ---
 
@@ -110,16 +110,16 @@ addVoltmeter!(monitoring; bus = 1, magnitude = 1.0)
 nothing # hide
 ```
 
-After determining the islands, the observability analysis merges these islands in a manner that protects previously determined observable states from being altered by the new set of equations defined by the additional measurements, called pseudo-measurements. In general, this can be achieved by ensuring that the set of new measurements forms a non-redundant set [monticellibook; Sec. 7.3.2](@cite), i.e., the set of equations must be linearly independent with respect to the global system. The goal of observability restoration is to find this non-redundant set.
+After determining the islands, the observability analysis merges these islands in a manner that protects previously determined observable states from being altered by the new set of equations defined by the additional measurements, called pseudo-measurements. In general, this is done by ensuring that the set of new measurements forms a non-redundant set [monticellibook; Sec. 7.3.2](@cite), i.e., the set of equations must be linearly independent with respect to the global system. The goal of observability restoration is to find this non-redundant set.
 
-The outcome of the island detection step results in the power system being divided into ``m`` islands. Subsequently, we focus on the set of measurements ``\mathcal M_\mathrm{r} \subset \mathcal M``, which exclusively consists of:
+The outcome of the island detection step results in the power system being divided into ``m`` islands. Then focus on the set of measurements ``\mathcal M_\mathrm{r} \subset \mathcal M``, which exclusively consists of:
 * active power injection measurements at tie buses,
 * bus voltage phasor measurements.
 These measurements are retained from the phase where we identify observable islands and are crucial in determining whether we need additional pseudo-measurements to be included in the measurement set ``\mathcal M``. In this specific example, we do not have active power injection measurements at tie buses remaining after the identification of maximal-observable islands. However, if we proceed with flow-observable islands to the restoration step, we will have two injection measurements at buses `2` and `3`.
 
 Next, let us introduce the matrix ``\mathbf M_\mathrm{r} \in \mathbb{R}^{r \times m}``, where ``r = |\mathcal M_\mathrm{r}|``. This matrix can be conceptualized as the coefficient matrix of a reduced network, with ``m`` columns corresponding to islands and ``r`` rows associated with the set ``\mathcal M_\mathrm{r}``. More precisely, if we construct the coefficient matrix ``\mathbf H_\mathrm{r}`` linked to the set ``\mathcal M_\mathrm{r}`` in the DC framework, the matrix ``\mathbf M_\mathrm{r}`` can be constructed by summing the columns of ``\mathbf H_\mathrm{r}`` that belong to a specific island [manousakis2010observability](@cite).
 
-Subsequently, the user needs to establish a set of pseudo-measurements, where measurements must also come in pairs. Let us create that set:
+Next, define a set of pseudo-measurements, where measurements must also come in pairs. Create that set:
 ```@example ACObservability
 pseudo = measurement(system)
 
@@ -131,14 +131,14 @@ addVarmeter!(pseudo; label = 5, from = 5, reactive = 0.03)
 nothing # hide
 ```
 
-From this set, the restoration step will only utilize the following:
+From this set, the restoration step will only use the following:
 * active power flow measurements between tie buses,
 * active power injection measurements at tie buses,
 * bus voltage phasor measurements.
 
 These pseudo-measurements ``\mathcal M_\mathrm{p}`` will define the reduced coefficient matrix ``\mathbf M_\mathrm{p} \in \mathbb{R}^{p \times m}``, where ``p = |\mathcal M_\mathrm{p}|``. In this example, only the fifth wattmeter will contribute to the construction of the matrix ``\mathbf M_\mathrm{p}``. Similar to the previous case, measurement functions linked to the set ``\mathcal M_\mathrm{p}`` define the coefficient matrix ``\mathbf H_\mathrm{p}``, and the matrix ``\mathbf M_\mathrm{p}`` can be viewed as the sum of the columns of ``\mathbf H_\mathrm{p}`` belonging to a specific observable island.
 
-Additionally, users have the option to include bus voltage angle measurements from PMUs. In this scenario, restoration can be conducted without merging observable islands into one island, as each island becomes globally observable when one angle is known. It is important to note that during the restoration step, JuliaGrid initially processes active power measurements and subsequently handles bus voltage angle measurements if they are present in the set of pseudo-measurements.
+Additionally, users can include bus voltage angle measurements from PMUs. Here, restoration can be performed without merging observable islands into one island, as each island becomes globally observable when one angle is known. It is important to note that during the restoration step, JuliaGrid initially processes active power measurements and then handles bus voltage angle measurements if they are present in the set of pseudo-measurements.
 
 Users can execute the observability restoration procedure with the following:
 ```@example ACObservability

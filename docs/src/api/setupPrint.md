@@ -1,7 +1,7 @@
 # [Setup and Print](@id setupPrintAPI)
 For further information on this topic, please see the [Power System Model](@ref PowerSystemModelManual) or [Measurement Model](@ref MeasurementModelManual) sections of the Manual. Various macros are available for setting units or defining label types. Print functions allow results to be displayed in the REPL, or users can redirect the output to a file.
 
-To load power system model API functionalities into the current scope, utilize the following command:
+To load power system model API functionalities into the current scope, use the following command:
 ```@example LoadApi
 using JuliaGrid
 ```

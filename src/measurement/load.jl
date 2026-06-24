@@ -20,7 +20,7 @@ The `Measurement` type with the following fields:
 - `system`: The reference to the power system.
 
 # Units
-JuliaGrid stores all data in per-units and radians format.
+JuliaGrid stores all data in per-unit values and radians.
 
 # Example
 ```jldoctest

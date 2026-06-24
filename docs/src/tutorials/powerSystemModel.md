@@ -1,10 +1,10 @@
 # [Power System Model](@id ACDCModelTutorials)
-Power system analyses commonly utilize the unified branch model that provides linear relationships between voltages and currents. However, as the focus is on power calculations rather than current calculations, the resulting equations become nonlinear, posing challenges in solving them [andersson2012power](@cite). Hence, to accurately analyze power systems without any approximations, we use the AC model, which is a crucial component of our framework. In contrast, to obtain a linear system of equations for various DC analyses, we introduce approximations in the unified branch model, resulting in the DC model.
+Power system analyses commonly use the unified branch model that provides linear relationships between voltages and currents. However, as the focus is on power calculations rather than current calculations, the resulting equations become nonlinear, posing challenges in solving them [andersson2012power](@cite). Hence, to accurately analyze power systems without any approximations, we use the AC model, which is a crucial component of our framework. In contrast, to obtain a linear system of equations for various DC analyses, we introduce approximations in the unified branch model, resulting in the DC model.
 
 !!! note "Info"
     In this section, we describe the AC and DC models derived from the unified branch model and provide the power and current equations used in JuliaGrid analyses.
 
-A common way to describe the power system network topology is through the bus/branch model, which employs the two-port ``\pi``-model, which results in the unified branch model. The bus/branch model can be represented by a graph denoted by ``\mathcal G = (\mathcal N, \mathcal E)``, where the set of nodes ``\mathcal N = \{1, \dots, n\}`` corresponds to buses, and the set of edges ``\mathcal E \subseteq \mathcal N \times \mathcal N`` represents the branches of the power network.
+A common way to describe the power system network topology is through the bus/branch model, which uses the two-port ``\pi``-model, which results in the unified branch model. The bus/branch model can be represented by a graph denoted by ``\mathcal G = (\mathcal N, \mathcal E)``, where the set of nodes ``\mathcal N = \{1, \dots, n\}`` corresponds to buses, and the set of edges ``\mathcal E \subseteq \mathcal N \times \mathcal N`` represents the branches of the power network.
 
 Let us now construct the power system:
 ```@example ACDCModel
@@ -42,7 +42,7 @@ The given example provides the set of buses ``\mathcal N`` and the set of branch
 ---
 
 ## [AC Model](@id ACModelTutorials)
-To generate matrices and vectors for AC analysis, JuliaGrid employs the [`acModel!`](@ref acModel!) function:
+To generate matrices and vectors for AC analysis, JuliaGrid uses the [`acModel!`](@ref acModel!) function:
 ```@example ACDCModel
 acModel!(system)
 nothing #hide
@@ -87,7 +87,7 @@ The branch shunt admittance ``y_{\mathrm{s}ij}`` is equal to:
 ```
 where ``g_{\mathrm{s}ij}`` represents the shunt conductance of the branch, and ``b_{\mathrm{s}ij}`` represents the shunt susceptance. Both of these values are positive for real line sections. It is worth noting that while the shunt conductance ``g_{\mathrm{s}ij}`` is often insignificantly small and can be ignored in many cases, it is included in the analyses to ensure comprehensive consideration of all potential scenarios.
 
-Within JuliaGrid, the total shunt conductances and susceptances of branches are stored. In order to obtain the vectors ``\mathbf{g}_\mathrm{s} = [g_{\mathrm{s}ij}]`` and ``\mathbf{b}_\mathrm{s} = [b_{\mathrm{s}ij}]``, the conductances and susceptances must be distributed by considering the ends of the branches:
+Within JuliaGrid, the total shunt conductances and susceptances of branches are stored. To obtain the vectors ``\mathbf{g}_\mathrm{s} = [g_{\mathrm{s}ij}]`` and ``\mathbf{b}_\mathrm{s} = [b_{\mathrm{s}ij}]``, the conductances and susceptances must be distributed by considering the ends of the branches:
 ```@repl ACDCModel
 𝐠ₛ = 0.5 * system.branch.parameter.conductance
 𝐛ₛ = 0.5 * system.branch.parameter.susceptance
@@ -182,7 +182,7 @@ Positive values of active or reactive power, ``P_{ij} > 0`` or ``Q_{ij} > 0``, i
 ---
 
 ##### [Nodal Network Equations](@id NodalNetworkEquationsTutorials)
-Let us consider an illustrative example from our case study, depicted in Figure 2. This example provides a smooth transition to the general case, demonstrating a system with three buses represented as ``\mathcal{N} = \{1, 2, 3\}`` and two branches ``\mathcal{E} = \{(1, 2), (2, 3)\}``, where bus ``2`` is incident to the shunt element with admittance ``{y}_{\mathrm{sh}2}``.
+Let us consider an illustrative example from the case study, depicted in Figure 2. This example provides a smooth transition to the general case, demonstrating a system with three buses represented as ``\mathcal{N} = \{1, 2, 3\}`` and two branches ``\mathcal{E} = \{(1, 2), (2, 3)\}``, where bus ``2`` is incident to the shunt element with admittance ``{y}_{\mathrm{sh}2}``.
 ```@raw html
 <div style="text-align: center;">
   <img src="../../assets/tutorials/powerSystemModel/pi_model_example.svg" width="650" class="my-svg"/>
@@ -381,7 +381,7 @@ We can conclude that ``P_{ij} = -P_{ji}`` holds. In the DC model, the linear net
 ---
 
 ##### [Nodal Network Equations](@id DCNodalNetworkEquationsTutorials)
-As before, let us consider an illustrative example from our case study, depicted in Figure 3. This example provides a smooth transition to the general case, demonstrating a system with three buses represented as ``\mathcal{N} = \{1, 2, 3\}`` and two branches ``\mathcal{E} = \{(1, 2), (2, 3)\}``, where bus ``2`` is incident to the shunt element with admittance ``g_{\mathrm{sh}2}``.
+As before, let us consider an illustrative example from the case study, depicted in Figure 3. This example provides a smooth transition to the general case, demonstrating a system with three buses represented as ``\mathcal{N} = \{1, 2, 3\}`` and two branches ``\mathcal{E} = \{(1, 2), (2, 3)\}``, where bus ``2`` is incident to the shunt element with admittance ``g_{\mathrm{sh}2}``.
 ```@raw html
 <div style="text-align: center;">
   <img src="../../assets/tutorials/powerSystemModel/dc_model.svg" width="500" class="my-svg"/>

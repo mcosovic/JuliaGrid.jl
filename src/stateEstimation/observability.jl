@@ -1,7 +1,7 @@
 """
     islandTopologicalFlow(monitoring::Measurement)
 
-The function utilizes a topological approach to detect flow-observable islands, resulting in the
+The function uses a topological approach to detect flow-observable islands, resulting in the
 formation of disconnected and loop-free subgraphs. It is assumed that active and reactive power
 measurements are paired, indicating a standard observability analysis. In this analysis, islands
 formed by active power measurements correspond to those formed by reactive power measurements.
@@ -41,9 +41,9 @@ end
 """
     islandTopological(monitoring::Measurement)
 
-The function employs a topological method to identify maximal-observable islands. Specifically, it
-employs active power measurements to pinpoint flow-observable islands. Subsequently, these islands
-are merged based on the available injection measurements.
+The function uses a topological method to identify maximal-observable islands. Specifically, it
+uses active power measurements to pinpoint flow-observable islands. These islands are then merged
+based on the available injection measurements.
 
 It is assumed that active and reactive power measurements are paired, indicating a standard
 observability analysis. In this analysis, islands formed by active power measurements correspond to
@@ -435,9 +435,9 @@ Upon identifying the `Island`, the function incorporates measurements from the a
 pseudo-measurements in the `pseudo` variable into the `monitoring` variable to reinstate observability.
 This method relies on reduced coefficient matrices and the Gram matrix.
 
-It is important to note that the monitoring labels in the `monitoring` and `pseudo` variables must be
-different to enable the function to successfully incorporate measurements from `pseudo` into the
-`monitoring` set of measurements.
+It is important to note that the monitoring labels in the `monitoring` and `pseudo` variables must
+differ so the function can incorporate measurements from `pseudo` into the `monitoring` set of
+measurements.
 
 # Keyword
 The keyword `threshold` defines the zero pivot threshold value, with a default value of `1e-5`. More
@@ -901,7 +901,7 @@ Settings for generating measurements include:
   * `noise = true`: adds white Gaussian noise to the phasor values, using the defined variances,
   * `noise = false`: uses the exact phasor values without adding noise.
 Settings for handling phasor measurements include:
-* `correlated`: Specifies error correlation for PMUs for algorithms utilizing rectangular coordinates:
+* `correlated`: Specifies error correlation for PMUs for algorithms using rectangular coordinates:
   * `correlated = true`: considers correlated errors,
   * `correlated = false`: disregards correlations between errors.
 * `polar`: Chooses the coordinate system for including phasor measurements in AC state estimation:

@@ -1,7 +1,7 @@
 # [Powers and Currents](@id PowerCurrentAnalysisAPI)
-In the following section, we have provided a list of functions that can be utilized for post-processing analysis. Once the voltage values are obtained through power flow analysis, optimal power flow analysis, or state estimation, these functions can be used to calculate power or current values. The specific procedures for computing these values depend on the chosen analysis, which are described in separate manuals for further information.
+In the following section, we have provided a list of functions that can be used for post-processing analysis. Once the voltage values are obtained through power flow analysis, optimal power flow analysis, or state estimation, these functions can be used to calculate power or current values. The specific procedures for computing these values depend on the chosen analysis, which are described in separate manuals for further information.
 
-To load power system model API functionalities into the current scope, utilize the following command:
+To load power system model API functionalities into the current scope, use the following command:
 ```@example LoadApi
 using JuliaGrid
 ```

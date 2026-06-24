@@ -1,5 +1,5 @@
 # [AC State Estimation](@id ACStateEstimationManual)
-To perform nonlinear or AC state estimation, the initial requirement is to have the `PowerSystem` type configured with the AC model, along with the `Measurement` type storing measurement data. Next, we can develop either the weighted least-squares (WLS) model, utilizing the Gauss-Newton method, or the least absolute value (LAV) model. These models are encapsulated within the `AcStateEstimation` type:
+To perform nonlinear or AC state estimation, the initial requirement is to have the `PowerSystem` type configured with the AC model, along with the `Measurement` type storing measurement data. Next, develop either the weighted least-squares (WLS) model, using the Gauss-Newton method, or the least absolute value (LAV) model. These models are encapsulated within the `AcStateEstimation` type:
 * [`gaussNewton`](@ref gaussNewton),
 * [`acLavStateEstimation`](@ref acLavStateEstimation).
 
@@ -23,7 +23,7 @@ Users can also access specialized functions for computing specific types of [pow
 ---
 
 ## [Setup Initial Voltages](@id ACSESetupInitialVoltagesManual)
-Let us create the `PowerSystem` and `Measurement` type:
+Create the `PowerSystem` and `Measurement` type:
 ```@example ACSEWLS
 using JuliaGrid # hide
 @default(unit) # hide
@@ -45,7 +45,7 @@ addWattmeter!(monitoring; from = "Branch 1", active = 0.6)
 nothing # hide
 ```
 
-Next, we can instantiate the weighted least-squares or least absolute value state estimation models. Let us choose the weighted least-squares model for this example:
+Next, instantiate the weighted least-squares or least absolute value state estimation models. This example uses the weighted least-squares model:
 ```@example ACSEWLS
 analysis = gaussNewton(monitoring)
 nothing # hide
@@ -79,7 +79,7 @@ This approach enables the state estimation process to start from a realistic ope
 ---
 
 ## [Weighted Least-Squares Estimator](@id ACWLSStateEstimationSolutionManual)
-To begin, we will define the `PowerSystem` and `Measurement` types:
+To begin, define the `PowerSystem` and `Measurement` types:
 ```@example ACSEWLS
 using JuliaGrid # hide
 @default(unit) # hide
@@ -113,7 +113,7 @@ addVarmeter!(monitoring; bus = "Bus 2", reactive = -0.1, variance = 1e-5)
 nothing # hide
 ```
 
-Next, to establish the AC state estimation model, we will utilize the [`gaussNewton`](@ref gaussNewton) function:
+Next, to establish the AC state estimation model, use the [`gaussNewton`](@ref gaussNewton) function:
 ```@example ACSEWLS
 analysis = gaussNewton(monitoring)
 nothing # hide
@@ -142,7 +142,7 @@ print(system.bus.label, analysis.voltage.magnitude, analysis.voltage.angle)
 ---
 
 ##### Breaking the Iterative Process
-The iterative process can be terminated using the [`increment!`](@ref increment!) function. The following code demonstrates how to utilize this function to break out of the iteration loop:
+The iterative process can be terminated using the [`increment!`](@ref increment!) function. The following code demonstrates how to use this function to break out of the iteration loop:
 ```@example ACSEWLS
 analysis = gaussNewton(monitoring)
 for iteration = 1:20
@@ -177,7 +177,7 @@ nothing # hide
 ---
 
 ##### Inclusion of PMUs in Rectangular Coordinates
-In the example above, our focus is solely on solving the AC state estimation using SCADA measurements. However, users have the option to also integrate PMUs into the AC state estimation, either in the rectangular or polar coordinate system.
+In the example above, the focus is solely on solving the AC state estimation using SCADA measurements. However, users can also integrate PMUs into the AC state estimation, either in the rectangular or polar coordinate system.
 
 The default approach is to include PMUs in the rectangular coordinate system:
 ```@example ACSEWLS
@@ -188,19 +188,19 @@ nothing # hide
 
 Including PMU measurements in the rectangular system resolves ill-conditioned problems arising in polar coordinates due to small current magnitudes. However, this approach's main disadvantage is related to measurement errors, as measurement errors correspond to polar coordinates. Therefore, the covariance matrix must be transformed from polar to rectangular coordinates [zhou2006alternative](@cite). As a result, measurement errors of a single PMU are correlated, and the covariance matrix does not have a diagonal form. Despite that, the measurement error covariance matrix is usually considered as a diagonal matrix, affecting the accuracy of the state estimation.
 
-In the example above, we specifically include PMUs where measurement error correlations are disregarded. This is evident through the precision matrix, which remains diagonal:
+The example above specifically includes PMUs where measurement error correlations are disregarded. This is evident through the precision matrix, which remains diagonal:
 ```@repl ACSEWLS
 analysis = gaussNewton(monitoring);
 analysis.method.precision
 ```
 
-Lastly, we incorporate correlation into our model by adding a new PMU with the desired error correlation:
+Lastly, correlation is incorporated into the model by adding a new PMU with the desired error correlation:
 ```@example ACSEWLS
 addPmu!(monitoring; bus = "Bus 3", magnitude = 0.846, angle = -0.1712, correlated = true)
 nothing # hide
 ```
 
-Now, we can observe the precision matrix, which is no longer diagonal:
+The precision matrix is now no longer diagonal:
 ```@repl ACSEWLS
 analysis = gaussNewton(monitoring);
 analysis.method.precision
@@ -218,19 +218,19 @@ nothing # hide
 Including PMU measurements in the polar system provides more accurate state estimates compared to rectangular inclusion, but demands longer computing time. PMUs are handled in the same manner as SCADA measurements. However, this approach is susceptible to ill-conditioned problems arising in polar coordinates due to small values of current magnitudes [korres2012state, zhou2006alternative](@cite).
 
 !!! tip "Tip"
-    It is important to note that with each individual phasor measurement, we can set the coordinate system, providing flexibility to include some in polar and some in rectangular systems. This flexibility is particularly valuable because bus voltage phasor measurements are preferably included in a polar coordinate system, while current phasor measurements are best suited to a rectangular coordinate system.
+    It is important to note that with each individual phasor measurement, the coordinate system can be set independently, allowing some measurements to use polar coordinates and others to use rectangular coordinates. This flexibility is particularly valuable because bus voltage phasor measurements are preferably included in a polar coordinate system, while current phasor measurements are best suited to a rectangular coordinate system.
 
 ---
 
 ##### Print Results in the REPL
-Users have the option to print the results in the REPL using any units that have been configured, such as:
+Users can print the results in the REPL using any units that have been configured, such as:
 ```@example ACSEWLS
 @voltage(pu, deg)
 printBusData(analysis)
 @default(unit) # hide
 ```
 
-Next, users can easily customize the print results for specific buses, for example:
+Next, users can customize the print results for specific buses, for example:
 ```julia
 printBusData(analysis; label = "Bus 1", header = true)
 printBusData(analysis; label = "Bus 2")
@@ -240,7 +240,7 @@ printBusData(analysis; label = "Bus 3", footer = true)
 ---
 
 ##### Save Results to a File
-Users can also redirect print output to a file. For example, data can be saved in a text file as follows:
+Users can also redirect print output to a file. For example, data can be saved in a text file:
 ```julia
 open("bus.txt", "w") do file
     printBusData(analysis, file)
@@ -248,14 +248,14 @@ end
 ```
 
 !!! tip "Tip"
-    We also provide functions to print or save state estimation results, such as estimated values and residuals. For more details, users can consult the [Power and Current Analysis](@ref ACSEPowerCurrentAnalysisManual) section of this manual.
+    JuliaGrid also provides functions to print or save state estimation results, such as estimated values and residuals. For more details, users can consult the [Power and Current Analysis](@ref ACSEPowerCurrentAnalysisManual) section of this manual.
 
 ---
 
 ## Alternative Formulations
 The resolution of the WLS state estimation problem using the conventional method typically progresses smoothly. However, it is widely acknowledged that in certain situations common to real-world systems, this method can be vulnerable to numerical instabilities. Such conditions might impede the algorithm from finding a satisfactory solution. In such scenarios, users may choose to apply an alternative formulation of the WLS estimator.
 
-These alternative methods are applicable when measurement errors are uncorrelated and the precision matrix is diagonal. Therefore, as a preliminary step, we need to eliminate the correlation, as we did previously:
+These alternative methods are applicable when measurement errors are uncorrelated and the precision matrix is diagonal. Therefore, as a preliminary step, the correlation must be eliminated, as shown previously:
 ```@example ACSEWLS
 updatePmu!(monitoring; label = "PMU 2 (Bus 3)", correlated = false)
 nothing # hide
@@ -289,7 +289,7 @@ nothing # hide
 ## [Least Absolute Value Estimator](@id ACLAVStateEstimationSolutionManual)
 The LAV method presents an alternative estimation technique known for its increased robustness compared to WLS. While the WLS method relies on specific assumptions regarding measurement errors, robust estimators like LAV are designed to maintain unbiasedness even in the presence of various types of measurement errors and outliers. This characteristic often eliminates the need for extensive bad data analysis procedures [aburbook; Ch. 6](@cite). However, it is important to note that achieving robustness typically involves increased computational complexity.
 
-To obtain an LAV estimator, users need to employ one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the `Ipopt` solver proves sufficient to obtain a solution:
+To obtain an LAV estimator, users need to use one of the [solvers](https://jump.dev/JuMP.jl/stable/packages/solvers/) listed in the JuMP documentation. In many common scenarios, the `Ipopt` solver proves sufficient to obtain a solution:
 ```@example ACSEWLS
 using Ipopt
 using JuMP  # hide
@@ -316,7 +316,7 @@ nothing # hide
 ---
 
 ## [Measurement Set Update](@id ACMeasurementsAlterationManual)
-We begin by creating the `PowerSystem` and `Measurement` types with the [`ems`](@ref ems) function. The AC model is then configured using the [`acModel!`](@ref acModel!) function. After that, we initialize the `AcStateEstimation` type through the [`gaussNewton`](@ref gaussNewton) function and solve the resulting state estimation problem:
+Begin by creating the `PowerSystem` and `Measurement` types with the [`ems`](@ref ems) function. The AC model is then configured using the [`acModel!`](@ref acModel!) function. After that, initialize the `AcStateEstimation` type through the [`gaussNewton`](@ref gaussNewton) function and solve the resulting state estimation problem:
 ```@example WLSACStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -343,7 +343,7 @@ stateEstimation!(analysis)
 nothing # hide
 ```
 
-Next, we modify the existing `Measurement` type using add and update functions. Then, we create the new `AcStateEstimation` type based on the modified system and solve the state estimation problem:
+Next, modify the existing `Measurement` type using add and update functions. Then, create the new `AcStateEstimation` type based on the modified system and solve the state estimation problem:
 ```@example WLSACStateEstimationSolution
 addWattmeter!(monitoring; label = "Wattmeter 3", to = "Branch 1", active = -0.7)
 updateWattmeter!(monitoring; label = "Wattmeter 2", status = 0)
@@ -362,14 +362,14 @@ nothing # hide
 ---
 
 ## [State Estimation Update](@id ACStateEstimationUpdateManual)
-An advanced methodology involves users establishing the `AcStateEstimation` type using [`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation) just once. After this initial setup, users can seamlessly modify existing measurement devices without the need to recreate the `AcStateEstimation` type.
+For advanced workflows, users can create the `AcStateEstimation` type once using [`gaussNewton`](@ref gaussNewton) or [`acLavStateEstimation`](@ref acLavStateEstimation). They can then modify existing measurement devices without recreating the `AcStateEstimation` type.
 
 This approach extends the previous workflow by also avoiding recreation of the `AcStateEstimation` object.
 
 !!! tip "Tip"
-    The addition of new measurements after the creation of `AcStateEstimation` is not practical in terms of reusing this type. Instead, we recommend that users create a final set of measurements and then utilize update functions to manage devices, either putting them in-service or out-of-service throughout the process.
+    The addition of new measurements after the creation of `AcStateEstimation` is not practical in terms of reusing this type. Instead, users should create a final set of measurements and then use update functions to manage devices, either setting them in-service or out-of-service throughout the process.
 
-Let us now revisit our defined `PowerSystem`, `Measurement` and `AcStateEstimation` types:
+Now revisit the defined `PowerSystem`, `Measurement` and `AcStateEstimation` types:
 ```@example WLSACStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -398,7 +398,7 @@ stateEstimation!(analysis)
 nothing # hide
 ```
 
-Next, we modify the existing `Measurement` type as well as the `AcStateEstimation` type using add and update functions. We then immediately proceed to solve the state estimation problem:
+Next, modify the existing `Measurement` type as well as the `AcStateEstimation` type using add and update functions. Then, immediately solve the state estimation problem:
 ```@example WLSACStateEstimationSolution
 updateWattmeter!(analysis; label = "Wattmeter 3", status = 1)
 updateWattmeter!(analysis; label = "Wattmeter 2", status = 0)
@@ -411,12 +411,12 @@ nothing # hide
 ```
 
 !!! note "Info"
-    This concept removes the need to rebuild both the `Measurement` and the `AcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of employing the WLS model, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, `LU`, and `KLU`, provided that the nonzero pattern of the gain matrix remains unchanged.
+    This concept removes the need to rebuild both the `Measurement` and the `AcStateEstimation` from the beginning when implementing changes to the existing measurement set. In the scenario of using the WLS model, JuliaGrid can reuse symbolic factorizations of `LL`, `LDLt`, `LU`, and `KLU`, provided that the nonzero pattern of the gain matrix remains unchanged.
 
 ---
 
 ## [Power and Current Analysis](@id ACSEPowerCurrentAnalysisManual)
-After obtaining the solution from the AC state estimation, we can calculate various electrical quantities related to buses and branches using the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AC)) functions. For instance, let us consider the model for which we obtained the AC state estimation solution:
+After obtaining the solution from the AC state estimation, calculate various electrical quantities related to buses and branches using the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AC)) functions. For instance, consider the model used to obtain the AC state estimation solution:
 ```@example WLSACStateEstimationSolution
 using JuliaGrid # hide
 @default(unit) # hide
@@ -445,26 +445,26 @@ analysis = gaussNewton(monitoring)
 stateEstimation!(analysis)
 ```
 
-We can now utilize the provided functions to compute powers and currents:
+Now use the provided functions to compute powers and currents:
 ```@example WLSACStateEstimationSolution
 power!(analysis)
 current!(analysis)
 nothing # hide
 ```
 
-For instance, if we want to show the active power injections and the from-bus current angles, we can employ the following code:
+For instance, to show the active power injections and the from-bus current angles, use the following code:
 ```@repl WLSACStateEstimationSolution
 print(system.bus.label, analysis.power.injection.active)
 print(system.branch.label, analysis.current.from.angle)
 ```
 
 !!! note "Info"
-    To better understand the powers and currents associated with buses and branches that are calculated by the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AC)) functions, we suggest referring to the tutorials on [AC State Estimation](@ref ACStateEstimationTutorials).
+    To better understand the powers and currents associated with buses and branches that are calculated by the [`power!`](@ref power!(::AcPowerFlow)) and [`current!`](@ref current!(::AC)) functions, see the tutorials on [AC State Estimation](@ref ACStateEstimationTutorials).
 
 ---
 
 ##### Print Results in the REPL
-Users can utilize any of the print functions outlined in the [Print API](@ref setupPrintAPI). For example, to print state estimation data related to wattmeters, we can use:
+Users can use any of the print functions outlined in the [Print API](@ref setupPrintAPI). For example, to print state estimation data related to wattmeters, use:
 ```@example WLSACStateEstimationSolution
 @power(MW, pu)
 printWattmeterData(analysis)
@@ -557,7 +557,7 @@ magnitude, angle = toCurrent(analysis; label = "Branch 2")
 ---
 
 ##### Current Through Series Impedance
-To calculate the current passing through the series impedance of the branch in the direction from the from-bus end to the to-bus end, we can use the following function:
+To calculate the current passing through the series impedance of the branch in the direction from the from-bus end to the to-bus end, use the following function:
 ```@repl WLSACStateEstimationSolution
 magnitude, angle = seriesCurrent(analysis; label = "Branch 2")
 ```

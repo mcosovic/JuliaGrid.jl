@@ -42,7 +42,7 @@ Moreover, we identify the set of generators as ``\mathcal{S} = \{1, \dots, n_\ma
 ---
 
 !!! ukw "Notation"
-    Here, when referring to a vector ``\mathbf a``, we use the notation ``\mathbf a = [a_i]`` or ``\mathbf a = [a_{ij}]``, where ``a_i`` represents the element related with bus ``i \in \mathcal N`` or generator ``i \in \mathcal S``, while ``a_{ij}`` denotes the element related with branch ``(i,j) \in \mathcal E``.
+    Here, when referring to a vector ``\mathbf a``, we use the notation ``\mathbf a = [a_i]`` or ``\mathbf a = [a_{ij}]``, where ``a_i`` represents the element related to bus ``i \in \mathcal N`` or generator ``i \in \mathcal S``, while ``a_{ij}`` denotes the element related to branch ``(i,j) \in \mathcal E``.
 
 ---
 
@@ -142,13 +142,13 @@ Furthermore, it is worth noting that the function can be given simply as a const
 &nbsp;
 ```
 
-When utilizing the [`cost!`](@ref cost!) function within JuliaGrid, employing the `polynomial` keyword results in the polynomial being constructed with coefficients ordered from the highest degree to the lowest. For instance, in the provided case study, we created a quadratic polynomial represented as:
+When using the [`cost!`](@ref cost!) function within JuliaGrid, the `polynomial` keyword constructs the polynomial with coefficients ordered from the highest degree to the lowest. For instance, in the provided case study, we created a quadratic polynomial represented as:
 ```math
 \begin{aligned}
     f_1(P_{\mathrm{g}1}) &= 1100.2 P_{\mathrm{g}1}^2 + 500 P_{\mathrm{g}1} + 80.
 \end{aligned}
 ```
-To access these coefficients, users can utilize the variable:
+To access these coefficients, use the variable:
 ```@repl dcopf
 f₁ = system.generator.cost.active.polynomial[1]
 ```
@@ -174,7 +174,7 @@ The DC optimal power flow in JuliaGrid offers another option for defining cost f
 &nbsp;
 ```
 
-To define piecewise linear functions in JuliaGrid, users can utilize the [`cost!`](@ref cost!) function with the `piecewise` keyword. The piecewise linear function is constructed using a matrix where each row defines a single point. The first column holds the generator's active power output, while the second column corresponds to the associated cost value. For example, in the provided case study, a piecewise linear function is created and can be accessed as follows:
+To define piecewise linear functions in JuliaGrid, use the [`cost!`](@ref cost!) function with the `piecewise` keyword. The piecewise linear function is constructed using a matrix where each row defines a single point. The first column holds the generator's active power output, while the second column corresponds to the associated cost value. For example, in the provided case study, a piecewise linear function is created and can be accessed as follows:
 ```@repl dcopf
 f₂ = system.generator.cost.active.piecewise[2]
 ```
@@ -186,7 +186,7 @@ Consequently, for a piecewise cost function denoted as ``f_i(P_{\mathrm{g}i})`` 
 \cfrac{f_i(P_{\mathrm{g}i,j+1}) - f_i(P_{\mathrm{g}i,j})}{P_{\mathrm{g}i,j+1} - P_{\mathrm{g}i,j}}
 (P_{\mathrm{g}i} - P_{\mathrm{g}i,j}) + f_i(P_{\mathrm{g}i,j}) \leq H_i, \;\;\; i \in \mathcal S, \;\;\; j = 1, \dots, k,
 ```
-where ``H_i`` represents the helper variable. To finalize this method, we simply need to include the helper variable ``H_i`` in the objective function. This approach efficiently handles piecewise linear cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
+where ``H_i`` represents the helper variable. To finalize this method, include the helper variable ``H_i`` in the objective function. This approach efficiently handles piecewise linear cost functions, providing the flexibility to capture nonlinear characteristics while still benefiting from the advantages of linear optimization techniques.
 
 As an example, in the provided case study, the helper variable is defined as follows:
 ```@repl dcopf
@@ -218,7 +218,7 @@ The first equality constraint is linked to the slack bus, where the bus voltage 
 ```math
 \theta_i - \theta_{\mathrm{s}} = 0,\;\;\; i \in \mathcal N_\mathrm{sb},
 ```
-where the set ``\mathcal N_\mathrm{sb}`` contains the index of the slack bus. To access the equality constraint from the model, we can utilize the variable:
+where the set ``\mathcal N_\mathrm{sb}`` contains the index of the slack bus. To access the equality constraint from the model, we can use the variable:
 ```@repl dcopf
 print(analysis.method.constraint.slack.angle)
 ```

@@ -24,7 +24,7 @@ The `PowerSystem` composite type with the following fields:
 - `model`: Data associated with AC and DC analyses.
 
 # Units
-JuliaGrid stores all data in per-units and radians format which are fixed, the exceptions are base
+JuliaGrid stores all data in per-unit values and radians, except for base
 values in volt-amperes and volts. The prefixes for these base values can be changed using the
 [`@base`](@ref @base) macro.
 

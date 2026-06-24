@@ -43,15 +43,15 @@ end
 """
     @power(active, reactive, apparent)
 
-JuliaGrid stores all data related with powers in per-units, and these cannot be altered. However, the
-power units of the built-in functions used to add or modified power system elements can be modified
+JuliaGrid stores all data related to powers as per-unit values, and these cannot be altered. However, the
+power units of the built-in functions used to add or modify power system elements can be modified
 using the macro.
 
 The macro modifies global JuliaGrid settings that remain active until changed again.
 
 Prefixes must be specified according to the [SI prefixes](https://www.nist.gov/pml/owm/metric-si-prefixes)
 and should be included with the unit of `active` power (W), `reactive` power (VAr), or `apparent` power
-(VA). Also, it is a possible to combine SI units with/without prefixes with per-units (pu).
+(VA). SI units with/without prefixes can also be combined with per-unit values (pu).
 
 Changing the unit of `active` power is reflected in the following quantities:
 * [`addBus!`](@ref addBus!), [`updateBus!`](@ref updateBus!), [`@bus`](@ref @bus):
@@ -105,8 +105,8 @@ end
 """
     @voltage(magnitude, angle, base)
 
-JuliaGrid stores all data related with voltages in per-units and radians, and these cannot be altered.
-However, the voltage magnitude and angle units of the built-in functions used to add or modified power
+JuliaGrid stores all data related to voltages as per-unit values and radians, and these cannot be altered.
+However, the voltage magnitude and angle units of the built-in functions used to add or modify power
 system elements can be modified using the macro.
 
 The macro modifies global JuliaGrid settings that remain active until changed again.
@@ -161,8 +161,8 @@ end
 """
     @current(magnitude, angle)
 
-JuliaGrid stores all data related with currents in per-units and radians, and these cannot be altered.
-However, the current magnitude and angle units of the built-in functions used to add or modified
+JuliaGrid stores all data related to currents as per-unit values and radians, and these cannot be altered.
+However, the current magnitude and angle units of the built-in functions used to add or modify
 measurement devices can be modified using the macro.
 
 The macro modifies global JuliaGrid settings that remain active until changed again.
@@ -207,8 +207,8 @@ end
 """
     @parameter(impedance, admittance)
 
-JuliaGrid stores all data related with impedances and admittancies in per-units, and these cannot be
-altered. However, units of impedance and admittance of the built-in functions used to add or modified
+JuliaGrid stores all data related to impedances and admittances as per-unit values, and these cannot be
+altered. However, units of impedance and admittance of the built-in functions used to add or modify
 power system elements can be modified using the macro.
 
 The macro modifies global JuliaGrid settings that remain active until changed again.

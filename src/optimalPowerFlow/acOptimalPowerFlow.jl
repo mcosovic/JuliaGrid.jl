@@ -9,7 +9,7 @@ The function sets up the optimization model for solving the AC optimal power flo
 The function requires the `PowerSystem` type to establish the framework. Next, the `optimizer`
 argument is also required to create and solve the optimization problem. Specifically, JuliaGrid
 constructs the AC optimal power flow using the JuMP package and provides support for commonly
-employed solvers. For more detailed information, please consult the
+supported solvers. For more detailed information, please consult the
 [JuMP documentation](https://jump.dev/JuMP.jl/stable/packages/solvers/).
 
 # Keywords
