@@ -2,6 +2,8 @@
 
 ## Version 0.6.2
 
+Release Date: June 25, 2026
+
 #### Performance
   * Improved AC and DC nodal matrix construction by using a preallocated CSC builder instead of triplet assembly through `sparse`.
   * Reduced Newton-Raphson setup time and memory use by constructing the Jacobian pattern directly as a CSC matrix and filling Jacobian values through existing nonzero entries.
@@ -12,6 +14,9 @@
   * Added shared sparse matrix construction utilities for backend model-building routines.
   * Added shared helpers for updating values of entries that are already stored in CSC sparse matrix patterns.
   * Replaced the internal power-injection sum helper that accepted an operator argument with explicit plus and minus variants.
+
+#### Documentation
+  * Polished manual, tutorial, and examples for clarity and consistency.
 
 ---
 
