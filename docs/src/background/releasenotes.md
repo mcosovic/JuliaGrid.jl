@@ -2,7 +2,7 @@
 
 ## Version 0.6.2
 
-Release Date: June 25, 2026
+Release Date: June 26, 2026
 
 #### Performance
   * Improved AC and DC nodal matrix construction by using a preallocated CSC builder instead of triplet assembly through `sparse`.
