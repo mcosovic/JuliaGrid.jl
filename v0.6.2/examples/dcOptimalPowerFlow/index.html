@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>DC Optimal Power Flow · JuliaGrid</title><meta name="title" content="DC Optimal Power Flow · JuliaGrid"/><meta property="og:title" content="DC Optimal Power Flow · JuliaGrid"/><meta property="twitter:title" content="DC Optimal Power Flow · JuliaGrid"/><meta name="description" content="Documentation for JuliaGrid."/><meta property="og:description" content="Documentation for JuliaGrid."/><meta property="twitter:description" content="Documentation for JuliaGrid."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/style.css" rel="stylesheet" type="text/css"/><link href="../../assets/citations.css" rel="stylesheet" type="text/css"/><link href="../../assets/subfigure.css" rel="stylesheet" type="text/css"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="JuliaGrid logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">JuliaGrid</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Manual</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../manual/powerSystemModel/">Power System Model</a></li><li><a class="tocitem" href="../../manual/acPowerFlow/">AC Power Flow</a></li><li><a class="tocitem" href="../../manual/dcPowerFlow/">DC Power Flow</a></li><li><a class="tocitem" href="../../manual/acOptimalPowerFlow/">AC Optimal Power Flow</a></li><li><a class="tocitem" href="../../manual/dcOptimalPowerFlow/">DC Optimal Power Flow</a></li><li><a class="tocitem" href="../../manual/measurementModel/">Measurement Model</a></li><li><a class="tocitem" href="../../manual/observabilityAnalysis/">Observability Analysis</a></li><li><a class="tocitem" href="../../manual/acStateEstimation/">AC State Estimation</a></li><li><a class="tocitem" href="../../manual/pmuStateEstimation/">PMU State Estimation</a></li><li><a class="tocitem" href="../../manual/dcStateEstimation/">DC State Estimation</a></li><li><a class="tocitem" href="../../manual/badDataAnalysis/">Bad Data Analysis</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../tutorials/powerSystemModel/">Power System Model</a></li><li><a class="tocitem" href="../../tutorials/acPowerFlow/">AC Power Flow</a></li><li><a class="tocitem" href="../../tutorials/dcPowerFlow/">DC Power Flow</a></li><li><a class="tocitem" href="../../tutorials/acOptimalPowerFlow/">AC Optimal Power Flow</a></li><li><a class="tocitem" href="../../tutorials/dcOptimalPowerFlow/">DC Optimal Power Flow</a></li><li><a class="tocitem" href="../../tutorials/measurementModel/">Measurement Model</a></li><li><a class="tocitem" href="../../tutorials/observabilityAnalysis/">Observability Analysis</a></li><li><a class="tocitem" href="../../tutorials/acStateEstimation/">AC State Estimation</a></li><li><a class="tocitem" href="../../tutorials/pmuStateEstimation/">PMU State Estimation</a></li><li><a class="tocitem" href="../../tutorials/dcStateEstimation/">DC State Estimation</a></li><li><a class="tocitem" href="../../tutorials/badDataAnalysis/">Bad Data Analysis</a></li><li><a class="tocitem" href="../../tutorials/perunit/">Per-Unit System</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox" checked/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../powerSystemDatasets/">Power System Datasets</a></li><li><a class="tocitem" href="../acPowerFlow/">AC Power Flow</a></li><li><a class="tocitem" href="../dcPowerFlow/">DC Power Flow</a></li><li><a class="tocitem" href="../acOptimalPowerFlow/">AC Optimal Power Flow</a></li><li class="is-active"><a class="tocitem" href>DC Optimal Power Flow</a><ul class="internal"><li><a class="tocitem" href="#Base-Case-Analysis"><span>Base Case Analysis</span></a></li><li><a class="tocitem" href="#Modifying-Demands"><span>Modifying Demands</span></a></li><li><a class="tocitem" href="#Modifying-Generator-Costs"><span>Modifying Generator Costs</span></a></li><li><a class="tocitem" href="#Adding-Branch-Flow-Constraints"><span>Adding Branch Flow Constraints</span></a></li><li><a class="tocitem" href="#Modifying-Network-Topology"><span>Modifying Network Topology</span></a></li></ul></li><li><a class="tocitem" href="../observabilityAnalysis/">Observability Analysis</a></li><li><a class="tocitem" href="../acStateEstimation/">AC State Estimation</a></li><li><a class="tocitem" href="../pmuStateEstimation/">PMU State Estimation</a></li><li><a class="tocitem" href="../dcStateEstimation/">DC State Estimation</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox"/><label class="tocitem" for="menuitem-5"><span class="docs-label">API Reference</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../api/powerSystemModel/">Power System Model</a></li><li><a class="tocitem" href="../../api/powerFlow/">Power Flow</a></li><li><a class="tocitem" href="../../api/optimalPowerFlow/">Optimal Power Flow</a></li><li><a class="tocitem" href="../../api/measurementModel/">Measurement Model</a></li><li><a class="tocitem" href="../../api/stateEstimation/">State Estimation</a></li><li><a class="tocitem" href="../../api/analysis/">Powers and Currents</a></li><li><a class="tocitem" href="../../api/setupPrint/">Setup and Print</a></li><li><a class="tocitem" href="../../api/publicTypes/">Public Types</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-6" type="checkbox"/><label class="tocitem" for="menuitem-6"><span class="docs-label">Background</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../background/installation/">Installation Guide</a></li><li><a class="tocitem" href="../../background/bibliography/">Bibliography</a></li><li><a class="tocitem" href="../../background/releasenotes/">Release Notes</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>DC Optimal Power Flow</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>DC Optimal Power Flow</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/mcosovic/JuliaGrid.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/mcosovic/JuliaGrid.jl/blob/master/docs/src/examples/dcOptimalPowerFlow.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="DCOptimalPowerFlowExamples"><a class="docs-heading-anchor" href="#DCOptimalPowerFlowExamples">DC Optimal Power Flow</a><a id="DCOptimalPowerFlowExamples-1"></a><a class="docs-heading-anchor-permalink" href="#DCOptimalPowerFlowExamples" title="Permalink"></a></h1><p>This example uses the power system shown in Figure 1. As in the AC optimal power flow example, we adjust constraints and modify the topology to show how JuliaGrid efficiently handles these scenarios.</p><div style="text-align: center;">
+    <img src="../../assets/examples/acOptimalPowerFlow//4bus.svg" width="400" class="my-svg"/>
+    <p>Figure 1: The 4-bus power system.</p>
+</div>
+&nbsp;<div class="admonition is-info" id="Info-14a43fdaf1ebae51"><header class="admonition-header">Info<a class="admonition-anchor" href="#Info-14a43fdaf1ebae51" title="Permalink"></a></header><div class="admonition-body"><p>Users can download a Julia script containing the scenarios from this section using the following <a href="https://github.com/mcosovic/JuliaGrid.jl/raw/refs/heads/master/docs/src/examples/analyses/dcOptimalPowerFlow.jl">link</a>.</p></div></div><p>We start by defining the unit system. Since DC optimal power flow considers only active power and voltage angles, we specify the relevant units:</p><pre><code class="language-julia hljs">@power(MW, pu)
+@voltage(pu, deg)</code></pre><p>Next, we define the bus parameters, including the slack bus (<code>type = 3</code>), where the voltage angle is fixed at zero, active power loads, and shunt conductance values. With these definitions, we construct the power system model:</p><pre><code class="language-julia hljs">system = powerSystem()
+
+addBus!(system; label = &quot;Bus 1&quot;, type = 3)
+addBus!(system; label = &quot;Bus 2&quot;, active = 20.2)
+addBus!(system; label = &quot;Bus 3&quot;, conductance = 0.1)
+addBus!(system; label = &quot;Bus 4&quot;, active = 50.8)</code></pre><p>We then define the transmission line parameters by specifying <code>reactance</code> values. For the phase-shifting transformer, we set the shift angle with <code>shiftAngle</code>. We also impose bus voltage angle difference constraints between the from-bus and to-bus ends of each branch with <code>minDiffAngle</code> and <code>maxDiffAngle</code>:</p><pre><code class="language-julia hljs">@branch(reactance = 0.2, minDiffAngle = -4.1, maxDiffAngle = 4.1)
+addBranch!(system; label = &quot;Branch 1&quot;, from = &quot;Bus 1&quot;, to = &quot;Bus 3&quot;)
+addBranch!(system; label = &quot;Branch 2&quot;, from = &quot;Bus 1&quot;, to = &quot;Bus 2&quot;)
+addBranch!(system; label = &quot;Branch 3&quot;, from = &quot;Bus 2&quot;, to = &quot;Bus 3&quot;)
+addBranch!(system; label = &quot;Branch 4&quot;, from = &quot;Bus 3&quot;, to = &quot;Bus 4&quot;, shiftAngle = -2.3)</code></pre><p>At this stage, no active power flow constraints are imposed; they are introduced later in the example.</p><p>Next, we define the generator <code>active</code> power outputs, which serve as initial values for the optimization variables. The outputs are constrained with <code>minActive</code> and <code>maxActive</code>:</p><pre><code class="language-julia hljs">@generator(label = &quot;Generator ?&quot;)
+addGenerator!(system; bus = &quot;Bus 1&quot;, active = 63.1, minActive = 10.0, maxActive = 65.5)
+addGenerator!(system; bus = &quot;Bus 2&quot;, active = 3.0, minActive = 7.0, maxActive = 20.5)
+addGenerator!(system; bus = &quot;Bus 2&quot;, active = 4.1, minActive = 7.0, maxActive = 22.4)</code></pre><p>Finally, we define the generator active power supply costs in polynomial form by setting <code>active = 2</code>. The quadratic coefficients are specified with <code>polynomial</code>:</p><pre><code class="language-julia hljs">cost!(system; generator = &quot;Generator 1&quot;, active = 2, polynomial = [0.04; 20.0; 0.0])
+cost!(system; generator = &quot;Generator 2&quot;, active = 2, polynomial = [1.00; 20.0; 0.0])
+cost!(system; generator = &quot;Generator 3&quot;, active = 2, polynomial = [1.00; 20.0; 0.0])</code></pre><p>Once the power system data are defined, we generate the DC model, including the key matrices and vectors used in the analysis:</p><pre><code class="language-julia hljs">dcModel!(system)</code></pre><hr/><h5 id="Display-Data-Settings"><a class="docs-heading-anchor" href="#Display-Data-Settings">Display Data Settings</a><a id="Display-Data-Settings-1"></a><a class="docs-heading-anchor-permalink" href="#Display-Data-Settings" title="Permalink"></a></h5><p>Before running simulations, we configure the numeric format for selected data, including branch active power flows and generator outputs:</p><pre><code class="language-julia hljs">fmt = Dict(&quot;From-Bus Power&quot; =&gt; &quot;%.2f&quot;, &quot;To-Bus Power&quot; =&gt; &quot;%.2f&quot;, &quot;Power Output&quot; =&gt; &quot;%.2f&quot;)</code></pre><hr/><h2 id="Base-Case-Analysis"><a class="docs-heading-anchor" href="#Base-Case-Analysis">Base Case Analysis</a><a id="Base-Case-Analysis-1"></a><a class="docs-heading-anchor-permalink" href="#Base-Case-Analysis" title="Permalink"></a></h2><p>First, we create the DC optimal power flow model with the <code>Ipopt</code> solver. The optimization variables are bus voltage angles and generator active power outputs, denoted as <code>θ</code> and <code>Pg</code>:</p><pre><code class="language-julia hljs">analysis = dcOptimalPowerFlow(system, Ipopt.Optimizer; angle = &quot;θ&quot;, active = &quot;Pg&quot;)</code></pre><p>We can then print the optimization problem:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; print(analysis.method.jump)</code><code class="nohighlight hljs ansi" style="display:block;">Min 400 Pg[1]² + 10000 Pg[2]² + 10000 Pg[3]² + 2000 Pg[1] + 2000 Pg[2] + 2000 Pg[3]
+Subject to
+ -10 θ[1] + 5 θ[2] + 5 θ[3] + Pg[1] = 0
+ 5 θ[1] - 10 θ[2] + 5 θ[3] + Pg[2] + Pg[3] = 0.202
+ 5 θ[1] + 5 θ[2] - 15 θ[3] + 5 θ[4] = 0.2017128639793479
+ 5 θ[3] - 5 θ[4] = 0.3072871360206521
+ θ[1] - θ[3] ∈ [-0.0715584993317675, 0.0715584993317675]
+ θ[1] - θ[2] ∈ [-0.0715584993317675, 0.0715584993317675]
+ θ[2] - θ[3] ∈ [-0.0715584993317675, 0.0715584993317675]
+ θ[3] - θ[4] ∈ [-0.0715584993317675, 0.0715584993317675]
+ θ[1] = 0
+ Pg[1] ≥ 0.1
+ Pg[2] ≥ 0.07
+ Pg[3] ≥ 0.07
+ Pg[1] ≤ 0.655
+ Pg[2] ≤ 0.20500000000000002
+ Pg[3] ≤ 0.224</code></pre><p>We solve the DC optimal power flow model to obtain the bus voltage angles and generator active power outputs, then compute the remaining bus and branch active powers:</p><pre><code class="language-julia hljs">powerFlow!(analysis; power = true, verbose = 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">EXIT: The optimal solution was found.</code></pre><p>After obtaining the solution, we inspect the bus results, including the optimal voltage angles:</p><pre><code class="language-julia hljs">printBusData(analysis)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|---------------------------------------------------------------------|
+| Bus Data                                                            |
+|---------------------------------------------------------------------|
+| Label | Voltage | Power Generation | Power Demand | Power Injection |
+|       |         |                  |              |                 |
+|   Bus |   Angle |           Active |       Active |          Active |
+|       |   [deg] |             [MW] |         [MW] |            [MW] |
+|-------|---------|------------------|--------------|-----------------|
+| Bus 1 |  0.0000 |          56.4378 |       0.0000 |         56.4378 |
+| Bus 2 | -2.3673 |          14.6622 |      20.2000 |         -5.5378 |
+| Bus 3 | -4.1000 |           0.0000 |       0.0000 |         -0.0000 |
+| Bus 4 | -7.6213 |           0.0000 |      50.8000 |        -50.8000 |
+|---------------------------------------------------------------------|</code></pre><p>The voltage angle difference constraint on <code>Branch 1</code> reaches its upper limit. The branch constraint data confirm this with a nonzero associated dual variable:</p><pre><code class="language-julia hljs">printBranchConstraint(analysis; label = &quot;Branch 1&quot;, header = true, footer = true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|------------------------------------------------------|
+|  Label   |         Voltage Angle Difference          |
+|          |                                           |
+|          | Minimum | Solution | Maximum |       Dual |
+|          |   [deg] |    [deg] |   [deg] | [$/deg-hr] |
+|----------|---------|----------|---------|------------|
+| Branch 1 | -4.1000 |   4.1000 |  4.1000 |  -265.6535 |
+|------------------------------------------------------|</code></pre><p>The optimal generator active power outputs are:</p><pre><code class="language-julia hljs">printGeneratorData(analysis; fmt)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|---------------------------------------------|
+| Generator Data                              |
+|---------------------------------------------|
+|        Label        | Power Output | Status |
+|                     |              |        |
+|   Generator |   Bus |       Active |        |
+|             |       |         [MW] |        |
+|-------------|-------|--------------|--------|
+| Generator 1 | Bus 1 |        56.44 |      1 |
+| Generator 2 | Bus 2 |         7.33 |      1 |
+| Generator 3 | Bus 2 |         7.33 |      1 |
+|---------------------------------------------|</code></pre><p>The generator constraint data confirm that all generators operate within their active power limits, with all dual variables equal to zero:</p><pre><code class="language-julia hljs">printGeneratorConstraint(analysis)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|--------------------------------------------------------|
+| Generator Constraint Data                              |
+|--------------------------------------------------------|
+|    Label    |         Active Power Capability          |
+|             |                                          |
+|             | Minimum | Solution | Maximum |      Dual |
+|             |    [MW] |     [MW] |    [MW] | [$/MW-hr] |
+|-------------|---------|----------|---------|-----------|
+| Generator 1 | 10.0000 |  56.4378 | 65.5000 |   -0.0000 |
+| Generator 2 |  7.0000 |   7.3311 | 20.5000 |    0.0000 |
+| Generator 3 |  7.0000 |   7.3311 | 22.4000 |    0.0000 |
+|--------------------------------------------------------|</code></pre><p>Because <code>Generator 1</code> has the lowest cost, it supplies most of the power. <code>Generator 2</code> and <code>Generator 3</code> produce equal active power because they have identical cost functions.</p><p>Finally, we inspect the branch flow results:</p><pre><code class="language-julia hljs">printBranchData(analysis; fmt)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|-----------------------------------------------------------------------|
+| Branch Data                                                           |
+|-----------------------------------------------------------------------|
+|            Label             | From-Bus Power | To-Bus Power | Status |
+|                              |                |              |        |
+|   Branch | From-Bus | To-Bus |         Active |       Active |        |
+|          |          |        |           [MW] |         [MW] |        |
+|----------|----------|--------|----------------|--------------|--------|
+| Branch 1 | Bus 1    | Bus 3  |          35.78 |       -35.78 |      1 |
+| Branch 2 | Bus 1    | Bus 2  |          20.66 |       -20.66 |      1 |
+| Branch 3 | Bus 2    | Bus 3  |          15.12 |       -15.12 |      1 |
+| Branch 4 | Bus 3    | Bus 4  |          50.80 |       -50.80 |      1 |
+|-----------------------------------------------------------------------|</code></pre><p>The resulting active power flows are shown in Figure 2.</p><div style="text-align: center;">
+    <img src="../../assets/examples/dcOptimalPowerFlow/4bus_base.svg" width="450" class="my-svg"/>
+    <p>Figure 2: Active power flows in the 4-bus power system for the base case scenario.</p>
+</div><hr/><h2 id="Modifying-Demands"><a class="docs-heading-anchor" href="#Modifying-Demands">Modifying Demands</a><a id="Modifying-Demands-1"></a><a class="docs-heading-anchor-permalink" href="#Modifying-Demands" title="Permalink"></a></h2><p>Next, we update the active power demands. These changes modify both the power system model and the DC optimal power flow model:</p><pre><code class="language-julia hljs">updateBus!(analysis; label = &quot;Bus 2&quot;, active = 25.2)
+updateBus!(analysis; label = &quot;Bus 4&quot;, active = 43.3)</code></pre><p>We then solve the DC optimal power flow again without recreating the model. This enables a warm start because the initial primal and dual values come from the base case:</p><pre><code class="language-julia hljs">powerFlow!(analysis; power = true, verbose = 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">EXIT: The optimal solution was found.</code></pre><p>We can now inspect the generator power outputs:</p><pre><code class="language-julia hljs">printGeneratorData(analysis; fmt)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|---------------------------------------------|
+| Generator Data                              |
+|---------------------------------------------|
+|        Label        | Power Output | Status |
+|                     |              |        |
+|   Generator |   Bus |       Active |        |
+|             |       |         [MW] |        |
+|-------------|-------|--------------|--------|
+| Generator 1 | Bus 1 |        54.60 |      1 |
+| Generator 2 | Bus 2 |         7.00 |      1 |
+| Generator 3 | Bus 2 |         7.00 |      1 |
+|---------------------------------------------|</code></pre><p>Compared with the base case, <code>Generator 1</code> increases its output, while <code>Generator 2</code> and <code>Generator 3</code> reduce production to their minimum limits. All voltage angle difference constraints remain within their limits:</p><pre><code class="language-julia hljs">printBranchConstraint(analysis)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|------------------------------------------------------|
+| Branch Constraint Data                               |
+|------------------------------------------------------|
+|  Label   |         Voltage Angle Difference          |
+|          |                                           |
+|          | Minimum | Solution | Maximum |       Dual |
+|          |   [deg] |    [deg] |   [deg] | [$/deg-hr] |
+|----------|---------|----------|---------|------------|
+| Branch 1 | -4.1000 |   3.7433 |  4.1000 |    -0.0000 |
+| Branch 2 | -4.1000 |   2.5134 |  4.1000 |    -0.0000 |
+| Branch 3 | -4.1000 |   1.2299 |  4.1000 |    -0.0000 |
+| Branch 4 | -4.1000 |   2.6618 |  4.1000 |    -0.0000 |
+|------------------------------------------------------|</code></pre><p>We then inspect the branch results for additional insight into power flows:</p><pre><code class="language-julia hljs">printBranchData(analysis; fmt)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|-----------------------------------------------------------------------|
+| Branch Data                                                           |
+|-----------------------------------------------------------------------|
+|            Label             | From-Bus Power | To-Bus Power | Status |
+|                              |                |              |        |
+|   Branch | From-Bus | To-Bus |         Active |       Active |        |
+|          |          |        |           [MW] |         [MW] |        |
+|----------|----------|--------|----------------|--------------|--------|
+| Branch 1 | Bus 1    | Bus 3  |          32.67 |       -32.67 |      1 |
+| Branch 2 | Bus 1    | Bus 2  |          21.93 |       -21.93 |      1 |
+| Branch 3 | Bus 2    | Bus 3  |          10.73 |       -10.73 |      1 |
+| Branch 4 | Bus 3    | Bus 4  |          43.30 |       -43.30 |      1 |
+|-----------------------------------------------------------------------|</code></pre><p>The resulting active power flows are shown in Figure 3.</p><div style="text-align: center;">
+    <img src="../../assets/examples/dcOptimalPowerFlow/4bus_demand.svg" width="450" class="my-svg"/>
+    <p>Figure 3: Active power flows in the 4-bus power system with modified demands.</p>
+</div><hr/><h2 id="Modifying-Generator-Costs"><a class="docs-heading-anchor" href="#Modifying-Generator-Costs">Modifying Generator Costs</a><a id="Modifying-Generator-Costs-1"></a><a class="docs-heading-anchor-permalink" href="#Modifying-Generator-Costs" title="Permalink"></a></h2><p>We adjust the cost functions for <code>Generator 1</code> and <code>Generator 3</code>, making <code>Generator 1</code> the highest-cost generator and <code>Generator 3</code> the lowest-cost generator in the system. Updating both models enables a warm start for this scenario:</p><pre><code class="language-julia hljs">cost!(analysis; generator = &quot;Generator 1&quot;, active = 2, polynomial = [2.0; 40.0; 0.0])
+cost!(analysis; generator = &quot;Generator 3&quot;, active = 2, polynomial = [0.5; 10.0; 0.0])</code></pre><p>Next, we solve the updated problem and compute the resulting powers:</p><pre><code class="language-julia hljs">powerFlow!(analysis; power = true, verbose = 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">EXIT: The optimal solution was found.</code></pre><p>The optimal generator active power outputs are:</p><pre><code class="language-julia hljs">printGeneratorData(analysis; fmt)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|---------------------------------------------|
+| Generator Data                              |
+|---------------------------------------------|
+|        Label        | Power Output | Status |
+|                     |              |        |
+|   Generator |   Bus |       Active |        |
+|             |       |         [MW] |        |
+|-------------|-------|--------------|--------|
+| Generator 1 | Bus 1 |        25.70 |      1 |
+| Generator 2 | Bus 2 |        20.50 |      1 |
+| Generator 3 | Bus 2 |        22.40 |      1 |
+|---------------------------------------------|</code></pre><p>In this scenario, the higher cost of <code>Generator 1</code> decreases its output, while <code>Generator 2</code> and <code>Generator 3</code> increase their output. Because <code>Generator 3</code> has the lowest cost, it produces more active power than <code>Generator 2</code>. Although <code>Generator 1</code> might be expected to reduce output further and <code>Generator 3</code> to increase output more, the solution must also satisfy constraints such as active power balance at each bus.</p><p>We can also inspect the branch results for this scenario:</p><pre><code class="language-julia hljs">printBranchData(analysis; fmt)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|-----------------------------------------------------------------------|
+| Branch Data                                                           |
+|-----------------------------------------------------------------------|
+|            Label             | From-Bus Power | To-Bus Power | Status |
+|                              |                |              |        |
+|   Branch | From-Bus | To-Bus |         Active |       Active |        |
+|          |          |        |           [MW] |         [MW] |        |
+|----------|----------|--------|----------------|--------------|--------|
+| Branch 1 | Bus 1    | Bus 3  |          23.03 |       -23.03 |      1 |
+| Branch 2 | Bus 1    | Bus 2  |           2.67 |        -2.67 |      1 |
+| Branch 3 | Bus 2    | Bus 3  |          20.37 |       -20.37 |      1 |
+| Branch 4 | Bus 3    | Bus 4  |          43.30 |       -43.30 |      1 |
+|-----------------------------------------------------------------------|</code></pre><p>Figure 4 shows the power flows for this scenario. Compared with the previous scenario, <code>Branch 2</code> has significantly lower active power flow, while <code>Branch 3</code> becomes more heavily loaded.</p><div style="text-align: center;">
+    <img src="../../assets/examples/dcOptimalPowerFlow/4bus_cost.svg" width="450" class="my-svg"/>
+    <p>Figure 4: Active power flows in the 4-bus power system with modified generator costs.</p>
+</div><hr/><h2 id="Adding-Branch-Flow-Constraints"><a class="docs-heading-anchor" href="#Adding-Branch-Flow-Constraints">Adding Branch Flow Constraints</a><a id="Adding-Branch-Flow-Constraints-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-Branch-Flow-Constraints" title="Permalink"></a></h2><p>To limit active power flow, we add constraints to <code>Branch 2</code> and <code>Branch 3</code> by setting <code>type = 1</code> and specifying the from-bus limit with <code>maxFromBus</code>:</p><pre><code class="language-julia hljs">updateBranch!(analysis; label = &quot;Branch 2&quot;, type = 1, maxFromBus = 15.0)
+updateBranch!(analysis; label = &quot;Branch 3&quot;, type = 1, maxFromBus = 15.0)</code></pre><p>Next, we solve the updated DC optimal power flow:</p><pre><code class="language-julia hljs">powerFlow!(analysis; power = true, verbose = 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">EXIT: The optimal solution was found.</code></pre><p>We can now inspect the generator outputs:</p><pre><code class="language-julia hljs">printGeneratorData(analysis; fmt)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|---------------------------------------------|
+| Generator Data                              |
+|---------------------------------------------|
+|        Label        | Power Output | Status |
+|                     |              |        |
+|   Generator |   Bus |       Active |        |
+|             |       |         [MW] |        |
+|-------------|-------|--------------|--------|
+| Generator 1 | Bus 1 |        41.80 |      1 |
+| Generator 2 | Bus 2 |         7.00 |      1 |
+| Generator 3 | Bus 2 |        19.80 |      1 |
+|---------------------------------------------|</code></pre><p>The power flow limit on <code>Branch 3</code> forces <code>Generator 1</code> to increase its active power output despite its higher cost than <code>Generator 2</code> and <code>Generator 3</code>.</p><p>The branch data show that active power at the from-bus end of <code>Branch 3</code> reaches the defined limit, while the power flow on <code>Branch 2</code> remains within its specified limit:</p><pre><code class="language-julia hljs">printBranchData(analysis; fmt)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|-----------------------------------------------------------------------|
+| Branch Data                                                           |
+|-----------------------------------------------------------------------|
+|            Label             | From-Bus Power | To-Bus Power | Status |
+|                              |                |              |        |
+|   Branch | From-Bus | To-Bus |         Active |       Active |        |
+|          |          |        |           [MW] |         [MW] |        |
+|----------|----------|--------|----------------|--------------|--------|
+| Branch 1 | Bus 1    | Bus 3  |          28.40 |       -28.40 |      1 |
+| Branch 2 | Bus 1    | Bus 2  |          13.40 |       -13.40 |      1 |
+| Branch 3 | Bus 2    | Bus 3  |          15.00 |       -15.00 |      1 |
+| Branch 4 | Bus 3    | Bus 4  |          43.30 |       -43.30 |      1 |
+|-----------------------------------------------------------------------|</code></pre><p>The resulting active power flows are shown in Figure 5.</p><div style="text-align: center;">
+    <img src="../../assets/examples/dcOptimalPowerFlow/4bus_flow.svg" width="450" class="my-svg"/>
+    <p>Figure 5: Active power flows in the 4-bus power system with added branch flow constraints.</p>
+</div><hr/><h2 id="Modifying-Network-Topology"><a class="docs-heading-anchor" href="#Modifying-Network-Topology">Modifying Network Topology</a><a id="Modifying-Network-Topology-1"></a><a class="docs-heading-anchor-permalink" href="#Modifying-Network-Topology" title="Permalink"></a></h2><p>Finally, we set <code>Branch 2</code> out-of-service:</p><pre><code class="language-julia hljs">updateBranch!(analysis; label = &quot;Branch 2&quot;, status = 0)</code></pre><p>We then solve the updated DC optimal power flow:</p><pre><code class="language-julia hljs">powerFlow!(analysis; power = true, verbose = 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">EXIT: The optimal solution was found.</code></pre><p>We can now inspect the updated generator outputs:</p><pre><code class="language-julia hljs">printGeneratorData(analysis; fmt)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|---------------------------------------------|
+| Generator Data                              |
+|---------------------------------------------|
+|        Label        | Power Output | Status |
+|                     |              |        |
+|   Generator |   Bus |       Active |        |
+|             |       |         [MW] |        |
+|-------------|-------|--------------|--------|
+| Generator 1 | Bus 1 |        28.40 |      1 |
+| Generator 2 | Bus 2 |        17.80 |      1 |
+| Generator 3 | Bus 2 |        22.40 |      1 |
+|---------------------------------------------|</code></pre><p>Because <code>Branch 2</code> is out-of-service and <code>Branch 3</code> is flow-limited, <code>Generator 1</code> has less ability to supply the load at <code>Bus 2</code>, so its output decreases. As a result, <code>Generator 2</code> and <code>Generator 3</code> increase their output.</p><p>The branch data show that active power flows in the remaining in-service branches remain largely unchanged. After the outage of <code>Branch 2</code>, <code>Generator 2</code> and <code>Generator 3</code> supply the load at <code>Bus 2</code>, effectively displacing <code>Generator 1</code>:</p><pre><code class="language-julia hljs">printBranchData(analysis; fmt)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">|-----------------------------------------------------------------------|
+| Branch Data                                                           |
+|-----------------------------------------------------------------------|
+|            Label             | From-Bus Power | To-Bus Power | Status |
+|                              |                |              |        |
+|   Branch | From-Bus | To-Bus |         Active |       Active |        |
+|          |          |        |           [MW] |         [MW] |        |
+|----------|----------|--------|----------------|--------------|--------|
+| Branch 1 | Bus 1    | Bus 3  |          28.40 |       -28.40 |      1 |
+| Branch 2 | Bus 1    | Bus 2  |           0.00 |        -0.00 |      0 |
+| Branch 3 | Bus 2    | Bus 3  |          15.00 |       -15.00 |      1 |
+| Branch 4 | Bus 3    | Bus 4  |          43.30 |       -43.30 |      1 |
+|-----------------------------------------------------------------------|</code></pre><p>Figure 6 shows the resulting active power flows with <code>Branch 2</code> out-of-service.</p><div style="text-align: center;">
+    <img src="../../assets/examples/dcOptimalPowerFlow/4bus_service.svg" width="450" class="my-svg"/>
+    <p>Figure 6: Active power flows in the 4-bus power system with modified network topology.</p>
+</div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../acOptimalPowerFlow/">« AC Optimal Power Flow</a><a class="docs-footer-nextpage" href="../observabilityAnalysis/">Observability Analysis »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 26 June 2026 11:31">Friday 26 June 2026</span>. Using Julia version 1.10.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
