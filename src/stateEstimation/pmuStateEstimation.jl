@@ -78,83 +78,117 @@ function pmuEstimationWls(system::PowerSystem, monitoring::Measurement)
 
     model!(system, system.model.ac)
 
-    nnzCff = 0
-    nnzPcs = 0
+    coeffCount = fill(0, 2 * bus.number)
+    precisionCount = fill(0, 2 * pmu.number)
     @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
-            nnzCff += 2
+            coeffCount[pmu.layout.index[i]] += 1
+            coeffCount[pmu.layout.index[i] + bus.number] += 1
         else
-            nnzCff += 8
+            idx = pmu.layout.index[i]
+            from = branch.layout.from[idx]
+            to = branch.layout.to[idx]
+
+            coeffCount[from] += 2
+            coeffCount[to] += 2
+            coeffCount[from + bus.number] += 2
+            coeffCount[to + bus.number] += 2
         end
 
+        idx = 2 * i - 1
         if pmu.layout.correlated[i]
             correlated = true
-            nnzPcs += 4
+            precisionCount[idx] += 2
+            precisionCount[idx + 1] += 2
         else
-            nnzPcs += 2
+            precisionCount[idx] += 1
+            precisionCount[idx + 1] += 1
         end
     end
 
     mean = fill(0.0, 2 * pmu.number)
-    cff = SparseModel(fill(0, nnzCff), fill(0, nnzCff), fill(0.0, nnzCff), 1, 1)
-    pcs = SparseModel(fill(0, nnzPcs), fill(0, nnzPcs), fill(0.0, nnzPcs), 1, 1)
+    coeffColptr, coeffRowval, coeffNzval, coeffPos = cscStorage(coeffCount, Float64)
+    precColptr, precRowval, precNzval, precPos = cscStorage(precisionCount, Float64)
     inservice = 0
 
     @inbounds for (i, k) in enumerate(pmu.layout.index)
+        row = 2 * i - 1
         sinθ, cosθ = sincos(pmu.angle.mean[i])
         varRe, varIm = variancePmu(pmu, cosθ, sinθ, i)
 
         if pmu.layout.correlated[i]
-            precision!(pcs, pmu, cosθ, sinθ, varRe, varIm, i)
+            L1⁻¹, L2, L3⁻² = covariancePmu(pmu, cosθ, sinθ, varRe, varIm, i)
+            offDiagonal = (-L2 * L1⁻¹) * L3⁻²
+
+            addCscEntry!(
+                precRowval, precNzval, precPos, row, row,
+                (L1⁻¹ - L2 * offDiagonal) * L1⁻¹
+            )
+            addCscEntry!(precRowval, precNzval, precPos, row + 1, row, offDiagonal)
+            addCscEntry!(precRowval, precNzval, precPos, row, row + 1, offDiagonal)
+            addCscEntry!(precRowval, precNzval, precPos, row + 1, row + 1, L3⁻²)
         else
-            precision!(pcs, varRe)
-            precision!(pcs, varIm)
+            addCscEntry!(precRowval, precNzval, precPos, row, row, 1 / varRe)
+            addCscEntry!(precRowval, precNzval, precPos, row + 1, row + 1, 1 / varIm)
         end
 
+        status = pmu.magnitude.status[i] * pmu.angle.status[i]
         if pmu.layout.bus[i]
-            if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
+            if status == 1
                 inservice += 2
 
-                mean[cff.idx] = pmu.magnitude.mean[i] * cosθ
-                mean[cff.idx + 1] = pmu.magnitude.mean[i] * sinθ
-
-                cff.val[cff.cnt] = 1.0
-                cff.val[cff.cnt + 1] = 1.0
+                mean[row] = pmu.magnitude.mean[i] * cosθ
+                mean[row + 1] = pmu.magnitude.mean[i] * sinθ
             end
-            pmuIndices(cff, pmu.layout.index[i], pmu.layout.index[i] + bus.number)
 
-            cff.idx += 2
+            addCscEntry!(
+                coeffRowval, coeffNzval, coeffPos,
+                row, pmu.layout.index[i], Float64(status)
+            )
+            addCscEntry!(
+                coeffRowval, coeffNzval, coeffPos,
+                row + 1, pmu.layout.index[i] + bus.number, Float64(status)
+            )
         else
-            if pmu.magnitude.status[i] == 1 && pmu.angle.status[i] == 1
+            if status == 1
                 inservice += 2
 
-                mean[cff.idx] = pmu.magnitude.mean[i] * cosθ
-                mean[cff.idx + 1] = pmu.magnitude.mean[i] * sinθ
+                mean[row] = pmu.magnitude.mean[i] * cosθ
+                mean[row + 1] = pmu.magnitude.mean[i] * sinθ
 
                 if pmu.layout.from[i]
                     p = ReImIijCoefficient(branch, ac, k)
                 else
                     p = ReImIjiCoefficient(branch, ac, k)
                 end
-                cff.val[cff.cnt] = cff.val[cff.cnt + 1] = p.A
-                cff.val[cff.cnt + 2] = cff.val[cff.cnt + 3] = p.C
-                cff.val[cff.cnt + 4] = p.B
-                cff.val[cff.cnt + 6] = p.D
-                cff.val[cff.cnt + 5] = -p.B
-                cff.val[cff.cnt + 7] = -p.D
+            else
+                p = PiModel(A = 0.0, B = 0.0, C = 0.0, D = 0.0)
             end
 
-            pmuIndices(cff, branch.layout.from[k], branch.layout.from[k] + bus.number)
-            pmuIndices(cff, branch.layout.to[k], branch.layout.to[k] + bus.number)
-            pmuIndices(cff, branch.layout.from[k] + bus.number, branch.layout.from[k])
-            pmuIndices(cff, branch.layout.to[k] + bus.number, branch.layout.to[k])
+            from = branch.layout.from[k]
+            to = branch.layout.to[k]
+            fromIm = from + bus.number
+            toIm = to + bus.number
 
-            cff.idx += 2
+            addCscEntry!(coeffRowval, coeffNzval, coeffPos, row, from, p.A)
+            addCscEntry!(coeffRowval, coeffNzval, coeffPos, row + 1, from, -p.B)
+            addCscEntry!(coeffRowval, coeffNzval, coeffPos, row, to, p.C)
+            addCscEntry!(coeffRowval, coeffNzval, coeffPos, row + 1, to, -p.D)
+            addCscEntry!(coeffRowval, coeffNzval, coeffPos, row, fromIm, p.B)
+            addCscEntry!(coeffRowval, coeffNzval, coeffPos, row + 1, fromIm, p.A)
+            addCscEntry!(coeffRowval, coeffNzval, coeffPos, row, toIm, p.D)
+            addCscEntry!(coeffRowval, coeffNzval, coeffPos, row + 1, toIm, p.C)
         end
     end
 
-    coefficient = sparse(cff.row, cff.col, cff.val, 2 * pmu.number, 2 * bus.number)
-    precision = sparse(pcs.row, pcs.col, pcs.val, 2 * pmu.number, 2 * pmu.number)
+    coefficient = SparseMatrixCSC(
+        2 * pmu.number, 2 * bus.number,
+        coeffColptr, coeffRowval, coeffNzval
+    )
+    precision = SparseMatrixCSC(
+        2 * pmu.number, 2 * pmu.number,
+        precColptr, precRowval, precNzval
+    )
 
     power = AcPower(
         Cartesian(Float64[], Float64[]),
@@ -403,13 +437,13 @@ function solve!(analysis::PmuStateEstimation{WLS{Orthogonal}})
     se = analysis.method
     bus = system.bus
 
-    @inbounds for i = 1:se.number
-        se.precision.nzval[i] = sqrt(se.precision.nzval[i])
-    end
+    se.factorization = qr(sparseDiagonalSqrtProduct(se.precision, se.coefficient, se.number))
 
-    se.factorization = qr(se.precision * se.coefficient)
-
-    ReImVi = solution!(fill(0.0, 2 * bus.number), se.factorization, se.precision * se.mean)
+    ReImVi = solution!(
+        fill(0.0, 2 * bus.number),
+        se.factorization,
+        sparseDiagonalSqrtProduct(se.precision, se.mean, se.number)
+    )
 
     if isempty(analysis.voltage.magnitude)
         analysis.voltage.magnitude = fill(0.0, bus.number)
@@ -422,8 +456,6 @@ function solve!(analysis::PmuStateEstimation{WLS{Orthogonal}})
         analysis.voltage.angle[i] = angle(voltage)
     end
 
-    squarePrecision!(se.precision, se.number)
-
     return nothing
 end
 
@@ -435,9 +467,7 @@ function solve!(analysis::PmuStateEstimation{WLS{PetersWilkinson}})
     control = UMFPACK.get_umfpack_control(Float64, Int64)
     control[UMFPACK.JL_UMFPACK_SCALE] = 0
 
-    sqrtPrecision!(se.precision, se.number)
-
-    H = se.precision * se.coefficient
+    H = sparseDiagonalSqrtProduct(se.precision, se.coefficient, se.number)
     se.signature[:pattern] = dropZeros!(H, se.signature[:pattern])
 
     if se.signature[:pattern] == -1
@@ -447,7 +477,7 @@ function solve!(analysis::PmuStateEstimation{WLS{PetersWilkinson}})
         lu!(se.factorization, H)
     end
 
-    z = (se.precision * se.mean)[se.factorization.p]
+    z = sparseDiagonalSqrtProduct(se.precision, se.mean, se.number)[se.factorization.p]
 
     Lt = transpose(se.factorization.L)
     y = (Lt * se.factorization.L) \ (Lt * z)
@@ -465,8 +495,6 @@ function solve!(analysis::PmuStateEstimation{WLS{PetersWilkinson}})
         analysis.voltage.magnitude[i] = abs(voltage)
         analysis.voltage.angle[i] = angle(voltage)
     end
-
-    squarePrecision!(se.precision, se.number)
 
     return nothing
 end

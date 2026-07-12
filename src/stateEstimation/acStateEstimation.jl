@@ -911,9 +911,7 @@ function increment!(analysis::AcStateEstimation{GaussNewton{Orthogonal}})
     normalEquation!(system, analysis)
 
     removeIdx, removeVal = removeColumn(se.jacobian, bus.layout.slack)
-    sqrtPrecision!(se.precision, lastindex(se.mean))
-
-    H = se.precision * se.jacobian
+    H = sparseDiagonalSqrtProduct(se.precision, se.jacobian, lastindex(se.mean))
     if se.signature[:pattern] == -1
         se.signature[:pattern] = 0
         se.factorization = factorization(H, se.factorization, Orthogonal)
@@ -921,10 +919,13 @@ function increment!(analysis::AcStateEstimation{GaussNewton{Orthogonal}})
         se.factorization = factorization!(H, se.factorization, Orthogonal)
     end
 
-    solution!(se.increment, se.factorization, se.precision * se.residual)
+    solution!(
+        se.increment,
+        se.factorization,
+        sparseDiagonalSqrtProduct(se.precision, se.residual, lastindex(se.mean))
+    )
     se.increment[bus.layout.slack] = 0.0
 
-    squarePrecision!(se.precision, lastindex(se.mean))
     restoreColumn!(se.jacobian, removeIdx, removeVal, bus.layout.slack)
 
     return maximum(abs, se.increment)
@@ -941,9 +942,11 @@ function increment!(analysis::AcStateEstimation{GaussNewton{PetersWilkinson}})
     control[UMFPACK.JL_UMFPACK_SCALE] = 0
 
     removeIdx, removeVal = removeColumn(se.jacobian, bus.layout.slack)
-    sqrtPrecision!(se.precision, lastindex(se.mean))
 
-    H = vcat(se.precision * se.jacobian, sparse([1], [bus.layout.slack], [1.0], 1, 2 * bus.number))
+    H = vcat(
+        sparseDiagonalSqrtProduct(se.precision, se.jacobian, lastindex(se.mean)),
+        sparse([1], [bus.layout.slack], [1.0], 1, 2 * bus.number)
+    )
     se.signature[:pattern] = dropZeros!(H, se.signature[:pattern])
 
     if se.signature[:pattern] == -1
@@ -953,7 +956,7 @@ function increment!(analysis::AcStateEstimation{GaussNewton{PetersWilkinson}})
         lu!(se.factorization, H)
     end
 
-    z = se.precision * se.residual
+    z = sparseDiagonalSqrtProduct(se.precision, se.residual, lastindex(se.mean))
     push!(z, 0.0)
     permute!(z, se.factorization.p)
 
@@ -964,7 +967,6 @@ function increment!(analysis::AcStateEstimation{GaussNewton{PetersWilkinson}})
     invpermute!(se.increment, se.factorization.q)
     se.increment[bus.layout.slack] = 0.0
 
-    squarePrecision!(se.precision, lastindex(se.mean))
     restoreColumn!(se.jacobian, removeIdx, removeVal, bus.layout.slack)
 
     return maximum(abs, se.increment)

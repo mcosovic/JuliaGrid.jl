@@ -1,5 +1,15 @@
 # [Release Notes](@id ReleaseNotes)
 
+## Version 0.6.3
+
+Release Date:
+
+#### Performance
+  * Reduced sparse matrix construction overhead in PMU and DC state-estimation WLS model setup.
+  * Reduced temporary allocations in diagonal-precision AC, PMU, and DC state-estimation solve paths.
+
+---
+
 ## Version 0.6.2
 
 Release Date: June 26, 2026

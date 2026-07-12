@@ -75,12 +75,15 @@ function dcStateEstimationWls(system::PowerSystem, monitoring::Measurement)
     checkSlackBus(system)
     model!(system, dc)
 
-    nnzCff = 0
+    colcount = fill(0, bus.number)
     @inbounds for (i, idx) in enumerate(wattmeter.layout.index)
         if wattmeter.layout.bus[i]
-            nnzCff += (dc.nodalMatrix.colptr[idx + 1] - dc.nodalMatrix.colptr[idx])
+            for ptr in dc.nodalMatrix.colptr[idx]:(dc.nodalMatrix.colptr[idx + 1] - 1)
+                colcount[dc.nodalMatrix.rowval[ptr]] += 1
+            end
         else
-            nnzCff += 2
+            colcount[branch.layout.from[idx]] += 1
+            colcount[branch.layout.to[idx]] += 1
         end
     end
 
@@ -88,15 +91,15 @@ function dcStateEstimationWls(system::PowerSystem, monitoring::Measurement)
     numDevice = wattmeter.number
     @inbounds for i = 1:pmu.number
         if pmu.layout.bus[i]
-            nnzCff += 1
             numDevice += 1
             pmuIdx[i] = numDevice
+            colcount[pmu.layout.index[i]] += 1
         end
     end
 
     mean = fill(0.0, numDevice)
-    pcs = spdiagm(0 => mean)
-    cff = SparseModel(fill(0, nnzCff), fill(0, nnzCff), fill(0.0, nnzCff), 1, 1)
+    pcs = sparseDiagonal(numDevice, Float64)
+    colptr, rowval, nzval, pos = cscStorage(colcount, Float64)
     inservice = 0
 
     @inbounds for (i, k) in enumerate(wattmeter.layout.index)
@@ -108,8 +111,10 @@ function dcStateEstimationWls(system::PowerSystem, monitoring::Measurement)
             mean[i] = status * meanPi(bus, dc, wattmeter, i, k)
 
             for j in dc.nodalMatrix.colptr[k]:(dc.nodalMatrix.colptr[k + 1] - 1)
-                cff.val[cff.cnt] = status * dc.nodalMatrix.nzval[j]
-                dcIndices(cff, i, dc.nodalMatrix.rowval[j])
+                addCscEntry!(
+                    rowval, nzval, pos, i, dc.nodalMatrix.rowval[j],
+                    status * dc.nodalMatrix.nzval[j]
+                )
             end
         else
             if wattmeter.layout.from[i]
@@ -120,11 +125,8 @@ function dcStateEstimationWls(system::PowerSystem, monitoring::Measurement)
 
             mean[i] = status * meanPij(branch, wattmeter, admittance, i, k)
 
-            cff.val[cff.cnt] = admittance
-            dcIndices(cff, i, branch.layout.from[k])
-
-            cff.val[cff.cnt] = -admittance
-            dcIndices(cff, i, branch.layout.to[k])
+            addCscEntry!(rowval, nzval, pos, i, branch.layout.from[k], admittance)
+            addCscEntry!(rowval, nzval, pos, i, branch.layout.to[k], -admittance)
         end
     end
 
@@ -135,11 +137,10 @@ function dcStateEstimationWls(system::PowerSystem, monitoring::Measurement)
         mean[k] = status * meanθi(pmu, bus, i)
         pcs.nzval[k] = 1 / pmu.angle.variance[i]
 
-        cff.val[cff.cnt] = status
-        dcIndices(cff, k, pmu.layout.index[i])
+        addCscEntry!(rowval, nzval, pos, k, pmu.layout.index[i], Float64(status))
     end
 
-    coefficient = sparse(cff.row, cff.col, cff.val, numDevice, bus.number)
+    coefficient = SparseMatrixCSC(numDevice, bus.number, colptr, rowval, nzval)
 
     power = DcPower(
         Real(Float64[]),
@@ -343,12 +344,11 @@ function solve!(analysis::DcStateEstimation{WLS{T}}) where T <: Normal
     se = analysis.method
     bus = analysis.system.bus
 
-    removeIdx, removeVal = removeColumn(se.coefficient, bus.layout.slack)
-
-    temp = transpose(se.coefficient) * se.precision
     if se.signature[:run]
         se.signature[:run] = false
 
+        removeIdx, removeVal = removeColumn(se.coefficient, bus.layout.slack)
+        temp = transpose(se.coefficient) * se.precision
         gain = temp * se.coefficient
         gain[bus.layout.slack, bus.layout.slack] = 1.0
 
@@ -358,14 +358,15 @@ function solve!(analysis::DcStateEstimation{WLS{T}}) where T <: Normal
         else
             se.factorization = factorization!(gain, se.factorization, T)
         end
+        restoreColumn!(se.coefficient, removeIdx, removeVal, bus.layout.slack)
     end
-    b = temp * se.mean
+    b = sparseTransposeDiagonalProduct(se.coefficient, se.precision, se.mean)
+    b[bus.layout.slack] = 0.0
 
     fillState!(analysis.voltage, bus.number)
     solution!(analysis.voltage.angle, se.factorization, b)
 
     addSlackAngle!(analysis.system, analysis)
-    restoreColumn!(se.coefficient, removeIdx, removeVal, bus.layout.slack)
 
     return nothing
 end
@@ -375,18 +376,19 @@ function solve!(analysis::DcStateEstimation{WLS{Orthogonal}})
     bus = analysis.system.bus
 
     removeIdx, removeVal = removeColumn(se.coefficient, bus.layout.slack)
-    sqrtPrecision!(se.precision, se.number)
-
     if se.signature[:run]
         se.signature[:run] = false
-        se.factorization = qr(se.precision * se.coefficient)
+        se.factorization = qr(sparseDiagonalSqrtProduct(se.precision, se.coefficient, se.number))
     end
 
     fillState!(analysis.voltage, bus.number)
-    solution!(analysis.voltage.angle, se.factorization, se.precision * se.mean)
+    solution!(
+        analysis.voltage.angle,
+        se.factorization,
+        sparseDiagonalSqrtProduct(se.precision, se.mean, se.number)
+    )
 
     addSlackAngle!(analysis.system, analysis)
-    squarePrecision!(se.precision, se.number)
     restoreColumn!(se.coefficient, removeIdx, removeVal, bus.layout.slack)
 
     return nothing
@@ -397,14 +399,15 @@ function solve!(analysis::DcStateEstimation{WLS{PetersWilkinson}})
     bus = analysis.system.bus
 
     removeIdx, removeVal = removeColumn(se.coefficient, bus.layout.slack)
-    sqrtPrecision!(se.precision, se.number)
-
     if se.signature[:run]
         se.signature[:run] = false
         control = UMFPACK.get_umfpack_control(Float64, Int64)
         control[UMFPACK.JL_UMFPACK_SCALE] = 0
 
-        H = vcat(se.precision * se.coefficient, sparse([1], [bus.layout.slack], [1.0], 1, bus.number))
+        H = vcat(
+            sparseDiagonalSqrtProduct(se.precision, se.coefficient, se.number),
+            sparse([1], [bus.layout.slack], [1.0], 1, bus.number)
+        )
         se.signature[:pattern] = dropZeros!(H, se.signature[:pattern])
 
         if se.signature[:pattern] == -1
@@ -415,7 +418,7 @@ function solve!(analysis::DcStateEstimation{WLS{PetersWilkinson}})
         end
     end
 
-    z = se.precision * se.mean
+    z = sparseDiagonalSqrtProduct(se.precision, se.mean, se.number)
     push!(z, 0.0)
     permute!(z, se.factorization.p)
 
@@ -427,7 +430,6 @@ function solve!(analysis::DcStateEstimation{WLS{PetersWilkinson}})
     invpermute!(analysis.voltage.angle, se.factorization.q)
 
     addSlackAngle!(analysis.system, analysis)
-    squarePrecision!(se.precision, se.number)
     restoreColumn!(se.coefficient, removeIdx, removeVal, bus.layout.slack)
 
     return nothing
