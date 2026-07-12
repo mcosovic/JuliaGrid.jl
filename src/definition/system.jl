@@ -220,18 +220,6 @@ mutable struct AcModel
     admittance::Vector{ComplexF64}
 end
 
-Base.@kwdef mutable struct SystemRevision
-    topology::Int64 = 0
-    type::Int64 = 0
-    slack::Int64 = 0
-    acModel::Int64 = 0
-    acPattern::Int64 = 0
-    dcModel::Int64 = 0
-    dcPattern::Int64 = 0
-    acOptimization::Int64 = 0
-    dcOptimization::Int64 = 0
-end
-
 """
     Model
 
@@ -399,10 +387,6 @@ mutable struct PMU
     angle::GaussMeter
     layout::PmuLayout
     number::Int64
-end
-
-Base.@kwdef mutable struct MeasurementRevision
-    measurement::Int64 = 0
 end
 
 """

@@ -15,6 +15,7 @@ import KLU: klu, klu!, KLUFactorization
 
 ######### Types and Constants ##########
 include("definition/internal.jl")
+include("backend/revision.jl")
 include("definition/system.jl")
 include("definition/analysis.jl")
 
